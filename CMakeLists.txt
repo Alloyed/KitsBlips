@@ -3,25 +3,24 @@ cmake_policy(SET CMP0048 NEW)
 
 project(kitblips_all)
 
-# SDK paths
+option(ENABLE_JUCE "build juce plugins" ON)
+option(ENABLE_VCVRACK "build vcv rack plugins" ON)
+option(ENABLE_DAISY "build daisy firwmare" OFF)
 
-# DaisySP (git submodule
+# platform-independent libraries
 add_subdirectory(sdk/DaisySP)
-
-# # libDaisy (fetch)
-# include(FetchContent)
-# FetchContent_Declare(daisy
-#   GIT_REPOSITORY https://github.com/stellar-aria/libDaisy
-#   GIT_TAG cmake-only
-# )
-# FetchContent_MakeAvailable(daisy)
-
-# juce (git submodule)
-add_subdirectory(sdk/JUCE)
-
-# project paths
 add_subdirectory(dsp)
-add_subdirectory(vcvrack)
-add_subdirectory(juce/ExamplePlugin)
-# add_subdirectory(daisy/ExampleFirmware)
 
+if(${ENABLE_JUCE})
+    add_subdirectory(sdk/JUCE)
+    add_subdirectory(juce/ExamplePlugin)
+endif()
+
+if(${ENABLE_VCVRACK})
+    add_subdirectory(vcvrack)
+endif()
+
+if(${ENABLE_DAISY})
+    add_subdirectory(sdk/libDaisy)
+    add_subdirectory(daisy/ExampleFirmware)
+endif()
