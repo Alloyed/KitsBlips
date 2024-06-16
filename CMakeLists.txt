@@ -3,8 +3,8 @@ cmake_policy(SET CMP0048 NEW)
 
 project(kitblips_all)
 
-option(ENABLE_JUCE "build juce plugins" ON)
-option(ENABLE_VCVRACK "build vcv rack plugins" ON)
+option(ENABLE_JUCE "build juce plugins" OFF)
+option(ENABLE_VCVRACK "build vcv rack plugins" OFF)
 option(ENABLE_DAISY "build daisy firwmare" OFF)
 
 # platform-independent libraries
