@@ -9,9 +9,11 @@ on:
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
+  rack-sdk-version: latest
+  rack-plugin-toolchain-dir: /home/build/rack-plugin-toolchain
 
 jobs:
-  build:
+  build-vst:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
@@ -28,3 +30,51 @@ jobs:
       - name: Build
         # Build your program with the given configuration
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+  modify-plugin-version:
+    name: Modify plugin version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        id: plugin-version-cache
+        with:
+          path: plugin.json
+          key: ${{ github.sha }}-${{ github.run_id }}
+      - run: |
+          gitrev=`git rev-parse --short HEAD`
+          pluginversion=`jq -r '.version' plugin.json`
+          echo "Set plugin version from $pluginversion to $pluginversion-$gitrev"
+          cat <<< `jq --arg VERSION "$pluginversion-$gitrev" '.version=$VERSION' plugin.json` > plugin.json
+        # only modify plugin version if no tag was created
+        if: "! startsWith(github.ref, 'refs/tags/v')"
+
+  build-vcvrack:
+    name: ${{ matrix.platform }}
+    needs: modify-plugin-version
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/qno/rack-plugin-toolchain-win-linux
+      options: --user root
+    strategy:
+      matrix:
+        platform: [win-x64, lin-x64]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: actions/cache@v3
+        id: plugin-version-cache
+        with:
+          path: plugin.json
+          key: ${{ github.sha }}-${{ github.run_id }}
+      - name: Build plugin
+        run: |
+          export PLUGIN_DIR=$GITHUB_WORKSPACE
+          pushd ${{ env.rack-plugin-toolchain-dir }}
+          make plugin-build-${{ matrix.platform }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          path: ${{ env.rack-plugin-toolchain-dir }}/plugin-build
+          name: ${{ matrix.platform }}
