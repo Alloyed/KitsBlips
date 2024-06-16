@@ -1,0 +1,146 @@
+# This starter workflow is for a CMake project running on a single platform. There is a different starter workflow if you need cross-platform coverage.
+# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-multi-platform.yml
+name: CMake
+
+on:
+  workflow_dispatch: # lets you run a build from the UI
+  push:
+  #pull_request:
+
+# When pushing new commits, cancel any running builds on that branch
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-vst:
+    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
+    # You can convert this to a matrix build if you need cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    name: vst ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-22.04
+          #- name: macOS
+          #  os: macos-14
+          #  extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          - name: Windows
+            os: windows-latest
+
+    steps:
+      - name: Install JUCE's Linux Deps
+        if: runner.os == 'Linux'
+        # Thanks to McMartin & co https://forum.juce.com/t/list-of-juce-dependencies-under-linux/15121/44
+        run: |
+          sudo apt-get update && sudo apt install libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libwebkit2gtk-4.0-dev libglu1-mesa-dev xvfb ninja-build
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure CMake
+        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+        # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_JUCE=true
+
+      - name: Build
+        # Build your program with the given configuration
+        run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
+
+  #modify-plugin-version:
+  #  name: Modify plugin version
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #    - uses: actions/checkout@v3
+  #    - uses: actions/cache@v3
+  #      id: plugin-version-cache
+  #      with:
+  #        path: plugin.json
+  #        key: ${{ github.sha }}-${{ github.run_id }}
+  #    - run: |
+  #        gitrev=`git rev-parse --short HEAD`
+  #        pluginversion=`jq -r '.version' plugin.json`
+  #        echo "Set plugin version from $pluginversion to $pluginversion-$gitrev"
+  #        cat <<< `jq --arg VERSION "$pluginversion-$gitrev" '.version=$VERSION' plugin.json` > plugin.json
+  #      # only modify plugin version if no tag was created
+  #      if: "! startsWith(github.ref, 'refs/tags/v')"
+
+  build-vcvrack:
+    name: vcvrack ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-22.04
+            generator: Unix Makefiles
+            rackFolder: Rack-SDK-2.5.2-lin-x64
+          #- name: macOS
+          #  os: macos-14
+          #  extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          - name: Windows
+            os: windows-latest
+            generator: MinGW Makefiles
+            rackFolder: Rack-SDK-2.5.2-win-x64
+    steps:
+      - name: Set up MinGW
+        if: runner.os == 'Windows'
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x64
+          static: 0
+
+      - name: Set up Linux deps
+        if: runner.os == 'Linux'
+        # https://github.com/VCVRack/rack-plugin-toolchain/blob/v2/Makefile#L268
+        run: sudo apt-get update && sudo apt install ca-certificates git build-essential autoconf automake bison flex gawk libtool-bin libncurses5-dev unzip zip jq libgl-dev libglu-dev git wget curl cmake nasm xz-utils file python3 libxml2-dev libssl-dev texinfo help2man libz-dev rsync xxd perl coreutils zstd markdown libarchive-tools
+
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Configure CMake
+        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+        # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_VCVRACK=true -DRACK_SDK_DIR="${{github.workspace}}/sdk/${{matrix.rackFolder}}" -G "${{matrix.generator}}"
+
+      - name: Build
+        # Build your program with the given configuration
+        run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
+#  build-daisy:
+#    name: daisy ${{ matrix.name }}
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
+#      matrix:
+#        include:
+#          - name: Linux
+#            os: ubuntu-22.04
+#            generator: Unix Makefiles
+#    steps:
+#      - name: Setup arm-none-eabi-gcc
+#        uses: carlosperate/arm-none-eabi-gcc-action@v1
+#        with:
+#          release: "9-2019-q4"
+#
+#      - uses: actions/checkout@v3
+#        with:
+#          submodules: recursive
+#
+#      - name: Configure CMake
+#        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_DAISY=true -G "${{matrix.generator}}"
+#
+#      - name: Build
+#        # Build your program with the given configuration
+#        run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
