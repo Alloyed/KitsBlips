@@ -5,7 +5,7 @@ name: CMake on a single platform
 on:
   workflow_dispatch: # lets you run a build from the UI
   push:
-  pull_request:
+  #pull_request:
 
 # When pushing new commits, cancel any running builds on that branch
 concurrency:
@@ -35,14 +35,11 @@ jobs:
         include:
           - name: Linux
             os: ubuntu-22.04
-            pluginval-binary: ./pluginval
-          - name: macOS
-            os: macos-14
-            pluginval-binary: pluginval.app/Contents/MacOS/pluginval
-            extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          #- name: macOS
+          #  os: macos-14
+          #  extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
           - name: Windows
             os: windows-latest
-            pluginval-binary: ./pluginval.exe
 
     steps:
       - name: Install JUCE's Linux Deps
@@ -64,27 +61,27 @@ jobs:
         # Build your program with the given configuration
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-  modify-plugin-version:
-    name: Modify plugin version
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/cache@v3
-        id: plugin-version-cache
-        with:
-          path: plugin.json
-          key: ${{ github.sha }}-${{ github.run_id }}
-      - run: |
-          gitrev=`git rev-parse --short HEAD`
-          pluginversion=`jq -r '.version' plugin.json`
-          echo "Set plugin version from $pluginversion to $pluginversion-$gitrev"
-          cat <<< `jq --arg VERSION "$pluginversion-$gitrev" '.version=$VERSION' plugin.json` > plugin.json
-        # only modify plugin version if no tag was created
-        if: "! startsWith(github.ref, 'refs/tags/v')"
+  #modify-plugin-version:
+  #  name: Modify plugin version
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #    - uses: actions/checkout@v3
+  #    - uses: actions/cache@v3
+  #      id: plugin-version-cache
+  #      with:
+  #        path: plugin.json
+  #        key: ${{ github.sha }}-${{ github.run_id }}
+  #    - run: |
+  #        gitrev=`git rev-parse --short HEAD`
+  #        pluginversion=`jq -r '.version' plugin.json`
+  #        echo "Set plugin version from $pluginversion to $pluginversion-$gitrev"
+  #        cat <<< `jq --arg VERSION "$pluginversion-$gitrev" '.version=$VERSION' plugin.json` > plugin.json
+  #      # only modify plugin version if no tag was created
+  #      if: "! startsWith(github.ref, 'refs/tags/v')"
 
   build-vcvrack:
-    name: ${{ matrix.platform }}
-    needs: modify-plugin-version
+    name: vcv ${{ matrix.platform }}
+    #needs: modify-plugin-version
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/qno/rack-plugin-toolchain-win-linux
@@ -96,18 +93,12 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
-      - uses: actions/cache@v3
-        id: plugin-version-cache
-        with:
-          path: plugin.json
-          key: ${{ github.sha }}-${{ github.run_id }}
-      - name: Build plugin
-        run: |
-          export PLUGIN_DIR=$GITHUB_WORKSPACE
-          pushd ${{ env.rack-plugin-toolchain-dir }}
-          make plugin-build-${{ matrix.platform }}
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          path: ${{ env.rack-plugin-toolchain-dir }}/plugin-build
-          name: ${{ matrix.platform }}
+
+      - name: Configure CMake
+        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+        # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_VCVRACK=true
+
+      - name: Build
+        # Build your program with the given configuration
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
