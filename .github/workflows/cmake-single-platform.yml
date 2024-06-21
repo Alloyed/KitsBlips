@@ -89,12 +89,14 @@ jobs:
           - name: Linux
             os: ubuntu-22.04
             generator: Unix Makefiles
+            rackFolder: ${{github.workspace}}/Rack-SDK-2.5.2-lin-x64
           #- name: macOS
           #  os: macos-14
           #  extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
           - name: Windows
             os: windows-latest
             generator: MinGW Makefiles
+            rackFolder: ${{github.workspace}}/Rack-SDK-2.5.2-win-x64
     steps:
       - name: Set up MinGW
         if: runner.os == 'Windows'
@@ -103,6 +105,11 @@ jobs:
           platform: x64
           static: 0
 
+      - name: Set up Linux deps
+        if: runner.os == 'Linux'
+        # https://github.com/VCVRack/rack-plugin-toolchain/blob/v2/Makefile#L268
+        run: sudo apt-get update && sudo apt install ca-certificates git build-essential autoconf automake bison flex gawk libtool-bin libncurses5-dev unzip zip jq libgl-dev libglu-dev git wget curl cmake nasm xz-utils file python3 libxml2-dev libssl-dev texinfo help2man libz-dev rsync xxd perl coreutils zstd markdown libarchive-tools
+
       - uses: actions/checkout@v3
         with:
           submodules: recursive
@@ -110,7 +117,7 @@ jobs:
       - name: Configure CMake
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_VCVRACK=true -G "${{matrix.generator}}"
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_VCVRACK=true -DRACK_SDK_DIR="${{matrix.rackFolder}}" -G "${{matrix.generator}}"
 
       - name: Build
         # Build your program with the given configuration
