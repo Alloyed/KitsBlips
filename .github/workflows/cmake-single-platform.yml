@@ -55,11 +55,11 @@ jobs:
       - name: Configure CMake
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_JUCE=true
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_JUCE=true
 
       - name: Build
         # Build your program with the given configuration
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
 
   #modify-plugin-version:
   #  name: Modify plugin version
@@ -80,16 +80,28 @@ jobs:
   #      if: "! startsWith(github.ref, 'refs/tags/v')"
 
   build-vcvrack:
-    name: vcv ${{ matrix.platform }}
-    #needs: modify-plugin-version
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/qno/rack-plugin-toolchain-win-linux
-      options: --user root
+    name: vcvrack ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:
-        platform: [win-x64, lin-x64]
+        include:
+          - name: Linux
+            os: ubuntu-22.04
+            generator: Ninja
+          #- name: macOS
+          #  os: macos-14
+          #  extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          - name: Windows
+            os: windows-latest
+            generator: MinGW Makefiles
     steps:
+      - name: Set up MinGW
+        if: runner.os == 'Windows'
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x64
+
       - uses: actions/checkout@v3
         with:
           submodules: recursive
@@ -97,8 +109,8 @@ jobs:
       - name: Configure CMake
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_VCVRACK=true
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_VCVRACK=true -G "${{matrix.generator}}"
 
       - name: Build
         # Build your program with the given configuration
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
