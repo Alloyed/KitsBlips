@@ -11,6 +11,12 @@ option(ENABLE_DAISY "build daisy firwmare" OFF)
 add_subdirectory(sdk/DaisySP)
 add_subdirectory(dsp)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    # https://stackoverflow.com/questions/6563810/m-pi-works-with-math-h-but-not-with-cmath-in-visual-studio
+    target_compile_definitions(KitDSP _USE_MATH_DEFINES)
+    target_compile_definitions(DaisySP _USE_MATH_DEFINES)
+endif()
+
 if(${ENABLE_JUCE})
     add_subdirectory(sdk/JUCE)
     add_subdirectory(juce/ExamplePlugin)
