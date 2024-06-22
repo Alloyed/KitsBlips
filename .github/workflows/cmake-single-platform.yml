@@ -122,7 +122,7 @@ jobs:
         run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
 
   build-daisy:
-    name: daisy
+    name: daisy ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
@@ -132,11 +132,6 @@ jobs:
             os: ubuntu-22.04
             generator: Unix Makefiles
     steps:
-      - name: Set up Linux deps
-        if: runner.os == 'Linux'
-        # https://github.com/VCVRack/rack-plugin-toolchain/blob/v2/Makefile#L268
-        run: sudo apt-get update && sudo apt install ca-certificates git build-essential autoconf automake bison flex gawk libtool-bin libncurses5-dev unzip zip jq libgl-dev libglu-dev git wget curl cmake nasm xz-utils file python3 libxml2-dev libssl-dev texinfo help2man libz-dev rsync xxd perl coreutils zstd markdown libarchive-tools
-
       - name: Setup arm-none-eabi-gcc
         uses: carlosperate/arm-none-eabi-gcc-action@v1
         with:
