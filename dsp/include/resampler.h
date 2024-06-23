@@ -2,6 +2,7 @@
 
 #include "util.h"
 #include <cstdint>
+#include <cstddef>
 
 class Resampler
 {
