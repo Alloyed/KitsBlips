@@ -6,4 +6,8 @@ set(PLUGIN_NAME ${PROJECT_NAME})
 set(ADDITIONAL_PLUGIN_DISTRIBUTABLES README.md)
 include(RackSDK.cmake)
 
-target_sources(${RACK_PLUGIN_LIB} PRIVATE src/plugin.cpp src/MyModule.cpp)
+target_sources(${RACK_PLUGIN_LIB} PRIVATE
+    src/plugin.cpp
+    src/MyModule.cpp
+    src/snecho.cpp
+)
