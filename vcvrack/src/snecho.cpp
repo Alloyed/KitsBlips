@@ -1,5 +1,5 @@
-#include "resampler.h"
-#include "snesEcho.h"
+#include "dsp/resampler.h"
+#include "dsp/snesEcho.h"
 #include "plugin.hpp"
 
 #define SAMPLE_RATE 32000

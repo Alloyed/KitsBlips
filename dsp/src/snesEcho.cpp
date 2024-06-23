@@ -1,5 +1,5 @@
-#include "snesEcho.h"
-#include "util.h"
+#include "dsp/snesEcho.h"
+#include "dsp/util.h"
 
 #include <algorithm>
 #include <cassert>

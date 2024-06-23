@@ -21,10 +21,10 @@
  * https://github.com/ipatix/lv2-psx-reverb/tree/master
  */
 
-#include "psxReverb.h"
+#include "dsp/psxReverb.h"
+#include "dsp/util.h"
 
 /** Include standard C headers */
-#include "util.h"
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
