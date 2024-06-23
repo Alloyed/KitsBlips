@@ -11,3 +11,8 @@ target_sources(${RACK_PLUGIN_LIB} PRIVATE
     src/MyModule.cpp
     src/snecho.cpp
 )
+
+target_link_libraries(${RACK_PLUGIN_LIB} PRIVATE
+    KitDSP
+    DaisySP
+)
