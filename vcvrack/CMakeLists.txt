@@ -8,8 +8,9 @@ include(RackSDK.cmake)
 
 target_sources(${RACK_PLUGIN_LIB} PRIVATE
     src/plugin.cpp
-    src/MyModule.cpp
+    #src/MyModule.cpp
     src/snecho.cpp
+    src/psxverb.cpp
 )
 
 target_link_libraries(${RACK_PLUGIN_LIB} PRIVATE

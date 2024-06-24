@@ -71,7 +71,7 @@ struct Snecho : Module
     void onSampleRateChange(const SampleRateChangeEvent &e) override
     {
         Module::onSampleRateChange(e);
-        snesSampler = {SNES::kOriginalSampleRate, static_cast<int32_t>(e.sampleRate)};
+        snesSampler = {SNES::kOriginalSampleRate, e.sampleRate};
     }
 
     void process(const ProcessArgs &args) override
