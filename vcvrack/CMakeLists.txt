@@ -9,4 +9,14 @@ include(RackSDK.cmake)
 add_subdirectory(../sdk/DaisySP dasiysp)
 add_subdirectory(../dsp kitdsp)
 
-target_sources(${RACK_PLUGIN_LIB} PRIVATE src/plugin.cpp src/MyModule.cpp)
+target_sources(${RACK_PLUGIN_LIB} PRIVATE
+    src/plugin.cpp
+    #src/MyModule.cpp
+    src/snecho.cpp
+    src/psxverb.cpp
+)
+
+target_link_libraries(${RACK_PLUGIN_LIB} PRIVATE
+    KitDSP
+    DaisySP
+)

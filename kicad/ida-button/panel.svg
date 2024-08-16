@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg12737"
+   sodipodi:docname="panel.svg"
+   inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview12739"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="1.0544998"
+     inkscape:cx="501.65966"
+     inkscape:cy="672.35671"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="1912"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs12734" />
+  <g
+     inkscape:label="EuroPanel"
+     transform="translate(74.7,98.927412)"
+     id="g13006">
+    <rect
+       style="fill:none;stroke:#0000ff;stroke-width:0.01mm"
+       height="128.5"
+       width="60.599998"
+       x="0"
+       y="0"
+       rx="0"
+       ry="0"
+       id="rect12964" />
+    <rect
+       style="fill:none;stroke:#0000ff;stroke-width:0.01mm"
+       height="3.2"
+       width="5.5"
+       x="4.75"
+       y="123.9"
+       rx="1.6"
+       ry="0"
+       id="rect12966" />
+    <rect
+       style="fill:none;stroke:#0000ff;stroke-width:0.01mm"
+       height="3.2"
+       width="5.5"
+       x="4.75"
+       y="1.4"
+       rx="1.6"
+       ry="0"
+       id="rect12968" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="m 5.55,125.5 h 3.9"
+       id="path12970" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="m 6.35,126.3 v -1.6"
+       id="path12972" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="m 7.5,126.3 v -1.6"
+       id="path12974" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="m 8.65,126.3 v -1.6"
+       id="path12976" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="m 5.55,3 h 3.9"
+       id="path12978" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="M 6.35,3.8 V 2.2"
+       id="path12980" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="M 7.5,3.8 V 2.2"
+       id="path12982" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="M 8.65,3.8 V 2.2"
+       id="path12984" />
+    <rect
+       style="fill:none;stroke:#0000ff;stroke-width:0.01mm"
+       height="3.2"
+       width="5.5"
+       x="50.470001"
+       y="123.9"
+       rx="1.6"
+       ry="0"
+       id="rect12986" />
+    <rect
+       style="fill:none;stroke:#0000ff;stroke-width:0.01mm"
+       height="3.2"
+       width="5.5"
+       x="50.470001"
+       y="1.4"
+       rx="1.6"
+       ry="0"
+       id="rect12988" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="m 51.27,125.5 h 3.9"
+       id="path12990" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="m 52.07,126.3 v -1.6"
+       id="path12992" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="m 53.22,126.3 v -1.6"
+       id="path12994" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="m 54.37,126.3 v -1.6"
+       id="path12996" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="m 51.27,3 h 3.9"
+       id="path12998" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="M 52.07,3.8 V 2.2"
+       id="path13000" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="M 53.22,3.8 V 2.2"
+       id="path13002" />
+    <path
+       style="fill:none;stroke:#f6921e;stroke-width:0.05mm"
+       d="M 54.37,3.8 V 2.2"
+       id="path13004" />
+  </g>
+  <rect
+     style="fill:#008000;stroke-width:0.299553"
+     id="rect13205"
+     width="34"
+     height="100"
+     x="99.515945"
+     y="110.46775" />
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Segoe UI';-inkscape-font-specification:'Segoe UI';fill:#000000;stroke:none;stroke-width:0.267999;stroke-opacity:1"
+     x="120.9131"
+     y="189.38829"
+     id="text23126-3-8"><tspan
+       sodipodi:role="line"
+       id="tspan23124-3-9"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Segoe UI';-inkscape-font-specification:'Segoe UI';fill:#000000;stroke:none;stroke-width:0.268"
+       x="120.9131"
+       y="189.38829">Gate</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Segoe UI';-inkscape-font-specification:'Segoe UI';fill:#000000;stroke:none;stroke-width:0.267999;stroke-opacity:1"
+     x="100.04113"
+     y="198.82579"
+     id="text23126-3-5"><tspan
+       sodipodi:role="line"
+       id="tspan23124-3-1"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Segoe UI';-inkscape-font-specification:'Segoe UI';fill:#000000;stroke:none;stroke-width:0.268"
+       x="100.04113"
+       y="198.82579">CV OUT</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Segoe UI';-inkscape-font-specification:'Segoe UI';fill:#000000;stroke:none;stroke-width:0.267999;stroke-opacity:1"
+     x="100.68129"
+     y="183.9765"
+     id="text23126-3"><tspan
+       sodipodi:role="line"
+       id="tspan23124-3"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Segoe UI';-inkscape-font-specification:'Segoe UI';fill:#000000;stroke:none;stroke-width:0.268"
+       x="100.68129"
+       y="183.9765">CV IN</tspan></text>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <circle
+       style="fill:#ff0000;stroke-width:0.276748"
+       id="path12793"
+       cx="87.725815"
+       cy="136.5"
+       r="12"
+       inkscape:label="button" />
+    <circle
+       style="fill:#ff0000;stroke-width:0.276748"
+       id="path12793-5"
+       cx="87.725815"
+       cy="-180.06369"
+       r="12"
+       inkscape:label="button"
+       transform="scale(1,-1)" />
+    <circle
+       style="fill:#000000;stroke-width:0.0703399"
+       id="path12793-4-8-2"
+       cx="105"
+       cy="-202.83435"
+       r="3.05"
+       inkscape:label="jack"
+       transform="scale(1,-1)" />
+    <circle
+       style="fill:#0000ff;stroke-width:0.106086"
+       id="path12793-4-8-1-9-8"
+       cx="123.01374"
+       cy="169.78154"
+       r="4.5999999"
+       inkscape:label="pot" />
+    <circle
+       style="fill:none;stroke:#0000ff;stroke-width:0.230621;stroke-opacity:1"
+       id="circle13465-5"
+       cx="122.8431"
+       cy="169.78699"
+       inkscape:label="pot clearance"
+       r="10" />
+    <circle
+       style="fill:#ffff00;stroke-width:0.0703399"
+       id="path12793-4-8-4-7"
+       cx="106.22681"
+       cy="-169.78699"
+       r="3.05"
+       inkscape:label="toggle"
+       transform="scale(1,-1)" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0.315997;stroke-opacity:1"
+       id="rect20708"
+       width="9.6840019"
+       height="14.084002"
+       x="100.158"
+       y="195.79234" />
+    <circle
+       style="fill:#000000;stroke-width:0.0703399"
+       id="path12793-4-8-2-0"
+       cx="115.32259"
+       cy="-202.83435"
+       r="3.05"
+       inkscape:label="jack"
+       transform="scale(1,-1)" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0.315997;stroke-opacity:1"
+       id="rect20708-8"
+       width="9.6840019"
+       height="14.084002"
+       x="110.48059"
+       y="195.79234" />
+    <circle
+       style="fill:#000000;stroke-width:0.0703399"
+       id="path12793-4-8-2-7"
+       cx="105.00001"
+       cy="-188.15323"
+       r="3.05"
+       inkscape:label="jack"
+       transform="scale(1,-1)" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0.315997;stroke-opacity:1"
+       id="rect20708-6"
+       width="9.6840019"
+       height="14.084002"
+       x="100.158"
+       y="181.11122" />
+    <circle
+       style="fill:#000000;stroke-width:0.0703399"
+       id="path12793-4-8-2-2"
+       cx="115.27419"
+       cy="-188.15323"
+       r="3.05"
+       inkscape:label="jack"
+       transform="scale(1,-1)" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0.315997;stroke-opacity:1"
+       id="rect20708-9"
+       width="9.6840019"
+       height="14.084002"
+       x="110.43218"
+       y="181.11122" />
+    <circle
+       style="fill:#000000;stroke-width:0.0703399"
+       id="path12793-4-8-2-5"
+       cx="-128.0145"
+       cy="118.01126"
+       r="3.05"
+       inkscape:label="jack"
+       transform="scale(-1,1)" />
+    <circle
+       style="fill:#0000ff;stroke-width:0.106086"
+       id="path12793-4-8-1-9-8-7"
+       cx="-110.00077"
+       cy="-151.06407"
+       r="4.5999999"
+       inkscape:label="pot"
+       transform="scale(-1)" />
+    <circle
+       style="fill:none;stroke:#0000ff;stroke-width:0.230621;stroke-opacity:1"
+       id="circle13465-5-9"
+       cx="-110.17139"
+       cy="-151.05862"
+       inkscape:label="pot clearance"
+       r="10"
+       transform="scale(-1)" />
+    <circle
+       style="fill:#ffff00;stroke-width:0.0703399"
+       id="path12793-4-8-4-7-9"
+       cx="-126.7877"
+       cy="151.05862"
+       r="3.05"
+       inkscape:label="toggle"
+       transform="scale(-1,1)" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0.315997;stroke-opacity:1"
+       id="rect20708-69"
+       width="9.6840019"
+       height="14.084002"
+       x="-132.85649"
+       y="-125.05327"
+       transform="scale(-1)" />
+    <circle
+       style="fill:#000000;stroke-width:0.0703399"
+       id="path12793-4-8-2-0-7"
+       cx="-117.69189"
+       cy="118.01126"
+       r="3.05"
+       inkscape:label="jack"
+       transform="scale(-1,1)" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0.315997;stroke-opacity:1"
+       id="rect20708-8-3"
+       width="9.6840019"
+       height="14.084002"
+       x="-122.53392"
+       y="-125.05327"
+       transform="scale(-1)" />
+    <circle
+       style="fill:#000000;stroke-width:0.0703399"
+       id="path12793-4-8-2-7-9"
+       cx="-128.01448"
+       cy="132.69238"
+       r="3.05"
+       inkscape:label="jack"
+       transform="scale(-1,1)" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0.315997;stroke-opacity:1"
+       id="rect20708-6-2"
+       width="9.6840019"
+       height="14.084002"
+       x="-132.85649"
+       y="-139.73439"
+       transform="scale(-1)" />
+    <circle
+       style="fill:#000000;stroke-width:0.0703399"
+       id="path12793-4-8-2-2-3"
+       cx="-117.74032"
+       cy="132.69238"
+       r="3.05"
+       inkscape:label="jack"
+       transform="scale(-1,1)" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0.315997;stroke-opacity:1"
+       id="rect20708-9-1"
+       width="9.6840019"
+       height="14.084002"
+       x="-122.58233"
+       y="-139.73439"
+       transform="scale(-1)" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Segoe UI';-inkscape-font-specification:'Segoe UI';fill:#000000;stroke:none;stroke-width:0.267999;stroke-opacity:1"
+       x="101.04968"
+       y="164.84602"
+       id="text23126"><tspan
+         sodipodi:role="line"
+         id="tspan23124"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Segoe UI';-inkscape-font-specification:'Segoe UI';fill:#000000;stroke:none;stroke-width:0.268"
+         x="101.04968"
+         y="164.84602">Toggle</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Segoe UI';-inkscape-font-specification:'Segoe UI';fill:#000000;stroke:none;stroke-width:0.267999;stroke-opacity:1"
+       x="120.48763"
+       y="163.26472"
+       id="text23126-2"><tspan
+         sodipodi:role="line"
+         id="tspan23124-8"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Segoe UI';-inkscape-font-specification:'Segoe UI';fill:#000000;stroke:none;stroke-width:0.268"
+         x="120.48763"
+         y="163.26472">-/+</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Segoe UI';-inkscape-font-specification:'Segoe UI';fill:#000000;stroke:none;stroke-width:0.267999;stroke-opacity:1"
+       x="83.697632"
+       y="166.46657"
+       id="text23126-9"><tspan
+         sodipodi:role="line"
+         id="tspan23124-2"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Segoe UI';-inkscape-font-specification:'Segoe UI';fill:#000000;stroke:none;stroke-width:0.268"
+         x="83.697632"
+         y="166.46657">donk</tspan></text>
+  </g>
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777px;font-family:'Segoe UI';-inkscape-font-specification:'Segoe UI';fill:#000000;stroke:none;stroke-width:0.267999;stroke-opacity:1"
+     x="121.80884"
+     y="202.26024"
+     id="text23288"><tspan
+       sodipodi:role="line"
+       id="tspan23286"
+       style="stroke-width:0.268"
+       x="121.80884"
+       y="202.26024">Trig</tspan></text>
+</svg>

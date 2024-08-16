@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cmath>
 
-static uint32_t ceilpower2(uint32_t x)
+static inline uint32_t ceilpower2(uint32_t x)
 {
   x--;
   x |= x >> 1;
