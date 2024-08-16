@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 3.22)
+cmake_policy(SET CMP0048 NEW)
+
+# shared libs
+add_subdirectory(../sdk/JUCE juce)
+add_subdirectory(../sdk/DaisySP daisysp)
+add_subdirectory(../dsp kitdsp)
+
+# plugins
+add_subdirectory(ExamplePlugin)
