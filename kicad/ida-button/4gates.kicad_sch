@@ -1,0 +1,165 @@
+(kicad_sch
+	(version 20231120)
+	(generator "eeschema")
+	(generator_version "8.0")
+	(uuid "373e077e-bfc7-40f9-b9b8-adde168d27e9")
+	(paper "A4")
+	(lib_symbols)
+	(sheet
+		(at 48.26 186.69)
+		(size 19.05 6.35)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "072300b4-0bfd-408d-8bb8-c0f2a345147e")
+		(property "Sheetname" "B"
+			(at 48.26 185.9784 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "B.kicad_sch"
+			(at 48.26 193.6246 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "4gates"
+				(path "/373e077e-bfc7-40f9-b9b8-adde168d27e9"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 16.51 186.69)
+		(size 25.4 6.35)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "bd678a3f-881e-490e-90d4-0127aa4aa2e0")
+		(property "Sheetname" "power"
+			(at 16.51 185.9784 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "power.kicad_sch"
+			(at 16.51 193.6246 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "4gates"
+				(path "/373e077e-bfc7-40f9-b9b8-adde168d27e9"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 48.26 172.72)
+		(size 19.05 6.35)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "ece89812-8d9b-443c-a076-081a4366d837")
+		(property "Sheetname" "A"
+			(at 48.26 172.0084 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "A.kicad_sch"
+			(at 48.26 179.6546 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "4gates"
+				(path "/373e077e-bfc7-40f9-b9b8-adde168d27e9"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 16.51 172.72)
+		(size 24.13 6.35)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "f765f6b7-0977-4652-ae5d-8c5e5aa74b64")
+		(property "Sheetname" "front_panel"
+			(at 16.51 172.0084 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "front_panel.kicad_sch"
+			(at 16.51 179.6546 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "4gates"
+				(path "/373e077e-bfc7-40f9-b9b8-adde168d27e9"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+)
