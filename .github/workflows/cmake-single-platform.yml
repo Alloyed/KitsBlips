@@ -28,6 +28,7 @@ jobs:
     name: vst ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:
         include:
           - name: Linux
@@ -80,6 +81,7 @@ jobs:
     name: vcvrack ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:
         include:
           - name: Linux
@@ -118,29 +120,30 @@ jobs:
       - name: Build
         # Build your program with the given configuration
         run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
-#  build-daisy:
-#    name: daisy ${{ matrix.name }}
-#    runs-on: ${{ matrix.os }}
-#    strategy:
-#      fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
-#      matrix:
-#        include:
-#          - name: Linux
-#            os: ubuntu-22.04
-#            generator: Unix Makefiles
-#    steps:
-#      - name: Setup arm-none-eabi-gcc
-#        uses: carlosperate/arm-none-eabi-gcc-action@v1
-#        with:
-#          release: "9-2019-q4"
-#
-#      - uses: actions/checkout@v3
-#        with:
-#          submodules: recursive
-#
-#      - name: Configure CMake
-#        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_DAISY=true -G "${{matrix.generator}}"
-#
-#      - name: Build
-#        # Build your program with the given configuration
-#        run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
+
+  build-daisy:
+    name: daisy ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-22.04
+            generator: Unix Makefiles
+    steps:
+      - name: Setup arm-none-eabi-gcc
+        uses: carlosperate/arm-none-eabi-gcc-action@v1
+        with:
+          release: "9-2019-q4"
+
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Configure CMake
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_DAISY=true -G "${{matrix.generator}}"
+
+      - name: Build
+        # Build your program with the given configuration
+        run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}

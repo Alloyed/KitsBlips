@@ -3,32 +3,44 @@ cmake_policy(SET CMP0048 NEW)
 
 project(kitblips_all)
 
-option(ENABLE_JUCE "build juce plugins" OFF)
-option(ENABLE_VCVRACK "build vcv rack plugins" OFF)
+include(ExternalProject)
+
+option(ENABLE_JUCE "build juce plugins" ON)
+option(ENABLE_VCVRACK "build vcv rack plugins" ON)
 option(ENABLE_DAISY "build daisy firwmare" OFF)
 
-# platform-independent libraries
-add_subdirectory(dsp)
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    # https://stackoverflow.com/questions/6563810/m-pi-works-with-math-h-but-not-with-cmath-in-visual-studio
-    target_compile_definitions(KitDSP PUBLIC _USE_MATH_DEFINES)
-    #target_compile_definitions(DaisySP PUBLIC _USE_MATH_DEFINES)
-else()
-    # doesn't run on msvc yet: https://github.com/electro-smith/DaisySP/pull/197
-    add_subdirectory(sdk/DaisySP)
-endif()
 
 if(${ENABLE_JUCE})
-    add_subdirectory(sdk/JUCE)
-    add_subdirectory(juce/ExamplePlugin)
+    set(JUCE_GENERATOR "Unix Makefiles")
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        set(JUCE_GENERATOR "Visual Studio 17 2022")
+    endif()
+
+    ExternalProject_Add(
+        KitBlips_Juce
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/juce
+        CMAKE_GENERATOR ${JUCE_GENERATOR}
+        INSTALL_COMMAND ""
+    )
 endif()
 
 if(${ENABLE_VCVRACK})
-    add_subdirectory(vcvrack)
+    set(RACK_GENERATOR "Unix Makefiles")
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        set(RACK_GENERATOR "Mingw Makefiles")
+    endif()
+
+    ExternalProject_Add(
+        KitBlips_Rack
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vcvrack
+        CMAKE_CACHE_ARGS -DRACK_SDK_DIR:STRING=${RACK_SDK_DIR}
+        CMAKE_GENERATOR ${RACK_GENERATOR}
+        INSTALL_COMMAND ""
+    )
 endif()
 
-if(${ENABLE_DAISY})
-    add_subdirectory(sdk/libDaisy)
-    add_subdirectory(daisy/ExampleFirmware)
-endif()
+#
+#if(${ENABLE_DAISY})
+#    add_subdirectory(sdk/libDaisy)
+#    add_subdirectory(daisy/ExampleFirmware)
+#endif()
