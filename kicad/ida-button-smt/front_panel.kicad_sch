@@ -1435,7 +1435,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Resistor:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 111.76 33.782 90)
 			(effects
 				(font
@@ -1848,7 +1848,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Resistor:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 111.76 83.312 90)
 			(effects
 				(font
@@ -2054,7 +2054,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Resistor:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 111.76 74.168 90)
 			(effects
 				(font
@@ -2542,7 +2542,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Resistor:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 111.76 47.498 90)
 			(effects
 				(font
@@ -2610,7 +2610,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Resistor:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 111.76 24.638 90)
 			(effects
 				(font
@@ -2643,7 +2643,6 @@
 		(pin "2"
 			(uuid "601155c8-46d4-4554-86ac-3f9a35cc340b")
 		)
-		(instances)
 	)
 	(symbol
 		(lib_id "Connector_Audio:AudioJack2_SwitchT")
@@ -2957,7 +2956,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Resistor:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 111.76 57.658 90)
 			(effects
 				(font
@@ -3165,7 +3164,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Resistor:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 111.76 97.028 90)
 			(effects
 				(font
@@ -3233,7 +3232,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Resistor:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 111.76 107.188 90)
 			(effects
 				(font

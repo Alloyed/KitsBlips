@@ -3044,7 +3044,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Diode:D_DO-41_P7.62mm_Horizontal"
+		(property "Footprint" "Diode_SMD:D_0603_1608Metric"
 			(at 53.34 64.135 0)
 			(effects
 				(font
@@ -3244,7 +3244,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Diode:D_DO-41_P7.62mm_Horizontal"
+		(property "Footprint" "Diode_SMD:D_0603_1608Metric"
 			(at 53.34 26.035 0)
 			(effects
 				(font
@@ -3576,7 +3576,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Capacitor:C_Disc_P5.08mm"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 128.27 53.6448 0)
 			(effects
 				(font
@@ -4065,7 +4065,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_THT:TO-92_Inline"
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-89-3_Handsoldering"
 			(at 38.1 73.025 0)
 			(effects
 				(font
@@ -4139,7 +4139,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Capacitor:CP_Radial_P2.5mm"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 65.0748 59.69 0)
 			(effects
 				(font
@@ -4209,7 +4209,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_DIP:DIP-14_W7.62mm_Socket"
+		(property "Footprint" "Package_SO:SSOP-14_5.3x6.2mm_P0.65mm"
 			(at 121.92 43.18 0)
 			(effects
 				(font
@@ -4315,7 +4315,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Capacitor:C_Disc_P5.08mm"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 46.6852 90.17 0)
 			(effects
 				(font
@@ -4382,7 +4382,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Capacitor:C_Disc_P5.08mm"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 153.67 35.8648 0)
 			(effects
 				(font
@@ -4648,7 +4648,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Capacitor:C_Disc_P5.08mm"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 128.27 35.8648 0)
 			(effects
 				(font
@@ -4716,7 +4716,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Resistor:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 33.02 114.808 90)
 			(effects
 				(font
@@ -4853,7 +4853,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_DIP:DIP-14_W7.62mm_Socket"
+		(property "Footprint" "Package_SO:SSOP-14_5.3x6.2mm_P0.65mm"
 			(at 147.32 43.18 0)
 			(effects
 				(font
@@ -4959,7 +4959,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_DIP:DIP-14_W7.62mm_Socket"
+		(property "Footprint" "Package_SO:TSSOP-14_4.4x5mm_P0.65mm"
 			(at 93.98 44.45 0)
 			(effects
 				(font
@@ -5062,7 +5062,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Capacitor:C_Disc_P5.08mm"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 101.6 29.5148 0)
 			(effects
 				(font
@@ -5132,7 +5132,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Resistor:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 23.622 119.38 90)
 			(effects
 				(font
@@ -5334,7 +5334,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Capacitor:C_Disc_P5.08mm"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 31.4452 90.17 0)
 			(effects
 				(font
@@ -5401,7 +5401,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Capacitor:C_Disc_P5.08mm"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 153.67 53.6448 0)
 			(effects
 				(font
@@ -5471,7 +5471,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "PCM_4ms_Capacitor:CP_Radial_P2.5mm"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 67.0052 40.64 0)
 			(effects
 				(font
