@@ -27,6 +27,7 @@ jobs:
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     name: vst ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    if: false # re-enable later
     strategy:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:
@@ -121,9 +122,16 @@ jobs:
         # Build your program with the given configuration
         run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
 
+      - name: Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: KitsBlips-VCVRack-${{ matrix.name }}
+          path: "${{github.workspace}}/build/dist" 
+
   build-daisy:
     name: daisy ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    if: false # re-enable later
     strategy:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:

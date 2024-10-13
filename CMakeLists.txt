@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 cmake_policy(SET CMP0048 NEW)
+set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/dist")
 
 project(kitblips_all)
 
@@ -19,8 +20,9 @@ if(${ENABLE_JUCE})
     ExternalProject_Add(
         KitBlips_Juce
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/juce
+	CMAKE_CACHE_ARGS -DCMAKE_INSTALL_PREFIX=:PATH=${CMAKE_INSTALL_PREFIX}
         CMAKE_GENERATOR ${JUCE_GENERATOR}
-        INSTALL_COMMAND ""
+	#INSTALL_COMMAND ""
     )
 endif()
 
@@ -33,9 +35,9 @@ if(${ENABLE_VCVRACK})
     ExternalProject_Add(
         KitBlips_Rack
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vcvrack
-        CMAKE_CACHE_ARGS -DRACK_SDK_DIR:STRING=${RACK_SDK_DIR}
+	CMAKE_CACHE_ARGS -DRACK_SDK_DIR:STRING=${RACK_SDK_DIR} -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
         CMAKE_GENERATOR ${RACK_GENERATOR}
-        INSTALL_COMMAND ""
+	#INSTALL_COMMAND ""
     )
 endif()
 
