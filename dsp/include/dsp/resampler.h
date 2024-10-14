@@ -27,8 +27,8 @@ public:
     {
       // TODO: we should filter the inputs to avoid aliasing
       // https://dspguru.com/dsp/faqs/multirate/decimation/
-      float decimatedInputLeft = inputLeft;
-      float decimatedInputRight = inputRight;
+      // float decimatedInputLeft = inputLeft;
+      // float decimatedInputRight = inputRight;
 
       mLastOutputLeft = mNextOutputLeft;
       mLastOutputRight = mNextOutputRight;

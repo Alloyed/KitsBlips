@@ -87,17 +87,29 @@ void SNES::Model::ClearBuffer()
     memset(mEchoBuffer, 0, mEchoBufferCapacity * sizeof(mEchoBuffer[0]));
 }
 
+void SNES::Model::ResetHead()
+{
+    mBufferIndex = 0;
+}
+
 void SNES::Model::Process(float inputLeft,
                           float inputRight,
                           float &outputLeft,
                           float &outputRight)
 {
     float targetSize = clampf(cfg.echoBufferSize + mod.echoBufferSize, 0.0f, 1.0f);
-    float delayMod = clampf(cfg.echoDelayMod + mod.echoDelayMod, 0.0f, 1.0f);
+    float delayMod = clampf(cfg.echoDelayMod + mod.echoDelayMod, -1.0f, 1.0f);
     float feedback = clampf(cfg.echoFeedback + mod.echoFeedback, -1.0f, 1.0f);
     uint8_t filterSetting = cfg.filterSetting % kNumFilterSettings;
     float filterMix = clampf(cfg.filterMix + mod.filterMix, 0.0f, 1.0f);
-    bool freeze = mod.freezeEcho > 0.5f;
+    bool freeze = cfg.freezeEcho || mod.freezeEcho;
+
+    // on press
+    if (mod.clearBuffer && !mClearBufferPressed)
+    {
+        ClearBuffer();
+    }
+    mClearBufferPressed = mod.clearBuffer;
 
     // TODO: hysteresis
     size_t targetSizeSamples = static_cast<size_t>(clampf(
@@ -105,6 +117,13 @@ void SNES::Model::Process(float inputLeft,
         kEchoIncrementSamples,
         mEchoBufferCapacity));
     mBufferIndex = mEchoBufferSize ? (mBufferIndex + 1) % mEchoBufferSize : 0;
+
+    // on press
+    if (mod.resetHead && !mResetHeadPressed)
+    {
+        ResetHead();
+    }
+    mResetHeadPressed = mod.resetHead;
 
     if (targetSizeSamples != mEchoBufferSize && mBufferIndex == 0)
     {
@@ -117,14 +136,16 @@ void SNES::Model::Process(float inputLeft,
 
     // summing mixdown. if right is normalled to left, acts as a mono signal.
     float inputFloat = (inputLeft + inputRight) * 0.5f;
-    int16_t inputNorm = static_cast<int16_t>(inputFloat * INT16_MAX);
+    int16_t inputNorm = static_cast<int16_t>(inputFloat * kHeadRoom * INT16_MAX);
 
     size_t delayModSamples = static_cast<size_t>(delayMod * mEchoBufferSize);
 
     // shift echo buffer from 15-bit -> 16-bit
     size_t delayIndex = (mBufferIndex - delayModSamples) % mEchoBufferSize;
+    viz.readHeadLocation = delayIndex / static_cast<float>(mEchoBufferCapacity);
     int16_t delayedSample = mEchoBuffer[delayIndex] << 1;
-    int16_t filteredSample = ProcessFIR(filterSetting, delayedSample);
+    // int16_t filteredSample = ProcessFIR(filterSetting, delayedSample);
+    int16_t filteredSample = delayedSample; // TODO: FIR is still busted
     // lerp
     int8_t filterMixInt = static_cast<int8_t>(filterMix * INT8_MAX);
     int16_t mixedSample = (delayedSample * (128 - filterMixInt) / 128) + (filteredSample * filterMixInt / 128);
@@ -135,12 +156,28 @@ void SNES::Model::Process(float inputLeft,
     {
         // echo buffer is 15-bit, so we remove one bit at the end to emulate that
         mEchoBuffer[mBufferIndex] = (inputNorm + (mixedSample * feedbackInt / 128)) >> 1;
+        viz.writeHeadLocation = mBufferIndex / static_cast<float>(mEchoBufferCapacity);
     }
 
     float echoFloat = static_cast<float>(mixedSample) / INT16_MAX;
 
     // The real SNES let you pick between inverting the right channel and not doing that.
     // if you don't want it here, just use a mult on the left output ;)
-    outputLeft = echoFloat;
-    outputRight = echoFloat * -1.0f;
+    outputLeft = echoFloat / kHeadRoom;
+    outputRight = echoFloat / -kHeadRoom;
+}
+
+size_t SNES::Model::GetDelayLengthSamples(float delay) const
+{
+    // TODO: hysteresis
+    return static_cast<size_t>(clampf(
+        roundTof(delay * mEchoBufferCapacity, kEchoIncrementSamples),
+        kEchoIncrementSamples,
+        mEchoBufferCapacity));
+}
+
+size_t SNES::Model::GetDelayModLengthSamples(float delayMod) const
+{
+    // TODO: hysteresis
+    return static_cast<size_t>(delayMod * mEchoBufferSize);
 }
