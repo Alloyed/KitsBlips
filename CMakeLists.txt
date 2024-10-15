@@ -29,7 +29,7 @@ endif()
 if(${ENABLE_VCVRACK})
     set(RACK_GENERATOR "Unix Makefiles")
     if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        set(RACK_GENERATOR "Ninja")
+        set(RACK_GENERATOR "MinGW Makefiles")
     endif()
 
     ExternalProject_Add(
