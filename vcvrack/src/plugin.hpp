@@ -8,3 +8,5 @@ extern Plugin *pluginInstance;
 
 // Declare each Model, defined in each module source file
 extern Model *modelSnecho;
+extern Model *modelPSXVerb;
+extern Model *modelDance;

@@ -11,9 +11,9 @@ add_subdirectory(../dsp kitdsp)
 
 target_sources(${RACK_PLUGIN_LIB} PRIVATE
     src/plugin.cpp
-    #src/MyModule.cpp
     src/snecho.cpp
     src/psxverb.cpp
+    src/dance.cpp
 )
 
 target_link_libraries(${RACK_PLUGIN_LIB} PRIVATE

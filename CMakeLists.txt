@@ -9,6 +9,7 @@ include(ExternalProject)
 option(ENABLE_JUCE "build juce plugins" ON)
 option(ENABLE_VCVRACK "build vcv rack plugins" ON)
 option(ENABLE_DAISY "build daisy firwmare" OFF)
+set(RACK_SDK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/sdk/Rack-SDK-2.5.2-win-x64 CACHE PATH "Location of VCV rack SDK")
 
 
 if(${ENABLE_JUCE})
@@ -29,7 +30,7 @@ endif()
 if(${ENABLE_VCVRACK})
     set(RACK_GENERATOR "Unix Makefiles")
     if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        set(RACK_GENERATOR "MinGW Makefiles")
+        set(RACK_GENERATOR "MSYS Makefiles")
     endif()
 
     ExternalProject_Add(

@@ -100,4 +100,4 @@ struct PSXVerbWidget : ModuleWidget
 	}
 };
 
-Model *modelPSXVerb = createModel<PSXVerb, PSXVerbWidget>("PSXVerb");
+Model *modelPSXVerb = createModel<PSXVerb, PSXVerbWidget>("psxverb");
