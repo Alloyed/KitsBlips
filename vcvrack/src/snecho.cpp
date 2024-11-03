@@ -140,6 +140,7 @@ struct Snecho : Module
         float snesLeft, snesRight;
 
         snesSampler.Process(inputL, inputR, snesLeft, snesRight,
+                            Resampler::InterpolationStrategy::Cubic,
                             [](float inLeft, float inRight, float &outLeft, float &outRight)
                             {
                                 float tmp;

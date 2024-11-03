@@ -66,6 +66,7 @@ struct PSXVerb : Module
 		float psxLeft, psxRight;
 
 		psxSampler.Process(inputLeft, inputRight, psxLeft, psxRight,
+						   Resampler::InterpolationStrategy::Cubic,
 						   [](float inLeft, float inRight, float &outLeft, float &outRight)
 						   {
 							   psx.Process(inLeft, inRight, outLeft, outRight);

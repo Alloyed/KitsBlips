@@ -96,6 +96,7 @@ struct Snecho : Module
         float snesLeft, snesRight;
 
         snesSampler.Process(input, input, snesLeft, snesRight,
+                            Resampler::InterpolationStrategy::Cubic,
                             [](float inLeft, float inRight, float &outLeft, float &outRight)
                             {
                                 snes.Process(inLeft, inRight, outLeft, outRight);
