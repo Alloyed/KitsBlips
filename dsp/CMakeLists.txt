@@ -2,6 +2,7 @@ add_library(KitDSP STATIC
 	src/psxReverb.cpp
 	src/resampler.cpp
 	src/snesEcho.cpp
+	src/dsfOscillator.cpp
 )
 
 set_target_properties(KitDSP PROPERTIES PUBLIC

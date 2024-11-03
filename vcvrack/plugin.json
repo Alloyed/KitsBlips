@@ -29,7 +29,13 @@
       "slug": "dance",
       "name": "Dance",
       "description": "Port of Fruity Dancer",
-      "tags": ["Visual"]
+      "tags": ["visual"]
+    },
+    {
+      "slug": "dsf",
+      "name": "dsf",
+      "description": "Discrete Summation Formula Oscillator",
+      "tags": ["oscillator", "polyphonic"]
     }
   ]
 }

@@ -107,6 +107,13 @@ struct Snecho : Module
         configOutput(AUDIO_R_OUTPUT, "Audio R");
         configBypass(AUDIO_L_INPUT, AUDIO_L_OUTPUT);
         configBypass(AUDIO_R_INPUT, AUDIO_R_OUTPUT);
+        snesSampler = {SNES::kOriginalSampleRate, 48000};
+    }
+
+    void onSampleRateChange(const SampleRateChangeEvent &e) override
+    {
+        Module::onSampleRateChange(e);
+        snesSampler = {SNES::kOriginalSampleRate, e.sampleRate};
     }
 
     void process(const ProcessArgs &args) override
