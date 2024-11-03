@@ -6,7 +6,17 @@
 
 class Resampler
 {
+  // TODO: we should filter the inputs to avoid aliasing
+  // https://dspguru.com/dsp/faqs/multirate/decimation/
 public:
+  enum class InterpolationStrategy
+  {
+    None,
+    Linear,
+    Hermite,
+    Cubic
+  };
+
   Resampler(float sourceRate, float targetRate);
 
   template <typename F>
@@ -14,6 +24,7 @@ public:
                float inputRight,
                float &outputLeft,
                float &outputRight,
+               InterpolationStrategy strategy,
                F &&callback)
   {
     mSampleCounter += 1.0f;
@@ -25,28 +36,53 @@ public:
 
     while (mSampleCounter > mPeriod)
     {
-      // TODO: we should filter the inputs to avoid aliasing
-      // https://dspguru.com/dsp/faqs/multirate/decimation/
-      // float decimatedInputLeft = inputLeft;
-      // float decimatedInputRight = inputRight;
+      // shift
+      mOutputLeft[0] = mOutputLeft[1];
+      mOutputLeft[1] = mOutputLeft[2];
+      mOutputLeft[2] = mOutputLeft[3];
 
-      mLastOutputLeft = mNextOutputLeft;
-      mLastOutputRight = mNextOutputRight;
-      callback(inputLeft, inputRight, mNextOutputLeft, mNextOutputRight);
+      mOutputRight[0] = mOutputRight[1];
+      mOutputRight[1] = mOutputRight[2];
+      mOutputRight[2] = mOutputRight[3];
+
+      callback(inputLeft, inputRight, mOutputLeft[3], mOutputRight[3]);
       mSampleCounter -= mPeriod;
     }
     float t = mSampleCounter / mPeriod;
 
     // Linear interpolation
-    outputLeft = lerpf(mLastOutputLeft, mNextOutputLeft, t);
-    outputRight = lerpf(mLastOutputRight, mNextOutputRight, t);
+    switch (strategy)
+    {
+    case InterpolationStrategy::None:
+    {
+      outputLeft = mOutputLeft[3];
+      outputRight = mOutputRight[3];
+    }
+    break;
+    case InterpolationStrategy::Linear:
+    {
+      outputLeft = lerpf(mOutputLeft[2], mOutputLeft[3], t);
+      outputRight = lerpf(mOutputRight[2], mOutputRight[3], t);
+    }
+    break;
+    case InterpolationStrategy::Hermite:
+    {
+      outputLeft = lerpHermite4pt3oXf(mOutputLeft[0], mOutputLeft[1], mOutputLeft[2], mOutputLeft[3], t);
+      outputRight = lerpHermite4pt3oXf(mOutputRight[0], mOutputRight[1], mOutputRight[2], mOutputRight[3], t);
+    }
+    break;
+    case InterpolationStrategy::Cubic:
+    {
+      outputLeft = lerpCubicf(mOutputLeft[0], mOutputLeft[1], mOutputLeft[2], mOutputLeft[3], t);
+      outputRight = lerpCubicf(mOutputRight[0], mOutputRight[1], mOutputRight[2], mOutputRight[3], t);
+    }
+    break;
+    }
   }
 
 private:
-  float mLastOutputLeft{};
-  float mLastOutputRight{};
-  float mNextOutputLeft{};
-  float mNextOutputRight{};
+  float mOutputLeft[4]{};
+  float mOutputRight[4]{};
   float mSampleCounter{};
   float mPeriod{};
 };
