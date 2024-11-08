@@ -25,9 +25,6 @@ namespace
      */
     float moorerFormula2(float theta, float beta, float N, float a)
     {
-        // this is the infinite form, so N is technically also infinite. I just picked a big number :)
-        float N = 16;
-
         float maxAmplitude = (1.0f - powf(a, N)) / (1.0f - a);
 
         float num = sinf(theta) - (a * sinf(theta - beta));
@@ -56,9 +53,6 @@ namespace
      */
     float moorerFormula4(float theta, float beta, float N, float a)
     {
-        // this is the infinite form, so N is technically also infinite. I just picked a big number :)
-        float N = 16;
-
         float maxAmplitude = (1.0f - powf(a, N)) / (1.0f - a);
 
         float num = (1.0f - a * a) * sinf(theta);
