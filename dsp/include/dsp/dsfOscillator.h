@@ -50,6 +50,7 @@ public:
         if (f != mFalloff)
         {
             mFalloff = f;
+            mFalloffPow2 = f * f;
             CalcAmplitude();
         }
     }
@@ -75,18 +76,21 @@ private:
     float mFalloff{0.0f};
 
     float mSecondsPerSample{1.0f / 41000.0f};
-    float mNyquistFrequency{41000.0f * 0.5f};
 
     // state
     float mPhaseCarrier{0.0f};
     float mPhaseModulator{0.0f};
 
     // cached intermediates
+    float mNyquistFrequency{41000.0f * 0.5f};
     float mAmplitudeReciprocal{1.0f};
     float mNumFrequencyBands{0.0f};
+    float mFalloffPow2{0.0f};
+    float mFalloffPowN1{0.0f};
 
     inline void CalcAmplitude()
     {
+        mFalloffPowN1 = powf(mFalloff, mNumFrequencyBands + 1);
         mAmplitudeReciprocal = (1.0f - powf(mFalloff, mNumFrequencyBands)) / (1.0f - mFalloff);
     }
 
