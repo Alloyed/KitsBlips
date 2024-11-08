@@ -20,7 +20,10 @@ namespace
     // period is [0,1] instead of [0,2pi]
     float approxCosf(float x)
     {
-        approxSinf(x - 0.5f);
+        // limit range
+        x = x - static_cast<uint8_t>(x);
+
+        return 2.0f * x * (1.0f - fabs(2.0f * x));
     }
 
 }
