@@ -25,6 +25,11 @@ inline float roundTof(float in, float increment)
     return in - remainderf(in, increment);
 }
 
+inline float floorf(float in, float increment)
+{
+    return static_cast<int32_t>(in * increment) / increment;
+}
+
 inline float lerpf(float a, float b, float t)
 {
     return a + (b - a) * t;
