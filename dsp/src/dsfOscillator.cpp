@@ -37,15 +37,12 @@ float DsfOscillator::Formula2() const
 {
     float theta = mPhaseCarrier * cTwoPi;
     float beta = mPhaseModulator * cTwoPi;
-    float N = mNumFrequencyBands;
     float a = mFalloff;
     float b = mAmplitudeReciprocal;
 
     /**
      * sidebands up, not band-limited
      */
-    float maxAmplitude = (1.0f - powf(a, N)) / (1.0f - a);
-
     float num = sinf(theta) - (a * sinf(theta - beta));
     float denom = 1.0f + (a * a) - (2.0f * a * cosf(beta));
 
@@ -75,7 +72,6 @@ float DsfOscillator::Formula4() const
 {
     float theta = mPhaseCarrier * cTwoPi;
     float beta = mPhaseModulator * cTwoPi;
-    float N = mNumFrequencyBands;
     float a = mFalloff;
     float b = mAmplitudeReciprocal;
 
