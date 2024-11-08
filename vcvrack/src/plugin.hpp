@@ -10,3 +10,4 @@ extern Plugin *pluginInstance;
 extern Model *modelSnecho;
 extern Model *modelPSXVerb;
 extern Model *modelDance;
+extern Model *modelDsf;

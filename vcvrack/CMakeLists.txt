@@ -14,6 +14,7 @@ target_sources(${RACK_PLUGIN_LIB} PRIVATE
     src/snecho.cpp
     src/psxverb.cpp
     src/dance.cpp
+    src/dsf.cpp
 )
 
 target_link_libraries(${RACK_PLUGIN_LIB} PRIVATE

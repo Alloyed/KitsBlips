@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "dsp/dsfOscillator.h"
+#include "dsp/util.h"
 
 struct Dsf : Module
 {
@@ -40,11 +41,11 @@ struct Dsf : Module
 		configParam(FM_PARAM, -1.f, 1.f, 0.f, "FM");
 		configInput(FM_CV_INPUT, "FM");
 		configSwitch(MOD_TYPE_PARAM, 0.f, 1.f, 0.f, "Mod type", {"Ratio", "Fixed"});
-		configParam(MOD_PARAM, 1.f, 5.f, 0.f, "Modulation Frequency");
+		configParam(MOD_PARAM, 0.1f, 8.f, 1.f, "Modulation Frequency");
 		configInput(MOD_CV_INPUT, "Modulation Frequency");
-		configParam(MOD_FM_PARAM, -5.f, 5.f, 0.f, "Mod FM");
+		configParam(MOD_FM_PARAM, -1.f, 1.f, 0.f, "Mod FM");
 		configInput(MOD_FM_CV_INPUT, "Mod FM");
-		configParam(FALLOFF_PARAM, 0.01f, 1.f, 0.f, "Falloff");
+		configParam(FALLOFF_PARAM, 0.0f, .9f, 0.f, "Falloff");
 		configInput(FALLOFF_CV_INPUT, "Falloff");
 		configOutput(OUT_OUTPUT, "");
 	}
@@ -67,15 +68,27 @@ struct Dsf : Module
 		// Iterate through each active channel.
 		for (int c = 0; c < channels; c++)
 		{
-			float pitch = params[FREQ_PARAM].getValue();
-			// Use getPolyVoltage(c) so that monophonic inputs apply their modulation to all channels.
-			pitch += inputs[FREQ_CV_INPUT].getPolyVoltage(c);
+			float pitch = params[FREQ_PARAM].getValue() + inputs[FREQ_CV_INPUT].getPolyVoltage(c);
+			float fm = params[FM_PARAM].getValue() * inputs[FM_CV_INPUT].getPolyVoltage(c);
+			float freqCarrier = dsp::FREQ_C4 * dsp::exp2_taylor5(pitch + fm);
 
-			float freqCarrier = dsp::FREQ_C4 * std::pow(2.f, pitch);
+			float freqModulator = 0.0f;
+			if (params[MOD_TYPE_PARAM].getValue() == 0.0f)
+			{
+				// ratio
+				float modpitch = params[MOD_PARAM].getValue() + inputs[MOD_CV_INPUT].getPolyVoltage(c);
+				float modfm = params[MOD_FM_PARAM].getValue() * inputs[MOD_FM_CV_INPUT].getPolyVoltage(c);
+				freqModulator = freqCarrier * (modpitch + modfm);
+			}
+			else
+			{
+				// fixed
+				float modpitch = params[MOD_PARAM].getValue() + inputs[MOD_CV_INPUT].getPolyVoltage(c);
+				float modfm = params[MOD_FM_PARAM].getValue() * inputs[MOD_FM_CV_INPUT].getPolyVoltage(c);
+				freqModulator = dsp::FREQ_C4 * dsp::exp2_taylor5(modpitch + modfm);
+			}
 
-			float freqModulator = freqCarrier * 2.0f;
-
-			float falloff = 0.5f;
+			float falloff = clampf(params[FALLOFF_PARAM].getValue() + (inputs[FALLOFF_CV_INPUT].getPolyVoltage(c) * 0.1f), 0.0f, 0.9f);
 
 			auto &osc = oscs[c];
 
@@ -106,12 +119,12 @@ struct DsfWidget : ModuleWidget
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(40.956, 31.362)), module, Dsf::MOD_TYPE_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(40.701, 40.025)), module, Dsf::MOD_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(11.879, 44.867)), module, Dsf::FREQ_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(42.1, 66.083)), module, Dsf::MOD_FM_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(11.734, 75.843)), module, Dsf::FM_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(31.626, 96.437)), module, Dsf::FALLOFF_PARAM));
+		addParam(createParamCentered<NKK>(mm2px(Vec(40.956, 31.362)), module, Dsf::MOD_TYPE_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(40.701, 40.025)), module, Dsf::MOD_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(11.879, 44.867)), module, Dsf::FREQ_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(42.1, 66.083)), module, Dsf::MOD_FM_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(11.734, 75.843)), module, Dsf::FM_PARAM));
+		addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(31.626, 96.437)), module, Dsf::FALLOFF_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(41.072, 50.368)), module, Dsf::MOD_CV_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(12.181, 59.95)), module, Dsf::FREQ_CV_INPUT));

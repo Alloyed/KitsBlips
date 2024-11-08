@@ -28,7 +28,7 @@ public:
 
     inline void SetFreqModulator(const float f)
     {
-        mFreqCarrier = f;
+        mFreqModulator = f;
     }
 
     inline void SetFalloff(const float f)

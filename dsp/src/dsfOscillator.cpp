@@ -9,15 +9,17 @@ namespace
     /**
      * sidebands up, not band-limited
      */
-    float moorerFormula2(float theta, float beta, float a)
+    inline float moorerFormula2(float theta, float beta, float a)
     {
         // this is the infinite form, so N is technically also infinite. I just picked a big number :)
-        float N = 16;
+        float N = 8;
+        // replace powf(a, N)
+        float aPowN = a * a * a * a;
 
-        float maxAmplitude = (1.0f - powf(a, N)) / (1.0f - a);
+        float maxAmplitude = (1.0f - aPowN) / (1.0f - a);
 
-        float num = sin(theta) - (a * sin(theta - beta));
-        float denom = 1 + (a * a) - (2 * cos(beta));
+        float num = sinf(theta) - (a * sinf(theta - beta));
+        float denom = 1.0f + (a * a) - (2.0f * a * cosf(beta));
 
         return num / (denom * maxAmplitude);
     }
@@ -28,12 +30,12 @@ namespace
     float moorerFormula4(float theta, float beta, float a)
     {
         // this is the infinite form, so N is technically also infinite. I just picked a big number :)
-        float N = 16;
+        float N = 8;
 
         float maxAmplitude = (1.0f - powf(a, N)) / (1.0f - a);
 
-        float num = (1.0f - a * a) * sin(theta);
-        float denom = 1 + (a * a) - (2 * a * cos(beta));
+        float num = (1.0f - a * a) * sinf(theta);
+        float denom = 1 + (a * a) - (2 * a * cosf(beta));
 
         return num / (denom * maxAmplitude);
     }
