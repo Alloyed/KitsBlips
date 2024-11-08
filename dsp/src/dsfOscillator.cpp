@@ -4,6 +4,32 @@
 
 #include "dsp/util.h"
 
+namespace
+{
+    // https://bmtechjournal.wordpress.com/2020/05/27/super-fast-quadratic-sinusoid-approximation/
+
+    // period is [0,1] instead of [0,2pi]
+    float approxSinf(float x)
+    {
+        // limit range
+        x = x - static_cast<uint8_t>(x) - 0.5f;
+
+        return 2.0f * x * (1.0f - fabs(2.0f * x));
+    }
+
+    // period is [0,1] instead of [0,2pi]
+    float approxCosf(float x)
+    {
+        approxSinf(x - 0.5f);
+    }
+
+}
+
+#define sin_(x) approxSinf(x)
+#define cos_(x) approxCosf(x)
+// #define sin_(x) sinf(x * cTwoPi)
+// #define cos_(x) cosf(x * cTwoPi)
+
 float DsfOscillator::Process()
 {
     mPhaseCarrier += mFreqCarrier * mSecondsPerSample;
@@ -17,8 +43,8 @@ float DsfOscillator::Process()
 
 float DsfOscillator::Formula1() const
 {
-    float theta = mPhaseCarrier * cTwoPi;
-    float beta = mPhaseModulator * cTwoPi;
+    float theta = mPhaseCarrier;
+    float beta = mPhaseModulator;
     float N = mNumFrequencyBands;
     float a = mFalloff;
     float a2 = mFalloffPow2;
@@ -27,17 +53,17 @@ float DsfOscillator::Formula1() const
     /**
      * sidebands up, band-limited
      */
-    float bandlimit = mFalloffPowN1 * (sinf(theta + (N + 1) * beta) - (a * sinf(theta + (N * beta))));
-    float num = sinf(theta) - (a * sinf(theta - beta)) - bandlimit;
-    float denom = 1.0f + a2 - (2.0f * a * cosf(beta));
+    float bandlimit = mFalloffPowN1 * (sin_(theta + (N + 1) * beta) - (a * sin_(theta + (N * beta))));
+    float num = sin_(theta) - (a * sin_(theta - beta)) - bandlimit;
+    float denom = 1.0f + a2 - (2.0f * a * cos_(beta));
 
     return num / (denom * b);
 }
 
 float DsfOscillator::Formula2() const
 {
-    float theta = mPhaseCarrier * cTwoPi;
-    float beta = mPhaseModulator * cTwoPi;
+    float theta = mPhaseCarrier;
+    float beta = mPhaseModulator;
     float a = mFalloff;
     float a2 = mFalloffPow2;
     float b = mAmplitudeReciprocal;
@@ -45,16 +71,16 @@ float DsfOscillator::Formula2() const
     /**
      * sidebands up, not band-limited
      */
-    float num = sinf(theta) - (a * sinf(theta - beta));
-    float denom = 1.0f + a2 - (2.0f * a * cosf(beta));
+    float num = sin_(theta) - (a * sin_(theta - beta));
+    float denom = 1.0f + a2 - (2.0f * a * cos_(beta));
 
     return num / (denom * b);
 }
 
 float DsfOscillator::Formula3() const
 {
-    float theta = mPhaseCarrier * cTwoPi;
-    float beta = mPhaseModulator * cTwoPi;
+    float theta = mPhaseCarrier;
+    float beta = mPhaseModulator;
     float N = mNumFrequencyBands;
     float a = mFalloff;
     float a2 = mFalloffPow2;
@@ -64,16 +90,16 @@ float DsfOscillator::Formula3() const
      * sidebands up+down, band-limited
      */
 
-    float num = sinf(theta) * (1.0f - a2 - (2.0f * mFalloffPowN1 * (cosf((N + 1.0f) * beta) - a * cosf(N * beta))));
-    float denom = 1.0f + a2 - (2.0f * a * cosf(beta));
+    float num = sin_(theta) * (1.0f - a2 - (2.0f * mFalloffPowN1 * (cos_((N + 1.0f) * beta) - a * cos_(N * beta))));
+    float denom = 1.0f + a2 - (2.0f * a * cos_(beta));
 
     return num / (denom * b);
 }
 
 float DsfOscillator::Formula4() const
 {
-    float theta = mPhaseCarrier * cTwoPi;
-    float beta = mPhaseModulator * cTwoPi;
+    float theta = mPhaseCarrier;
+    float beta = mPhaseModulator;
     float a = mFalloff;
     float a2 = mFalloffPow2;
     float b = mAmplitudeReciprocal;
@@ -81,8 +107,8 @@ float DsfOscillator::Formula4() const
     /**
      * sidebands up+down, not band-limited
      */
-    float num = (1.0f - a2) * sinf(theta);
-    float denom = 1.0f + a2 - (2.0f * a * cosf(beta));
+    float num = (1.0f - a2) * sin_(theta);
+    float denom = 1.0f + a2 - (2.0f * a * cos_(beta));
 
     return num / (denom * b);
 }
