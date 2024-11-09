@@ -4,30 +4,6 @@
 
 #include "dsp/util.h"
 
-namespace
-{
-    // https://bmtechjournal.wordpress.com/2020/05/27/super-fast-quadratic-sinusoid-approximation/
-
-    // period is [0,1] instead of [0,2pi]
-    float approxSinf(float x)
-    {
-        // limit range
-        x = x - static_cast<uint8_t>(x) - 0.5f;
-
-        return 2.0f * x * (1.0f - fabs(2.0f * x));
-    }
-
-    // period is [0,1] instead of [0,2pi]
-    float approxCosf(float x)
-    {
-        // limit range
-        x = x - static_cast<uint8_t>(x + 0.25f) - 0.5f;
-
-        return 2.0f * x * (1.0f - fabs(2.0f * x));
-    }
-
-}
-
 // #define sin_(x) approxSinf(x)
 // #define cos_(x) approxCosf(x)
 #define sin_(x) sinf(x *cTwoPi)

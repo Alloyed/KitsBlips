@@ -2,6 +2,9 @@
 #include "dsp/dsfOscillator.h"
 #include "dsp/util.h"
 
+using float4 = simd::float_4;
+using int4 = simd::int32_4;
+
 struct NKK2 : app::SvgSwitch
 {
 	NKK2()
@@ -25,6 +28,16 @@ static constexpr float cModulatorRatios[] = {0.0f,
 											 10.0f};
 static constexpr float cNumRatios = sizeof(cModulatorRatios) - 2.0f;
 static constexpr float cMaxLevel = 0.9f;
+
+float4 lookupRatio(int4 ratioIndex)
+{
+	float4 out;
+	out[0] = cModulatorRatios[ratioIndex[0]];
+	out[1] = cModulatorRatios[ratioIndex[1]];
+	out[2] = cModulatorRatios[ratioIndex[2]];
+	out[3] = cModulatorRatios[ratioIndex[3]];
+	return out;
+}
 
 struct Dsf : Module
 {
@@ -103,68 +116,83 @@ struct Dsf : Module
 	void
 	process(const ProcessArgs &args) override
 	{
+		// shared parameters:
+		float octave = floorf(params[COARSE_PARAM].getValue() + 0.5f);
+		bool useRatioModulator = params[MOD_MODE_PARAM].getValue() == 0.0f;
+
+		// ratio mod params
+		float ratioFine = params[MOD_FINE_PARAM].getValue() / 14.0f;
+
+		// fixed mod params
+		float modOctave = floorf(params[MOD_COARSE_PARAM].getValue() + 0.5f);
+		float modFine = (params[MOD_FINE_PARAM].getValue() / 12.0f);
+
 		// Get desired number of channels from a "primary" input.
 		// If this input is unpatched, getChannels() returns 0, but we should still generate 1 channel of output.
 		int channels = std::max(1, inputs[PITCH_INPUT].getChannels());
 
 		// Iterate through each active channel.
-		for (int c = 0; c < channels; c++)
+		for (int c = 0; c < channels; c += 4)
 		{
-			float freqCarrier = 0.0f;
+			float4 freqCarrier = 0.0f;
 			{
-				float octave = floorf(params[COARSE_PARAM].getValue() + 0.5f);
-				float pitch = octave + inputs[PITCH_INPUT].getPolyVoltage(c) + (params[FINE_PARAM].getValue() / 12.0f);
-				float fm = params[FM_PARAM].getValue() * inputs[FM_INPUT].getPolyVoltage(c);
+				float4 pitch = octave + inputs[PITCH_INPUT].getPolyVoltageSimd<float4>(c) + (params[FINE_PARAM].getValue() / 12.0f);
+				float4 fm = params[FM_PARAM].getValue() * inputs[FM_INPUT].getPolyVoltageSimd<float4>(c);
 				freqCarrier = dsp::FREQ_C4 * (dsp::exp2_taylor5(pitch) + fm);
 			}
 
-			float freqModulator = 0.0f;
-			if (params[MOD_MODE_PARAM].getValue() == 0.0f)
+			float4 freqModulator = 0.0f;
+			if (useRatioModulator)
 			{
 				// ratio
-				float ratioCoarse = clampf(params[MOD_COARSE_PARAM].getValue() + 2.0f + inputs[MOD_PITCH_INPUT].getPolyVoltage(c), 0.0f, 6.0f);
-				int32_t ratioIndex = static_cast<int32_t>(ratioCoarse + 0.5f) + 1;
-				float ratioFine = params[MOD_FINE_PARAM].getValue() / 14.0f;
-				float ratio;
+				float4 ratioCoarse = simd::clamp(params[MOD_COARSE_PARAM].getValue() + 2.0f + inputs[MOD_PITCH_INPUT].getPolyVoltageSimd<float4>(c), 0.0f, 6.0f);
+				int4 ratioIndex = simd::trunc(ratioCoarse + 0.5f) + 1;
+				float4 ratio;
 				if (ratioFine < 0.0f)
 				{
-					// negative
-					ratio = lerpf(cModulatorRatios[ratioIndex - 1], cModulatorRatios[ratioIndex], -ratioFine);
+					float4 ratio0 = lookupRatio(ratioIndex - 1);
+					float4 ratio1 = lookupRatio(ratioIndex);
+					ratio = lerpf<float4>(ratio0, ratio1, simd::fabs(ratioFine));
 				}
 				else
 				{
-					ratio = lerpf(cModulatorRatios[ratioIndex], cModulatorRatios[ratioIndex + 1], ratioFine);
+					float4 ratio0 = lookupRatio(ratioIndex);
+					float4 ratio1 = lookupRatio(ratioIndex + 1);
+					ratio = lerpf<float4>(ratio0, ratio1, ratioFine);
 				}
-				float modfm = params[MOD_FM_PARAM].getValue() * inputs[MOD_FM_INPUT].getPolyVoltage(c) * dsp::FREQ_C4;
+				float4 modfm = params[MOD_FM_PARAM].getValue() * inputs[MOD_FM_INPUT].getPolyVoltageSimd<float4>(c) * dsp::FREQ_C4;
 				freqModulator = (freqCarrier * ratio) + modfm;
 			}
 			else
 			{
 				// fixed
-				float octave = floorf(params[MOD_COARSE_PARAM].getValue() + 0.5f);
-				float fine = (params[MOD_FINE_PARAM].getValue() / 12.0f);
-				float pitch = octave + fine + inputs[MOD_PITCH_INPUT].getPolyVoltage(c);
-				float fm = params[MOD_FM_PARAM].getValue() * inputs[MOD_FM_INPUT].getPolyVoltage(c);
+				float4 pitch = modOctave + modFine + inputs[MOD_PITCH_INPUT].getPolyVoltageSimd<float4>(c);
+				float4 fm = params[MOD_FM_PARAM].getValue() * inputs[MOD_FM_INPUT].getPolyVoltageSimd<float4>(c);
 				freqModulator = dsp::FREQ_C4 * (dsp::exp2_taylor5(pitch) + fm);
 			}
 
-			float level = clampf(params[LEVEL_PARAM].getValue() + (inputs[LEVEL_INPUT].getPolyVoltage(c) * 0.1f * params[LEVEL_CV_PARAM].getValue()), 0.0f, 1.0f);
-			float falloff = level * 0.9f; // numerical instability/volume issues closer to 1.0f
+			float4 level = simd::clamp(params[LEVEL_PARAM].getValue() + (inputs[LEVEL_INPUT].getPolyVoltageSimd<float4>(c) * 0.1f * params[LEVEL_CV_PARAM].getValue()), 0.0f, 1.0f);
+			float4 falloff = level * 0.9f; // numerical instability/volume issues closer to 1.0f
 
-			auto &osc = oscs[c];
+			float4 out1, out2;
+			for (int32_t i = 0; i < 4; ++i)
+			{
+				auto &osc = oscs[c + i];
 
-			osc.SetFreqCarrier(freqCarrier);
-			osc.SetFreqModulator(freqModulator);
-			osc.SetFalloff(falloff);
-			float out1, out2;
-			osc.Process(out1, out2);
+				// TODO: vectorize dsp library
+				osc.SetFreqCarrier(freqCarrier[i]);
+				osc.SetFreqModulator(freqModulator[i]);
+				osc.SetFalloff(falloff[i]);
+				osc.Process(out1[i], out2[i]);
+			}
 
 			// scale/clip
-			out1 = 5.0f * tanhf(out1 * 0.8f);
-			out2 = 5.0f * tanhf(out2 * 0.8f);
+			// TODO: simd::tanh
+			out1 = 5.0f * simd::clamp(out1 * 0.8f);
+			out2 = 5.0f * simd::clamp(out2 * 0.8f);
 
-			outputs[OUT_MAIN_OUTPUT].setVoltage(out1, c);
-			outputs[OUT_AUX_OUTPUT].setVoltage(out2, c);
+			outputs[OUT_MAIN_OUTPUT].setVoltageSimd<float4>(out1, c);
+			outputs[OUT_AUX_OUTPUT].setVoltageSimd<float4>(out2, c);
 		}
 
 		// Set the number of channels for each output.

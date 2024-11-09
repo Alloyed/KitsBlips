@@ -30,7 +30,8 @@ inline float floorf(float in, float increment)
     return static_cast<int32_t>(in * increment) / increment;
 }
 
-inline float lerpf(float a, float b, float t)
+template <typename F>
+F lerpf(F a, F b, F t)
 {
     return a + (b - a) * t;
 }
