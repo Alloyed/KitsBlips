@@ -21,19 +21,19 @@ namespace
     float approxCosf(float x)
     {
         // limit range
-        x = x - static_cast<uint8_t>(x);
+        x = x - static_cast<uint8_t>(x + 0.25f) - 0.5f;
 
         return 2.0f * x * (1.0f - fabs(2.0f * x));
     }
 
 }
 
-#define sin_(x) approxSinf(x)
-#define cos_(x) approxCosf(x)
-// #define sin_(x) sinf(x * cTwoPi)
-// #define cos_(x) cosf(x * cTwoPi)
+// #define sin_(x) approxSinf(x)
+// #define cos_(x) approxCosf(x)
+#define sin_(x) sinf(x *cTwoPi)
+#define cos_(x) cosf(x *cTwoPi)
 
-float DsfOscillator::Process()
+void DsfOscillator::Process(float &out1, float &out2)
 {
     mPhaseCarrier += mFreqCarrier * mSecondsPerSample;
     mPhaseCarrier = fmodf(mPhaseCarrier, 1.0f);
@@ -41,7 +41,8 @@ float DsfOscillator::Process()
     mPhaseModulator += mFreqModulator * mSecondsPerSample;
     mPhaseModulator = fmodf(mPhaseModulator, 1.0f);
 
-    return Formula2();
+    out1 = mDcBlocker1.Process(blockNanf(Formula1()));
+    out2 = mDcBlocker2.Process(blockNanf(Formula3()));
 }
 
 float DsfOscillator::Formula1() const

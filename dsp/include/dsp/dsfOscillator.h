@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include "dsp/dcBlocker.h"
 
 /**
  *
@@ -55,7 +56,7 @@ public:
         }
     }
 
-    float Process();
+    void Process(float &out1, float &out2);
 
     void PhaseAdd(float _phase)
     {
@@ -67,6 +68,8 @@ public:
     {
         mPhaseCarrier = _phase;
         mPhaseModulator = _phase * mFreqModulator / mFreqCarrier;
+        mDcBlocker1.Reset();
+        mDcBlocker2.Reset();
     }
 
 private:
@@ -80,6 +83,8 @@ private:
     // state
     float mPhaseCarrier{0.0f};
     float mPhaseModulator{0.0f};
+    DcBlocker mDcBlocker1;
+    DcBlocker mDcBlocker2;
 
     // cached intermediates
     float mNyquistFrequency{41000.0f * 0.5f};

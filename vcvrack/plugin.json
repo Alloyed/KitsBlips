@@ -1,12 +1,13 @@
 {
   "slug": "KitsBlips_VCV",
   "name": "Kit's Blips",
-  "version": "2.4.1",
-  "license": "GPL-3.0-or-later",
-  "brand": "KitsBlips",
+  "version": "2.0.1",
+  "minRackVersion": "2.4.0",
+  "license": "MIT",
+  "brand": "Kits",
   "author": "Alloyed",
   "authorEmail": "",
-  "authorUrl": "alloyed.cohost.org",
+  "authorUrl": "https://alloyed.me",
   "pluginUrl": "",
   "manualUrl": "",
   "sourceUrl": "",
@@ -17,25 +18,28 @@
       "slug": "psxverb",
       "name": "PSXVerb",
       "description": "Reverb algorithm used in the Playstation (PSX) DSP chip",
-      "tags": ["digital", "effect", "reverb"]
+      "tags": ["digital", "effect", "reverb"],
+      "hidden": true
     },
     {
       "slug": "snecho",
       "name": "Snecho",
       "description": "Echo algorithm used in the SNES SPC700 DSP chip",
-      "tags": ["digital", "effect", "delay"]
+      "tags": ["digital", "effect", "delay"],
+      "hidden": true
     },
     {
       "slug": "dance",
       "name": "Dance",
       "description": "Port of Fruity Dancer",
-      "tags": ["visual"]
+      "tags": ["visual"],
+      "hidden": true
     },
     {
       "slug": "dsf",
-      "name": "dsf",
+      "name": "DSF Oscillator",
       "description": "Discrete Summation Formula Oscillator",
-      "tags": ["oscillator", "polyphonic"]
+      "tags": ["digital", "oscillator", "polyphonic"]
     }
   ]
 }

@@ -53,3 +53,8 @@ inline float lerpHermite4pt3oXf(float x0, float x1, float x2, float x3, float t)
     float c3 = (.5f * (x3 - x0)) + (1.5f * (x1 - x2));
     return (((((c3 * t) + c2) * t) + c1) * t) + c0;
 }
+
+inline float blockNanf(float in, float valueIfNan = 0.0f)
+{
+    return std::isfinite(in) ? in : valueIfNan;
+}
