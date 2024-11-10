@@ -25,4 +25,5 @@ FetchContent_MakeAvailable(daisy)
 FetchContent_MakeAvailable(DaisySP)
 FetchContent_MakeAvailable(kitdsp)
 
-add_subdirectory(ExampleFirmware)
+# add each new firmware here
+add_subdirectory(template)
