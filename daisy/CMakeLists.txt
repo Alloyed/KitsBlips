@@ -1,17 +1,22 @@
 cmake_minimum_required(VERSION 3.26)
 cmake_policy(SET CMP0048 NEW)
 
+# Use Daisy's toolchain
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    include(${CMAKE_CURRENT_LIST_DIR}/../sdk/libDaisy/cmake/toolchains/autodetect.cmake)
+endif()
+
 include(FetchContent)
 
 #deps
 FetchContent_Declare(daisy
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/../sdk/libDaisy
+    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sdk/libDaisy
 )
 FetchContent_Declare(DaisySP
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/../sdk/DaisySP
+    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sdk/DaisySP
 )
 FetchContent_Declare(kitdsp
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/../dsp
+    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../dsp
 )
 
 project(KitsBlips_daisy)
