@@ -106,7 +106,10 @@ jobs:
       - name: Set up Linux deps
         if: runner.os == 'Linux'
         # https://github.com/VCVRack/rack-plugin-toolchain/blob/v2/Makefile#L268
-        run: sudo apt-get update && sudo apt install ca-certificates git build-essential autoconf automake bison flex gawk libtool-bin libncurses5-dev unzip zip jq libgl-dev libglu-dev git wget curl cmake nasm xz-utils file python3 libxml2-dev libssl-dev texinfo help2man libz-dev rsync xxd perl coreutils zstd markdown libarchive-tools
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: ca-certificates git build-essential autoconf automake bison flex gawk libtool-bin libncurses5-dev unzip zip jq libgl-dev libglu-dev git wget curl cmake nasm xz-utils file python3 libxml2-dev libssl-dev texinfo help2man libz-dev rsync xxd perl coreutils zstd markdown libarchive-tools
+          version: 1.0
 
       - uses: actions/checkout@v4
         with:
