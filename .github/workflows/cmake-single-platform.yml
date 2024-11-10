@@ -87,14 +87,12 @@ jobs:
           - name: Linux
             os: ubuntu-22.04
             generator: Unix Makefiles
-            rackFolder: Rack-SDK-2.5.2-lin-x64
           #- name: macOS
           #  os: macos-14
           #  extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
           - name: Windows
             os: windows-latest
             generator: MinGW Makefiles
-            rackFolder: Rack-SDK-2.5.2-win-x64
     steps:
       - name: Set up MinGW
         if: runner.os == 'Windows'
@@ -118,7 +116,7 @@ jobs:
       - name: Configure CMake
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRACK_SDK_DIR="${{github.workspace}}/sdk/${{matrix.rackFolder}}" -G "${{matrix.generator}}" "${{github.workspace}}/vcvrack"
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G "${{matrix.generator}}" "${{github.workspace}}/vcvrack"
 
       - name: Build
         # Build your program with the given configuration
