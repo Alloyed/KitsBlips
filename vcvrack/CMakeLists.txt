@@ -6,7 +6,6 @@ set(PLUGIN_NAME ${PROJECT_NAME})
 set(ADDITIONAL_PLUGIN_DISTRIBUTABLES README.md)
 include(RackSDK.cmake)
 
-add_subdirectory(../sdk/DaisySP dasiysp)
 add_subdirectory(../dsp kitdsp)
 
 target_sources(${RACK_PLUGIN_LIB} PRIVATE
@@ -19,5 +18,4 @@ target_sources(${RACK_PLUGIN_LIB} PRIVATE
 
 target_link_libraries(${RACK_PLUGIN_LIB} PRIVATE
     KitDSP
-    DaisySP
 )

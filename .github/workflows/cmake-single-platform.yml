@@ -54,7 +54,7 @@ jobs:
       - name: Configure CMake
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_JUCE=true -DENABLE_VCVRACK=false -DENABLE_DAISY=false
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} "${{github.workspace}}/juce"
 
       - name: Build
         # Build your program with the given configuration
@@ -116,7 +116,7 @@ jobs:
       - name: Configure CMake
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRACK_SDK_DIR="${{github.workspace}}/sdk/${{matrix.rackFolder}}" -G "${{matrix.generator}}"  -DENABLE_JUCE=false -DENABLE_VCVRACK=true -DENABLE_DAISY=false
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRACK_SDK_DIR="${{github.workspace}}/sdk/${{matrix.rackFolder}}" -G "${{matrix.generator}}" "${{github.workspace}}/vcvrack"
 
       - name: Build
         # Build your program with the given configuration
@@ -150,7 +150,7 @@ jobs:
           submodules: recursive
 
       - name: Configure CMake
-        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_DAISY=true -G "${{matrix.generator}}" -DENABLE_JUCE=false -DENABLE_VCVRACK=false -DENABLE_DAISY=true
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_DAISY=true -G "${{matrix.generator}}" "${{github.workspace}}/daisy"
 
       - name: Build
         # Build your program with the given configuration
