@@ -27,16 +27,15 @@ jobs:
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     name: vst ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    if: false # re-enable later
     strategy:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:
         include:
           - name: Linux
             os: ubuntu-22.04
-          #- name: macOS
-          #  os: macos-14
-          #  extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          # - name: macOS
+          #   os: macos-14
+          #   extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
           - name: Windows
             os: windows-latest
 
@@ -54,7 +53,7 @@ jobs:
       - name: Configure CMake
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_JUCE=true -DENABLE_VCVRACK=false -DENABLE_DAISY=false
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} "${{github.workspace}}/juce" ${{matrix.extra-flags}}
 
       - name: Build
         # Build your program with the given configuration
@@ -88,14 +87,17 @@ jobs:
           - name: Linux
             os: ubuntu-22.04
             generator: Unix Makefiles
-            rackFolder: Rack-SDK-2.5.2-lin-x64
-          #- name: macOS
-          #  os: macos-14
-          #  extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          - name: macOS x86_64
+            os: macos-14
+            extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64"
+            generator: Unix Makefiles
+          - name: macOS arm64
+            os: macos-14
+            extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64"
+            generator: Unix Makefiles
           - name: Windows
             os: windows-latest
             generator: MinGW Makefiles
-            rackFolder: Rack-SDK-2.5.2-win-x64
     steps:
       - name: Set up MinGW
         if: runner.os == 'Windows'
@@ -107,7 +109,10 @@ jobs:
       - name: Set up Linux deps
         if: runner.os == 'Linux'
         # https://github.com/VCVRack/rack-plugin-toolchain/blob/v2/Makefile#L268
-        run: sudo apt-get update && sudo apt install ca-certificates git build-essential autoconf automake bison flex gawk libtool-bin libncurses5-dev unzip zip jq libgl-dev libglu-dev git wget curl cmake nasm xz-utils file python3 libxml2-dev libssl-dev texinfo help2man libz-dev rsync xxd perl coreutils zstd markdown libarchive-tools
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: ca-certificates git build-essential autoconf automake bison flex gawk libtool-bin libncurses5-dev unzip zip jq libgl-dev libglu-dev git wget curl cmake nasm xz-utils file python3 libxml2-dev libssl-dev texinfo help2man libz-dev rsync xxd perl coreutils zstd markdown libarchive-tools
+          version: 1.0
 
       - uses: actions/checkout@v4
         with:
@@ -116,11 +121,14 @@ jobs:
       - name: Configure CMake
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRACK_SDK_DIR="${{github.workspace}}/sdk/${{matrix.rackFolder}}" -G "${{matrix.generator}}"  -DENABLE_JUCE=false -DENABLE_VCVRACK=true -DENABLE_DAISY=false
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G "${{matrix.generator}}" "${{github.workspace}}/vcvrack" ${{matrix.extra-flags}}
 
       - name: Build
         # Build your program with the given configuration
         run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
+        
+      - name: install
+        run: cmake --install "${{github.workspace}}/build" --prefix "${{github.workspace}}/build/dist"
 
       - name: Package
         uses: actions/upload-artifact@v4
@@ -131,14 +139,12 @@ jobs:
   build-daisy:
     name: daisy ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    if: false # re-enable later
     strategy:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:
         include:
           - name: Linux
             os: ubuntu-22.04
-            generator: Unix Makefiles
     steps:
       - name: Setup arm-none-eabi-gcc
         uses: carlosperate/arm-none-eabi-gcc-action@v1
@@ -150,7 +156,7 @@ jobs:
           submodules: recursive
 
       - name: Configure CMake
-        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_DAISY=true -G "${{matrix.generator}}" -DENABLE_JUCE=false -DENABLE_VCVRACK=false -DENABLE_DAISY=true
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} "${{github.workspace}}/daisy"
 
       - name: Build
         # Build your program with the given configuration
