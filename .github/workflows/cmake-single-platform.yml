@@ -136,7 +136,6 @@ jobs:
         include:
           - name: Linux
             os: ubuntu-22.04
-            generator: Unix Makefiles
     steps:
       - name: Setup arm-none-eabi-gcc
         uses: carlosperate/arm-none-eabi-gcc-action@v1
@@ -148,7 +147,7 @@ jobs:
           submodules: recursive
 
       - name: Configure CMake
-        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_DAISY=true -G "${{matrix.generator}}" "${{github.workspace}}/daisy"
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} "${{github.workspace}}/daisy"
 
       - name: Build
         # Build your program with the given configuration
