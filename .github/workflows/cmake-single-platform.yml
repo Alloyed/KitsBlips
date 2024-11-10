@@ -130,7 +130,6 @@ jobs:
   build-daisy:
     name: daisy ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    if: false # re-enable later
     strategy:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:

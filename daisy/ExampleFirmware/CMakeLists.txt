@@ -13,3 +13,4 @@ set(FIRMWARE_SOURCES
 include(DaisyProject)
 
 target_include_directories(${FIRMWARE_NAME} PUBLIC include)
+target_link_libraries(${FIRMWARE_NAME} PRIVATE KitDSP DaisySP)
