@@ -2,7 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
-#include "dsp/dcBlocker.h"
+#include "kitdsp/dcBlocker.h"
 
 /**
  *

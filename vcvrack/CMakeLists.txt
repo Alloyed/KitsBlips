@@ -7,7 +7,7 @@ set(ADDITIONAL_PLUGIN_DISTRIBUTABLES README.md)
 include(RackSDK.cmake)
 
 add_subdirectory(../sdk/DaisySP dasiysp)
-add_subdirectory(../dsp kitdsp)
+add_subdirectory(../kitdsp kitdsp)
 
 target_sources(${RACK_PLUGIN_LIB} PRIVATE
     src/plugin.cpp

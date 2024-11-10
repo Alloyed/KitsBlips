@@ -10,8 +10,8 @@ template <typename F>
 F approxTanhf(F x)
 {
     F xx = x * x;
-    F x = x + (0.16489087f + 0.00985468f * xx) * (x * xx);
-    return x * rsqrt(1.0f + xx);
+    F x1 = x + (0.16489087f + 0.00985468f * xx) * (x * xx);
+    return x1 * rsqrt(1.0f + x1 * x1);
 }
 
 // https://bmtechjournal.wordpress.com/2020/05/27/super-fast-quadratic-sinusoid-approximation/

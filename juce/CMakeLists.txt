@@ -5,7 +5,7 @@ project(KitsBlips_JUCE)
 # shared libs
 add_subdirectory(../sdk/JUCE juce)
 add_subdirectory(../sdk/DaisySP daisysp)
-add_subdirectory(../dsp kitdsp)
+add_subdirectory(../kitdsp kitdsp)
 
 # plugins
 add_subdirectory(ExamplePlugin)

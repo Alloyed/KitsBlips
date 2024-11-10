@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dsp/util.h"
+#include "kitdsp/util.h"
 #include <cstdint>
 #include <cstddef>
 

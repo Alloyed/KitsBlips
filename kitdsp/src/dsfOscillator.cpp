@@ -1,13 +1,14 @@
-#include "dsp/dsfOscillator.h"
+#include "kitdsp/dsfOscillator.h"
 
 #include <cmath>
 
-#include "dsp/util.h"
+#include "kitdsp/util.h"
+#include "kitdsp/approx.h"
 
-// #define sin_(x) approxSinf(x)
-// #define cos_(x) approxCosf(x)
-#define sin_(x) sinf(x *cTwoPi)
-#define cos_(x) cosf(x *cTwoPi)
+#define sin_(x) approxSinf(x)
+#define cos_(x) approxCosf(x)
+// #define sin_(x) sinf(x *cTwoPi)
+// #define cos_(x) cosf(x *cTwoPi)
 
 void DsfOscillator::Process(float &out1, float &out2)
 {

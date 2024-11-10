@@ -5,6 +5,13 @@
 using float4 = simd::float_4;
 using int4 = simd::int32_4;
 
+float4 approxTanhf(float4 x)
+{
+	float4 xx = x * x;
+	float4 x1 = x + (0.16489087f + 0.00985468f * xx) * (x * xx);
+	return x1 * simd::rsqrt(1.0f + x1 * x1);
+}
+
 struct NKK2 : app::SvgSwitch
 {
 	NKK2()
@@ -80,7 +87,7 @@ struct Dsf : Module
 		configParam(COARSE_PARAM, -2.f, 4.f, 0.f, "Octave");
 		configParam(FINE_PARAM, -7.f, 7.f, 0.f, "Fine (+/- 7 semitones)");
 		configParam(FM_PARAM, -1.f, 1.f, 0.f, "FM (linear)");
-		configParam(MOD_MODE_PARAM, 0.f, 1.f, 0.f, "Ratio/Fixed pitch");
+		configSwitch(MOD_MODE_PARAM, 0.f, 1.f, 0.f, "Modulator Pitch tracking", {"Ratio", "Fixed"});
 		configParam(MOD_COARSE_PARAM, -2.f, 4.f, 0.f, "Coarse");
 		configParam(MOD_FINE_PARAM, -7.f, 7.f, 0.f, "Fine");
 		configParam(MOD_FM_PARAM, -1.f, 1.f, 0.f, "FM (linear)");
@@ -90,9 +97,9 @@ struct Dsf : Module
 		configInput(MOD_PITCH_INPUT, "Harmonics");
 		configInput(FM_INPUT, "FM");
 		configInput(MOD_FM_INPUT, "Harmonics FM");
-		configInput(LEVEL_INPUT, "Level");
-		configOutput(OUT_MAIN_OUTPUT, "Main out");
-		configOutput(OUT_AUX_OUTPUT, "Aux out");
+		configInput(LEVEL_INPUT, "Harmonics Level");
+		configOutput(OUT_MAIN_OUTPUT, "Main out (DSF algorithm 1)");
+		configOutput(OUT_AUX_OUTPUT, "Aux out (DSF algorithm 3)");
 	}
 
 	void onReset(const ResetEvent &e) override
@@ -116,6 +123,12 @@ struct Dsf : Module
 	void
 	process(const ProcessArgs &args) override
 	{
+		if (!outputs[OUT_MAIN_OUTPUT].isConnected() && !outputs[OUT_AUX_OUTPUT].isConnected())
+		{
+			// nothing to compute!
+			return;
+		}
+
 		// shared parameters:
 		float octave = floorf(params[COARSE_PARAM].getValue() + 0.5f);
 		bool useRatioModulator = params[MOD_MODE_PARAM].getValue() == 0.0f;
@@ -131,9 +144,21 @@ struct Dsf : Module
 		// If this input is unpatched, getChannels() returns 0, but we should still generate 1 channel of output.
 		int channels = std::max(1, inputs[PITCH_INPUT].getChannels());
 
+		if (channels != mLastChannels)
+		{
+			mLastChannels = channels;
+			// reset oscs, their phases may be out of sync
+			for (auto &osc : oscs)
+			{
+				osc.Reset();
+			}
+		}
+
 		// Iterate through each active channel.
 		for (int c = 0; c < channels; c += 4)
 		{
+			int32_t channelsInBlock = std::min(channels - c, 4);
+
 			float4 freqCarrier = 0.0f;
 			{
 				float4 pitch = octave + inputs[PITCH_INPUT].getPolyVoltageSimd<float4>(c) + (params[FINE_PARAM].getValue() / 12.0f);
@@ -175,7 +200,7 @@ struct Dsf : Module
 			float4 falloff = level * 0.9f; // numerical instability/volume issues closer to 1.0f
 
 			float4 out1, out2;
-			for (int32_t i = 0; i < 4; ++i)
+			for (int32_t i = 0; i < channelsInBlock; ++i)
 			{
 				auto &osc = oscs[c + i];
 
@@ -187,9 +212,8 @@ struct Dsf : Module
 			}
 
 			// scale/clip
-			// TODO: simd::tanh
-			out1 = 5.0f * simd::clamp(out1 * 0.8f);
-			out2 = 5.0f * simd::clamp(out2 * 0.8f);
+			out1 = 5.0f * approxTanhf(out1 * 0.8f);
+			out2 = 5.0f * approxTanhf(out2 * 0.8f);
 
 			outputs[OUT_MAIN_OUTPUT].setVoltageSimd<float4>(out1, c);
 			outputs[OUT_AUX_OUTPUT].setVoltageSimd<float4>(out2, c);
@@ -201,6 +225,7 @@ struct Dsf : Module
 	}
 
 	DsfOscillator oscs[16];
+	int32_t mLastChannels{};
 };
 
 struct DsfWidget : ModuleWidget
