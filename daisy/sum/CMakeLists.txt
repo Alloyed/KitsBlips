@@ -1,8 +1,8 @@
-project(Template VERSION 0.0.1)
+project(Sum VERSION 0.0.1)
 
-set(FIRMWARE_NAME Template)
+set(FIRMWARE_NAME Sum)
 set(FIRMWARE_SOURCES
-  template.cpp
+  sum.cpp
 )
 
 # DaisyProject uses FIRMWARE_NAME and FIRMWARE_SOURCES to build a target called ${FIRMWARE_NAME}

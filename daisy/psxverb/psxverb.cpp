@@ -1,21 +1,19 @@
 #include "daisy_patch_sm.h"
 
-#include "dsp/psx.h"
+#include "dsp/psxReverb.h"
 #include "dsp/util.h"
 #include "dsp/resampler.h"
 
 using namespace daisy;
 using namespace patch_sm;
 
-
 DaisyPatchSM hw;
-Switch       button, toggle;
+Switch button, toggle;
 
-constexpr size_t psxBufferSize
-    = PSX::Model::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
-float      psxBuffer[psxBufferSize];
+constexpr size_t psxBufferSize = 65536; // PSX::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
+float psxBuffer[psxBufferSize];
 PSX::Model psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
-Resampler  psxSampler(PSX::kOriginalSampleRate, PSX::kOriginalSampleRate);
+Resampler psxSampler(PSX::kOriginalSampleRate, PSX::kOriginalSampleRate);
 
 float knobValue(int32_t cvEnum)
 {
@@ -27,9 +25,9 @@ float jackValue(int32_t cvEnum)
     return clampf(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
 }
 
-void AudioCallback(AudioHandle::InputBuffer  in,
+void AudioCallback(AudioHandle::InputBuffer in,
                    AudioHandle::OutputBuffer out,
-                   size_t                    size)
+                   size_t size)
 {
     hw.ProcessAllControls();
     button.Debounce();
@@ -40,12 +38,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     float wetDry = clampf(knobValue(CV_4) + jackValue(CV_8), 0.0f, 1.0f);
     hw.WriteCvOut(2, 2.5 * wetDry);
 
-    if(button.RisingEdge() || hw.gate_in_1.Trig())
-    {
-        psx.cfg.preset = psx.cfg.preset + 1 % PSX::kNumPresets;
-    }
-
-    for(size_t i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
     {
         float psxLeft, psxRight;
         // signals scaled to compensate for eurorack's (often loud) signal levels
@@ -54,11 +47,11 @@ void AudioCallback(AudioHandle::InputBuffer  in,
             IN_R[i] * 0.5f,
             psxLeft,
             psxRight,
+            Resampler::InterpolationStrategy::Linear,
             [](float inLeft, float inRight, float &outLeft, float &outRight)
             { psx.Process(inLeft, inRight, outLeft, outRight); });
 
-
-        float left  = psxLeft * 2.0f;
+        float left = psxLeft * 2.0f;
         float right = psxRight * 2.0f;
 
         OUT_L[i] = lerpf(IN_L[i], left, wetDry);
@@ -77,5 +70,7 @@ int main(void)
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
 
     hw.StartAudio(AudioCallback);
-    while(1) {}
+    while (1)
+    {
+    }
 }

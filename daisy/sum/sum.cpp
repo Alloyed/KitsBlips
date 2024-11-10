@@ -68,8 +68,8 @@ void AudioCallback(AudioHandle::InputBuffer  in,
         {
             size_t idx = toggle.Pressed() ? 1 : 0;
             hw.WriteCvOut(CV_OUT_2, (out[idx][i] + 1.0f) * 2.5f);
-            dsy_gpio_write(&hw.gate_out_1, gate_or);
-            dsy_gpio_write(&hw.gate_out_2, gate_and);
+            hw.gate_out_1.Write(gate_or);
+            hw.gate_out_2.Write(gate_and);
         }
     }
 }

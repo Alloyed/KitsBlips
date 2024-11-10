@@ -1,6 +1,6 @@
 #include "daisy_patch_sm.h"
 
-#include "dsp/snes.h"
+#include "dsp/snesEcho.h"
 #include "dsp/util.h"
 #include "dsp/resampler.h"
 
@@ -11,8 +11,8 @@ using namespace patch_sm;
 DaisyPatchSM hw;
 Switch       button, toggle;
 
-constexpr size_t snesBufferSize
-    = SNES::Model::GetBufferDesiredSizeInt16s(SNES::kOriginalSampleRate);
+// constexpr size_t snesBufferSize = SNES::Model::GetBufferDesiredSizeInt16s(SNES::kOriginalSampleRate);
+constexpr size_t snesBufferSize = 7680UL;
 int16_t     snesBuffer[snesBufferSize];
 SNES::Model snes(SNES::kOriginalSampleRate, snesBuffer, snesBufferSize);
 Resampler   snesSampler(SNES::kOriginalSampleRate, SNES::kOriginalSampleRate);
@@ -51,10 +51,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     float wetDry = clampf(knobValue(CV_4) + jackValue(CV_8), 0.0f, 1.0f);
     hw.WriteCvOut(2, 2.5 * wetDry);
 
-    if(button.RisingEdge() || hw.gate_in_1.Trig())
-    {
-        snes.ClearBuffer();
-    }
+    snes.mod.clearBuffer = button.RisingEdge() || hw.gate_in_1.Trig();
 
     if(toggle.Pressed() || hw.gate_in_2.State())
     {
@@ -74,6 +71,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
             IN_R[i] * 0.5f,
             snesLeft,
             snesRight,
+            Resampler::InterpolationStrategy::Linear,
             [](float inLeft, float inRight, float &outLeft, float &outRight)
             { snes.Process(inLeft, inRight, outLeft, outRight); });
 

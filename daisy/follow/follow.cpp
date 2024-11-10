@@ -77,7 +77,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
         if(i == size - 1)
         {
             hw.WriteCvOut(CV_OUT_2, OUT_L[i] * 5.0f);
-            dsy_gpio_write(&hw.gate_out_1, OUT_L[i] > 0.3f);
+            hw.gate_out_1.Write(OUT_L[i] > 0.3f);
         }
     }
 }

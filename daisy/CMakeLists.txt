@@ -26,4 +26,10 @@ FetchContent_MakeAvailable(DaisySP)
 FetchContent_MakeAvailable(kitdsp)
 
 # add each new firmware here
+add_subdirectory(calibrate)
+add_subdirectory(follow)
+add_subdirectory(psxverb)
+add_subdirectory(quantize)
+add_subdirectory(snecho)
+add_subdirectory(sum)
 add_subdirectory(template)

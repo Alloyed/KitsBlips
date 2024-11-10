@@ -1,8 +1,8 @@
-project(Template VERSION 0.0.1)
+project(Snecho VERSION 0.0.1)
 
-set(FIRMWARE_NAME Template)
+set(FIRMWARE_NAME Snecho)
 set(FIRMWARE_SOURCES
-  template.cpp
+  snecho.cpp
 )
 
 # DaisyProject uses FIRMWARE_NAME and FIRMWARE_SOURCES to build a target called ${FIRMWARE_NAME}

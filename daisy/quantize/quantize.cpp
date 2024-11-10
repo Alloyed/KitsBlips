@@ -83,9 +83,9 @@ int main(void)
             // trigger out
             // note changes are queued in case they happen within the 10ms window
             state.hasNoteChanged--;
-            dsy_gpio_write(&hw.gate_out_1, true);
+            hw.gate_out_1.Write(true);
             hw.Delay(9);
-            dsy_gpio_write(&hw.gate_out_1, false);
+            hw.gate_out_1.Write(false);
             hw.Delay(1);
         }
     }
