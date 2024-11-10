@@ -33,9 +33,9 @@ jobs:
         include:
           - name: Linux
             os: ubuntu-22.04
-          #- name: macOS
-          #  os: macos-14
-          #  extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          # - name: macOS
+          #   os: macos-14
+          #   extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
           - name: Windows
             os: windows-latest
 
@@ -53,7 +53,7 @@ jobs:
       - name: Configure CMake
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} "${{github.workspace}}/juce"
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} "${{github.workspace}}/juce" ${{matrix.extra-flags}}
 
       - name: Build
         # Build your program with the given configuration
@@ -87,9 +87,14 @@ jobs:
           - name: Linux
             os: ubuntu-22.04
             generator: Unix Makefiles
-          #- name: macOS
-          #  os: macos-14
-          #  extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          - name: macOS x86_64
+            os: macos-14
+            extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64"
+            generator: Unix Makefiles
+          - name: macOS arm64
+            os: macos-14
+            extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64"
+            generator: Unix Makefiles
           - name: Windows
             os: windows-latest
             generator: MinGW Makefiles
@@ -116,7 +121,7 @@ jobs:
       - name: Configure CMake
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G "${{matrix.generator}}" "${{github.workspace}}/vcvrack"
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G "${{matrix.generator}}" "${{github.workspace}}/vcvrack" ${{matrix.extra-flags}}
 
       - name: Build
         # Build your program with the given configuration
