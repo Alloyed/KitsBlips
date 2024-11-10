@@ -33,36 +33,36 @@ This derived source file is released under the zlib license.
   freely, subject to the following restrictions:
 
   1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
+	 claim that you wrote the original software. If you use this software
+	 in a product, an acknowledgment in the product documentation would be
+	 appreciated but is not required.
   2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
+	 misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 
   (this is the zlib license)
 */
 #pragma once
-#include "common.hpp"
-
+#include "common.h"
 
 /** Generate 1.f without accessing memory */
-inline __m128 sse_mathfun_one_ps() {
+inline __m128 sse_mathfun_one_ps()
+{
 	__m128i zeros = _mm_setzero_si128();
 	__m128i ones = _mm_cmpeq_epi32(zeros, zeros);
 	__m128i a = _mm_slli_epi32(_mm_srli_epi32(ones, 25), 23);
 	return _mm_castsi128_ps(a);
 }
 
-
-inline __m128 sse_mathfun_log_ps(__m128 x) {
+inline __m128 sse_mathfun_log_ps(__m128 x)
+{
 	__m128i emm0;
 	__m128 one = _mm_set_ps1(1.0);
 
 	__m128 invalid_mask = _mm_cmple_ps(x, _mm_setzero_ps());
 
 	/* the smallest non denormalized float number */
-	x = _mm_max_ps(x, _mm_castsi128_ps(_mm_set1_epi32(0x00800000)));  /* cut off denormalized stuff */
+	x = _mm_max_ps(x, _mm_castsi128_ps(_mm_set1_epi32(0x00800000))); /* cut off denormalized stuff */
 
 	emm0 = _mm_srli_epi32(_mm_castps_si128(x), 23);
 	/* keep only the fractional part */
@@ -76,8 +76,8 @@ inline __m128 sse_mathfun_log_ps(__m128 x) {
 
 	/* part2:
 	   if( x < SQRTHF ) {
-	     e -= 1;
-	     x = x + x - 1.0;
+		 e -= 1;
+		 x = x + x - 1.0;
 	   } else { x = x - 1.0; }
 	*/
 	__m128 mask = _mm_cmplt_ps(x, _mm_set_ps1(0.707106781186547524));
@@ -85,7 +85,6 @@ inline __m128 sse_mathfun_log_ps(__m128 x) {
 	x = _mm_sub_ps(x, one);
 	e = _mm_sub_ps(e, _mm_and_ps(one, mask));
 	x = _mm_add_ps(x, tmp);
-
 
 	__m128 z = _mm_mul_ps(x, x);
 
@@ -110,10 +109,8 @@ inline __m128 sse_mathfun_log_ps(__m128 x) {
 
 	y = _mm_mul_ps(y, z);
 
-
 	tmp = _mm_mul_ps(e, _mm_set_ps1(-2.12194440e-4));
 	y = _mm_add_ps(y, tmp);
-
 
 	tmp = _mm_mul_ps(z, _mm_set_ps1(0.5));
 	y = _mm_sub_ps(y, tmp);
@@ -125,8 +122,8 @@ inline __m128 sse_mathfun_log_ps(__m128 x) {
 	return x;
 }
 
-
-inline __m128 sse_mathfun_exp_ps(__m128 x) {
+inline __m128 sse_mathfun_exp_ps(__m128 x)
+{
 	__m128 tmp = _mm_setzero_ps(), fx;
 	__m128i emm0;
 	__m128 one = _mm_set_ps1(1.0);
@@ -140,7 +137,7 @@ inline __m128 sse_mathfun_exp_ps(__m128 x) {
 
 	/* how to perform a floorf with SSE: just below */
 	emm0 = _mm_cvttps_epi32(fx);
-	tmp  = _mm_cvtepi32_ps(emm0);
+	tmp = _mm_cvtepi32_ps(emm0);
 	/* if greater, substract 1 */
 	__m128 mask = _mm_cmpgt_ps(tmp, fx);
 	mask = _mm_and_ps(mask, one);
@@ -177,7 +174,6 @@ inline __m128 sse_mathfun_exp_ps(__m128 x) {
 	return y;
 }
 
-
 /* evaluation of 4 sines at onces, using only SSE1+MMX intrinsics so
    it runs also on old athlons XPs and the pentium III of your grand
    mother.
@@ -206,7 +202,8 @@ inline __m128 sse_mathfun_exp_ps(__m128 x) {
    Since it is based on SSE intrinsics, it has to be compiled at -O2 to
    deliver full speed.
 */
-inline __m128 sse_mathfun_sin_ps(__m128 x) { // any x
+inline __m128 sse_mathfun_sin_ps(__m128 x)
+{ // any x
 	__m128 xmm1, xmm2 = _mm_setzero_ps(), xmm3, sign_bit, y;
 
 	__m128i emm0, emm2;
@@ -292,9 +289,9 @@ inline __m128 sse_mathfun_sin_ps(__m128 x) { // any x
 	return y;
 }
 
-
 /* almost the same as sin_ps */
-inline __m128 sse_mathfun_cos_ps(__m128 x) { // any x
+inline __m128 sse_mathfun_cos_ps(__m128 x)
+{ // any x
 	__m128 xmm1, xmm2 = _mm_setzero_ps(), xmm3, y;
 	__m128i emm0, emm2;
 	/* take the absolute value */
@@ -371,10 +368,10 @@ inline __m128 sse_mathfun_cos_ps(__m128 x) { // any x
 	return y;
 }
 
-
 /* since sin_ps and cos_ps are almost identical, sincos_ps could replace both of them..
    it is almost as fast, and gives you a free cosine with your sine */
-inline void sse_mathfun_sincos_ps(__m128 x, __m128* s, __m128* c) {
+inline void sse_mathfun_sincos_ps(__m128 x, __m128 *s, __m128 *c)
+{
 	__m128 xmm1, xmm2, xmm3 = _mm_setzero_ps(), sign_bit_sin, y;
 	__m128i emm0, emm2, emm4;
 	sign_bit_sin = x;
@@ -427,7 +424,6 @@ inline void sse_mathfun_sincos_ps(__m128 x, __m128* s, __m128* c) {
 	__m128 sign_bit_cos = _mm_castsi128_ps(emm4);
 
 	sign_bit_sin = _mm_xor_ps(sign_bit_sin, swap_sign_bit_sin);
-
 
 	/* Evaluate the first polynom  (0 <= x <= Pi/4) */
 	__m128 z = _mm_mul_ps(x, x);
