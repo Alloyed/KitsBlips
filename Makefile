@@ -7,14 +7,14 @@ prep:
 	mkdir -p juce/build
 
 configure:
-	cmake -B daisy/build daisy -DCMAKE_BUILD_TYPE=Release
-	cmake -B vcvrack/build vcvrack -DCMAKE_BUILD_TYPE=Release -DRACK_SDK_DIR="$(abspath sdk/Rack-SDK-2.5.2-lin-x64)"
-	cmake -B juce/build juce -DCMAKE_BUILD_TYPE=Release
+	cmake -B daisy/build daisy -DCMAKE_BUILD_TYPE=MinSizeRel
+	cmake -B vcvrack/build vcvrack -DCMAKE_BUILD_TYPE=MinSizeRel
+	cmake -B juce/build juce -DCMAKE_BUILD_TYPE=MinSizeRel
 
 build:
-	cmake --build daisy/build --config Release
-	cmake --build vcvrack/build --config Release
-	cmake --build juce/build --config Release
+	cmake --build daisy/build --config MinSizeRel
+	cmake --build vcvrack/build --config MinSizeRel
+	cmake --build juce/build --config MinSizeRel
 
 install:
 	cmake --install vcvrack/build --prefix vcvrack/build/dist

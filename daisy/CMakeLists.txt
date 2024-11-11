@@ -15,15 +15,18 @@ FetchContent_Declare(daisy
 FetchContent_Declare(DaisySP
     SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../sdk/DaisySP
 )
-FetchContent_Declare(kitdsp
-    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../dsp
+FetchContent_Declare(KitDSP
+    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../kitdsp
 )
 
 project(KitsBlips_daisy)
 
 FetchContent_MakeAvailable(daisy)
 FetchContent_MakeAvailable(DaisySP)
-FetchContent_MakeAvailable(kitdsp)
+FetchContent_MakeAvailable(KitDSP)
+
+# Common firmware options
+set(FIRMWARE_RELEASE_OPT_LEVEL -Os)
 
 # add each new firmware here
 add_subdirectory(calibrate)

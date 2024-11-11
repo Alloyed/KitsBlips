@@ -1,8 +1,8 @@
 #include "daisy_patch_sm.h"
 
-#include "dsp/psxReverb.h"
-#include "dsp/util.h"
-#include "dsp/resampler.h"
+#include "kitdsp/psxReverb.h"
+#include "kitdsp/util.h"
+#include "kitdsp/resampler.h"
 
 using namespace daisy;
 using namespace patch_sm;
@@ -11,7 +11,7 @@ DaisyPatchSM hw;
 Switch button, toggle;
 
 constexpr size_t psxBufferSize = 65536; // PSX::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
-float psxBuffer[psxBufferSize];
+float DSY_SDRAM_BSS psxBuffer[psxBufferSize];
 PSX::Model psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
 Resampler psxSampler(PSX::kOriginalSampleRate, PSX::kOriginalSampleRate);
 

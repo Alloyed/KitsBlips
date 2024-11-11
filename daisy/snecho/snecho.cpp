@@ -1,21 +1,20 @@
 #include "daisy_patch_sm.h"
 
-#include "dsp/snesEcho.h"
-#include "dsp/util.h"
-#include "dsp/resampler.h"
+#include "kitdsp/snesEcho.h"
+#include "kitdsp/util.h"
+#include "kitdsp/resampler.h"
 
 using namespace daisy;
 using namespace patch_sm;
 
-
 DaisyPatchSM hw;
-Switch       button, toggle;
+Switch button, toggle;
 
 // constexpr size_t snesBufferSize = SNES::Model::GetBufferDesiredSizeInt16s(SNES::kOriginalSampleRate);
 constexpr size_t snesBufferSize = 7680UL;
-int16_t     snesBuffer[snesBufferSize];
+int16_t DSY_SDRAM_BSS snesBuffer[snesBufferSize];
 SNES::Model snes(SNES::kOriginalSampleRate, snesBuffer, snesBufferSize);
-Resampler   snesSampler(SNES::kOriginalSampleRate, SNES::kOriginalSampleRate);
+Resampler snesSampler(SNES::kOriginalSampleRate, SNES::kOriginalSampleRate);
 
 float knobValue(int32_t cvEnum)
 {
@@ -27,9 +26,9 @@ float jackValue(int32_t cvEnum)
     return clampf(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
 }
 
-void AudioCallback(AudioHandle::InputBuffer  in,
+void AudioCallback(AudioHandle::InputBuffer in,
                    AudioHandle::OutputBuffer out,
-                   size_t                    size)
+                   size_t size)
 {
     hw.ProcessAllControls();
     button.Debounce();
@@ -37,23 +36,23 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 
     snes.cfg.echoBufferSize = knobValue(CV_1);
     snes.mod.echoBufferSize = jackValue(CV_5);
-    snes.cfg.echoFeedback   = knobValue(CV_2);
-    snes.mod.echoFeedback   = jackValue(CV_6);
-    snes.cfg.filterMix      = knobValue(CV_3);
-    snes.mod.filterMix      = jackValue(CV_7);
+    snes.cfg.echoFeedback = knobValue(CV_2);
+    snes.mod.echoFeedback = jackValue(CV_6);
+    snes.cfg.filterMix = knobValue(CV_3);
+    snes.mod.filterMix = jackValue(CV_7);
 
     // TODO
-    snes.cfg.echoDelayMod  = 1.0f;
-    snes.mod.echoDelayMod  = 1.0f;
+    snes.cfg.echoDelayMod = 1.0f;
+    snes.mod.echoDelayMod = 1.0f;
     snes.cfg.filterSetting = 0;
-    snes.mod.freezeEcho    = 0.0f;
+    snes.mod.freezeEcho = 0.0f;
 
     float wetDry = clampf(knobValue(CV_4) + jackValue(CV_8), 0.0f, 1.0f);
     hw.WriteCvOut(2, 2.5 * wetDry);
 
     snes.mod.clearBuffer = button.RisingEdge() || hw.gate_in_1.Trig();
 
-    if(toggle.Pressed() || hw.gate_in_2.State())
+    if (toggle.Pressed() || hw.gate_in_2.State())
     {
         snes.mod.freezeEcho = 1.0f;
     }
@@ -62,7 +61,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
         snes.mod.freezeEcho = 0.0f;
     }
 
-    for(size_t i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
     {
         // signals are scaled to get a more appropriate clipping level for eurorack's (often very loud) signal values
         float snesLeft, snesRight;
@@ -91,5 +90,7 @@ int main(void)
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
 
     hw.StartAudio(AudioCallback);
-    while(1) {}
+    while (1)
+    {
+    }
 }
