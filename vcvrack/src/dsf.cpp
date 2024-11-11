@@ -1,6 +1,6 @@
 #include "plugin.hpp"
-#include "dsp/dsfOscillator.h"
-#include "dsp/util.h"
+#include "kitdsp/dsfOscillator.h"
+#include "kitdsp/util.h"
 
 using float4 = simd::float_4;
 using int4 = simd::int32_4;

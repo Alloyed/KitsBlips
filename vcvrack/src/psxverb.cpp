@@ -1,5 +1,5 @@
-#include "dsp/resampler.h"
-#include "dsp/psxReverb.h"
+#include "kitdsp/resampler.h"
+#include "kitdsp/psxReverb.h"
 #include "plugin.hpp"
 
 namespace

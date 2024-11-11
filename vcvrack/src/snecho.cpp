@@ -1,5 +1,5 @@
-#include "dsp/resampler.h"
-#include "dsp/snesEcho.h"
+#include "kitdsp/resampler.h"
+#include "kitdsp/snesEcho.h"
 #include "plugin.hpp"
 
 #define SAMPLE_RATE 32000
@@ -161,13 +161,13 @@ struct Snecho : Module
         size_t i = 0;
         for (size_t idx = LIGHT0_LIGHT; idx < LIGHTS_LEN; idx += 2)
         {
-            lights[idx].setBrightnessSmooth((static_cast<int32_t>(snes1.viz.readHeadLocation * 5) == i ? 0.5 : 0), args.sampleTime);
+            lights[idx].setBrightnessSmooth((static_cast<size_t>(snes1.viz.readHeadLocation * 5) == i ? 0.5 : 0), args.sampleTime);
             i++;
         }
         i = 0;
         for (size_t idx = LIGHT0G_LIGHT; idx < LIGHTS_LEN; idx += 2)
         {
-            lights[idx].setBrightnessSmooth((static_cast<int32_t>(snes1.viz.writeHeadLocation * 5) == ((i - 1) % 5) ? 0.5 : 0), args.sampleTime);
+            lights[idx].setBrightnessSmooth((static_cast<size_t>(snes1.viz.writeHeadLocation * 5) == ((i - 1) % 5) ? 0.5 : 0), args.sampleTime);
             i++;
         }
     }
