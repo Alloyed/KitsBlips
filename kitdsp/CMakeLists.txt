@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 project(KitDSP)
 
-
 add_library(KitDSP STATIC
 	src/psxReverb.cpp
 	src/snesEcho.cpp
@@ -24,5 +23,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     target_compile_definitions(KitDSP INTERFACE _USE_MATH_DEFINES)
 endif()
 
-include(CTest)
-add_subdirectory(test)
+# when built standalone, enable tests
+if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+	include(CTest)
+	add_subdirectory(test)
+endif()

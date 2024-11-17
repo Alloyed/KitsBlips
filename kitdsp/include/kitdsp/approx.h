@@ -38,7 +38,7 @@ namespace kitdsp
 
         // https://bmtechjournal.wordpress.com/2020/05/27/super-fast-quadratic-sinusoid-approximation/
         // period is [0,1] instead of [0,2pi]
-        inline float sin2pif(float x)
+        inline float sin2pif_nasty(float x)
         {
             // limit range
             x = x - truncf(x) - 0.5f;
@@ -48,12 +48,36 @@ namespace kitdsp
 
         // https://bmtechjournal.wordpress.com/2020/05/27/super-fast-quadratic-sinusoid-approximation/
         // period is [0,1] instead of [0,2pi]
-        inline float cos2pif(float x)
+        inline float cos2pif_nasty(float x)
         {
             // limit range
             x = x - truncf(x + 0.25f) - 0.5f;
 
             return 2.0f * x * (1.0f - fabsf(2.0f * x));
+        }
+
+        /*
+         * adapted from https://github.com/squinkylabs/Demo/blob/main/src/VCO3.cpp
+         * input: _x must be >= 0, and <= 2 * pi.
+         */
+        inline float sinf_squinky(float _x)
+        {
+            constexpr static float twoPi = 2 * 3.141592653589793238;
+            constexpr static float pi = 3.141592653589793238;
+            _x -= (_x > pi) ? twoPi : 0.0f;
+
+            float xneg = _x < 0;
+            float xOffset = xneg ? pi / 2.f: -pi / 2.f;
+            xOffset += _x;
+            float xSquared = xOffset * xOffset;
+            float ret = xSquared * 1.f / 24.f;
+            float correction = ret * xSquared * .02 / .254;
+            ret += -.5;
+            ret *= xSquared;
+            ret += 1.f;
+
+            ret -= correction;
+            return xneg ? -ret : ret;
         }
     }
 }
