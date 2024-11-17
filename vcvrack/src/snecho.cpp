@@ -11,7 +11,7 @@ namespace
     int16_t snesBuffer2[7680];
     SNES::Model snes1(SNES::kOriginalSampleRate, snesBuffer1, snesBufferSize);
     SNES::Model snes2(SNES::kOriginalSampleRate, snesBuffer2, snesBufferSize);
-    Resampler snesSampler(SNES::kOriginalSampleRate, SAMPLE_RATE);
+    kitdsp::Resampler snesSampler(SNES::kOriginalSampleRate, SAMPLE_RATE);
 } // namespace
 
 struct DelayQuantity : public rack::engine::ParamQuantity
@@ -147,7 +147,7 @@ struct Snecho : Module
         float snesLeft, snesRight;
 
         snesSampler.Process(inputL, inputR, snesLeft, snesRight,
-                            Resampler::InterpolationStrategy::Cubic,
+                            kitdsp::Resampler::InterpolationStrategy::Cubic,
                             [](float inLeft, float inRight, float &outLeft, float &outRight)
                             {
                                 float tmp;

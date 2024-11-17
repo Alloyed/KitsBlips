@@ -2,6 +2,7 @@
 #include "kitdsp/dsfOscillator.h"
 #include "kitdsp/util.h"
 
+using namespace kitdsp;
 using float4 = simd::float_4;
 using int4 = simd::int32_4;
 

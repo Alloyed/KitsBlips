@@ -2,12 +2,13 @@
 #include "kitdsp/psxReverb.h"
 #include "plugin.hpp"
 
+
 namespace
 {
 	constexpr size_t psxBufferSize = 65536; // PSX::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
 	float psxBuffer[psxBufferSize];
 	PSX::Model psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
-	Resampler psxSampler(PSX::kOriginalSampleRate, PSX::kOriginalSampleRate);
+	kitdsp::Resampler psxSampler(PSX::kOriginalSampleRate, PSX::kOriginalSampleRate);
 }
 
 struct PSXVerb : Module
@@ -66,7 +67,7 @@ struct PSXVerb : Module
 		float psxLeft, psxRight;
 
 		psxSampler.Process(inputLeft, inputRight, psxLeft, psxRight,
-						   Resampler::InterpolationStrategy::Cubic,
+						   kitdsp::Resampler::InterpolationStrategy::Cubic,
 						   [](float inLeft, float inRight, float &outLeft, float &outRight)
 						   {
 							   psx.Process(inLeft, inRight, outLeft, outRight);

@@ -5,10 +5,12 @@
 #include "kitdsp/util.h"
 #include "kitdsp/approx.h"
 
-#define sin_(x) approxSinf(x)
-#define cos_(x) approxCosf(x)
-// #define sin_(x) sinf(x *cTwoPi)
-// #define cos_(x) cosf(x *cTwoPi)
+using namespace kitdsp;
+
+//#define sin_(x) approxSinf(x)
+//#define cos_(x) approxCosf(x)
+#define sin_(x) sinf(x *cTwoPi)
+#define cos_(x) cosf(x *cTwoPi)
 
 void DsfOscillator::Process(float &out1, float &out2)
 {
@@ -18,8 +20,10 @@ void DsfOscillator::Process(float &out1, float &out2)
     mPhaseModulator += mFreqModulator * mSecondsPerSample;
     mPhaseModulator = fmodf(mPhaseModulator, 1.0f);
 
-    out1 = mDcBlocker1.Process(blockNanf(Formula1()));
-    out2 = mDcBlocker2.Process(blockNanf(Formula3()));
+    //out1 = mDcBlocker1.Process(blockNanf(Formula1()));
+    //out2 = mDcBlocker2.Process(blockNanf(Formula3()));
+    out1 = clampf(Formula4() * 0.4f, -1.0f, 1.0f);
+    out2 = clampf(Formula3() * 0.4f, -1.0f, 1.0f);
 }
 
 float DsfOscillator::Formula1() const
