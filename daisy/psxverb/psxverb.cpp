@@ -13,7 +13,7 @@ Switch button, toggle;
 constexpr size_t psxBufferSize = 65536; // PSX::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
 float DSY_SDRAM_BSS psxBuffer[psxBufferSize];
 PSX::Model psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
-Resampler psxSampler(PSX::kOriginalSampleRate, PSX::kOriginalSampleRate);
+kitdsp::Resampler psxSampler(PSX::kOriginalSampleRate, PSX::kOriginalSampleRate);
 
 float knobValue(int32_t cvEnum)
 {
@@ -47,7 +47,7 @@ void AudioCallback(AudioHandle::InputBuffer in,
             IN_R[i] * 0.5f,
             psxLeft,
             psxRight,
-            Resampler::InterpolationStrategy::Linear,
+            kitdsp::Resampler::InterpolationStrategy::Linear,
             [](float inLeft, float inRight, float &outLeft, float &outRight)
             { psx.Process(inLeft, inRight, outLeft, outRight); });
 

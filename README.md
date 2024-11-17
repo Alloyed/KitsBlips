@@ -10,26 +10,55 @@ unless otherwise listed, all code is MIT licensed. All hardware designs and grap
 
 ## Building
 
-Build orchestration is managed with cmake.
+### Daisy
+you can skip specifying compiler if your intended compiler is part of your `$PATH`.
 
-JUCE uses msvc. create a project using:
-
-```
-PS E:\code\KitsBlips\build\msvc> cmake ../.. -DENABLE_JUCE=true
-```
-
-VCVRack uses mingw. create a project using:
-
-```
-kyle@KDESK MINGW64 /e/code/KitsBlips/build/vcvrack
-$ cmake ../.. -DENABLE_VCVRACK=true -DRACK_SDK_DIR=/e/code/KitsBlips/sdk/Rack-SDK-2.5.2-win-x64
+```bash
+$ mkdir -p daisy/build && cd daisy/build
+$ cmake .. -DCMAKE_C_COMPILER="<path to arm-non-eabi-gcc>" -DCMAKE_BUILD_TYPE="MinSizeRel"
+$ cmake --build .
 ```
 
-daisy uses gcc and a custom toolchain. to-be-integrated.
+scripts for convenient flashing todo
 
-Kicad is kicad. to-be-integrated.
+### VCV Rack
+Building on windows requires mingw-64, see [official docs](https://vcvrack.com/manual/Building#Windows) for details. you will need to run cmake from a mingw shell.
+
+```bash
+$ mkdir -p vcvrack/build && cd vcvrack/build
+$ cmake ..
+$ cmake --build .
+
+$ cmake --install . --prefix dist
+$ cp -r dist/* ~/.local/share/Rack2/plugins/lin-x64/
+# or
+$ cp -r dist/* $LOCALAPPDATA/Rack2/plugins/win-x64/
+```
+
+### JUCE
+This folder is aggressively underutilized right now, but it's there!
+
+```bash
+$ mkdir -p juce/build && cd juce/build
+$ cmake ..
+$ cmake --build .
+```
+
+### KitDSP
+KitDSP can be used independently for unit testing purposes.
+
+```bash
+$ mkdir -p kitdsp/build && cd kitdsp/build
+$ cmake ..
+$ cmake --build .
+
+$ ctest
+```
+
 
 ## This project structure is cool, how can I use it?
+
+!!!This template needs to be updated!!! ping me first, and I can update it for you.
 
 create your own new repo, then
 

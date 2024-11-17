@@ -14,7 +14,7 @@ Switch button, toggle;
 constexpr size_t snesBufferSize = 7680UL;
 int16_t DSY_SDRAM_BSS snesBuffer[snesBufferSize];
 SNES::Model snes(SNES::kOriginalSampleRate, snesBuffer, snesBufferSize);
-Resampler snesSampler(SNES::kOriginalSampleRate, SNES::kOriginalSampleRate);
+kitdsp::Resampler snesSampler(SNES::kOriginalSampleRate, SNES::kOriginalSampleRate);
 
 float knobValue(int32_t cvEnum)
 {
@@ -70,7 +70,7 @@ void AudioCallback(AudioHandle::InputBuffer in,
             IN_R[i] * 0.5f,
             snesLeft,
             snesRight,
-            Resampler::InterpolationStrategy::Linear,
+            kitdsp::Resampler::InterpolationStrategy::Linear,
             [](float inLeft, float inRight, float &outLeft, float &outRight)
             { snes.Process(inLeft, inRight, outLeft, outRight); });
 
