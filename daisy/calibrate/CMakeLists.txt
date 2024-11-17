@@ -10,3 +10,4 @@ include(DaisyProject)
 
 target_include_directories(${FIRMWARE_NAME} PUBLIC include ../shared/include)
 target_link_libraries(${FIRMWARE_NAME} PRIVATE KitDSP DaisySP)
+install(TARGETS ${FIRMWARE_NAME} DESTINATION ${DAISY_STORAGE})
