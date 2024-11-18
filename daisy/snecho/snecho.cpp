@@ -65,12 +65,12 @@ void AudioCallback(AudioHandle::InputBuffer in,
     {
         // signals are scaled to get a more appropriate clipping level for eurorack's (often very loud) signal values
         float snesLeft, snesRight;
-        snesSampler.Process(
+        snesSampler.Process<
+            kitdsp::Resampler::InterpolationStrategy::Linear>(
             IN_L[i] * 0.5f,
             IN_R[i] * 0.5f,
             snesLeft,
             snesRight,
-            kitdsp::Resampler::InterpolationStrategy::Linear,
             [](float inLeft, float inRight, float &outLeft, float &outRight)
             { snes.Process(inLeft, inRight, outLeft, outRight); });
 

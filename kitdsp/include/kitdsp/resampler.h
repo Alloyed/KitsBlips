@@ -24,12 +24,11 @@ namespace kitdsp
     {
     }
 
-    template <typename F>
+    template <InterpolationStrategy strategy, typename F>
     void Process(float inputLeft,
                  float inputRight,
                  float &outputLeft,
                  float &outputRight,
-                 InterpolationStrategy strategy,
                  F &&callback)
     {
       mSampleCounter += 1.0f;

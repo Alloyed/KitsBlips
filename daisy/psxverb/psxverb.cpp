@@ -42,12 +42,12 @@ void AudioCallback(AudioHandle::InputBuffer in,
     {
         float psxLeft, psxRight;
         // signals scaled to compensate for eurorack's (often loud) signal levels
-        psxSampler.Process(
+        psxSampler.Process<
+            kitdsp::Resampler::InterpolationStrategy::Linear>(
             IN_L[i] * 0.5f,
             IN_R[i] * 0.5f,
             psxLeft,
             psxRight,
-            kitdsp::Resampler::InterpolationStrategy::Linear,
             [](float inLeft, float inRight, float &outLeft, float &outRight)
             { psx.Process(inLeft, inRight, outLeft, outRight); });
 

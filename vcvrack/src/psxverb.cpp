@@ -2,7 +2,6 @@
 #include "kitdsp/psxReverb.h"
 #include "plugin.hpp"
 
-
 namespace
 {
 	constexpr size_t psxBufferSize = 65536; // PSX::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
@@ -66,12 +65,12 @@ struct PSXVerb : Module
 		float inputRight = inputs[AUDIO_R_INPUT].isConnected() ? inputs[AUDIO_R_INPUT].getVoltage() / 5.0f : inputLeft;
 		float psxLeft, psxRight;
 
-		psxSampler.Process(inputLeft, inputRight, psxLeft, psxRight,
-						   kitdsp::Resampler::InterpolationStrategy::Cubic,
-						   [](float inLeft, float inRight, float &outLeft, float &outRight)
-						   {
-							   psx.Process(inLeft, inRight, outLeft, outRight);
-						   });
+		psxSampler.Process<
+			kitdsp::Resampler::InterpolationStrategy::Cubic>(inputLeft, inputRight, psxLeft, psxRight,
+															 [](float inLeft, float inRight, float &outLeft, float &outRight)
+															 {
+																 psx.Process(inLeft, inRight, outLeft, outRight);
+															 });
 
 		outputs[AUDIO_L_OUTPUT].setVoltage(5.0f * lerpf(inputLeft, psxLeft, wetDry));
 		outputs[AUDIO_R_OUTPUT].setVoltage(5.0f * lerpf(inputRight, psxRight, wetDry));

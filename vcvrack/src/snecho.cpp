@@ -146,14 +146,14 @@ struct Snecho : Module
         float inputR = inputs[AUDIO_R_INPUT].isConnected() ? inputs[AUDIO_R_INPUT].getVoltage() / 5.0f : inputL;
         float snesLeft, snesRight;
 
-        snesSampler.Process(inputL, inputR, snesLeft, snesRight,
-                            kitdsp::Resampler::InterpolationStrategy::Cubic,
-                            [](float inLeft, float inRight, float &outLeft, float &outRight)
-                            {
-                                float tmp;
-                                snes1.Process(inLeft, inLeft, outLeft, tmp);
-                                snes2.Process(inRight, inRight, outRight, tmp);
-                            });
+        snesSampler.Process<
+            kitdsp::Resampler::InterpolationStrategy::Cubic>(inputL, inputR, snesLeft, snesRight,
+                                                             [](float inLeft, float inRight, float &outLeft, float &outRight)
+                                                             {
+                                                                 float tmp;
+                                                                 snes1.Process(inLeft, inLeft, outLeft, tmp);
+                                                                 snes2.Process(inRight, inRight, outRight, tmp);
+                                                             });
 
         outputs[AUDIO_L_OUTPUT].setVoltage(5.0f * lerpf(inputL, snesLeft, wetDry));
         outputs[AUDIO_R_OUTPUT].setVoltage(5.0f * lerpf(inputR, snesRight, wetDry));

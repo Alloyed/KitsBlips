@@ -62,9 +62,9 @@ float crunch(float in)
 class ToneFilter
 {
 public:
-    ToneFilter()
+    ToneFilter(float sampleRate)
     {
-        mPole1.SetFrequency(1600.0f);
+        mPole1.SetFrequency(1600.0f, sampleRate);
     }
     float Process(float in, float tone)
     {
@@ -81,10 +81,10 @@ constexpr float cSampleRate = 96000.0f;
 constexpr auto cSamplerateEnum = SaiHandle::Config::SampleRate::SAI_96KHZ;
 kitdsp::DcBlocker dcLeft;
 kitdsp::DcBlocker dcRight;
-ToneFilter tonePreLeft;
-ToneFilter tonePreRight;
-ToneFilter tonePostLeft;
-ToneFilter tonePostRight;
+ToneFilter tonePreLeft(cSampleRate);
+ToneFilter tonePreRight(cSampleRate);
+ToneFilter tonePostLeft(cSampleRate);
+ToneFilter tonePostRight(cSampleRate);
 
 float knobValue(int32_t cvEnum)
 {

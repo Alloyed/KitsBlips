@@ -10,20 +10,25 @@ namespace kitdsp
     class OnePole
     {
     public:
-        OnePole(float initialFrequency = 1000.0f) {
-            SetFrequency(initialFrequency);
+        OnePole()
+        {
+            // pick arbitrary frequency
+            SetFrequency(1200.0f, 48000.0f);
             Reset();
         }
         ~OnePole() {}
 
         inline void Reset() { mState = 0.0f; }
 
-        inline void SetFrequency(float frequency)
+        inline void SetFrequency(float frequencyHz, float sampleRate)
         {
-            // Clip coefficient to about 100
-            frequency = maxf(frequency, 0.497);
+            float ratio = frequencyHz / sampleRate;
 
-            mG = tanf(cPi * frequency);
+            // this is FREQUENCY_EXACT in the og implementation
+            // Clip coefficient to about 100
+            ratio = minf(ratio, 0.497);
+            mG = tanf(cPi * ratio);
+
             mGi = 1.f / (1.f + mG);
         }
 

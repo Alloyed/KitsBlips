@@ -18,7 +18,7 @@ namespace kitdsp
             union
             {
                 float f;
-                int32_t i;
+                uint32_t i;
             } y;
 
             y.f = number;

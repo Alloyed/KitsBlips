@@ -24,8 +24,11 @@ namespace kitdsp
     class DbMeter : public OnePole
     {
     public:
-        // this is a time constant of about 100 ms
-        DbMeter() : OnePole(1.6f) {}
+        DbMeter(float sampleRate) : OnePole()
+        {
+            // this is a time constant of about 100 ms
+            SetFrequency(1.6f, sampleRate);
+        }
 
         /**
          * @returns dBFS (max amplitude sine wave = 0dbfs)
