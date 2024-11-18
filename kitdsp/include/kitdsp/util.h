@@ -7,6 +7,16 @@ constexpr float cTwoPi = 6.28318530718;
 constexpr float cPi = 3.14159265359;
 constexpr float cHalfPi = 1.57079632679;
 
+inline float minf(float a, float b)
+{
+    return a < b ? a : b;
+}
+
+inline float maxf(float a, float b)
+{
+    return a > b ? a : b;
+}
+
 inline float clampf(float in, float min, float max)
 {
     return in > max ? max : in < min ? min
