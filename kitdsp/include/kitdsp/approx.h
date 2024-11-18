@@ -11,17 +11,18 @@ namespace kitdsp
         // you know what this is
         inline float rsqrtf(float number)
         {
-            const float threehalfs = 1.5F;
-            float x2 = number * 0.5F;
-            
+            const float threehalfs = 1.5f;
+            float x2 = number * 0.5f;
+
             // evil floating point bit level hacking
-            union {
+            union
+            {
                 float f;
                 int32_t i;
             } y;
 
             y.f = number;
-            y.i = 0x5f3759df - (y.i >> 1); // what the fuck?
+            y.i = 0x5f3759df - (y.i >> 1);               // what the fuck?
             y.f = y.f * (threehalfs - (x2 * y.f * y.f)); // 1st iteration
             // y.f  = y.f * ( threehalfs - ( x2 * y.f * y.f ) );   // 2nd iteration, this can be removed
 
@@ -67,7 +68,7 @@ namespace kitdsp
             _x -= (_x > pi) ? twoPi : 0.0f;
 
             float xneg = _x < 0;
-            float xOffset = xneg ? pi / 2.f: -pi / 2.f;
+            float xOffset = xneg ? pi / 2.f : -pi / 2.f;
             xOffset += _x;
             float xSquared = xOffset * xOffset;
             float ret = xSquared * 1.f / 24.f;

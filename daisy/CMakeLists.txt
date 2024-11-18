@@ -30,6 +30,7 @@ set(FIRMWARE_RELEASE_OPT_LEVEL -Os)
 
 # add each new firmware here
 add_subdirectory(calibrate)
+add_subdirectory(crunch)
 add_subdirectory(follow)
 add_subdirectory(psxverb)
 add_subdirectory(quantize)

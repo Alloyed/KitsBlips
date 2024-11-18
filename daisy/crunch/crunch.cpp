@@ -1,10 +1,12 @@
 #include <daisy.h>
 #include <daisy_patch_sm.h>
-#include <kitdsp/util.h>
+#include <cstdint>
+
 #include <kitdsp/approx.h>
-#include <kitdsp/onePole.h>
 #include <kitdsp/dbMeter.h>
-#include <kitdsp/resampler.h>
+#include <kitdsp/dcBlocker.h>
+#include <kitdsp/onePole.h>
+#include <kitdsp/util.h>
 
 /**
  * multi-algorithm distortion
@@ -24,7 +26,7 @@ enum class Algorithm
     Count
 };
 
-Algorithm algorithm;
+Algorithm algorithm = Algorithm::Tanh;
 
 float crunch(float in)
 {
@@ -36,12 +38,12 @@ float crunch(float in)
     }
     case Algorithm::Tanh:
     {
-        return kitdsp::approx::tanhf(in);
+        return tanhf(in);
     }
     case Algorithm::Fold:
     {
         // input: [-.5, .5] out [-1, 1]
-        return kitdsp::approx::sin2pif_nasty(in * 0.5);
+        return sinf(in * 0.5 * cTwoPi);
     }
     case Algorithm::Rectify:
     {
@@ -49,36 +51,40 @@ float crunch(float in)
     }
     case Algorithm::Count:
     {
-        break;
+        return in;
     }
     }
     return in;
 }
 
 // lazy tone control
-class ToneFilter : public kitdsp::OnePole {
-    public:
-    ToneFilter() {
-        SetFrequency(1200.0f);
+// TODO: this was too lazy, time to find a nice shelf filter
+class ToneFilter
+{
+public:
+    ToneFilter()
+    {
+        mPole1.SetFrequency(1600.0f);
     }
     float Process(float in, float tone)
     {
-        float lowpass = OnePole::Process(in);
-        float highpass = in - lowpass;
-        return lerpf(lowpass, highpass, tone);
+        float lowpass = mPole1.Process(in);
+        return lerpf(lowpass, in, tone);
     }
+    kitdsp::OnePole mPole1;
 };
 
 DaisyPatchSM hw;
-Switch       button, toggle;
+Switch button, toggle;
 
-constexpr float cSampleRate = 48000.0f;
-constexpr auto cSamplerateEnum = SaiHandle::Config::SampleRate::SAI_48KHZ;
-// 8x resampling to avoid aliasing
-kitdsp::Resampler resampler(cSampleRate, cSampleRate * 8);
-ToneFilter toneLeft;
-ToneFilter toneRight;
-kitdsp::DbMeter meter;
+constexpr float cSampleRate = 96000.0f;
+constexpr auto cSamplerateEnum = SaiHandle::Config::SampleRate::SAI_96KHZ;
+kitdsp::DcBlocker dcLeft;
+kitdsp::DcBlocker dcRight;
+ToneFilter tonePreLeft;
+ToneFilter tonePreRight;
+ToneFilter tonePostLeft;
+ToneFilter tonePostRight;
 
 float knobValue(int32_t cvEnum)
 {
@@ -90,45 +96,45 @@ float jackValue(int32_t cvEnum)
     return clampf(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
 }
 
-void AudioCallback(AudioHandle::InputBuffer  in,
+void AudioCallback(AudioHandle::InputBuffer in,
                    AudioHandle::OutputBuffer out,
-                   size_t                    size)
+                   size_t size)
 {
     hw.ProcessAllControls();
     button.Debounce();
     toggle.Debounce();
-    
-    float gain = kitdsp::dbToRatio(lerpf(-6.f, 20.0f, knobValue(CV_1) + jackValue(CV_5)));
-    float tone = lerpf(.0f, 1.0f, knobValue(CV_2)+ jackValue(CV_6));
-    float makeup = kitdsp::dbToRatio(lerpf(-12.f, 12.f, knobValue(CV_3) + jackValue(CV_7)));
-    float mix = lerpf(.0f, 1.0f, knobValue(CV_4) + jackValue(CV_8));
 
-    if(button.RisingEdge()) {
-        algorithm = static_cast<Algorithm>(static_cast<int8_t>(algorithm) + 1 % static_cast<int8_t>(Algorithm::Count));
+    float gain = kitdsp::dbToRatio(lerpf(0.f, 6.0f, knobValue(CV_1)));
+    float tone = lerpf(.0f, 1.0f, knobValue(CV_2));
+    float makeup = kitdsp::dbToRatio(lerpf(-2.f, 4.f, knobValue(CV_3)));
+    float mix = lerpf(.0f, 1.0f, knobValue(CV_4));
+
+    if (button.RisingEdge())
+    {
+        algorithm = static_cast<Algorithm>((static_cast<int32_t>(algorithm) + 1) % static_cast<int32_t>(Algorithm::Count));
     }
 
     float dbfs;
-    for(size_t i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
     {
         float left = IN_L[i];
         float right = IN_R[i];
-        float leftToned = toneLeft.Process(left, tone);
-        float rightToned = toneRight.Process(right, tone);
-        float leftCrunched = crunch(leftToned * gain) / gain;
-        float rightCrunched = crunch(rightToned * gain) / gain;
-        
-        float diffLeft = left - leftCrunched;
-        dbfs = meter.Process(diffLeft);
+        float &outleft = OUT_L[i];
+        float &outright = OUT_R[i];
+        if (toggle.Pressed())
+        {
+            // bypass
+            outleft = left;
+            outright = right;
+            continue;
+        }
 
-        OUT_L[i] = lerpf(left, leftCrunched, mix) * makeup;
-        OUT_R[i] = lerpf(right, rightCrunched, mix) * makeup;
+        float leftCrunched = dcLeft.Process(crunch(left * gain));
+        float rightCrunched = dcRight.Process(crunch(right * gain));
+
+        outleft = lerpf(left, leftCrunched, mix) * makeup;
+        outright = lerpf(right, rightCrunched, mix) * makeup;
     }
-
-    // visualize db
-    float mindb = -40.0f;
-    float maxdb = 3.0f;
-    float led = (clampf(dbfs, mindb, maxdb) - mindb ) / (maxdb - mindb);
-    hw.WriteCvOut(CV_OUT_2, led * 5.0f);
 }
 
 int main(void)
@@ -140,5 +146,21 @@ int main(void)
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
     hw.StartAudio(AudioCallback);
 
-    for (;;) {}
+    const int32_t unit = 150;
+    for (;;)
+    {
+        // visualize algorithm
+        const int32_t num = static_cast<int32_t>(algorithm) + 1;
+        for (int i = 0; i < num; ++i)
+        {
+            hw.WriteCvOut(CV_OUT_2, 1.8f);
+            hw.Delay(unit);
+            hw.WriteCvOut(CV_OUT_2, 0.0f);
+            hw.Delay(unit);
+        }
+
+        // wait space length of time
+        hw.WriteCvOut(CV_OUT_2, 0.0f);
+        hw.Delay(7 * unit);
+    }
 }
