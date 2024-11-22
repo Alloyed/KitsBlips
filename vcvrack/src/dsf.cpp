@@ -1,5 +1,5 @@
 #include "plugin.hpp"
-#include "kitdsp/dsfOscillator.h"
+#include "kitdsp/osc/dsfOscillator.h"
 #include "kitdsp/util.h"
 
 using namespace kitdsp;
@@ -209,7 +209,9 @@ struct Dsf : Module
 				osc.SetFreqCarrier(freqCarrier[i]);
 				osc.SetFreqModulator(freqModulator[i]);
 				osc.SetFalloff(falloff[i]);
-				osc.Process(out1[i], out2[i]);
+				osc.Process();
+				out1[i] = osc.Formula1();
+				out2[i] = osc.Formula3();
 			}
 
 			// scale/clip

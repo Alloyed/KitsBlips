@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "kitdsp/dsfOscillator.h"
+#include "kitdsp/osc/dsfOscillator.h"
 #include "kitdsp/wavFile.h"
 
 using namespace kitdsp;

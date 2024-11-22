@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kitdsp/onePole.h"
+#include "kitdsp/filters/onePole.h"
 #include "kitdsp/util.h"
 
 namespace kitdsp

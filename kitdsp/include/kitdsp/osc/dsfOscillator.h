@@ -2,7 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
-#include "kitdsp/dcBlocker.h"
+#include "kitdsp/filters/dcBlocker.h"
 
 namespace kitdsp
 {
@@ -58,7 +58,12 @@ namespace kitdsp
             }
         }
 
-        void Process(float &out1, float &out2);
+        // call FormulaX() to get the final value after processing.
+        void Process();
+        float Formula1() const;
+        float Formula2() const;
+        float Formula3() const;
+        float Formula4() const;
 
         void PhaseAdd(float _phase)
         {
@@ -70,8 +75,6 @@ namespace kitdsp
         {
             mPhaseCarrier = _phase;
             mPhaseModulator = _phase * mFreqModulator / mFreqCarrier;
-            mDcBlocker1.Reset();
-            mDcBlocker2.Reset();
         }
 
     private:
@@ -85,8 +88,6 @@ namespace kitdsp
         // state
         float mPhaseCarrier{0.0f};
         float mPhaseModulator{0.0f};
-        DcBlocker mDcBlocker1;
-        DcBlocker mDcBlocker2;
 
         // cached intermediates
         float mNyquistFrequency{41000.0f * 0.5f};
@@ -111,9 +112,5 @@ namespace kitdsp
             }
         }
 
-        float Formula1() const;
-        float Formula2() const;
-        float Formula3() const;
-        float Formula4() const;
     };
 }

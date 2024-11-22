@@ -4,8 +4,8 @@
 
 #include <kitdsp/approx.h>
 #include <kitdsp/dbMeter.h>
-#include <kitdsp/dcBlocker.h>
-#include <kitdsp/onePole.h>
+#include <kitdsp/filters/dcBlocker.h>
+#include <kitdsp/filters/onePole.h>
 #include <kitdsp/util.h>
 
 /**
