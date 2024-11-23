@@ -1,29 +1,23 @@
-#include "kitdsp/dsfOscillator.h"
+#include "kitdsp/osc/dsfOscillator.h"
 
 #include <cmath>
 
 #include "kitdsp/util.h"
 #include "kitdsp/approx.h"
+#include "kitdsp/lookupTables/sineLut.h"
+#include "kitdsp/osc/oscillatorUtil.h"
 
 using namespace kitdsp;
 
-//#define sin_(x) approxSinf(x)
-//#define cos_(x) approxCosf(x)
-#define sin_(x) sinf(x *cTwoPi)
-#define cos_(x) cosf(x *cTwoPi)
+//#define sin_(x) sinf(x *cTwoPi)
+//#define cos_(x) cosf(x *cTwoPi)
+#define sin_(x) sin2pif_lut(x)
+#define cos_(x) sin2pif_lut(x+0.25f)
 
-void DsfOscillator::Process(float &out1, float &out2)
+void DsfOscillator::Process()
 {
-    mPhaseCarrier += mFreqCarrier * mSecondsPerSample;
-    mPhaseCarrier = fmodf(mPhaseCarrier, 1.0f);
-
-    mPhaseModulator += mFreqModulator * mSecondsPerSample;
-    mPhaseModulator = fmodf(mPhaseModulator, 1.0f);
-
-    //out1 = mDcBlocker1.Process(blockNanf(Formula1()));
-    //out2 = mDcBlocker2.Process(blockNanf(Formula3()));
-    out1 = clampf(Formula4() * 0.4f, -1.0f, 1.0f);
-    out2 = clampf(Formula3() * 0.4f, -1.0f, 1.0f);
+    mPhaseCarrier = Phasor::WrapPhase(mPhaseCarrier + mFreqCarrier * mSecondsPerSample);
+    mPhaseModulator = Phasor::WrapPhase(mPhaseModulator + mFreqModulator * mSecondsPerSample);
 }
 
 float DsfOscillator::Formula1() const
@@ -42,7 +36,7 @@ float DsfOscillator::Formula1() const
     float num = sin_(theta) - (a * sin_(theta - beta)) - bandlimit;
     float denom = 1.0f + a2 - (2.0f * a * cos_(beta));
 
-    return num / (denom * b);
+    return blockNanf(num / (denom * b));
 }
 
 float DsfOscillator::Formula2() const
@@ -59,7 +53,7 @@ float DsfOscillator::Formula2() const
     float num = sin_(theta) - (a * sin_(theta - beta));
     float denom = 1.0f + a2 - (2.0f * a * cos_(beta));
 
-    return num / (denom * b);
+    return blockNanf(num / (denom * b));
 }
 
 float DsfOscillator::Formula3() const
@@ -78,7 +72,7 @@ float DsfOscillator::Formula3() const
     float num = sin_(theta) * (1.0f - a2 - (2.0f * mFalloffPowN1 * (cos_((N + 1.0f) * beta) - a * cos_(N * beta))));
     float denom = 1.0f + a2 - (2.0f * a * cos_(beta));
 
-    return num / (denom * b);
+    return blockNanf(num / (denom * b));
 }
 
 float DsfOscillator::Formula4() const
@@ -95,5 +89,5 @@ float DsfOscillator::Formula4() const
     float num = (1.0f - a2) * sin_(theta);
     float denom = 1.0f + a2 - (2.0f * a * cos_(beta));
 
-    return num / (denom * b);
+    return blockNanf(num / (denom * b));
 }

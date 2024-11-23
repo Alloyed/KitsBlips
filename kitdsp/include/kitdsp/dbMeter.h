@@ -1,12 +1,12 @@
 #pragma once
 
-#include "kitdsp/onePole.h"
+#include "kitdsp/filters/onePole.h"
 #include "kitdsp/util.h"
 
 namespace kitdsp
 {
     /*
-     * turns a ratio of inputs (say, eg. a gain factor, or just A/B) into a relative decibel measurement
+     * turns a ratio of inputs (say, eg. a gain factor, or just A/B) into a relative decibel (dbFS) measurement
      */
     inline float ratioToDb(float ratio)
     {
@@ -14,11 +14,11 @@ namespace kitdsp
     }
 
     /*
-     * turns a ratio of inputs (say, eg. a gain factor, or just A/B) into a relative decibel measurement
+     * turns a dbfs measurement into a gain factor
      */
     inline float dbToRatio(float db)
     {
-        return powf(10, db) / 20.0f;
+        return powf(10, db / 20.0f);
     }
 
     class DbMeter : public OnePole
