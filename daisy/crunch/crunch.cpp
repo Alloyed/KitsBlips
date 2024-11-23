@@ -64,12 +64,17 @@ class ToneFilter
 public:
     ToneFilter(float sampleRate)
     {
-        mPole1.SetFrequency(1600.0f, sampleRate);
+        mPole1.SetFrequency(1200.0f, sampleRate);
     }
     float Process(float in, float tone)
     {
         float lowpass = mPole1.Process(in);
-        return lerpf(lowpass, in, tone);
+        float highpass = in - lowpass;
+
+        // needs to be 2 at 0.5 and 1 at 0, 1, in between is a matter of taste
+        float gain = sinf(tone * cPi) + 1.0f;
+
+        return lerpf(lowpass, highpass, tone) * gain;
     }
     kitdsp::OnePole mPole1;
 };
@@ -104,9 +109,9 @@ void AudioCallback(AudioHandle::InputBuffer in,
     button.Debounce();
     toggle.Debounce();
 
-    float gain = kitdsp::dbToRatio(lerpf(0.f, 6.0f, knobValue(CV_1)));
+    float gain = kitdsp::dbToRatio(lerpf(0.f, 4.0f, knobValue(CV_1)));
     float tone = lerpf(.0f, 1.0f, knobValue(CV_2));
-    float makeup = kitdsp::dbToRatio(lerpf(-2.f, 4.f, knobValue(CV_3)));
+    float makeup = kitdsp::dbToRatio(lerpf(-3.f, 3.f, knobValue(CV_3)));
     float mix = lerpf(.0f, 1.0f, knobValue(CV_4));
 
     if (button.RisingEdge())
@@ -129,11 +134,22 @@ void AudioCallback(AudioHandle::InputBuffer in,
             continue;
         }
 
-        float leftCrunched = dcLeft.Process(crunch(left * gain));
-        float rightCrunched = dcRight.Process(crunch(right * gain));
+        // strong pre tone
+        float preTone = lerpf(0.1f, 0.9f, tone);
+        float leftPre = tonePreLeft.Process(left, preTone);
+        float rightPre = tonePreRight.Process(right, preTone);
 
-        outleft = lerpf(left, leftCrunched, mix) * makeup;
-        outright = lerpf(right, rightCrunched, mix) * makeup;
+        // TODO: different gain curves for different algorithms?
+        float crunchedLeft = crunch(leftPre * gain);
+        float crunchedRight = crunch(rightPre * gain);
+
+        // weak post tone
+        float postTone = lerpf(0.4f, 0.6f, tone);
+        float processedLeft = dcLeft.Process(tonePostLeft.Process(crunchedLeft, postTone)) * makeup;
+        float processedRight = dcRight.Process(tonePostRight.Process(crunchedRight, postTone)) * makeup;
+
+        outleft = lerpf(left, processedLeft, mix);
+        outright = lerpf(right, processedRight, mix);
     }
 }
 
