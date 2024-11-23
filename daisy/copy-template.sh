@@ -17,5 +17,7 @@ for file in template/*; do
     fi
 done
 
+echo "add_subdirectory(${projectName})" >> CMakeLists.txt
+
 echo "Project $projectName Initialized!"
 exit 0
