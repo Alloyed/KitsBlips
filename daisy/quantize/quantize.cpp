@@ -1,6 +1,6 @@
 #include "daisy_patch_sm.h"
 #include "daisysp.h"
-#include "ScaleQuantizer.h"
+#include <kitdsp/ScaleQuantizer.h>
 
 using namespace daisy;
 using namespace patch_sm;
@@ -26,7 +26,7 @@ using namespace daisysp;
 DaisyPatchSM hw;
 Switch       updateTransposeRoot;
 //ScaleQuantizer quantizer(kChromaticScale, DSY_COUNTOF(kChromaticScale));
-ScaleQuantizer quantizer(kPentatonic, DSY_COUNTOF(kPentatonic));
+kitdsp::ScaleQuantizer quantizer(kitdsp::kPentatonic, DSY_COUNTOF(kitdsp::kPentatonic));
 //ScaleQuantizer quantizer(kMajorScale, DSY_COUNTOF(kMajorScale));
 
 struct State
