@@ -10,9 +10,11 @@
 using namespace daisy;
 using namespace patch_sm;
 
+constexpr size_t cNumSteps = 4;
+
 DaisyPatchSM hw;
 Switch       button, toggle;
-float sequence[4] = {0.0f};
+float sequence[cNumSteps] = {0.0f};
 size_t indexInternal = 0;
 bool hasWrapped = false;
 kitdsp::ScaleQuantizer quantizer(kitdsp::kChromaticScale, 12);
@@ -43,7 +45,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     if (hw.gate_in_1.Trig())
     {
         size_t lastIndex = indexInternal;
-        indexInternal = indexInternal + 1 % 4;
+        indexInternal = indexInternal + 1 % cNumSteps;
         hasWrapped = indexInternal < lastIndex;
     }
 
@@ -52,7 +54,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
         indexInternal = 0;
     }
 
-    size_t index = (indexInternal + static_cast<size_t>(jackValue(CV_5) * 4.0f + 0.5f)) % 4;
+    size_t index = (indexInternal + static_cast<size_t>(jackValue(CV_5) * cNumSteps + 0.5f)) % 4;
 
     // hehe
     float outBi = sequence[index];
@@ -66,8 +68,9 @@ void AudioCallback(AudioHandle::InputBuffer  in,
         OUT_R[i] = -outBi;
     }
 
-    float noteIn = lerpf(0.0f, 60.0f, outUni);
-    float noteOut = (clampf(quantizer.Process(noteIn), 0.f, 60.f) / 60.0f) * 5.0f;
+    // range: 2 octaves 0-2v
+    float noteIn = lerpf(0.0f, 24.0f, outUni);
+    float noteOut = (clampf(quantizer.Process(noteIn), 0.f, 24.f) / 24.0f) * 2.0f;
     hw.WriteCvOut(CV_OUT_1, noteOut);
     hw.WriteCvOut(CV_OUT_2, outUni * 5.0f);
     hw.gate_out_1.Write(outBi > 0.0f);

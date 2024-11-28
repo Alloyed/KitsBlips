@@ -72,6 +72,8 @@ namespace SNES
 
     size_t GetDelayLengthSamples(float delay) const;
     size_t GetDelayModLengthSamples(float delayMod) const;
+    
+    void Reset();
 
     Config cfg;
     Modulations mod;

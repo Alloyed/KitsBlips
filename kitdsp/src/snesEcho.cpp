@@ -52,23 +52,22 @@ int16_t SNES::Model::ProcessFIR(uint8_t filterSetting, int16_t inSample)
     size_t idx = filterSetting * 8;
 
     // apply first 7 taps
-    int64_t S = 0;
-    S += static_cast<int8_t>(mFIRCoeff[idx + 7]) * mFIRBuffer[0] / 128;
-    S += static_cast<int8_t>(mFIRCoeff[idx + 6]) * mFIRBuffer[1] / 128;
-    S += static_cast<int8_t>(mFIRCoeff[idx + 5]) * mFIRBuffer[2] / 128;
-    S += static_cast<int8_t>(mFIRCoeff[idx + 4]) * mFIRBuffer[3] / 128;
-    S += static_cast<int8_t>(mFIRCoeff[idx + 3]) * mFIRBuffer[4] / 128;
-    S += static_cast<int8_t>(mFIRCoeff[idx + 2]) * mFIRBuffer[5] / 128;
-    S += static_cast<int8_t>(mFIRCoeff[idx + 1]) * mFIRBuffer[6] / 128;
+    int16_t S = (static_cast<int8_t>(mFIRCoeff[idx + 0]) * mFIRBuffer[0] >> 6)
+    + (static_cast<int8_t>(mFIRCoeff[idx + 1]) * mFIRBuffer[1] >> 6)
+    + (static_cast<int8_t>(mFIRCoeff[idx + 2]) * mFIRBuffer[2] >> 6)
+    + (static_cast<int8_t>(mFIRCoeff[idx + 3]) * mFIRBuffer[3] >> 6)
+    + (static_cast<int8_t>(mFIRCoeff[idx + 4]) * mFIRBuffer[4] >> 6)
+    + (static_cast<int8_t>(mFIRCoeff[idx + 5]) * mFIRBuffer[5] >> 6)
+    + (static_cast<int8_t>(mFIRCoeff[idx + 6]) * mFIRBuffer[6] >> 6);
     // Clip
     S &= 0xFFFF;
     // Apply last tap
-    S += static_cast<int8_t>(mFIRCoeff[idx + 0]) * mFIRBuffer[7] / 128;
+    S += (static_cast<int8_t>(mFIRCoeff[idx + 7]) * mFIRBuffer[7] >> 6);
 
     // Clamp
     S = S > 32767 ? 32767 : S < -32768 ? -32768
                                        : S;
-    return static_cast<int16_t>(S);
+    return S;
 }
 
 SNES::Model::Model(int32_t _sampleRate,
@@ -144,8 +143,7 @@ void SNES::Model::Process(float inputLeft,
     size_t delayIndex = (mBufferIndex - delayModSamples) % mEchoBufferSize;
     viz.readHeadLocation = delayIndex / static_cast<float>(mEchoBufferCapacity);
     int16_t delayedSample = mEchoBuffer[delayIndex] << 1;
-    // int16_t filteredSample = ProcessFIR(filterSetting, delayedSample);
-    int16_t filteredSample = delayedSample; // TODO: FIR is still busted
+    int16_t filteredSample = ProcessFIR(filterSetting, delayedSample);
     // lerp
     int8_t filterMixInt = static_cast<int8_t>(filterMix * INT8_MAX);
     int16_t mixedSample = (delayedSample * (128 - filterMixInt) / 128) + (filteredSample * filterMixInt / 128);
@@ -180,4 +178,11 @@ size_t SNES::Model::GetDelayModLengthSamples(float delayMod) const
 {
     // TODO: hysteresis
     return static_cast<size_t>(delayMod * mEchoBufferSize);
+}
+void SNES::Model::Reset()
+{
+    ClearBuffer();
+    ResetHead();
+    mod = {};
+    mEchoBufferSize = 0;
 }

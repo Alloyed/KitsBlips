@@ -21,14 +21,24 @@ TEST(dsfOscillator, CanBeUsed) {
         float t = i / static_cast<float>(len);
         osc.SetFalloff(0.9f - (t * 0.9f));
 
-        float out1, out2;
-        osc.Process(out1, out2);
+        osc.Process();
+        float out1 = osc.Formula1();
+        float out2 = osc.Formula2();
+        float out3 = osc.Formula3();
+        float out4 = osc.Formula4();
+
+        /*
         EXPECT_LE(out1, 1.0);
         EXPECT_GE(out1, -1.0);
         EXPECT_LE(out2, 1.0);
         EXPECT_GE(out2, -1.0);
+        */
+        EXPECT_LE(out3, 1.0);
+        EXPECT_GE(out3, -1.0);
+        EXPECT_LE(out4, 1.0);
+        EXPECT_GE(out4, -1.0);
 
-        f.Add(out1);
+        f.Add(out3);
     }
     f.Finish();
 
