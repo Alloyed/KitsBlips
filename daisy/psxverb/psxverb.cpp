@@ -13,7 +13,7 @@ Switch button, toggle;
 constexpr size_t psxBufferSize =
     65536;  // PSX::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
 float DSY_SDRAM_BSS psxBuffer[psxBufferSize];
-PSX::Model psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
+PSX::Reverb psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
 kitdsp::Resampler psxSampler(PSX::kOriginalSampleRate,
                              PSX::kOriginalSampleRate);
 

@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <cstdint>
 
+namespace kitdsp {
+
 static inline uint32_t ceilpower2(uint32_t x) {
     x--;
     x |= x >> 1;
@@ -15,9 +17,38 @@ static inline uint32_t ceilpower2(uint32_t x) {
     return x;
 }
 
-#define SPU_REV_PRESET_LONGEST_COUNT (0x18040 / 2)
+namespace PSX {
+struct PresetBinaryChunk;
 
-typedef struct {
+struct Config {
+    int16_t preset;
+};
+
+struct Modulations {};
+
+static constexpr int32_t kOriginalSampleRate = 22050;
+static constexpr size_t SPU_REV_PRESET_LONGEST_COUNT = 0x18040 / 2;
+
+class Reverb {
+   public:
+    Reverb(int32_t sampleRate, float* buffer, size_t bufferSize);
+    void Process(float inputLeft,
+                 float inputRight,
+                 float& outputLeft,
+                 float& outputRight);
+    void ClearBuffer();
+    
+    void LoadPreset(const PresetBinaryChunk& preset, float sampleRate);
+
+    static size_t GetBufferDesiredSizeFloats(int32_t sampleRate) {
+        return ceilpower2((uint32_t)ceil(SPU_REV_PRESET_LONGEST_COUNT *
+                                         (sampleRate / kOriginalSampleRate)));
+    }
+
+    Config cfg;
+    Modulations mod;
+
+   private:
     // Port buffers
     float* spu_buffer;
     size_t spu_buffer_count;
@@ -62,35 +93,6 @@ typedef struct {
     uint32_t mRAPF2;
     float vLIN;
     float vRIN;
-} PsxReverb;
-
-namespace PSX {
-struct Config {
-    int16_t preset;
-};
-
-struct Modulations {};
-
-static constexpr int32_t kOriginalSampleRate = 22050;
-
-class Model {
-   public:
-    Model(int32_t sampleRate, float* buffer, size_t bufferSize);
-    void Process(float inputLeft,
-                 float inputRight,
-                 float& outputLeft,
-                 float& outputRight);
-    void ClearBuffer();
-
-    static size_t GetBufferDesiredSizeFloats(int32_t sampleRate) {
-        return ceilpower2((uint32_t)ceil(SPU_REV_PRESET_LONGEST_COUNT *
-                                         (sampleRate / kOriginalSampleRate)));
-    }
-
-    Config cfg;
-    Modulations mod;
-
-   private:
-    PsxReverb rev;
 };
 }  // namespace PSX
+}
