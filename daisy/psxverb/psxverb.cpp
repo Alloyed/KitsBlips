@@ -1,11 +1,13 @@
 #include "daisy_patch_sm.h"
 
+#include "kitdsp/math/vector.h"
 #include "kitdsp/psxReverb.h"
 #include "kitdsp/resampler.h"
 #include "kitdsp/util.h"
 
 using namespace daisy;
 using namespace patch_sm;
+using namespace kitdsp;
 
 DaisyPatchSM hw;
 Switch button, toggle;
@@ -14,7 +16,7 @@ constexpr size_t psxBufferSize =
     65536;  // PSX::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
 float DSY_SDRAM_BSS psxBuffer[psxBufferSize];
 PSX::Reverb psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
-kitdsp::Resampler psxSampler(PSX::kOriginalSampleRate,
+Resampler<float_2> psxSampler(PSX::kOriginalSampleRate,
                              PSX::kOriginalSampleRate);
 
 float knobValue(int32_t cvEnum) {
@@ -41,11 +43,12 @@ void AudioCallback(AudioHandle::InputBuffer in,
         float psxLeft, psxRight;
         // signals scaled to compensate for eurorack's (often loud) signal
         // levels
-        psxSampler.Process<kitdsp::Resampler::InterpolationStrategy::Linear>(
-            IN_L[i] * 0.5f, IN_R[i] * 0.5f, psxLeft, psxRight,
-            [](float inLeft, float inRight, float& outLeft, float& outRight) {
-                psx.Process(inLeft, inRight, outLeft, outRight);
-            });
+        float_2 dry = float_2{IN_L[i] * 0.5f, IN_R[i] * 0.5f};
+        float_2 wet =
+            psxSampler
+                .Process<kitdsp::Resampler<float_2>::InterpolationStrategy::Linear>(
+                    dry,
+                    [](float_2 in, float_2& out) { out = psx.Process(in); });
 
         float left = psxLeft * 2.0f;
         float right = psxRight * 2.0f;
@@ -58,8 +61,8 @@ void AudioCallback(AudioHandle::InputBuffer in,
 int main(void) {
     hw.Init();
     hw.SetAudioBlockSize(8);  // number of samples handled per callback
-    hw.SetAudioSampleRate(PSX::kOriginalSampleRate);
-    psxSampler = {PSX::kOriginalSampleRate, hw.AudioSampleRate()};
+    hw.SetAudioSampleRate(kitdsp::PSX::kOriginalSampleRate);
+    psxSampler = {kitdsp::PSX::kOriginalSampleRate, hw.AudioSampleRate()};
 
     button.Init(DaisyPatchSM::B7, hw.AudioCallbackRate());
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());

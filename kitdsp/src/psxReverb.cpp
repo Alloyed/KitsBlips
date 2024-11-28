@@ -77,10 +77,7 @@ PSX::Reverb::Reverb(int32_t sampleRate, float* buffer, size_t bufferSize) {
     ClearBuffer();
 }
 
-void PSX::Reverb::Process(float inputLeft,
-                          float inputRight,
-                          float& outputLeft,
-                          float& outputRight) {
+float_2 PSX::Reverb::Process(float_2 in) {
     if (cfg.preset != preset) {
         preset = cfg.preset;
         LoadPreset(cPresets[preset].data.chunk, rate);
@@ -98,7 +95,8 @@ void PSX::Reverb::Process(float inputLeft,
         mem(index.r) = sample.r;
     };
 
-    const float_2 in = vIN * float_2{inputLeft, inputRight};
+    // apply input gain
+    in = vIN * in;
 
     // same side reflection
     set(mSAME,
@@ -123,11 +121,10 @@ void PSX::Reverb::Process(float inputLeft,
     out = out * vAPF2 + get(mAPF2 - dAPF2);
 #undef mem
 
-    // output to mixer
-    outputLeft = out.l;
-    outputRight = out.r;
-
     BufferAddress = ((BufferAddress + 1) & spu_buffer_count_mask);
+    
+    // output to mixer
+    return out;
 }
 
 void PSX::Reverb::ClearBuffer() {

@@ -2,13 +2,15 @@
 #include "kitdsp/resampler.h"
 #include "plugin.hpp"
 
+using namespace kitdsp;
+
 namespace {
 constexpr size_t psxBufferSize =
     65536;  // PSX::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
 float psxBuffer[psxBufferSize];
-PSX::Model psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
-kitdsp::Resampler psxSampler(PSX::kOriginalSampleRate,
-                             PSX::kOriginalSampleRate);
+PSX::Reverb psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
+kitdsp::Resampler<float_2> psxSampler(PSX::kOriginalSampleRate,
+                                      PSX::kOriginalSampleRate);
 }  // namespace
 
 struct PSXVerb : Module {
@@ -40,21 +42,20 @@ struct PSXVerb : Module {
         wetDry = wetDry > 1.0f ? 1.0f : wetDry < 0.0f ? 0.0f : wetDry;
 
         float inputLeft = inputs[AUDIO_L_INPUT].getVoltage() / 5.0f;
-        float inputRight = inputs[AUDIO_R_INPUT].isConnected()
-                               ? inputs[AUDIO_R_INPUT].getVoltage() / 5.0f
-                               : inputLeft;
-        float psxLeft, psxRight;
+        float_2 in = {inputLeft,
+                      inputs[AUDIO_R_INPUT].isConnected()
+                          ? inputs[AUDIO_R_INPUT].getVoltage() / 5.0f
+                          : inputLeft};
+        float_2 out;
 
-        psxSampler.Process<kitdsp::Resampler::InterpolationStrategy::Cubic>(
-            inputLeft, inputRight, psxLeft, psxRight,
-            [](float inLeft, float inRight, float& outLeft, float& outRight) {
-                psx.Process(inLeft, inRight, outLeft, outRight);
-            });
+        out = psxSampler.Process<
+            kitdsp::Resampler<float_2>::InterpolationStrategy::Cubic>(
+            in, [](float_2 in, float_2& out) { out = psx.Process(in); });
 
         outputs[AUDIO_L_OUTPUT].setVoltage(5.0f *
-                                           lerpf(inputLeft, psxLeft, wetDry));
+                                           lerpf(in.left, out.left, wetDry));
         outputs[AUDIO_R_OUTPUT].setVoltage(5.0f *
-                                           lerpf(inputRight, psxRight, wetDry));
+                                           lerpf(in.right, out.right, wetDry));
     }
 };
 

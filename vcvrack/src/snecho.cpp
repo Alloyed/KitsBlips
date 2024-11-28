@@ -7,10 +7,8 @@
 namespace {
 constexpr size_t snesBufferSize = 7680UL;
 int16_t snesBuffer1[7680];
-int16_t snesBuffer2[7680];
 SNES::Model snes1(SNES::kOriginalSampleRate, snesBuffer1, snesBufferSize);
-SNES::Model snes2(SNES::kOriginalSampleRate, snesBuffer2, snesBufferSize);
-kitdsp::Resampler snesSampler(SNES::kOriginalSampleRate, SAMPLE_RATE);
+kitdsp::Resampler<float> snesSampler(SNES::kOriginalSampleRate, SAMPLE_RATE);
 }  // namespace
 
 struct DelayQuantity : public rack::engine::ParamQuantity {
@@ -121,31 +119,25 @@ struct Snecho : Module {
             (params[RESET_PARAM].getValue() > 0.5f) ||
             (inputs[RESET_CV_INPUT].getVoltage() * 0.1f) > 0.25f;
 
-        snes2.cfg = snes1.cfg;
-        snes2.mod = snes1.mod;
 
         float wetDry = params[MIX_PARAM].getValue();
         wetDry += inputs[MIX_CV_INPUT].getVoltage() * 0.1f;
         wetDry = wetDry > 1.0f ? 1.0f : wetDry < 0.0f ? 0.0f : wetDry;
 
-        float inputL = inputs[AUDIO_L_INPUT].getVoltage() / 5.0f;
-        float inputR = inputs[AUDIO_R_INPUT].isConnected()
-                           ? inputs[AUDIO_R_INPUT].getVoltage() / 5.0f
-                           : inputL;
-        float snesLeft, snesRight;
+        float in = inputs[AUDIO_L_INPUT].getVoltage() / 5.0f;
+        float out;
 
-        snesSampler.Process<kitdsp::Resampler::InterpolationStrategy::Cubic>(
-            inputL, inputR, snesLeft, snesRight,
-            [](float inLeft, float inRight, float& outLeft, float& outRight) {
-                float tmp;
-                snes1.Process(inLeft, inLeft, outLeft, tmp);
-                snes2.Process(inRight, inRight, outRight, tmp);
+        out = snesSampler.Process<
+            kitdsp::Resampler<float>::InterpolationStrategy::Cubic>(
+            in,
+            [](float in, float& out) {
+                out = snes1.Process(in);
             });
 
         outputs[AUDIO_L_OUTPUT].setVoltage(5.0f *
-                                           lerpf(inputL, snesLeft, wetDry));
-        outputs[AUDIO_R_OUTPUT].setVoltage(5.0f *
-                                           lerpf(inputR, snesRight, wetDry));
+                                           lerpf(in, out, wetDry));
+        outputs[AUDIO_R_OUTPUT].setVoltage(-5.0f *
+                                           lerpf(in, out, wetDry));
 
         size_t i = 0;
         for (size_t idx = LIGHT0_LIGHT; idx < LIGHTS_LEN; idx += 2) {

@@ -45,11 +45,15 @@ struct Visualizations {
 
 // low sample rate for OG crunchiness
 static constexpr int32_t kOriginalSampleRate = 32000;
+
 // max echo depth. TODO: choose between these at runtime
-static constexpr int32_t kMaxEchoMs = 240;  // the original algorithm length
-static constexpr int32_t kMaxEchoModdedMs =
-    496;  // the length if you didn't want to store any samples on the chip
-static constexpr int32_t kMaxEchoFantasyMs = 10000;  // just a big number
+// the original algorithm length
+static constexpr int32_t kMaxEchoMs = 240;
+// the length if you didn't want to store any samples on the chip
+static constexpr int32_t kMaxEchoModdedMs = 496;
+// just a big number
+static constexpr int32_t kMaxEchoFantasyMs = 10000;
+
 // snap to 16ms increments, 16 * 32000 / 1000
 static constexpr int32_t kEchoIncrementSamples = 512;
 // hardcoded into the snes. not sure how sample rate affects this
@@ -61,10 +65,7 @@ static constexpr float kHeadRoom = 0.1;
 class Model {
    public:
     Model(int32_t sampleRate, int16_t* echoBuffer, size_t echoBufferCapacity);
-    void Process(float inputLeft,
-                 float inputRight,
-                 float& outputLeft,
-                 float& outputRight);
+    float Process(float in);
 
     static constexpr size_t GetBufferDesiredSizeInt16s(int32_t sampleRate) {
         return kMaxEchoMs * (sampleRate / 1000);

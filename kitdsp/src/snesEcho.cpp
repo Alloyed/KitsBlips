@@ -63,8 +63,6 @@ int16_t SNES::Model::ProcessFIR(uint8_t filterSetting, int16_t inSample) {
     // Apply last tap
     S += (static_cast<int8_t>(mFIRCoeff[idx + 7]) * mFIRBuffer[7] >> 6);
 
-    // Clamp
-    S = S > 32767 ? 32767 : S < -32768 ? -32768 : S;
     return S;
 }
 
@@ -86,10 +84,7 @@ void SNES::Model::ResetHead() {
     mBufferIndex = 0;
 }
 
-void SNES::Model::Process(float inputLeft,
-                          float inputRight,
-                          float& outputLeft,
-                          float& outputRight) {
+float SNES::Model::Process(float input) {
     float targetSize =
         clampf(cfg.echoBufferSize + mod.echoBufferSize, 0.0f, 1.0f);
     float delayMod = clampf(cfg.echoDelayMod + mod.echoDelayMod, -1.0f, 1.0f);
@@ -124,10 +119,7 @@ void SNES::Model::Process(float inputLeft,
         mEchoBufferSize = targetSizeSamples;
     }
 
-    // summing mixdown. if right is normalled to left, acts as a mono signal.
-    float inputFloat = (inputLeft + inputRight) * 0.5f;
-    int16_t inputNorm =
-        static_cast<int16_t>(inputFloat * kHeadRoom * INT16_MAX);
+    int16_t inputNorm = static_cast<int16_t>(input * kHeadRoom * INT16_MAX);
 
     size_t delayModSamples = static_cast<size_t>(delayMod * mEchoBufferSize);
 
@@ -155,11 +147,7 @@ void SNES::Model::Process(float inputLeft,
 
     float echoFloat = static_cast<float>(mixedSample) / INT16_MAX;
 
-    // The real SNES let you pick between inverting the right channel and not
-    // doing that. if you don't want it here, just use a mult on the left output
-    // ;)
-    outputLeft = echoFloat / kHeadRoom;
-    outputRight = echoFloat / -kHeadRoom;
+    return echoFloat / kHeadRoom;
 }
 
 size_t SNES::Model::GetDelayLengthSamples(float delay) const {

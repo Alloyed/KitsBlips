@@ -33,10 +33,7 @@ static constexpr size_t SPU_REV_PRESET_LONGEST_COUNT = 0x18040 / 2;
 class Reverb {
    public:
     Reverb(int32_t sampleRate, float* buffer, size_t bufferSize);
-    void Process(float inputLeft,
-                 float inputRight,
-                 float& outputLeft,
-                 float& outputRight);
+    float_2 Process(float_2 in);
     void ClearBuffer();
     
     void LoadPreset(const PresetBinaryChunk& preset, float sampleRate);

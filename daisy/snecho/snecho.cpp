@@ -6,6 +6,7 @@
 
 using namespace daisy;
 using namespace patch_sm;
+using namespace kitdsp;
 
 DaisyPatchSM hw;
 Switch button, toggle;
@@ -15,8 +16,7 @@ Switch button, toggle;
 constexpr size_t snesBufferSize = 7680UL;
 int16_t DSY_SDRAM_BSS snesBuffer[snesBufferSize];
 SNES::Model snes(SNES::kOriginalSampleRate, snesBuffer, snesBufferSize);
-kitdsp::Resampler snesSampler(SNES::kOriginalSampleRate,
-                              SNES::kOriginalSampleRate);
+Resampler<float> snesSampler(SNES::kOriginalSampleRate, SNES::kOriginalSampleRate);
 
 float knobValue(int32_t cvEnum) {
     return clampf(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
@@ -60,15 +60,14 @@ void AudioCallback(AudioHandle::InputBuffer in,
     for (size_t i = 0; i < size; i++) {
         // signals are scaled to get a more appropriate clipping level for
         // eurorack's (often very loud) signal values
-        float snesLeft, snesRight;
-        snesSampler.Process<kitdsp::Resampler::InterpolationStrategy::Linear>(
-            IN_L[i] * 0.5f, IN_R[i] * 0.5f, snesLeft, snesRight,
-            [](float inLeft, float inRight, float& outLeft, float& outRight) {
-                snes.Process(inLeft, inRight, outLeft, outRight);
-            });
+        float delayed =
+            snesSampler
+                .Process<Resampler<float>::InterpolationStrategy::Linear>(
+                    IN_L[i] * 0.5f,
+                    [](float in, float& out) { out = snes.Process(in); });
 
-        OUT_L[i] = lerpf(IN_L[i], snesLeft * 2.0f, wetDry);
-        OUT_R[i] = lerpf(IN_R[i], snesRight * 2.0f, wetDry);
+        OUT_L[i] = lerpf(IN_L[i], delayed * 2.0f, wetDry);
+        OUT_R[i] = -OUT_L[i];
     }
 }
 
