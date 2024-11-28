@@ -36,14 +36,14 @@ float q16ToFloat(int16_t v) {
 /* convert iir filter constant to center frequency */
 float alpha2fc(float alpha, float sampleRate) {
     const double dt = 1.0 / sampleRate;
-    const double fc_inv = kitdsp::cTwoPi * (dt / alpha - dt);
+    const double fc_inv = kitdsp::kTwoPi * (dt / alpha - dt);
     return (float)(1.0 / fc_inv);
 }
 
 /* convert center frequency to iir filter constant */
 float fc2alpha(float fc, float sampleRate) {
     const double dt = 1.0 / sampleRate;
-    const double rc = 1.0 / (kitdsp::cTwoPi * fc);
+    const double rc = 1.0 / (kitdsp::kTwoPi * fc);
     return (float)(dt / (rc + dt));
 }
 

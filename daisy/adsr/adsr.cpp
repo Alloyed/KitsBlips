@@ -10,7 +10,7 @@ using namespace patch_sm;
 
 const float cEpsilon = 0.005f;
 float lerpPowf(float a, float b, float curve, float t) {
-    return lerpf(a, b, clampf(powf(t, curve), 0.0f, 1.0f));
+    return lerpf(a, b, clamp(powf(t, curve), 0.0f, 1.0f));
 }
 
 /**
@@ -142,11 +142,11 @@ Switch button, toggle;
 ApproachAdsr adsr;
 
 float knobValue(int32_t cvEnum) {
-    return clampf(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
+    return clamp(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
 }
 
 float jackValue(int32_t cvEnum) {
-    return clampf(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
+    return clamp(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
 }
 
 void AudioCallback(AudioHandle::InputBuffer in,
@@ -162,7 +162,7 @@ void AudioCallback(AudioHandle::InputBuffer in,
     float a = lerpPowf(3.0f, 10000.0f, 2.0f, knobValue(CV_1) + jackValue(CV_5));
     float d = lerpPowf(3.0f, 10000.0f, 2.0f, knobValue(CV_2) + jackValue(CV_6));
     float s = lerpf(0.0f, 1.0f,
-                    clampf(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f));
+                    clamp(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f));
     float r = lerpPowf(3.0f, 10000.0f, 2.0f, knobValue(CV_4) + jackValue(CV_8));
 
     adsr.Set(ApproachAdsr::State::Attack, a);

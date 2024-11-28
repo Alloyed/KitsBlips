@@ -9,8 +9,8 @@
 
 using namespace kitdsp;
 
-// #define sin_(x) sinf(x *cTwoPi)
-// #define cos_(x) cosf(x *cTwoPi)
+// #define sin_(x) sinf(x *kTwoPi)
+// #define cos_(x) cosf(x *kTwoPi)
 #define sin_(x) sin2pif_lut(x)
 #define cos_(x) sin2pif_lut(x + 0.25f)
 

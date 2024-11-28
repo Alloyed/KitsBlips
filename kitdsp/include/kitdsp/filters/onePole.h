@@ -22,8 +22,8 @@ class OnePole {
 
         // this is FREQUENCY_EXACT in the og implementation
         // Clip coefficient to about 100
-        ratio = minf(ratio, 0.497);
-        mG = tanf(cPi * ratio);
+        ratio = min(ratio, 0.497f);
+        mG = tanf(kPi * ratio);
 
         mGi = 1.f / (1.f + mG);
     }

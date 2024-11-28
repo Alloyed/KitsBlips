@@ -21,11 +21,11 @@ bool hasWrapped = false;
 kitdsp::ScaleQuantizer quantizer(kitdsp::kChromaticScale, 12);
 
 float knobValue(int32_t cvEnum) {
-    return clampf(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
+    return clamp(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
 }
 
 float jackValue(int32_t cvEnum) {
-    return clampf(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
+    return clamp(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
 }
 
 void AudioCallback(AudioHandle::InputBuffer in,
@@ -67,8 +67,7 @@ void AudioCallback(AudioHandle::InputBuffer in,
 
     // range: 2 octaves 0-2v
     float noteIn = lerpf(0.0f, 24.0f, outUni);
-    float noteOut =
-        (clampf(quantizer.Process(noteIn), 0.f, 24.f) / 24.0f) * 2.0f;
+    float noteOut = clamp(quantizer.Process(noteIn), 0.f, 24.f) * 2.0f / 24.0f;
     hw.WriteCvOut(CV_OUT_1, noteOut);
     hw.WriteCvOut(CV_OUT_2, outUni * 5.0f);
     hw.gate_out_1.Write(outBi > 0.0f);

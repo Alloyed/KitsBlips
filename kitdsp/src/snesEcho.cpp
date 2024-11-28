@@ -87,11 +87,11 @@ void SNES::Model::ResetHead() {
 
 float SNES::Model::Process(float input) {
     float targetSize =
-        clampf(cfg.echoBufferSize + mod.echoBufferSize, 0.0f, 1.0f);
-    float delayMod = clampf(cfg.echoDelayMod + mod.echoDelayMod, -1.0f, 1.0f);
-    float feedback = clampf(cfg.echoFeedback + mod.echoFeedback, -1.0f, 1.0f);
+        clamp(cfg.echoBufferSize + mod.echoBufferSize, 0.0f, 1.0f);
+    float delayMod = clamp(cfg.echoDelayMod + mod.echoDelayMod, -1.0f, 1.0f);
+    float feedback = clamp(cfg.echoFeedback + mod.echoFeedback, -1.0f, 1.0f);
     uint8_t filterSetting = cfg.filterSetting % kNumFilterSettings;
-    float filterMix = clampf(cfg.filterMix + mod.filterMix, 0.0f, 1.0f);
+    float filterMix = clamp(cfg.filterMix + mod.filterMix, 0.0f, 1.0f);
     bool freeze = cfg.freezeEcho || mod.freezeEcho;
 
     // on press
@@ -101,9 +101,9 @@ float SNES::Model::Process(float input) {
     mClearBufferPressed = mod.clearBuffer;
 
     // TODO: hysteresis
-    size_t targetSizeSamples = static_cast<size_t>(clampf(
-        roundTof(targetSize * mEchoBufferCapacity, kEchoIncrementSamples),
-        kEchoIncrementSamples, mEchoBufferCapacity));
+    size_t targetSizeSamples = clamp<size_t>(
+        roundTo(targetSize * mEchoBufferCapacity, kEchoIncrementSamples),
+        kEchoIncrementSamples, mEchoBufferCapacity);
     mBufferIndex = mEchoBufferSize ? (mBufferIndex + 1) % mEchoBufferSize : 0;
 
     // on press
@@ -153,9 +153,9 @@ float SNES::Model::Process(float input) {
 
 size_t SNES::Model::GetDelayLengthSamples(float delay) const {
     // TODO: hysteresis
-    return static_cast<size_t>(
-        clampf(roundTof(delay * mEchoBufferCapacity, kEchoIncrementSamples),
-               kEchoIncrementSamples, mEchoBufferCapacity));
+    return clamp<size_t>(
+        roundTo(delay * mEchoBufferCapacity, kEchoIncrementSamples),
+        kEchoIncrementSamples, mEchoBufferCapacity);
 }
 
 size_t SNES::Model::GetDelayModLengthSamples(float delayMod) const {

@@ -15,7 +15,7 @@ class Phasor {
     float GetPhase() { return mPhase; }
 
     /** take an arbitrary value and wrap into 0-1 (phasor range) */
-    static inline float WrapPhase(float phase) { return phase - floorf(phase); }
+    static inline float WrapPhase(float phase) { return phase - floor(phase); }
 
    protected:
     void Advance() { mPhase = WrapPhase(mPhase + mAdvance); }

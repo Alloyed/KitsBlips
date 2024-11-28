@@ -31,14 +31,14 @@ Algorithm algorithm = Algorithm::Tanh;
 float crunch(float in) {
     switch (algorithm) {
         case Algorithm::HardClip: {
-            return clampf(in, -1.0, 1.0);
+            return clamp(in, -1.0f, 1.0f);
         }
         case Algorithm::Tanh: {
             return tanhf(in);
         }
         case Algorithm::Fold: {
             // input: [-.5, .5] out [-1, 1]
-            return sinf(in * 0.5 * cTwoPi);
+            return sinf(in * 0.5 * kTwoPi);
         }
         case Algorithm::Rectify: {
             return fabsf(in) * 2.0f - 1.0f;
@@ -60,7 +60,7 @@ class ToneFilter {
         float highpass = in - lowpass;
 
         // needs to be 2 at 0.5 and 1 at 0, 1, in between is a matter of taste
-        float gain = sinf(tone * cPi) + 1.0f;
+        float gain = sinf(tone * kPi) + 1.0f;
 
         return lerpf(lowpass, highpass, tone) * gain;
     }
@@ -80,11 +80,11 @@ ToneFilter tonePostLeft(cSampleRate);
 ToneFilter tonePostRight(cSampleRate);
 
 float knobValue(int32_t cvEnum) {
-    return clampf(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
+    return clamp(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
 }
 
 float jackValue(int32_t cvEnum) {
-    return clampf(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
+    return clamp(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
 }
 
 void AudioCallback(AudioHandle::InputBuffer in,

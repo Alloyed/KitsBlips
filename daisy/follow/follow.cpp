@@ -1,10 +1,10 @@
-#include <string>
+#include <kitdsp/math/util.h>
 #include "daisy_patch_sm.h"
-#include "daisysp.h"
+#include <string>
 
+using namespace kitdsp;
 using namespace daisy;
 using namespace patch_sm;
-using namespace daisysp;
 
 /**
  * follow is an envelope follower. pitch detection too, eventually(?)
@@ -23,25 +23,17 @@ Switch button, toggle;
 float state = 0.0f;
 float dt = 0;
 
-inline constexpr float lerpf(float a, float b, float t) {
-    return a + (b - a) * t;
-}
-
-inline constexpr float clampf(float in, float min, float max) {
-    return in > max ? max : in < min ? min : in;
-}
-
 inline constexpr float dampf(float a, float b, float halflife, float dt) {
     // https://x.com/FreyaHolmer/status/1757836988495847568
     return b + (a - b) * exp2f(-dt / halflife);
 }
 
 float knobValue(int32_t cvEnum) {
-    return clampf(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
+    return kitdsp::clamp(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
 }
 
 float jackValue(int32_t cvEnum) {
-    return clampf(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
+    return clamp(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
 }
 
 void AudioCallback(AudioHandle::InputBuffer in,
@@ -52,13 +44,13 @@ void AudioCallback(AudioHandle::InputBuffer in,
     // units are ms until half life, exponential curve
     float rise = lerpf(
         0.1f, 5.0f,
-        powf(clampf(knobValue(CV_1) + jackValue(CV_5), 0.0f, 1.0f), 2.0f));
+        powf(clamp(knobValue(CV_1) + jackValue(CV_5), 0.0f, 1.0f), 2.0f));
     float fall = lerpf(
         0.1f, 5000.0f,
-        powf(clampf(knobValue(CV_2) + jackValue(CV_6), 0.0f, 1.0f), 2.0f));
+        powf(clamp(knobValue(CV_2) + jackValue(CV_6), 0.0f, 1.0f), 2.0f));
     float gain =
         powf(lerpf(0.8f, 5.0f,
-                   clampf(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f)),
+                   clamp(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f)),
              4.0f);
 
     for (size_t i = 0; i < size; i++) {

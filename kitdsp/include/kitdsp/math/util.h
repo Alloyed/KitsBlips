@@ -4,38 +4,33 @@
 #include <cstdint>
 
 namespace kitdsp {
-constexpr float cTwoPi = 6.28318530718;
-constexpr float cPi = 3.14159265359;
-constexpr float cHalfPi = 1.57079632679;
+constexpr float kTwoPi = 6.28318530718;
+constexpr float kPi = 3.14159265359;
+constexpr float kHalfPi = 1.57079632679;
 
-inline float minf(float a, float b) {
+template<typename F>
+inline F min(F a, F b) {
     return a < b ? a : b;
 }
 
-inline float maxf(float a, float b) {
+template<typename F>
+inline F max(F a, F b) {
     return a > b ? a : b;
 }
 
-inline float clampf(float in, float min, float max) {
+template<typename F>
+inline F clamp(F in, F min, F max) {
     return in > max ? max : in < min ? min : in;
 }
 
 inline float fadeCpowf(float a, float b, float t) {
-    float scalar_1 = sinf(t * cHalfPi);
-    float scalar_2 = sinf((1.0f - t) * cHalfPi);
+    float scalar_1 = sinf(t * kHalfPi);
+    float scalar_2 = sinf((1.0f - t) * kHalfPi);
     return (a * scalar_2) + (b * scalar_1);
 }
 
-inline float roundTof(float in, float increment) {
-    return in - remainderf(in, increment);
-}
-
-inline float floorf(float in, float increment) {
-    return static_cast<int32_t>(in * increment) / increment;
-}
-
-inline float floorf(float in) {
-    return static_cast<int32_t>(in);
+inline float roundTo(float in, float increment) {
+    return in - std::remainder(in, increment);
 }
 
 inline uint32_t ceilToPowerOf2(uint32_t x) {

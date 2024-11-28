@@ -6,8 +6,8 @@
 #include "kitdsp/math/util.h"
 
 using namespace daisy;
-using namespace patch_sm;
 using namespace kitdsp;
+using namespace patch_sm;
 
 DaisyPatchSM hw;
 Switch button, toggle;
@@ -20,11 +20,11 @@ Resampler<float_2> psxSampler(PSX::kOriginalSampleRate,
                              PSX::kOriginalSampleRate);
 
 float knobValue(int32_t cvEnum) {
-    return clampf(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
+    return clamp(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
 }
 
 float jackValue(int32_t cvEnum) {
-    return clampf(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
+    return clamp(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
 }
 
 void AudioCallback(AudioHandle::InputBuffer in,
@@ -36,7 +36,7 @@ void AudioCallback(AudioHandle::InputBuffer in,
 
     // PSX has no parameters yet D:
 
-    float wetDry = clampf(knobValue(CV_4) + jackValue(CV_8), 0.0f, 1.0f);
+    float wetDry = clamp(knobValue(CV_4) + jackValue(CV_8), 0.0f, 1.0f);
     hw.WriteCvOut(2, 2.5 * wetDry);
 
     for (size_t i = 0; i < size; i++) {

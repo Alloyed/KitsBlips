@@ -103,20 +103,20 @@ struct Dsf : Module {
         }
 
         // shared parameters:
-        float octave = kitdsp::floorf(params[COARSE_PARAM].getValue() + 0.5f);
+        float octave = floor(params[COARSE_PARAM].getValue() + 0.5f);
         bool useRatioModulator = params[MOD_MODE_PARAM].getValue() == 0.0f;
 
         // ratio mod params
         float ratioFine = params[MOD_FINE_PARAM].getValue() / 14.0f;
 
         // fixed mod params
-        float modOctave = kitdsp::floorf(params[MOD_COARSE_PARAM].getValue() + 0.5f);
+        float modOctave = floor(params[MOD_COARSE_PARAM].getValue() + 0.5f);
         float modFine = (params[MOD_FINE_PARAM].getValue() / 12.0f);
 
         // Get desired number of channels from a "primary" input.
         // If this input is unpatched, getChannels() returns 0, but we should
         // still generate 1 channel of output.
-        int channels = std::max(1, inputs[PITCH_INPUT].getChannels());
+        int channels = max(1, inputs[PITCH_INPUT].getChannels());
 
         if (channels != mLastChannels) {
             mLastChannels = channels;
