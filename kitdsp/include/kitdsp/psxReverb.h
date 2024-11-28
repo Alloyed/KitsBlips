@@ -3,9 +3,10 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include "kitdsp/math/vector.h"
 
 namespace kitdsp {
-
+    
 static inline uint32_t ceilpower2(uint32_t x) {
     x--;
     x |= x >> 1;
@@ -71,28 +72,17 @@ class Reverb {
     float vWALL;
     float vAPF1;
     float vAPF2;
-    uint32_t mLSAME;
-    uint32_t mRSAME;
-    uint32_t mLCOMB1;
-    uint32_t mRCOMB1;
-    uint32_t mLCOMB2;
-    uint32_t mRCOMB2;
-    uint32_t dLSAME;
-    uint32_t dRSAME;
-    uint32_t mLDIFF;
-    uint32_t mRDIFF;
-    uint32_t mLCOMB3;
-    uint32_t mRCOMB3;
-    uint32_t mLCOMB4;
-    uint32_t mRCOMB4;
-    uint32_t dLDIFF;
-    uint32_t dRDIFF;
-    uint32_t mLAPF1;
-    uint32_t mRAPF1;
-    uint32_t mLAPF2;
-    uint32_t mRAPF2;
-    float vLIN;
-    float vRIN;
+    size_2 mSAME;
+    size_2 mCOMB1;
+    size_2 mCOMB2;
+    size_2 dSAME;
+    size_2 mDIFF;
+    size_2 mCOMB3;
+    size_2 mCOMB4;
+    size_2 dDIFF;
+    size_2 mAPF1;
+    size_2 mAPF2;
+    float_2 vIN;
 };
 }  // namespace PSX
 }
