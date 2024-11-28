@@ -13,7 +13,7 @@ using namespace patch_sm;
 constexpr size_t cNumSteps = 4;
 
 DaisyPatchSM hw;
-Switch       button, toggle;
+Switch button, toggle;
 float sequence[cNumSteps] = {0.0f};
 size_t indexInternal = 0;
 bool hasWrapped = false;
@@ -29,9 +29,9 @@ float jackValue(int32_t cvEnum)
     return clampf(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
 }
 
-void AudioCallback(AudioHandle::InputBuffer  in,
+void AudioCallback(AudioHandle::InputBuffer in,
                    AudioHandle::OutputBuffer out,
-                   size_t                    size)
+                   size_t size)
 {
     hw.ProcessAllControls();
     button.Debounce();
@@ -42,7 +42,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     sequence[2] = lerpf(-1.0f, 1.0f, knobValue(CV_3));
     sequence[3] = lerpf(-1.0f, 1.0f, knobValue(CV_4));
 
-    if (hw.gate_in_1.Trig())
+    if (hw.gate_in_1.Trig() || button.RisingEdge())
     {
         size_t lastIndex = indexInternal;
         indexInternal = indexInternal + 1 % cNumSteps;
@@ -60,7 +60,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     float outBi = sequence[index];
     float outUni = (sequence[index] + 1.0f) / 2.0f;
 
-    for(size_t i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
     {
         // unipolar
         OUT_L[i] = -outUni;
@@ -86,5 +86,7 @@ int main(void)
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
     hw.StartAudio(AudioCallback);
 
-    for (;;) {}
+    for (;;)
+    {
+    }
 }
