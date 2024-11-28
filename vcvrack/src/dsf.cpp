@@ -1,5 +1,5 @@
 #include "kitdsp/osc/dsfOscillator.h"
-#include "kitdsp/util.h"
+#include "kitdsp/math/util.h"
 #include "plugin.hpp"
 
 using namespace kitdsp;
@@ -103,14 +103,14 @@ struct Dsf : Module {
         }
 
         // shared parameters:
-        float octave = floorf(params[COARSE_PARAM].getValue() + 0.5f);
+        float octave = kitdsp::floorf(params[COARSE_PARAM].getValue() + 0.5f);
         bool useRatioModulator = params[MOD_MODE_PARAM].getValue() == 0.0f;
 
         // ratio mod params
         float ratioFine = params[MOD_FINE_PARAM].getValue() / 14.0f;
 
         // fixed mod params
-        float modOctave = floorf(params[MOD_COARSE_PARAM].getValue() + 0.5f);
+        float modOctave = kitdsp::floorf(params[MOD_COARSE_PARAM].getValue() + 0.5f);
         float modFine = (params[MOD_FINE_PARAM].getValue() / 12.0f);
 
         // Get desired number of channels from a "primary" input.

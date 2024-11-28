@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kitdsp/util.h"
+#include "kitdsp/math/util.h"
 
 namespace kitdsp {
 /**

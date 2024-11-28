@@ -4,11 +4,13 @@
 
 #define SAMPLE_RATE 32000
 
+using namespace kitdsp;
+
 namespace {
 constexpr size_t snesBufferSize = 7680UL;
 int16_t snesBuffer1[7680];
 SNES::Model snes1(SNES::kOriginalSampleRate, snesBuffer1, snesBufferSize);
-kitdsp::Resampler<float> snesSampler(SNES::kOriginalSampleRate, SAMPLE_RATE);
+Resampler<float> snesSampler(SNES::kOriginalSampleRate, SAMPLE_RATE);
 }  // namespace
 
 struct DelayQuantity : public rack::engine::ParamQuantity {

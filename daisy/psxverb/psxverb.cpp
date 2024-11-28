@@ -3,7 +3,7 @@
 #include "kitdsp/math/vector.h"
 #include "kitdsp/psxReverb.h"
 #include "kitdsp/resampler.h"
-#include "kitdsp/util.h"
+#include "kitdsp/math/util.h"
 
 using namespace daisy;
 using namespace patch_sm;

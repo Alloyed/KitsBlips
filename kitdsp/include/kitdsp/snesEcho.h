@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+namespace kitdsp {
 namespace SNES {
 struct Config {
     // [0, 1]: rounded up to nearest 16 ms,  down to exactly 16ms and up to
@@ -105,3 +106,4 @@ class Model {
         0x0C, 0x21, 0x2B, 0x2B, 0xF3, 0xFE, 0xF3, 0xF9};
 };
 }  // namespace SNES
+}

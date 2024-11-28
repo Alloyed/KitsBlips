@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "kitdsp/snesEcho.h"
 #include "kitdsp/wavFile.h"
-#include "kitdsp/util.h"
+#include "kitdsp/math/util.h"
 
 using namespace kitdsp;
 

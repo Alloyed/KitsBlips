@@ -2,16 +2,17 @@
 #include <daisy_patch_sm.h>
 #include <cstdint>
 
-#include <kitdsp/approx.h>
+#include <kitdsp/math/approx.h>
 #include <kitdsp/dbMeter.h>
 #include <kitdsp/filters/dcBlocker.h>
 #include <kitdsp/filters/onePole.h>
-#include <kitdsp/util.h>
+#include <kitdsp/math/util.h>
 
 /**
  * multi-algorithm distortion
  */
 
+using namespace kitdsp;
 using namespace daisy;
 using namespace patch_sm;
 

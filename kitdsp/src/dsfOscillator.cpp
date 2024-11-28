@@ -2,10 +2,10 @@
 
 #include <cmath>
 
-#include "kitdsp/approx.h"
+#include "kitdsp/math/approx.h"
 #include "kitdsp/lookupTables/sineLut.h"
 #include "kitdsp/osc/oscillatorUtil.h"
-#include "kitdsp/util.h"
+#include "kitdsp/math/util.h"
 
 using namespace kitdsp;
 

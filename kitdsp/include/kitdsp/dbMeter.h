@@ -1,7 +1,7 @@
 #pragma once
 
 #include "kitdsp/filters/onePole.h"
-#include "kitdsp/util.h"
+#include "kitdsp/math/util.h"
 
 namespace kitdsp {
 /*

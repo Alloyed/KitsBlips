@@ -1,7 +1,12 @@
 #include <daisy.h>
 #include <daisy_patch_sm.h>
 
-#include <kitdsp/util.h>
+#include <kitdsp/math/util.h>
+
+using namespace kitdsp;
+using namespace daisy;
+using namespace patch_sm;
+
 
 const float cEpsilon = 0.005f;
 float lerpPowf(float a, float b, float curve, float t) {
@@ -131,13 +136,6 @@ class ApproachAdsr {
     float mReleaseApproach{1.0f};
     float mReleaseTime{0.0f};
 };
-
-/**
- * Patch.init() starting adsr
- */
-
-using namespace daisy;
-using namespace patch_sm;
 
 DaisyPatchSM hw;
 Switch button, toggle;

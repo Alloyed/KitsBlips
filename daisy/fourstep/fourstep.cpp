@@ -1,12 +1,13 @@
 #include <daisy.h>
 #include <daisy_patch_sm.h>
 #include <kitdsp/ScaleQuantizer.h>
-#include <kitdsp/util.h>
+#include <kitdsp/math/util.h>
 
 /**
  * Patch.init() starting fourstep
  */
 
+using namespace kitdsp;
 using namespace daisy;
 using namespace patch_sm;
 

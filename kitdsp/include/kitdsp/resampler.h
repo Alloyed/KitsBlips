@@ -2,7 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
-#include "kitdsp/util.h"
+#include "kitdsp/math/util.h"
 
 namespace kitdsp {
 enum class InterpolationStrategy { None, Linear, Hermite, Cubic };

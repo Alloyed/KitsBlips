@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include "kitdsp/math/vector.h"
-#include "kitdsp/util.h"
+#include "kitdsp/math/util.h"
 
 namespace kitdsp {
     

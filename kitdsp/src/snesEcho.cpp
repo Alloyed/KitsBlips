@@ -1,5 +1,5 @@
 #include "kitdsp/snesEcho.h"
-#include "kitdsp/util.h"
+#include "kitdsp/math/util.h"
 
 #include <algorithm>
 #include <cassert>
@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstring>
 
+namespace kitdsp {
 /*
   This is a rough transcription of the rules that govern the SNES's reverb/echo
 pathway, references below:
@@ -166,4 +167,5 @@ void SNES::Model::Reset() {
     ResetHead();
     mod = {};
     mEchoBufferSize = 0;
+}
 }

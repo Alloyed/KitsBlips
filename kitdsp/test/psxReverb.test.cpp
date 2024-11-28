@@ -2,7 +2,7 @@
 #include "kitdsp/psxReverb.h"
 #include "kitdsp/psxReverbPresets.h"
 #include "kitdsp/wavFile.h"
-#include "kitdsp/util.h"
+#include "kitdsp/math/util.h"
 
 using namespace kitdsp;
 

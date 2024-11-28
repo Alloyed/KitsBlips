@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 
+namespace kitdsp {
 constexpr float cTwoPi = 6.28318530718;
 constexpr float cPi = 3.14159265359;
 constexpr float cHalfPi = 1.57079632679;
@@ -33,6 +34,10 @@ inline float floorf(float in, float increment) {
     return static_cast<int32_t>(in * increment) / increment;
 }
 
+inline float floorf(float in) {
+    return static_cast<int32_t>(in);
+}
+
 inline uint32_t ceilToPowerOf2(uint32_t x) {
     x--;
     x |= x >> 1;
@@ -47,7 +52,6 @@ inline uint32_t ceilToPowerOf2(uint32_t x) {
 inline uint32_t ceilToPowerOf2(float f) {
     return ceilToPowerOf2(static_cast<uint32_t>(ceilf(f)));
 }
-
 
 template <typename F>
 F lerpf(F a, F b, float t) {
@@ -65,18 +69,15 @@ inline F lerpCubicf(F x0, F x1, F x2, F x3, float t) {
 }
 
 template <typename F>
-inline F lerpHermite4pt3oXf(F x0,
-                                F x1,
-                                F x2,
-                                F x3,
-                                float t) {
+inline F lerpHermite4pt3oXf(F x0, F x1, F x2, F x3, float t) {
     F c0 = x1;
     F c1 = (x2 - x0) * 0.5f;
     F c2 = x0 - (x1 * 2.5f) + (x2 * 2.0f) - (x3 * .5f);
-    F c3 = ((x3 - x0) * .5f ) + ((x1 - x2) * 1.5f);
+    F c3 = ((x3 - x0) * .5f) + ((x1 - x2) * 1.5f);
     return (((((c3 * t) + c2) * t) + c1) * t) + c0;
 }
 
 inline float blockNanf(float in, float valueIfNan = 0.0f) {
     return std::isfinite(in) ? in : valueIfNan;
 }
+}  // namespace kitdsp

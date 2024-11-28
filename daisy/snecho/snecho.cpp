@@ -2,7 +2,7 @@
 
 #include "kitdsp/resampler.h"
 #include "kitdsp/snesEcho.h"
-#include "kitdsp/util.h"
+#include "kitdsp/math/util.h"
 
 using namespace daisy;
 using namespace patch_sm;
