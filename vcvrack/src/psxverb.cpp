@@ -49,7 +49,7 @@ struct PSXVerb : Module {
         float_2 out;
 
         out = psxSampler.Process<
-            kitdsp::Resampler<float_2>::InterpolationStrategy::Cubic>(
+            kitdsp::InterpolationStrategy::Cubic>(
             in, [](float_2 in, float_2& out) { out = psx.Process(in); });
 
         outputs[AUDIO_L_OUTPUT].setVoltage(5.0f *

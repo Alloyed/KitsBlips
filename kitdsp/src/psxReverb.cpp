@@ -15,13 +15,6 @@
   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
-
-/**
- * This code is primarily copied from:
- * https://github.com/ipatix/lv2-psx-reverb/tree/master
- * changes primarily made to use C++ features and style conformance
- */
-
 #include "kitdsp/psxReverb.h"
 #include "kitdsp/psxReverbPresets.h"
 #include "kitdsp/util.h"
@@ -64,77 +57,78 @@ namespace kitdsp {
 
 PSX::Reverb::Reverb(int32_t sampleRate, float* buffer, size_t bufferSize) {
     assert(bufferSize == GetBufferDesiredSizeFloats(sampleRate));
-    rate = (float)sampleRate;
+    mSampleRate = (float)sampleRate;
 
     /* alloc reverb buffer */
-    spu_buffer_count = bufferSize;
-    spu_buffer_count_mask =
-        spu_buffer_count -
-        1;  // <-- we can use this for quick circular buffer access
-    spu_buffer = buffer;
+    mBufferSize = bufferSize;
+    // this can be used for wrapping as `index & mask` instead of `index % size`
+    mBufferWrapMask = mBufferSize - 1; 
+    mBuffer = buffer;
 
-    LoadPreset(cPresets[0].data.chunk, rate);
+    LoadPreset(kPresets[0].data.chunk, mSampleRate);
     ClearBuffer();
 }
 
 float_2 PSX::Reverb::Process(float_2 in) {
-    if (cfg.preset != preset) {
-        preset = cfg.preset;
-        LoadPreset(cPresets[preset].data.chunk, rate);
+    if (cfg.preset != mPreset) {
+        mPreset = cfg.preset;
+        LoadPreset(kPresets[mPreset].data.chunk, mSampleRate);
     }
-
-#define mem(idx) \
-    (spu_buffer[(unsigned)((idx) + BufferAddress) & spu_buffer_count_mask])
-    
-    const auto get = [&](size_2 index) {
-        return float_2{mem(index.l), mem(index.r)};
-    };
-
-    const auto set = [&](size_2 index, float_2 sample) {
-        mem(index.l) = sample.l;
-        mem(index.r) = sample.r;
-    };
 
     // apply input gain
     in = vIN * in;
 
     // same side reflection
-    set(mSAME,
-        (in + get(dSAME) * vWALL - get(mSAME - 1)) * vIIR + get(mSAME - 1));
+    Set(mSAME,
+        (in + Get(dSAME) * vWALL - Get(mSAME - 1)) * vIIR + Get(mSAME - 1));
 
     // different side reflection
-    set(mDIFF,
-        (in + get(dDIFF) * vWALL - get(mDIFF - 1)) * vIIR + get(mDIFF - 1));
+    Set(mDIFF,
+        (in + Get(dDIFF) * vWALL - Get(mDIFF - 1)) * vIIR + Get(mDIFF - 1));
 
     // early echo
-    float_2 out = get(mCOMB1) * vCOMB1 + get(mCOMB2) * vCOMB2 +
-                  get(mCOMB3) * vCOMB3 + get(mCOMB4) * vCOMB4;
+    float_2 out = Get(mCOMB1) * vCOMB1 + Get(mCOMB2) * vCOMB2 +
+                  Get(mCOMB3) * vCOMB3 + Get(mCOMB4) * vCOMB4;
 
     // late reverb APF1
-    out = out - get(mAPF1 - dAPF1) * vAPF1;
-    set(mAPF1, out);
-    out = out * vAPF1 + get(mAPF1 - dAPF1);
+    out = out - Get(mAPF1 - dAPF1) * vAPF1;
+    Set(mAPF1, out);
+    out = out * vAPF1 + Get(mAPF1 - dAPF1);
 
     // late reverb APF2
-    out = out - get(mAPF2 - dAPF2) * vAPF2;
-    set(mAPF2, out);
-    out = out * vAPF2 + get(mAPF2 - dAPF2);
-#undef mem
+    out = out - Get(mAPF2 - dAPF2) * vAPF2;
+    Set(mAPF2, out);
+    out = out * vAPF2 + Get(mAPF2 - dAPF2);
 
-    BufferAddress = ((BufferAddress + 1) & spu_buffer_count_mask);
-    
+    mBufferHeadIndex = ((mBufferHeadIndex + 1) & mBufferWrapMask);
+
     // output to mixer
     return out;
 }
 
 void PSX::Reverb::ClearBuffer() {
-    BufferAddress = 0;
-    memset(spu_buffer, 0, spu_buffer_count * sizeof(spu_buffer[0]));
+    mBufferHeadIndex = 0;
+    memset(mBuffer, 0, mBufferSize * sizeof(mBuffer[0]));
 }
 
-void kitdsp::PSX::Reverb::LoadPreset(const PresetBinaryChunk& presetData,
-                                     float sampleRate) {
-    const kitdsp::PSX::PresetBinaryChunk* preset = &presetData;
+void PSX::Reverb::Reset() {
+    ClearBuffer();
+}
+
+float_2 PSX::Reverb::Get(size_2 index) {
+    return float_2{
+        mBuffer[(index.left + mBufferHeadIndex) & mBufferWrapMask],
+        mBuffer[(index.right + mBufferHeadIndex) & mBufferWrapMask]};
+}
+
+void PSX::Reverb::Set(size_2 index, float_2 sample) {
+    mBuffer[(index.left + mBufferHeadIndex) & mBufferWrapMask] = sample.left;
+    mBuffer[(index.right + mBufferHeadIndex) & mBufferWrapMask] = sample.right;
+}
+
+void PSX::Reverb::LoadPreset(const PresetBinaryChunk& presetData,
+                             float sampleRate) {
+    const PSX::PresetBinaryChunk* preset = &presetData;
 
     dAPF1 = u16ToDelayBufferIndex(preset->dAPF1, sampleRate);
     dAPF2 = u16ToDelayBufferIndex(preset->dAPF2, sampleRate);
@@ -172,7 +166,7 @@ void kitdsp::PSX::Reverb::LoadPreset(const PresetBinaryChunk& presetData,
     vIN.l = q16ToFloat(preset->vLIN);
     vIN.r = q16ToFloat(preset->vRIN);
 
-    memset(spu_buffer, 0, spu_buffer_count * sizeof(spu_buffer[0]));
+    memset(mBuffer, 0, mBufferSize * sizeof(mBuffer[0]));
 }
 
 }  // namespace kitdsp

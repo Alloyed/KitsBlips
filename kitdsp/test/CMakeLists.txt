@@ -13,6 +13,7 @@ FetchContent_MakeAvailable(googletest)
 add_executable(testdsp
     dsfOscillator.test.cpp
     snesEcho.test.cpp
+    psxReverb.test.cpp
 )
 
 target_link_libraries(testdsp

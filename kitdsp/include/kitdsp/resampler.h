@@ -5,14 +5,13 @@
 #include "kitdsp/util.h"
 
 namespace kitdsp {
+enum class InterpolationStrategy { None, Linear, Hermite, Cubic };
 
 template<typename SAMPLE>
 class Resampler {
     // TODO: we should filter the inputs to avoid aliasing
     // https://dspguru.com/dsp/faqs/multirate/decimation/
    public:
-    enum class InterpolationStrategy { None, Linear, Hermite, Cubic };
-
     Resampler(float sourceRate, float targetRate)
         : mPeriod(targetRate / sourceRate) {}
 

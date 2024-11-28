@@ -49,7 +49,8 @@ struct Preset {
     } data;
 };
 
-static const Preset cPresets[] = {
+static constexpr size_t kNumPresets = 10;
+static const Preset kPresets[] = {
     /* Name: Room, SPU mem required: 0x26C0 */
     {"Room",
      "",

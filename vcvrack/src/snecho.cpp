@@ -128,7 +128,7 @@ struct Snecho : Module {
         float out;
 
         out = snesSampler.Process<
-            kitdsp::Resampler<float>::InterpolationStrategy::Cubic>(
+            kitdsp::InterpolationStrategy::Cubic>(
             in,
             [](float in, float& out) {
                 out = snes1.Process(in);

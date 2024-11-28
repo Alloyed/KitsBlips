@@ -62,7 +62,7 @@ void AudioCallback(AudioHandle::InputBuffer in,
         // eurorack's (often very loud) signal values
         float delayed =
             snesSampler
-                .Process<Resampler<float>::InterpolationStrategy::Linear>(
+                .Process<InterpolationStrategy::Linear>(
                     IN_L[i] * 0.5f,
                     [](float in, float& out) { out = snes.Process(in); });
 

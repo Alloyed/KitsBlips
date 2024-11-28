@@ -46,7 +46,7 @@ void AudioCallback(AudioHandle::InputBuffer in,
         float_2 dry = float_2{IN_L[i] * 0.5f, IN_R[i] * 0.5f};
         float_2 wet =
             psxSampler
-                .Process<kitdsp::Resampler<float_2>::InterpolationStrategy::Linear>(
+                .Process<kitdsp::InterpolationStrategy::Linear>(
                     dry,
                     [](float_2 in, float_2& out) { out = psx.Process(in); });
 

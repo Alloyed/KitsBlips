@@ -12,12 +12,11 @@ TEST(snesEcho, works) {
 
     FILE* fp = fopen("snecho.wav","wb");
     ASSERT_NE(fp, nullptr);
-    WavFile f{SNES::kOriginalSampleRate, fp};
+    WavFile<1> f{SNES::kOriginalSampleRate, fp};
 
     f.Start();
 
     size_t len = static_cast<size_t>(1.0f * SNES::kOriginalSampleRate);
-    float out1, out2;
 
     // test 1 simple feedback
     snes.Reset();
@@ -30,9 +29,8 @@ TEST(snesEcho, works) {
         // simple saw
         float in = fmodf(t*440.f, 1.0f) * clampf(1.0f - t*10.0f, 0.0f, 1.0f);
 
-        out1, out2;
-        snes.Process(in, in, out1, out2);
-        f.Add(in + out1);
+        float out = snes.Process(in);
+        f.Add(in + out);
     }
     
     // test 2 no feedback
@@ -47,8 +45,8 @@ TEST(snesEcho, works) {
         // simple saw
         float in = fmodf(t*440.f, 1.0f) * clampf(1.0f - t*10.0f, 0.0f, 1.0f);
 
-        snes.Process(in, in, out1, out2);
-        f.Add(in + out1);
+        float out = snes.Process(in);
+        f.Add(in + out);
     }
     
     // test 3 freeze
@@ -63,12 +61,10 @@ TEST(snesEcho, works) {
         float in = fmodf(t*440.f, 1.0f) * clampf(1.0f - t*10.0f, 0.0f, 1.0f);
         snes.mod.freezeEcho = t > 0.1f;
 
-        out1, out2;
-        snes.Process(in, in, out1, out2);
-        f.Add(in + out1);
+        float out = snes.Process(in);
+        f.Add(in + out);
     }
     
-
     f.Finish();
 
     fclose(fp);
@@ -81,13 +77,11 @@ TEST(snesEchoFilter, works) {
 
     FILE* fp = fopen("snechoFilter.wav","wb");
     ASSERT_NE(fp, nullptr);
-    WavFile f{SNES::kOriginalSampleRate, fp};
+    WavFile<1> f{SNES::kOriginalSampleRate, fp};
 
     f.Start();
 
     size_t len = static_cast<size_t>(1.0f * SNES::kOriginalSampleRate);
-    float out1, out2;
-
     // test 4 filter
     for (size_t filter = 0; filter < SNES::kNumFilterSettings; ++filter)
     {
@@ -102,10 +96,8 @@ TEST(snesEchoFilter, works) {
 
             // simple saw
             float in = fmodf(t * 440.f, 1.0f) * clampf(1.0f - t * 10.0f, 0.0f, 1.0f);
-
-            out1, out2;
-            snes.Process(in, in, out1, out2);
-            f.Add(in + out1);
+            float out = snes.Process(in);
+            f.Add(in + out);
         }
     }
 

@@ -13,7 +13,7 @@ TEST(dsfOscillator, CanBeUsed) {
     
     FILE* fp = fopen("dsf.wav","wb");
     ASSERT_NE(fp, nullptr);
-    WavFile f{44100.0f, fp};
+    WavFile<1> f{44100.0f, fp};
 
     f.Start();
     size_t len = static_cast<size_t>(4.0f * 44100.f);

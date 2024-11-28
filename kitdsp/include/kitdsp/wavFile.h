@@ -1,11 +1,13 @@
 #pragma once
 
+#include "kitdsp/math/vector.h"
 #include <cstdint>
 #include <cstdio>
 
 // convenience wrapper for writing wav files using cstdio (mostly for debugging)
 
 namespace kitdsp {
+template <size_t NUM_CHANNELS>
 class WavFile {
    public:
     WavFile(float sampleRate, FILE* fp)
@@ -28,13 +30,13 @@ class WavFile {
         fwrite(&fmtDataSize, sizeof(fmtDataSize), 1, mFp);
         uint16_t audioFormat = 3;  // float
         fwrite(&audioFormat, sizeof(audioFormat), 1, mFp);
-        uint16_t numChannels = mNumChannels;
+        uint16_t numChannels = NUM_CHANNELS;
         fwrite(&numChannels, sizeof(numChannels), 1, mFp);
         uint32_t sampleRate = mSampleRate;
         fwrite(&sampleRate, sizeof(sampleRate), 1, mFp);
-        uint32_t bytesPerSecond = mBytesPerSample * mNumChannels * mSampleRate;
+        uint32_t bytesPerSecond = mBytesPerSample * NUM_CHANNELS * mSampleRate;
         fwrite(&bytesPerSecond, sizeof(bytesPerSecond), 1, mFp);
-        uint16_t bytesPerSampleAllChannels = mBytesPerSample * numChannels;
+        uint16_t bytesPerSampleAllChannels = mBytesPerSample * NUM_CHANNELS;
         fwrite(&bytesPerSampleAllChannels, sizeof(bytesPerSampleAllChannels), 1,
                mFp);
         uint16_t bitsPerSample = mBytesPerSample * bitsPerByte;
@@ -48,6 +50,13 @@ class WavFile {
     }
 
     void Add(float in) { mNumSamples += fwrite(&in, mBytesPerSample, 1, mFp); }
+    
+    void Add(Vector<float, NUM_CHANNELS> in) {
+        for (size_t i = 0; i < NUM_CHANNELS; ++i)
+        {
+            Add(in.data[i]);
+        }
+    }
 
     void Finish() {
         size_t finalSize = ftell(mFp);
@@ -57,14 +66,13 @@ class WavFile {
         fwrite(&fileSize, sizeof(fileSize), 1, mFp);
 
         fseek(mFp, mTellWavDataSize, SEEK_SET);
-        uint32_t wavDataSize = mNumSamples * mNumChannels * mBytesPerSample;
+        uint32_t wavDataSize = mNumSamples * NUM_CHANNELS * mBytesPerSample;
         fwrite(&fileSize, sizeof(fileSize), 1, mFp);
     }
 
    private:
     // configuration
     uint32_t mSampleRate = 0;
-    static constexpr size_t mNumChannels = 1;
     static constexpr size_t mBytesPerSample = sizeof(float);
 
     // file state
@@ -73,4 +81,5 @@ class WavFile {
     size_t mTellFileSize;
     size_t mTellWavDataSize;
 };
+
 }  // namespace kitdsp

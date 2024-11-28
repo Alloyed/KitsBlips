@@ -33,6 +33,22 @@ inline float floorf(float in, float increment) {
     return static_cast<int32_t>(in * increment) / increment;
 }
 
+inline uint32_t ceilToPowerOf2(uint32_t x) {
+    x--;
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    x++;
+    return x;
+}
+
+inline uint32_t ceilToPowerOf2(float f) {
+    return ceilToPowerOf2(static_cast<uint32_t>(ceilf(f)));
+}
+
+
 template <typename F>
 F lerpf(F a, F b, float t) {
     return a + (b - a) * t;
