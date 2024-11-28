@@ -1,8 +1,8 @@
 #include "daisy_patch_sm.h"
 
+#include "kitdsp/resampler.h"
 #include "kitdsp/snesEcho.h"
 #include "kitdsp/util.h"
-#include "kitdsp/resampler.h"
 
 using namespace daisy;
 using namespace patch_sm;
@@ -10,26 +10,25 @@ using namespace patch_sm;
 DaisyPatchSM hw;
 Switch button, toggle;
 
-// constexpr size_t snesBufferSize = SNES::Model::GetBufferDesiredSizeInt16s(SNES::kOriginalSampleRate);
+// constexpr size_t snesBufferSize =
+// SNES::Model::GetBufferDesiredSizeInt16s(SNES::kOriginalSampleRate);
 constexpr size_t snesBufferSize = 7680UL;
 int16_t DSY_SDRAM_BSS snesBuffer[snesBufferSize];
 SNES::Model snes(SNES::kOriginalSampleRate, snesBuffer, snesBufferSize);
-kitdsp::Resampler snesSampler(SNES::kOriginalSampleRate, SNES::kOriginalSampleRate);
+kitdsp::Resampler snesSampler(SNES::kOriginalSampleRate,
+                              SNES::kOriginalSampleRate);
 
-float knobValue(int32_t cvEnum)
-{
+float knobValue(int32_t cvEnum) {
     return clampf(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
 }
 
-float jackValue(int32_t cvEnum)
-{
+float jackValue(int32_t cvEnum) {
     return clampf(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
 }
 
 void AudioCallback(AudioHandle::InputBuffer in,
                    AudioHandle::OutputBuffer out,
-                   size_t size)
-{
+                   size_t size) {
     hw.ProcessAllControls();
     button.Debounce();
     toggle.Debounce();
@@ -52,37 +51,30 @@ void AudioCallback(AudioHandle::InputBuffer in,
 
     snes.mod.clearBuffer = button.RisingEdge() || hw.gate_in_1.Trig();
 
-    if (toggle.Pressed() || hw.gate_in_2.State())
-    {
+    if (toggle.Pressed() || hw.gate_in_2.State()) {
         snes.mod.freezeEcho = 1.0f;
-    }
-    else
-    {
+    } else {
         snes.mod.freezeEcho = 0.0f;
     }
 
-    for (size_t i = 0; i < size; i++)
-    {
-        // signals are scaled to get a more appropriate clipping level for eurorack's (often very loud) signal values
+    for (size_t i = 0; i < size; i++) {
+        // signals are scaled to get a more appropriate clipping level for
+        // eurorack's (often very loud) signal values
         float snesLeft, snesRight;
-        snesSampler.Process<
-            kitdsp::Resampler::InterpolationStrategy::Linear>(
-            IN_L[i] * 0.5f,
-            IN_R[i] * 0.5f,
-            snesLeft,
-            snesRight,
-            [](float inLeft, float inRight, float &outLeft, float &outRight)
-            { snes.Process(inLeft, inRight, outLeft, outRight); });
+        snesSampler.Process<kitdsp::Resampler::InterpolationStrategy::Linear>(
+            IN_L[i] * 0.5f, IN_R[i] * 0.5f, snesLeft, snesRight,
+            [](float inLeft, float inRight, float& outLeft, float& outRight) {
+                snes.Process(inLeft, inRight, outLeft, outRight);
+            });
 
         OUT_L[i] = lerpf(IN_L[i], snesLeft * 2.0f, wetDry);
         OUT_R[i] = lerpf(IN_R[i], snesRight * 2.0f, wetDry);
     }
 }
 
-int main(void)
-{
+int main(void) {
     hw.Init();
-    hw.SetAudioBlockSize(8); // number of samples handled per callback
+    hw.SetAudioBlockSize(8);  // number of samples handled per callback
     hw.SetAudioSampleRate(SNES::kOriginalSampleRate);
     snesSampler = {SNES::kOriginalSampleRate, hw.AudioSampleRate()};
 
@@ -90,7 +82,6 @@ int main(void)
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
 
     hw.StartAudio(AudioCallback);
-    while (1)
-    {
+    while (1) {
     }
 }

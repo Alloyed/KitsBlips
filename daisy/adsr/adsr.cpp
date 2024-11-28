@@ -4,102 +4,73 @@
 #include <kitdsp/util.h>
 
 const float cEpsilon = 0.005f;
-float lerpPowf(float a, float b, float curve, float t)
-{
+float lerpPowf(float a, float b, float curve, float t) {
     return lerpf(a, b, clampf(powf(t, curve), 0.0f, 1.0f));
 }
 
 /**
- * Implements an ADSR envelope using the "smooth lerp" technique common in gamedev
- * this means that the envelopes are hardcoded to be exponential decay envelopes, which implies logarithmic attacks
+ * Implements an ADSR envelope using the "smooth lerp" technique common in
+ * gamedev this means that the envelopes are hardcoded to be exponential decay
+ * envelopes, which implies logarithmic attacks
  */
-class ApproachAdsr
-{
-public:
-    enum class State
-    {
-        Attack,
-        Decay,
-        Sustain,
-        Release,
-        Idle
-    };
+class ApproachAdsr {
+   public:
+    enum class State { Attack, Decay, Sustain, Release, Idle };
 
-    void Init(float sampleRate)
-    {
-        mSampleTimeMs = 1000.0f / sampleRate;
-    }
+    void Init(float sampleRate) { mSampleTimeMs = 1000.0f / sampleRate; }
 
-    void Set(State state, float value)
-    {
-        switch (state)
-        {
-        case State::Attack:
-        {
-
-            mAttackTime = value;
-            mAttackApproach = calculateApproach(mAttackTime, 0.0f, 1.0f);
-        }
-        break;
-        case State::Decay:
-        {
-
-            mDecayTime = value;
-            mDecayApproach = calculateApproach(mDecayTime, 1.0f, mSustainLevel);
-        }
-        break;
-        case State::Sustain:
-        {
-            mSustainLevel = value;
-            mDecayApproach = calculateApproach(mDecayTime, 1.0f, mSustainLevel);
-            mReleaseApproach = calculateApproach(mReleaseTime, mSustainLevel, 0.0f);
-        }
-        break;
-        case State::Release:
-        {
-            mReleaseTime = value;
-            mReleaseApproach = calculateApproach(mReleaseTime, mSustainLevel, 0.0f);
-        }
-        break;
-        case State::Idle:
-            return;
+    void Set(State state, float value) {
+        switch (state) {
+            case State::Attack: {
+                mAttackTime = value;
+                mAttackApproach = calculateApproach(mAttackTime, 0.0f, 1.0f);
+            } break;
+            case State::Decay: {
+                mDecayTime = value;
+                mDecayApproach =
+                    calculateApproach(mDecayTime, 1.0f, mSustainLevel);
+            } break;
+            case State::Sustain: {
+                mSustainLevel = value;
+                mDecayApproach =
+                    calculateApproach(mDecayTime, 1.0f, mSustainLevel);
+                mReleaseApproach =
+                    calculateApproach(mReleaseTime, mSustainLevel, 0.0f);
+            } break;
+            case State::Release: {
+                mReleaseTime = value;
+                mReleaseApproach =
+                    calculateApproach(mReleaseTime, mSustainLevel, 0.0f);
+            } break;
+            case State::Idle:
+                return;
         }
     }
 
-    float Process(bool gate, bool retrigger)
-    {
+    float Process(bool gate, bool retrigger) {
         // calculate state transistions
         retrigger = gate || retrigger;
-        if (gate || retrigger)
-        {
-            if (retrigger && !mLastRetrigger)
-            {
+        if (gate || retrigger) {
+            if (retrigger && !mLastRetrigger) {
                 mState = State::Attack;
             }
 
-            if (mState == State::Idle)
-            {
+            if (mState == State::Idle) {
                 mState = State::Attack;
-            }
-            else if (mState == State::Attack && mLastLevel >= 1.0f - cEpsilon)
-            {
+            } else if (mState == State::Attack &&
+                       mLastLevel >= 1.0f - cEpsilon) {
                 mLastLevel = 1.0f;
                 mState = State::Decay;
-            }
-            else if (mState == State::Decay && mLastLevel <= mSustainLevel + cEpsilon)
-            {
+            } else if (mState == State::Decay &&
+                       mLastLevel <= mSustainLevel + cEpsilon) {
                 mLastLevel = mSustainLevel;
                 mState = State::Sustain;
             }
-        }
-        else
-        {
-            if (mState != State::Idle && mState != State::Release)
-            {
+        } else {
+            if (mState != State::Idle && mState != State::Release) {
                 mState = State::Release;
-            }
-            else if (mState == State::Release && mLastLevel <= 0.0f + cEpsilon)
-            {
+            } else if (mState == State::Release &&
+                       mLastLevel <= 0.0f + cEpsilon) {
                 mLastLevel = 0.0f;
                 mState = State::Idle;
             }
@@ -108,30 +79,22 @@ public:
 
         // update & return value based on state
         float targetApproach, targetLevel;
-        if (mState == State::Attack)
-        {
+        if (mState == State::Attack) {
             targetApproach = mAttackApproach;
             targetLevel = 1.0f;
-        }
-        else if (mState == State::Decay)
-        {
+        } else if (mState == State::Decay) {
             targetApproach = mDecayApproach;
             targetLevel = mSustainLevel;
-        }
-        else if (mState == State::Sustain)
-        {
-            // this could be smoothed too to account for real time changes in sustain level, if necessary
+        } else if (mState == State::Sustain) {
+            // this could be smoothed too to account for real time changes in
+            // sustain level, if necessary
             targetApproach = mDecayApproach;
             targetLevel = mSustainLevel;
             // return mLastLevel;
-        }
-        else if (mState == State::Release)
-        {
+        } else if (mState == State::Release) {
             targetApproach = mReleaseApproach;
             targetLevel = 0.0f;
-        }
-        else if (mState == State::Idle)
-        {
+        } else if (mState == State::Idle) {
             // return mLastLevel;
             return 0.0f;
         }
@@ -141,16 +104,15 @@ public:
         return mLastLevel;
     }
 
-    State GetState() const
-    {
-        return mState;
-    }
+    State GetState() const { return mState; }
 
-private:
-    float calculateApproach(float targetTimeMs, float lastLevel, float nextLevel)
-    {
+   private:
+    float calculateApproach(float targetTimeMs,
+                            float lastLevel,
+                            float nextLevel) {
         // https://www.youtube.com/watch?v=LSNQuFEDOyQ
-        // the target precision should be whatever gets us within cEpsilon of the target, in absolute terms
+        // the target precision should be whatever gets us within cEpsilon of
+        // the target, in absolute terms
         float precision = cEpsilon * fabsf(nextLevel - lastLevel);
         return 1.0f - blockNanf(powf(precision, mSampleTimeMs / targetTimeMs));
     }
@@ -181,20 +143,17 @@ DaisyPatchSM hw;
 Switch button, toggle;
 ApproachAdsr adsr;
 
-float knobValue(int32_t cvEnum)
-{
+float knobValue(int32_t cvEnum) {
     return clampf(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
 }
 
-float jackValue(int32_t cvEnum)
-{
+float jackValue(int32_t cvEnum) {
     return clampf(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
 }
 
 void AudioCallback(AudioHandle::InputBuffer in,
                    AudioHandle::OutputBuffer out,
-                   size_t size)
-{
+                   size_t size) {
     hw.ProcessAllControls();
     button.Debounce();
     toggle.Debounce();
@@ -204,7 +163,8 @@ void AudioCallback(AudioHandle::InputBuffer in,
 
     float a = lerpPowf(3.0f, 10000.0f, 2.0f, knobValue(CV_1) + jackValue(CV_5));
     float d = lerpPowf(3.0f, 10000.0f, 2.0f, knobValue(CV_2) + jackValue(CV_6));
-    float s = lerpf(0.0f, 1.0f, clampf(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f));
+    float s = lerpf(0.0f, 1.0f,
+                    clampf(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f));
     float r = lerpPowf(3.0f, 10000.0f, 2.0f, knobValue(CV_4) + jackValue(CV_8));
 
     adsr.Set(ApproachAdsr::State::Attack, a);
@@ -212,8 +172,7 @@ void AudioCallback(AudioHandle::InputBuffer in,
     adsr.Set(ApproachAdsr::State::Sustain, s);
     adsr.Set(ApproachAdsr::State::Release, r);
 
-    for (size_t i = 0; i < size; i++)
-    {
+    for (size_t i = 0; i < size; i++) {
         float level = adsr.Process(gate, retrig);
         OUT_L[i] = -level;
         OUT_R[i] = level - 1.0f;
@@ -225,12 +184,13 @@ void AudioCallback(AudioHandle::InputBuffer in,
     // stage gates!
     // A+D and S+R combined for lack of open jacks
     const auto state = adsr.GetState();
-    hw.gate_out_1.Write(state == ApproachAdsr::State::Attack || state == ApproachAdsr::State::Decay);
-    hw.gate_out_2.Write(state == ApproachAdsr::State::Sustain || state == ApproachAdsr::State::Release);
+    hw.gate_out_1.Write(state == ApproachAdsr::State::Attack ||
+                        state == ApproachAdsr::State::Decay);
+    hw.gate_out_2.Write(state == ApproachAdsr::State::Sustain ||
+                        state == ApproachAdsr::State::Release);
 }
 
-int main(void)
-{
+int main(void) {
     hw.Init();
     // low sample rate low block size for cv workload
     hw.SetAudioBlockSize(1);
@@ -241,7 +201,6 @@ int main(void)
     adsr.Init(hw.AudioSampleRate());
     hw.StartAudio(AudioCallback);
 
-    for (;;)
-    {
+    for (;;) {
     }
 }

@@ -9,18 +9,16 @@ using namespace daisy;
 using namespace patch_sm;
 
 DaisyPatchSM hw;
-Switch       button, toggle;
+Switch button, toggle;
 
-void AudioCallback(AudioHandle::InputBuffer  in,
+void AudioCallback(AudioHandle::InputBuffer in,
                    AudioHandle::OutputBuffer out,
-                   size_t                    size)
-{
+                   size_t size) {
     hw.ProcessAllControls();
     button.Debounce();
     toggle.Debounce();
 
-    for(size_t i = 0; i < size; i++)
-    {
+    for (size_t i = 0; i < size; i++) {
         OUT_L[i] = IN_L[i];
         OUT_R[i] = IN_R[i];
     }
@@ -31,8 +29,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     hw.gate_out_2.Write(false);
 }
 
-int main(void)
-{
+int main(void) {
     hw.Init();
     hw.SetAudioBlockSize(4);
     hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
@@ -40,5 +37,6 @@ int main(void)
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
     hw.StartAudio(AudioCallback);
 
-    for (;;) {}
+    for (;;) {
+    }
 }

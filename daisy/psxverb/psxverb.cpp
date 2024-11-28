@@ -1,8 +1,8 @@
 #include "daisy_patch_sm.h"
 
 #include "kitdsp/psxReverb.h"
-#include "kitdsp/util.h"
 #include "kitdsp/resampler.h"
+#include "kitdsp/util.h"
 
 using namespace daisy;
 using namespace patch_sm;
@@ -10,25 +10,24 @@ using namespace patch_sm;
 DaisyPatchSM hw;
 Switch button, toggle;
 
-constexpr size_t psxBufferSize = 65536; // PSX::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
+constexpr size_t psxBufferSize =
+    65536;  // PSX::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
 float DSY_SDRAM_BSS psxBuffer[psxBufferSize];
 PSX::Model psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
-kitdsp::Resampler psxSampler(PSX::kOriginalSampleRate, PSX::kOriginalSampleRate);
+kitdsp::Resampler psxSampler(PSX::kOriginalSampleRate,
+                             PSX::kOriginalSampleRate);
 
-float knobValue(int32_t cvEnum)
-{
+float knobValue(int32_t cvEnum) {
     return clampf(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
 }
 
-float jackValue(int32_t cvEnum)
-{
+float jackValue(int32_t cvEnum) {
     return clampf(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
 }
 
 void AudioCallback(AudioHandle::InputBuffer in,
                    AudioHandle::OutputBuffer out,
-                   size_t size)
-{
+                   size_t size) {
     hw.ProcessAllControls();
     button.Debounce();
     toggle.Debounce();
@@ -38,18 +37,15 @@ void AudioCallback(AudioHandle::InputBuffer in,
     float wetDry = clampf(knobValue(CV_4) + jackValue(CV_8), 0.0f, 1.0f);
     hw.WriteCvOut(2, 2.5 * wetDry);
 
-    for (size_t i = 0; i < size; i++)
-    {
+    for (size_t i = 0; i < size; i++) {
         float psxLeft, psxRight;
-        // signals scaled to compensate for eurorack's (often loud) signal levels
-        psxSampler.Process<
-            kitdsp::Resampler::InterpolationStrategy::Linear>(
-            IN_L[i] * 0.5f,
-            IN_R[i] * 0.5f,
-            psxLeft,
-            psxRight,
-            [](float inLeft, float inRight, float &outLeft, float &outRight)
-            { psx.Process(inLeft, inRight, outLeft, outRight); });
+        // signals scaled to compensate for eurorack's (often loud) signal
+        // levels
+        psxSampler.Process<kitdsp::Resampler::InterpolationStrategy::Linear>(
+            IN_L[i] * 0.5f, IN_R[i] * 0.5f, psxLeft, psxRight,
+            [](float inLeft, float inRight, float& outLeft, float& outRight) {
+                psx.Process(inLeft, inRight, outLeft, outRight);
+            });
 
         float left = psxLeft * 2.0f;
         float right = psxRight * 2.0f;
@@ -59,10 +55,9 @@ void AudioCallback(AudioHandle::InputBuffer in,
     }
 }
 
-int main(void)
-{
+int main(void) {
     hw.Init();
-    hw.SetAudioBlockSize(8); // number of samples handled per callback
+    hw.SetAudioBlockSize(8);  // number of samples handled per callback
     hw.SetAudioSampleRate(PSX::kOriginalSampleRate);
     psxSampler = {PSX::kOriginalSampleRate, hw.AudioSampleRate()};
 
@@ -70,7 +65,6 @@ int main(void)
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
 
     hw.StartAudio(AudioCallback);
-    while (1)
-    {
+    while (1) {
     }
 }

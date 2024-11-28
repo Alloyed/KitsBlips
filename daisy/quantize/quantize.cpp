@@ -1,6 +1,6 @@
+#include <kitdsp/ScaleQuantizer.h>
 #include "daisy_patch_sm.h"
 #include "daisysp.h"
-#include <kitdsp/ScaleQuantizer.h>
 
 using namespace daisy;
 using namespace patch_sm;
@@ -24,20 +24,20 @@ using namespace daisysp;
  */
 
 DaisyPatchSM hw;
-Switch       updateTransposeRoot;
-//ScaleQuantizer quantizer(kChromaticScale, DSY_COUNTOF(kChromaticScale));
-kitdsp::ScaleQuantizer quantizer(kitdsp::kPentatonic, DSY_COUNTOF(kitdsp::kPentatonic));
-//ScaleQuantizer quantizer(kMajorScale, DSY_COUNTOF(kMajorScale));
+Switch updateTransposeRoot;
+// ScaleQuantizer quantizer(kChromaticScale, DSY_COUNTOF(kChromaticScale));
+kitdsp::ScaleQuantizer quantizer(kitdsp::kPentatonic,
+                                 DSY_COUNTOF(kitdsp::kPentatonic));
+// ScaleQuantizer quantizer(kMajorScale, DSY_COUNTOF(kMajorScale));
 
-struct State
-{
+struct State {
     // in
     float input;
     float transpose;
     float scale;
 
     // out
-    int   hasNoteChanged;
+    int hasNoteChanged;
     float lastNote;
 
     // state
@@ -46,8 +46,7 @@ struct State
 State state;
 
 void Controls();
-void CvCallback()
-{
+void CvCallback() {
     hw.ProcessAllControls();
     Controls();
 
@@ -58,8 +57,7 @@ void CvCallback()
     */
 
     float quantizedNote = quantizer.Process(inputNote);
-    if(state.lastNote != quantizedNote)
-    {
+    if (state.lastNote != quantizedNote) {
         state.hasNoteChanged++;
         state.lastNote = quantizedNote;
     }
@@ -67,21 +65,19 @@ void CvCallback()
     hw.WriteCvOut(CV_OUT_1, noteOut);
 }
 
-int main(void)
-{
+int main(void) {
     hw.Init();
-    hw.SetAudioBlockSize(4); // number of samples handled per callback
+    hw.SetAudioBlockSize(4);  // number of samples handled per callback
     hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
-    //hw.StartDac(CvCallback);
+    // hw.StartDac(CvCallback);
     int32_t triggerActive = -1;
-    while(1)
-    {
+    while (1) {
         CvCallback();
 
-        if(state.hasNoteChanged > 0)
-        {
+        if (state.hasNoteChanged > 0) {
             // trigger out
-            // note changes are queued in case they happen within the 10ms window
+            // note changes are queued in case they happen within the 10ms
+            // window
             state.hasNoteChanged--;
             hw.gate_out_1.Write(true);
             hw.Delay(9);
@@ -91,15 +87,13 @@ int main(void)
     }
 }
 
-void Controls()
-{
+void Controls() {
     updateTransposeRoot.Debounce();
 
     // convert to 0-1
-    state.input     = (hw.controls[CV_1].Value() + 1.0f) * 0.5f;
+    state.input = (hw.controls[CV_1].Value() + 1.0f) * 0.5f;
     state.transpose = (hw.controls[CV_2].Value() + 1.0f) * 0.5f;
-    if(updateTransposeRoot.RisingEdge())
-    {
+    if (updateTransposeRoot.RisingEdge()) {
         state.transposeRoot = state.transpose;
     }
     state.scale = hw.controls[CV_3].Value();
