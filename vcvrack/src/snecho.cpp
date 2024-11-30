@@ -1,5 +1,6 @@
 #include "kitdsp/resampler.h"
 #include "kitdsp/snesEcho.h"
+#include "kitdsp/snesEchoFilterPresets.h"
 #include "plugin.hpp"
 
 #define SAMPLE_RATE 32000
@@ -11,6 +12,13 @@ constexpr size_t snesBufferSize = 7680UL;
 int16_t snesBuffer1[7680];
 SNES::Echo snes1(snesBuffer1, snesBufferSize);
 Resampler<float> snesSampler(SNES::kOriginalSampleRate, SAMPLE_RATE);
+size_t filterPreset = 0;
+rack::dsp::SchmittTrigger nextFilter;
+rack::dsp::SchmittTrigger freeze;
+rack::dsp::SchmittTrigger clear;
+rack::dsp::SchmittTrigger reset;
+rack::dsp::SchmittTrigger clockIn;
+rack::dsp::Timer clockTime;
 }  // namespace
 
 struct DelayQuantity : public rack::engine::ParamQuantity {
@@ -23,74 +31,69 @@ struct DelayQuantity : public rack::engine::ParamQuantity {
         }
     }
 
-    virtual std::string getDisplayValueString() override {
-        return rack::string::f("%f", getValue());
-    }
+    virtual std::string getDisplayValueString() override { return rack::string::f("%f", getValue()); }
 };
 
 struct Snecho : Module {
     enum ParamId {
-        FILTER_PARAM,
+        SIZE_PARAM,
         FEEDBACK_PARAM,
+        FILTER_PRESET_PARAM,
         MIX_PARAM,
-        DELAY_PARAM,
-        DELAY_MOD_PARAM,
         FREEZE_PARAM,
+        MOD_PARAM,
+        FILTER_MIX_PARAM,
+        SIZE_RANGE_PARAM,
         CLEAR_PARAM,
         RESET_PARAM,
         PARAMS_LEN
     };
     enum InputId {
-        MIX_CV_INPUT,
-        DELAY_MOD_CV_INPUT,
+        SIZE_CV_INPUT,
         FEEDBACK_CV_INPUT,
-        DELAY_CV_INPUT,
-        FREEZE_CV_INPUT,
-        CLEAR_CV_INPUT,
-        RESET_CV_INPUT,
-        AUDIO_L_INPUT,
-        AUDIO_R_INPUT,
+        MIX_CV_INPUT,
+        FREEZE_GATE_INPUT,
+        MOD_CV_INPUT,
+        FILTER_MIX_CV_INPUT,
+        CLEAR_TRIG_INPUT,
+        RESET_TRIG_INPUT,
+        AUDIO_INPUT,
+        CLOCK_INPUT,
         INPUTS_LEN
     };
     enum OutputId { AUDIO_L_OUTPUT, AUDIO_R_OUTPUT, OUTPUTS_LEN };
-    enum LightId {
-        LIGHT0_LIGHT,
-        LIGHT0G_LIGHT,
-        LIGHT1_LIGHT,
-        LIGHT1G_LIGHT,
-        LIGHT2_LIGHT,
-        LIGHT2G_LIGHT,
-        LIGHT3_LIGHT,
-        LIGHT3G_LIGHT,
-        LIGHT4_LIGHT,
-        LIGHT4G_LIGHT,
-        LIGHTS_LEN
-    };
+    enum LightId { LIGHTS_LEN };
 
     Snecho() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-        configParam(FILTER_PARAM, 0.f, 1.f, 0.f, "");
-        configParam(FEEDBACK_PARAM, -1.f, 1.f, 0.f, "Feedback", "%", 0.0f,
-                    100.0f);
+
+        configParam(SIZE_PARAM, 0.f, 1.f, 0.f, "Echo buffer size");
+        configParam(FEEDBACK_PARAM, -1.f, 1.f, 0.f, "Feedback", "%", 0.0f, 100.0f);
+        configButton(FILTER_PRESET_PARAM, "Swap out FIR Filter setting");
         configParam(MIX_PARAM, 0.f, 1.f, 0.f, "Mix", "%", 0.0f, 100.0f);
-        configParam(DELAY_PARAM, 0.f, 1.f, 0.f, "Delay Length");
-        configParam(DELAY_MOD_PARAM, 0.f, 1.f, 0.f, "Delay mod/wiggle");
-        configParam(FREEZE_PARAM, 0.f, 1.f, 0.f, "Freeze Input");
-        configParam(CLEAR_PARAM, 0.f, 1.f, 0.f, "Clear Delay Buffer");
-        configParam(RESET_PARAM, 0.f, 1.f, 0.f, "Reset playhead to start");
-        configInput(MIX_CV_INPUT, "Mix");
-        configInput(DELAY_MOD_CV_INPUT, "Delay mod/Wiggle");
+        configSwitch(FREEZE_PARAM, 0.f, 1.f, 0.f, "Freeze Input");
+        configParam(MOD_PARAM, 0.f, 1.f, 0.f, "Delay modulation/wiggle");
+        configParam(FILTER_MIX_PARAM, 0.f, 1.f, 0.f, "Filter Mix", "%", 0.0f, 100.0f);
+        configSwitch(SIZE_RANGE_PARAM, 0.f, 2.f, 0.f, "Buffer Size Range", {"Standard", "Medium", "Long"});
+        configButton(CLEAR_PARAM, "Clear Delay Buffer");
+        configButton(RESET_PARAM, "Reset playhead to start");
+
+        configInput(SIZE_CV_INPUT, "Buffer size");
         configInput(FEEDBACK_CV_INPUT, "Feedback");
-        configInput(DELAY_CV_INPUT, "Delay");
-        configInput(FREEZE_CV_INPUT, "Freeze Input (gate)");
-        configInput(CLEAR_CV_INPUT, "Clear Delay Buffer (trig)");
-        configInput(RESET_CV_INPUT, "Reset playhead to start (trig)");
-        configInput(AUDIO_L_INPUT, "Audio L");
-        configInput(AUDIO_R_INPUT, "Audio R");
+        configInput(MIX_CV_INPUT, "Mix");
+        configInput(FREEZE_GATE_INPUT, "Freeze Input (gate)");
+        configInput(MOD_CV_INPUT, "Delay mod/Wiggle");
+        configInput(FILTER_MIX_CV_INPUT, "Filter Mix");
+        configInput(CLEAR_TRIG_INPUT, "Clear Delay Buffer (trig)");
+        configInput(RESET_TRIG_INPUT, "Reset playhead to start (trig)");
+        configInput(AUDIO_INPUT, "Audio In");
+        configInput(CLOCK_INPUT, "Clock In (used for delay sync)");
+
         configOutput(AUDIO_L_OUTPUT, "Audio L");
-        configOutput(AUDIO_R_OUTPUT, "Audio R");
-        configBypass(AUDIO_L_INPUT, AUDIO_L_OUTPUT);
-        configBypass(AUDIO_R_INPUT, AUDIO_R_OUTPUT);
+        configOutput(AUDIO_R_OUTPUT, "Audio R(Inverted)");
+
+        configBypass(AUDIO_INPUT, AUDIO_L_OUTPUT);
+        configBypass(AUDIO_INPUT, AUDIO_R_OUTPUT);
         snesSampler = {SNES::kOriginalSampleRate, 48000};
     }
 
@@ -100,45 +103,55 @@ struct Snecho : Module {
     }
 
     void process(const ProcessArgs& args) override {
-        snes1.cfg.echoBufferSize = params[DELAY_PARAM].getValue();
-        snes1.mod.echoBufferSize = inputs[DELAY_CV_INPUT].getVoltage() * 0.1f;
-        snes1.cfg.echoDelayMod = params[DELAY_MOD_PARAM].getValue();
-        snes1.mod.echoDelayMod = inputs[DELAY_MOD_CV_INPUT].getVoltage() * 0.1f;
+        // inputs
+        // core
+        snes1.cfg.echoBufferSize = params[SIZE_PARAM].getValue();
+        snes1.mod.echoBufferSize = inputs[SIZE_CV_INPUT].getVoltage() * 0.1f;
+
         snes1.cfg.echoFeedback = params[FEEDBACK_PARAM].getValue();
         snes1.mod.echoFeedback = inputs[FEEDBACK_CV_INPUT].getVoltage() * 0.1f;
-        snes1.cfg.filterMix = 0.0f;
-        snes1.mod.filterMix = 0.0f;
 
-        // TODO: hysterisis
+        if (nextFilter.process(params[FILTER_PRESET_PARAM].getValue())) {
+            filterPreset = filterPreset + 1 % sizeof(SNES::kFilterPresets);
+            memcpy(snes1.cfg.filterCoefficients, SNES::kFilterPresets[filterPreset].data, 8);
+        }
+
+        float wetDryMix = clamp(params[MIX_PARAM].getValue() + inputs[MIX_CV_INPUT].getVoltage() * 0.1f, 0.0f, 1.0f);
+
         snes1.cfg.freezeEcho = (params[FREEZE_PARAM].getValue()) > 0.5f;
-        snes1.mod.freezeEcho =
-            (inputs[FREEZE_CV_INPUT].getVoltage() * 0.1f) > 0.25f;
+        freeze.process(inputs[FREEZE_GATE_INPUT].getVoltage(), .1f, 1.f);
+        snes1.mod.freezeEcho = freeze.isHigh();
+
+        // extension
+        snes1.cfg.echoDelayMod = params[MOD_PARAM].getValue();
+        snes1.mod.echoDelayMod = inputs[MOD_CV_INPUT].getVoltage() * 0.1f;
+
+        snes1.cfg.filterMix = params[FILTER_MIX_PARAM].getValue();
+        snes1.mod.filterMix = inputs[FILTER_MIX_CV_INPUT].getVoltage() * 0.1f;
+
         snes1.mod.clearBuffer =
-            (params[CLEAR_PARAM].getValue() > 0.5f) ||
-            (inputs[CLEAR_CV_INPUT].getVoltage() * 0.1f) > 0.25f;
+            clear.process(params[CLEAR_PARAM].getValue() + inputs[CLEAR_TRIG_INPUT].getVoltage(), .1f, 1.f);
         snes1.mod.resetHead =
-            (params[RESET_PARAM].getValue() > 0.5f) ||
-            (inputs[RESET_CV_INPUT].getVoltage() * 0.1f) > 0.25f;
+            clear.process(params[RESET_PARAM].getValue() + inputs[RESET_TRIG_INPUT].getVoltage(), .1f, 1.f);
 
+        if (inputs[CLOCK_INPUT].isConnected()) {
+            clockTime.process(args.sampleTime);
+            if (clockIn.process(inputs[CLOCK_INPUT].getVoltage())) {
+                snes1.cfg.echoBufferIncrementSamples = SNES::MsToSamples(clockTime.getTime() * 1000.0f);
+                clockTime.reset();
+            }
+        } else {
+            snes1.cfg.echoBufferIncrementSamples = SNES::kOriginalEchoIncrementSamples;
+        }
 
-        float wetDry = params[MIX_PARAM].getValue();
-        wetDry += inputs[MIX_CV_INPUT].getVoltage() * 0.1f;
-        wetDry = wetDry > 1.0f ? 1.0f : wetDry < 0.0f ? 0.0f : wetDry;
+        // processing
+        float drySignal = inputs[AUDIO_INPUT].getVoltage() / 5.0f;
+        float wetSignal = snesSampler.Process<kitdsp::InterpolationStrategy::None>(
+            drySignal, [](float in, float& out) { out = snes1.Process(in * 0.5f) * 2.0f; });
 
-        float in = inputs[AUDIO_L_INPUT].getVoltage() / 5.0f;
-        float out;
-
-        out = snesSampler.Process<
-            kitdsp::InterpolationStrategy::Cubic>(
-            in,
-            [](float in, float& out) {
-                out = snes1.Process(in);
-            });
-
-        outputs[AUDIO_L_OUTPUT].setVoltage(5.0f *
-                                           lerpf(in, out, wetDry));
-        outputs[AUDIO_R_OUTPUT].setVoltage(-5.0f *
-                                           lerpf(in, out, wetDry));
+        // outputs
+        outputs[AUDIO_L_OUTPUT].setVoltage(5.0f * lerpf(drySignal, wetSignal, wetDryMix));
+        outputs[AUDIO_R_OUTPUT].setVoltage(-5.0f * lerpf(drySignal, wetSignal, wetDryMix));
     }
 };
 
@@ -148,65 +161,69 @@ struct SnechoWidget : ModuleWidget {
         setPanel(createPanel(asset::plugin(pluginInstance, "res/snecho.svg")));
 
         addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-        addChild(createWidget<ScrewSilver>(
-            Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-        addChild(createWidget<ScrewSilver>(
-            Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-        addChild(
-            createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH,
-                                          RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+        addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+        addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+        addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-        addParam(createParamCentered<VCVButton>(mm2px(Vec(10.659, 23.553)),
-                                                module, Snecho::FILTER_PARAM));
-        addParam(createParamCentered<RoundBlackKnob>(
-            mm2px(Vec(35.609, 39.825)), module, Snecho::FEEDBACK_PARAM));
-        addParam(createParamCentered<RoundBlackKnob>(
-            mm2px(Vec(21.831, 52.662)), module, Snecho::MIX_PARAM));
-        addParam(createParamCentered<RoundBlackKnob>(
-            mm2px(Vec(50.808, 52.662)), module, Snecho::DELAY_PARAM));
-        addParam(createParamCentered<RoundBlackKnob>(
-            mm2px(Vec(35.609, 68.519)), module, Snecho::DELAY_MOD_PARAM));
-        addParam(createParamCentered<VCVButton>(mm2px(Vec(20.033, 94.993)),
-                                                module, Snecho::FREEZE_PARAM));
-        addParam(createParamCentered<VCVButton>(mm2px(Vec(41.899, 94.993)),
-                                                module, Snecho::CLEAR_PARAM));
-        addParam(createParamCentered<VCVButton>(mm2px(Vec(60.984, 94.993)),
-                                                module, Snecho::RESET_PARAM));
+        float x0 = 8;
+        float x1 = 35;
+        float x2 = 45;
+        float ynext = 10;
+        float y = 10;
 
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(14.264, 83.942)),
-                                                 module, Snecho::MIX_CV_INPUT));
-        addInput(createInputCentered<PJ301MPort>(
-            mm2px(Vec(26.431, 83.942)), module, Snecho::DELAY_MOD_CV_INPUT));
-        addInput(createInputCentered<PJ301MPort>(
-            mm2px(Vec(40.209, 83.942)), module, Snecho::FEEDBACK_CV_INPUT));
-        addInput(createInputCentered<PJ301MPort>(
-            mm2px(Vec(52.376, 83.942)), module, Snecho::DELAY_CV_INPUT));
-        addInput(createInputCentered<PJ301MPort>(
-            mm2px(Vec(11.832, 102.249)), module, Snecho::FREEZE_CV_INPUT));
-        addInput(createInputCentered<PJ301MPort>(
-            mm2px(Vec(32.706, 102.249)), module, Snecho::CLEAR_CV_INPUT));
-        addInput(createInputCentered<PJ301MPort>(
-            mm2px(Vec(53.508, 102.249)), module, Snecho::RESET_CV_INPUT));
-        addInput(createInputCentered<PJ301MPort>(
-            mm2px(Vec(7.866, 115.969)), module, Snecho::AUDIO_L_INPUT));
-        addInput(createInputCentered<PJ301MPort>(
-            mm2px(Vec(20.033, 115.969)), module, Snecho::AUDIO_R_INPUT));
+        addLabel(mm2px(Vec(x0, y)), "size");
+        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(x1, y)), module, Snecho::SIZE_PARAM));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(x2, y)), module, Snecho::SIZE_CV_INPUT));
+        y += ynext;
+        addLabel(mm2px(Vec(x0, y)), "fb");
+        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(x1, y)), module, Snecho::FEEDBACK_PARAM));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(x2, y)), module, Snecho::FEEDBACK_CV_INPUT));
+        y += ynext;
+        addLabel(mm2px(Vec(x0, y)), "fir");
+        addParam(createParamCentered<VCVButton>(mm2px(Vec(x1, y)), module, Snecho::FILTER_PRESET_PARAM));
+        y += ynext;
+        addLabel(mm2px(Vec(x0, y)), "mix");
+        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(x1, y)), module, Snecho::MIX_PARAM));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(x2, y)), module, Snecho::MIX_CV_INPUT));
+        y += ynext;
+        addLabel(mm2px(Vec(x0, y)), "freeze");
+        addParam(createParamCentered<CKSS>(mm2px(Vec(x1, y)), module, Snecho::FREEZE_PARAM));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(x2, y)), module, Snecho::FREEZE_GATE_INPUT));
+        y += ynext;
 
-        addOutput(createOutputCentered<PJ301MPort>(
-            mm2px(Vec(47.773, 115.969)), module, Snecho::AUDIO_L_OUTPUT));
-        addOutput(createOutputCentered<PJ301MPort>(
-            mm2px(Vec(59.939, 115.969)), module, Snecho::AUDIO_R_OUTPUT));
+        addLabel(mm2px(Vec(x0, y)), "(EX) mod");
+        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(x1, y)), module, Snecho::MOD_PARAM));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(x2, y)), module, Snecho::MOD_CV_INPUT));
+        y += ynext;
+        addLabel(mm2px(Vec(x0, y)), "(EX) fir mix");
+        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(x1, y)), module, Snecho::FILTER_MIX_PARAM));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(x2, y)), module, Snecho::FILTER_MIX_CV_INPUT));
+        y += ynext;
+        addLabel(mm2px(Vec(x0, y)), "(EX) range");
+        addParam(createParamCentered<CKSSThreeHorizontal>(mm2px(Vec(x1, y)), module, Snecho::SIZE_RANGE_PARAM));
+        y += ynext;
+        addLabel(mm2px(Vec(x0, y)), "(EX) clear");
+        addParam(createParamCentered<VCVButton>(mm2px(Vec(x1, y)), module, Snecho::CLEAR_PARAM));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(x2, y)), module, Snecho::CLEAR_TRIG_INPUT));
+        y += ynext;
+        addLabel(mm2px(Vec(x0, y)), "(EX) reset");
+        addParam(createParamCentered<VCVButton>(mm2px(Vec(x1, y)), module, Snecho::RESET_PARAM));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(x2, y)), module, Snecho::RESET_TRIG_INPUT));
+        y += ynext;
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8, 115.969)), module, Snecho::AUDIO_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(20, 115.969)), module, Snecho::CLOCK_INPUT));
+        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(47.773, 115.969)), module, Snecho::AUDIO_L_OUTPUT));
+    }
 
-        addChild(createLightCentered<MediumLight<GreenRedLight>>(
-            mm2px(Vec(43.117, 23.553)), module, Snecho::LIGHT0_LIGHT));
-        addChild(createLightCentered<MediumLight<GreenRedLight>>(
-            mm2px(Vec(47.71, 23.553)), module, Snecho::LIGHT1_LIGHT));
-        addChild(createLightCentered<MediumLight<GreenRedLight>>(
-            mm2px(Vec(52.302, 23.553)), module, Snecho::LIGHT2_LIGHT));
-        addChild(createLightCentered<MediumLight<GreenRedLight>>(
-            mm2px(Vec(56.895, 23.553)), module, Snecho::LIGHT3_LIGHT));
-        addChild(createLightCentered<MediumLight<GreenRedLight>>(
-            mm2px(Vec(61.488, 23.553)), module, Snecho::LIGHT4_LIGHT));
+    Label* addLabel(const Vec& v, const std::string& str) {
+        NVGcolor black = nvgRGB(0, 0, 0);
+        Label* label = new Label();
+        label->box.pos = v;
+        label->box.pos.y -= 5.f;
+        label->text = str;
+        label->color = black;
+        addChild(label);
+        return label;
     }
 };
 

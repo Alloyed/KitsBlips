@@ -16,8 +16,8 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 #include "kitdsp/psxReverb.h"
-#include "kitdsp/psxReverbPresets.h"
 #include "kitdsp/math/util.h"
+#include "kitdsp/psxReverbPresets.h"
 
 /** Include standard C headers */
 #include <cassert>
@@ -62,7 +62,7 @@ PSX::Reverb::Reverb(int32_t sampleRate, float* buffer, size_t bufferSize) {
     /* alloc reverb buffer */
     mBufferSize = bufferSize;
     // this can be used for wrapping as `index & mask` instead of `index % size`
-    mBufferWrapMask = mBufferSize - 1; 
+    mBufferWrapMask = mBufferSize - 1;
     mBuffer = buffer;
 
     LoadPreset(kPresets[0].data.chunk, mSampleRate);
@@ -79,16 +79,13 @@ float_2 PSX::Reverb::Process(float_2 in) {
     in = vIN * in;
 
     // same side reflection
-    Set(mSAME,
-        (in + Get(dSAME) * vWALL - Get(mSAME - 1)) * vIIR + Get(mSAME - 1));
+    Set(mSAME, (in + Get(dSAME) * vWALL - Get(mSAME - 1)) * vIIR + Get(mSAME - 1));
 
     // different side reflection
-    Set(mDIFF,
-        (in + Get(dDIFF) * vWALL - Get(mDIFF - 1)) * vIIR + Get(mDIFF - 1));
+    Set(mDIFF, (in + Get(dDIFF) * vWALL - Get(mDIFF - 1)) * vIIR + Get(mDIFF - 1));
 
     // early echo
-    float_2 out = Get(mCOMB1) * vCOMB1 + Get(mCOMB2) * vCOMB2 +
-                  Get(mCOMB3) * vCOMB3 + Get(mCOMB4) * vCOMB4;
+    float_2 out = Get(mCOMB1) * vCOMB1 + Get(mCOMB2) * vCOMB2 + Get(mCOMB3) * vCOMB3 + Get(mCOMB4) * vCOMB4;
 
     // late reverb APF1
     out = out - Get(mAPF1 - dAPF1) * vAPF1;
@@ -100,7 +97,7 @@ float_2 PSX::Reverb::Process(float_2 in) {
     Set(mAPF2, out);
     out = out * vAPF2 + Get(mAPF2 - dAPF2);
 
-    mBufferHeadIndex = ((mBufferHeadIndex + 1) & mBufferWrapMask);
+    mBufferHeadIndex = (mBufferHeadIndex + 1) & mBufferWrapMask;
 
     // output to mixer
     return out;
@@ -116,9 +113,8 @@ void PSX::Reverb::Reset() {
 }
 
 float_2 PSX::Reverb::Get(size_2 index) {
-    return float_2{
-        mBuffer[(index.left + mBufferHeadIndex) & mBufferWrapMask],
-        mBuffer[(index.right + mBufferHeadIndex) & mBufferWrapMask]};
+    return float_2{mBuffer[(index.left + mBufferHeadIndex) & mBufferWrapMask],
+                   mBuffer[(index.right + mBufferHeadIndex) & mBufferWrapMask]};
 }
 
 void PSX::Reverb::Set(size_2 index, float_2 sample) {
@@ -126,16 +122,13 @@ void PSX::Reverb::Set(size_2 index, float_2 sample) {
     mBuffer[(index.right + mBufferHeadIndex) & mBufferWrapMask] = sample.right;
 }
 
-void PSX::Reverb::LoadPreset(const PresetBinaryChunk& presetData,
-                             float sampleRate) {
+void PSX::Reverb::LoadPreset(const PresetBinaryChunk& presetData, float sampleRate) {
     const PSX::PresetBinaryChunk* preset = &presetData;
 
     dAPF1 = u16ToDelayBufferIndex(preset->dAPF1, sampleRate);
     dAPF2 = u16ToDelayBufferIndex(preset->dAPF2, sampleRate);
     // correct 22050 Hz IIR alpha to our actual sampleRate
-    vIIR =
-        fc2alpha(alpha2fc(q16ToFloat(preset->vIIR), PSX::kOriginalSampleRate),
-                 sampleRate);
+    vIIR = fc2alpha(alpha2fc(q16ToFloat(preset->vIIR), PSX::kOriginalSampleRate), sampleRate);
     vCOMB1 = q16ToFloat(preset->vCOMB1);
     vCOMB2 = q16ToFloat(preset->vCOMB2);
     vCOMB3 = q16ToFloat(preset->vCOMB3);
