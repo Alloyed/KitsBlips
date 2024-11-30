@@ -63,7 +63,7 @@ struct Snecho : Module {
         INPUTS_LEN
     };
     enum OutputId { AUDIO_L_OUTPUT, AUDIO_R_OUTPUT, OUTPUTS_LEN };
-    enum LightId { LIGHTS_LEN };
+    enum LightId { FILTER_1_LIGHT, FILTER_2_LIGHT, FILTER_3_LIGHT, FILTER_4_LIGHT, LIGHTS_LEN };
 
     Snecho() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -117,6 +117,10 @@ struct Snecho : Module {
             memcpy(snes1.cfg.filterCoefficients, SNES::kFilterPresets[filterPreset].data, SNES::kFIRTaps);
             snes1.cfg.filterGain = dbToRatio(-SNES::kFilterPresets[filterPreset].maxGainDb);
         }
+        lights[FILTER_1_LIGHT].setBrightness(filterPreset & 1);
+        lights[FILTER_2_LIGHT].setBrightness(filterPreset & 2 >> 1);
+        lights[FILTER_3_LIGHT].setBrightness(filterPreset & 4 >> 2);
+        lights[FILTER_4_LIGHT].setBrightness(filterPreset & 8 >> 3);
 
         float wetDryMix = clamp(params[MIX_PARAM].getValue() + inputs[MIX_CV_INPUT].getVoltage() * 0.1f, 0.0f, 1.0f);
 
@@ -183,6 +187,10 @@ struct SnechoWidget : ModuleWidget {
         y += ynext;
         addLabel(mm2px(Vec(x0, y)), "fir");
         addParam(createParamCentered<VCVButton>(mm2px(Vec(x1, y)), module, Snecho::FILTER_PRESET_PARAM));
+        addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(x2 - 2, y - 2)), module, Snecho::FILTER_1_LIGHT));
+        addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(x2 + 2, y - 2)), module, Snecho::FILTER_2_LIGHT));
+        addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(x2 - 2, y + 2)), module, Snecho::FILTER_3_LIGHT));
+        addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(x2 + 2, y + 2)), module, Snecho::FILTER_4_LIGHT));
         y += ynext;
         addLabel(mm2px(Vec(x0, y)), "mix");
         addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(x1, y)), module, Snecho::MIX_PARAM));
