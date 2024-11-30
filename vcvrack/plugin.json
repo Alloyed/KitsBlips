@@ -18,15 +18,13 @@
       "slug": "psxverb",
       "name": "PSXVerb",
       "description": "Reverb algorithm used in the Playstation (PSX) DSP chip",
-      "tags": ["digital", "effect", "reverb"],
-      "hidden": true
+      "tags": ["digital", "effect", "reverb"]
     },
     {
       "slug": "snecho",
       "name": "Snecho",
       "description": "Echo algorithm used in the SNES SPC700 DSP chip",
-      "tags": ["digital", "effect", "delay"],
-      "hidden": true
+      "tags": ["digital", "effect", "delay"]
     },
     {
       "slug": "dance",

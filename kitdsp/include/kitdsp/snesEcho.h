@@ -23,7 +23,7 @@ static constexpr int32_t kOriginalEchoIncrementSamples = 16 * kOriginalSampleRat
 // hardcoded into the snes.
 static constexpr size_t kFIRTaps = 8;
 // how much should the input be attenuated by to avoid clipping?
-static constexpr float kHeadRoom = 1.0f;
+static constexpr float kHeadRoom = 1.f;
 
 // settings that were not available on original hardware marked as (extension)
 struct Config {
@@ -44,6 +44,8 @@ struct Config {
     // Raw FIR filter coefficients. Historical examples can be found here:
     // https://sneslab.net/wiki/FIR_Filter#Examples
     uint8_t filterCoefficients[kFIRTaps] = {0x7F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    // (Extension) final gain to apply to filter. useful for filters that produce louder signals than the dry
+    float filterGain = 1.0f;
     // [0, 1]: (Extension) FIR mix setting. 0 is no filter, 1 is full filter.
     float filterMix = 1.0f;
     // corresponds to the ECEN register value. when true, writing to the delay

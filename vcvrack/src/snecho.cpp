@@ -1,6 +1,7 @@
 #include "kitdsp/resampler.h"
 #include "kitdsp/snesEcho.h"
 #include "kitdsp/snesEchoFilterPresets.h"
+#include "kitdsp/dbMeter.h"
 #include "plugin.hpp"
 
 #define SAMPLE_RATE 32000
@@ -112,8 +113,9 @@ struct Snecho : Module {
         snes1.mod.echoFeedback = inputs[FEEDBACK_CV_INPUT].getVoltage() * 0.1f;
 
         if (nextFilter.process(params[FILTER_PRESET_PARAM].getValue())) {
-            filterPreset = filterPreset + 1 % sizeof(SNES::kFilterPresets);
-            memcpy(snes1.cfg.filterCoefficients, SNES::kFilterPresets[filterPreset].data, 8);
+            filterPreset = filterPreset + 1 % SNES::kNumFilterPresets;
+            memcpy(snes1.cfg.filterCoefficients, SNES::kFilterPresets[filterPreset].data, SNES::kFIRTaps);
+            snes1.cfg.filterGain = dbToRatio(-SNES::kFilterPresets[filterPreset].maxGainDb);
         }
 
         float wetDryMix = clamp(params[MIX_PARAM].getValue() + inputs[MIX_CV_INPUT].getVoltage() * 0.1f, 0.0f, 1.0f);

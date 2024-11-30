@@ -43,7 +43,13 @@ DSP Mixer/Reverb Block Diagram (c=channel, L/R)
 
 namespace {
 inline int8_t q1_7(uint8_t byte) {
-    return static_cast<int8_t>(byte);
+    union U {
+        uint8_t byte;
+        int8_t q;
+    };
+    U u;
+    u.byte = byte;
+    return u.q;
 }
 }  // namespace
 int16_t SNES::Echo::ProcessFIR(int16_t inSample) {
@@ -66,6 +72,7 @@ int16_t SNES::Echo::ProcessFIR(int16_t inSample) {
     S &= 0xFFFF;
     // Apply last tap
     S += (q1_7(cfg.filterCoefficients[7]) * mFIRBuffer[7] >> 7);
+    S *= cfg.filterGain;
     // clang-format on
 
     return S;

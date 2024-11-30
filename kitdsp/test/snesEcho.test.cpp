@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "kitdsp/snesEcho.h"
 #include "kitdsp/snesEchoFilterPresets.h"
+#include "kitdsp/dbMeter.h"
 #include "kitdsp/wavFile.h"
 #include "kitdsp/math/util.h"
 
@@ -31,7 +32,10 @@ TEST(snesEcho, works) {
         float in = fmodf(t*440.f, 1.0f) * clamp(1.0f - t*10.0f, 0.0f, 1.0f);
 
         float out = snes.Process(in);
-        f.Add(in + out);
+        float mixed = in + out;
+        ASSERT_GE(mixed, -1.0f);
+        ASSERT_LE(mixed, 1.0f);
+        f.Add(mixed);
     }
     
     // test 2 no feedback
@@ -47,7 +51,10 @@ TEST(snesEcho, works) {
         float in = fmodf(t*440.f, 1.0f) * clamp(1.0f - t*10.0f, 0.0f, 1.0f);
 
         float out = snes.Process(in);
-        f.Add(in + out);
+        float mixed = in + out;
+        ASSERT_GE(mixed, -1.0f);
+        ASSERT_LE(mixed, 1.0f);
+        f.Add(mixed);
     }
     
     // test 3 freeze
@@ -62,7 +69,10 @@ TEST(snesEcho, works) {
         snes.mod.freezeEcho = t > 0.1f;
 
         float out = snes.Process(in);
-        f.Add(in + out);
+        float mixed = in + out;
+        ASSERT_GE(mixed, -1.0f);
+        ASSERT_LE(mixed, 1.0f);
+        f.Add(mixed);
     }
     
     f.Finish();
@@ -83,13 +93,14 @@ TEST(snesEchoFilter, works) {
 
     size_t len = static_cast<size_t>(1.0f * SNES::kOriginalSampleRate);
     // test 4 filter
-    size_t numFilters = sizeof(SNES::kFilterPresets);
+    size_t numFilters = 4;
     for (size_t filter = 0; filter < numFilters; ++filter)
     {
         snes.Reset();
-        snes.cfg.echoBufferSize = 0.5f;
+        snes.cfg.echoBufferSize = 0.2f;
         snes.cfg.echoFeedback = 0.5f;
-        memcpy(snes.cfg.filterCoefficients, SNES::kFilterPresets[filter].data, 8);
+        memcpy(snes.cfg.filterCoefficients, SNES::kFilterPresets[filter].data, SNES::kFIRTaps);
+        snes.cfg.filterGain = dbToRatio(-SNES::kFilterPresets[filter].maxGainDb);
         snes.cfg.filterMix = 1.0f;
         for (size_t i = 0; i < len; ++i)
         {
@@ -98,7 +109,10 @@ TEST(snesEchoFilter, works) {
             // simple saw
             float in = fmodf(t * 440.f, 1.0f) * clamp(1.0f - t * 10.0f, 0.0f, 1.0f);
             float out = snes.Process(in);
-            f.Add(in + out);
+            float mixed = lerpf(in, out, 0.5f);
+            ASSERT_GE(mixed, -1.0f);
+            ASSERT_LE(mixed, 1.0f);
+            f.Add(mixed);
         }
     }
 
@@ -131,7 +145,10 @@ TEST(snesEchoBufferSize, isLinearQuantized) {
             // simple saw
             float in = fmodf(t * 440.f, 1.0f) * clamp(1.0f - t * 10.0f, 0.0f, 1.0f);
             float out = snes.Process(in);
-            f.Add((-in + out));
+            float mixed = -in + out;
+            ASSERT_GE(mixed, -1.0f);
+            ASSERT_LE(mixed, 1.0f);
+            f.Add(mixed);
         }
     }
 
