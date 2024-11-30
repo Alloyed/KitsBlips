@@ -1,4 +1,5 @@
 #include "kitdsp/psxReverb.h"
+#include "kitdsp/psxReverbPresets.h"
 #include "kitdsp/resampler.h"
 #include "plugin.hpp"
 
@@ -11,21 +12,23 @@ float psxBuffer[psxBufferSize];
 PSX::Reverb psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
 kitdsp::Resampler<float_2> psxSampler(PSX::kOriginalSampleRate,
                                       PSX::kOriginalSampleRate);
+size_t filterPreset = 1;
+rack::dsp::SchmittTrigger nextFilter;
 }  // namespace
 
 struct PSXVerb : Module {
-    enum ParamId { MIX_PARAM, MIX_AMT_PARAM, PARAMS_LEN };
-    enum InputId { MIX_IN_INPUT, AUDIO_L_INPUT, AUDIO_R_INPUT, INPUTS_LEN };
+    enum ParamId { MIX_PARAM, ALGORITHM_PARAM, PARAMS_LEN };
+    enum InputId { MIX_CV_INPUT, AUDIO_L_INPUT, AUDIO_R_INPUT, INPUTS_LEN };
     enum OutputId { AUDIO_L_OUTPUT, AUDIO_R_OUTPUT, OUTPUTS_LEN };
-    enum LightId { LIGHTS_LEN };
+    enum LightId { PRESET_1_LIGHT, PRESET_2_LIGHT, PRESET_3_LIGHT, PRESET_4_LIGHT, LIGHTS_LEN };
 
     PSXVerb() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-        configParam(MIX_PARAM, 0.f, 1.f, 0.f, "Mix");
-        configParam(MIX_AMT_PARAM, 0.f, 1.f, 0.f, "Mix CV");
-        configInput(MIX_IN_INPUT, "Mix");
-        configInput(AUDIO_L_INPUT, "Audio In (L/Mono)");
-        configInput(AUDIO_R_INPUT, "Audio In (R) (normalled to L)");
+        configParam(MIX_PARAM, 0.f, 1.f, 0.f, "Mix", "%", 0.0f, 100.0f);
+        configButton(ALGORITHM_PARAM, "Algorithm");
+        configInput(MIX_CV_INPUT, "Mix");
+        configInput(AUDIO_L_INPUT, "Audio In/L");
+        configInput(AUDIO_R_INPUT, "Audio In/R");
         configOutput(AUDIO_L_OUTPUT, "OUT/L");
         configOutput(AUDIO_R_OUTPUT, "OUT/R");
     }
@@ -36,10 +39,18 @@ struct PSXVerb : Module {
     }
 
     void process(const ProcessArgs& args) override {
-        float wetDry = params[MIX_PARAM].getValue();
-        wetDry += params[MIX_AMT_PARAM].getValue() *
-                  inputs[MIX_IN_INPUT].getVoltage() * 0.1f;
-        wetDry = wetDry > 1.0f ? 1.0f : wetDry < 0.0f ? 0.0f : wetDry;
+        if (nextFilter.process(params[ALGORITHM_PARAM].getValue())) {
+            // intentionally 1-indexed
+            filterPreset = (filterPreset % PSX::kNumPresets - 1) + 1;
+            psx.cfg.preset = filterPreset;
+        }
+        lights[PRESET_1_LIGHT].setBrightness(filterPreset & 1);
+        lights[PRESET_2_LIGHT].setBrightness(filterPreset & 2 >> 1);
+        lights[PRESET_3_LIGHT].setBrightness(filterPreset & 4 >> 2);
+        lights[PRESET_4_LIGHT].setBrightness(filterPreset & 8 >> 3);
+
+        float wetDryMix = params[MIX_PARAM].getValue() + inputs[MIX_CV_INPUT].getVoltage() * 0.1f;
+        wetDryMix = clamp(wetDryMix, 0.0f, 1.0f);
 
         float inputLeft = inputs[AUDIO_L_INPUT].getVoltage() / 5.0f;
         float_2 in = {inputLeft,
@@ -53,9 +64,9 @@ struct PSXVerb : Module {
             in, [](float_2 in, float_2& out) { out = psx.Process(in); });
 
         outputs[AUDIO_L_OUTPUT].setVoltage(5.0f *
-                                           lerpf(in.left, out.left, wetDry));
+                                           lerpf(in.left, out.left, wetDryMix));
         outputs[AUDIO_R_OUTPUT].setVoltage(5.0f *
-                                           lerpf(in.right, out.right, wetDry));
+                                           lerpf(in.right, out.right, wetDryMix));
     }
 };
 
@@ -73,22 +84,39 @@ struct PSXVerbWidget : ModuleWidget {
             createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH,
                                           RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-        addParam(createParamCentered<RoundBlackKnob>(
-            mm2px(Vec(39.539, 55.794)), module, PSXVerb::MIX_PARAM));
-        addParam(createParamCentered<RoundBlackKnob>(
-            mm2px(Vec(31.032, 85.505)), module, PSXVerb::MIX_AMT_PARAM));
+        float x0 = 8;
+        float x1 = 35;
+        float x2 = 45;
+        float ynext = 10;
+        float y = 10;
 
-        addInput(createInputCentered<PJ301MPort>(
-            mm2px(Vec(31.388, 98.3)), module, PSXVerb::MIX_IN_INPUT));
-        addInput(createInputCentered<PJ301MPort>(
-            mm2px(Vec(6.419, 112.184)), module, PSXVerb::AUDIO_L_INPUT));
-        addInput(createInputCentered<PJ301MPort>(
-            mm2px(Vec(18.585, 112.184)), module, PSXVerb::AUDIO_R_INPUT));
+        addLabel(mm2px(Vec(x0, y)), "Mix");
+        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(x1, y)), module, PSXVerb::MIX_PARAM));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(x2, y)), module, PSXVerb::MIX_CV_INPUT));
+        y += ynext;
+        addLabel(mm2px(Vec(x0, y)), "Algo");
+        addParam(createParamCentered<VCVButton>(mm2px(Vec(x1, y)), module, PSXVerb::ALGORITHM_PARAM));
+        addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(x2 - 2, y - 2)), module, PSXVerb::PRESET_1_LIGHT));
+        addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(x2 + 2, y - 2)), module, PSXVerb::PRESET_2_LIGHT));
+        addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(x2 - 2, y + 2)), module, PSXVerb::PRESET_3_LIGHT));
+        addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(x2 + 2, y + 2)), module, PSXVerb::PRESET_4_LIGHT));
+        y += ynext;
 
-        addOutput(createOutputCentered<PJ301MPort>(
-            mm2px(Vec(31.388, 111.95)), module, PSXVerb::AUDIO_L_OUTPUT));
-        addOutput(createOutputCentered<PJ301MPort>(
-            mm2px(Vec(43.555, 111.95)), module, PSXVerb::AUDIO_R_OUTPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8, 115.969)), module, PSXVerb::AUDIO_L_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(13, 115.969)), module, PSXVerb::AUDIO_R_INPUT));
+        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(47.773, 115.969)), module, PSXVerb::AUDIO_L_OUTPUT));
+        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(53, 115.969)), module, PSXVerb::AUDIO_R_OUTPUT));
+    }
+
+    Label* addLabel(const Vec& v, const std::string& str) {
+        NVGcolor black = nvgRGB(0, 0, 0);
+        Label* label = new Label();
+        label->box.pos = v;
+        label->box.pos.y -= 5.f;
+        label->text = str;
+        label->color = black;
+        addChild(label);
+        return label;
     }
 };
 
