@@ -31,7 +31,7 @@ TEST(psxEcho, works) {
             float t = i / static_cast<float>(len);
 
             // simple saw
-            float in = fmodf(t * 440.f, 1.0f) * clampf(1.0f - t * 10.0f, 0.0f, 1.0f);
+            float in = fmodf(t * 440.f, 1.0f) * clamp(1.0f - t * 10.0f, 0.0f, 1.0f);
 
             float_2 out = psx.Process(float_2{in, in});
             f.Add((out + in) * 0.5f);

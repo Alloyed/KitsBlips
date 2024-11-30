@@ -9,7 +9,7 @@ using namespace kitdsp;
 namespace {
 constexpr size_t snesBufferSize = 7680UL;
 int16_t snesBuffer1[7680];
-SNES::Model snes1(SNES::kOriginalSampleRate, snesBuffer1, snesBufferSize);
+SNES::Echo snes1(snesBuffer1, snesBufferSize);
 Resampler<float> snesSampler(SNES::kOriginalSampleRate, SAMPLE_RATE);
 }  // namespace
 
@@ -106,7 +106,6 @@ struct Snecho : Module {
         snes1.mod.echoDelayMod = inputs[DELAY_MOD_CV_INPUT].getVoltage() * 0.1f;
         snes1.cfg.echoFeedback = params[FEEDBACK_PARAM].getValue();
         snes1.mod.echoFeedback = inputs[FEEDBACK_CV_INPUT].getVoltage() * 0.1f;
-        snes1.cfg.filterSetting = 0;  // TODO
         snes1.cfg.filterMix = 0.0f;
         snes1.mod.filterMix = 0.0f;
 
@@ -140,25 +139,6 @@ struct Snecho : Module {
                                            lerpf(in, out, wetDry));
         outputs[AUDIO_R_OUTPUT].setVoltage(-5.0f *
                                            lerpf(in, out, wetDry));
-
-        size_t i = 0;
-        for (size_t idx = LIGHT0_LIGHT; idx < LIGHTS_LEN; idx += 2) {
-            lights[idx].setBrightnessSmooth(
-                (static_cast<size_t>(snes1.viz.readHeadLocation * 5) == i ? 0.5
-                                                                          : 0),
-                args.sampleTime);
-            i++;
-        }
-        i = 0;
-        for (size_t idx = LIGHT0G_LIGHT; idx < LIGHTS_LEN; idx += 2) {
-            lights[idx].setBrightnessSmooth(
-                (static_cast<size_t>(snes1.viz.writeHeadLocation * 5) ==
-                         ((i - 1) % 5)
-                     ? 0.5
-                     : 0),
-                args.sampleTime);
-            i++;
-        }
     }
 };
 

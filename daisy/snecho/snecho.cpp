@@ -12,10 +12,10 @@ DaisyPatchSM hw;
 Switch button, toggle;
 
 // constexpr size_t snesBufferSize =
-// SNES::Model::GetBufferDesiredSizeInt16s(SNES::kOriginalSampleRate);
+// SNES::Echo::GetBufferDesiredSizeInt16s(SNES::kOriginalSampleRate);
 constexpr size_t snesBufferSize = 7680UL;
 int16_t DSY_SDRAM_BSS snesBuffer[snesBufferSize];
-SNES::Model snes(SNES::kOriginalSampleRate, snesBuffer, snesBufferSize);
+SNES::Echo snes(snesBuffer, snesBufferSize);
 Resampler<float> snesSampler(SNES::kOriginalSampleRate, SNES::kOriginalSampleRate);
 
 float knobValue(int32_t cvEnum) {
@@ -43,7 +43,6 @@ void AudioCallback(AudioHandle::InputBuffer in,
     // TODO
     snes.cfg.echoDelayMod = 1.0f;
     snes.mod.echoDelayMod = 1.0f;
-    snes.cfg.filterSetting = 0;
     snes.mod.freezeEcho = 0.0f;
 
     float wetDry = clamp(knobValue(CV_4) + jackValue(CV_8), 0.0f, 1.0f);

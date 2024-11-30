@@ -37,8 +37,7 @@ float crunch(float in) {
             return tanhf(in);
         }
         case Algorithm::Fold: {
-            // input: [-.5, .5] out [-1, 1]
-            return sinf(in * 0.5 * kTwoPi);
+            return sinf(in * kPi);
         }
         case Algorithm::Rectify: {
             return fabsf(in) * 2.0f - 1.0f;
