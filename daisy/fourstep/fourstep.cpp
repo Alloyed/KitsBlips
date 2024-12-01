@@ -2,12 +2,14 @@
 #include <daisy_patch_sm.h>
 #include <kitdsp/ScaleQuantizer.h>
 #include <kitdsp/math/util.h>
+#include "kitDaisy/controls.h"
 
 /**
  * Patch.init() starting fourstep
  */
 
 using namespace kitdsp;
+using namespace kitDaisy::controls;
 using namespace daisy;
 using namespace patch_sm;
 
@@ -20,14 +22,6 @@ size_t indexInternal = 0;
 bool hasWrapped = false;
 kitdsp::ScaleQuantizer quantizer(kitdsp::kChromaticScale, 12);
 
-float knobValue(int32_t cvEnum) {
-    return clamp(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
-}
-
-float jackValue(int32_t cvEnum) {
-    return clamp(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
-}
-
 void AudioCallback(AudioHandle::InputBuffer in,
                    AudioHandle::OutputBuffer out,
                    size_t size) {
@@ -35,10 +29,11 @@ void AudioCallback(AudioHandle::InputBuffer in,
     button.Debounce();
     toggle.Debounce();
 
-    sequence[0] = lerpf(-1.0f, 1.0f, knobValue(CV_1));
-    sequence[1] = lerpf(-1.0f, 1.0f, knobValue(CV_2));
-    sequence[2] = lerpf(-1.0f, 1.0f, knobValue(CV_3));
-    sequence[3] = lerpf(-1.0f, 1.0f, knobValue(CV_4));
+    // TODO: calibration on these seems way off
+    sequence[0] = lerpf(-1.0f, 1.0f, GetKnob(hw.controls[CV_1]));
+    sequence[1] = lerpf(-1.0f, 1.0f, GetKnob(hw.controls[CV_2]));
+    sequence[2] = lerpf(-1.0f, 1.0f, GetKnob(hw.controls[CV_3]));
+    sequence[3] = lerpf(-1.0f, 1.0f, GetKnob(hw.controls[CV_4]));
 
     if (hw.gate_in_1.Trig() || button.RisingEdge()) {
         size_t lastIndex = indexInternal;
@@ -51,7 +46,7 @@ void AudioCallback(AudioHandle::InputBuffer in,
     }
 
     size_t index = (indexInternal +
-                    static_cast<size_t>(jackValue(CV_5) * cNumSteps + 0.5f)) %
+                    static_cast<size_t>(GetJack(hw.controls[CV_5]) * cNumSteps + 0.5f)) %
                    4;
 
     // hehe

@@ -1,15 +1,19 @@
 #include "daisy_patch_sm.h"
 
-#include "kitdsp/resampler.h"
-#include "kitdsp/snesEcho.h"
-#include "kitdsp/math/util.h"
+#include <kitdsp/resampler.h>
+#include <kitdsp/snesEcho.h>
+#include <kitdsp/math/util.h>
+
+#include "kitDaisy/controls.h"
 
 using namespace daisy;
+using namespace kitDaisy::controls;
 using namespace patch_sm;
 using namespace kitdsp;
 
 DaisyPatchSM hw;
 Switch button, toggle;
+LinearControl wetDryMix{hw.controls[CV_4], &hw.controls[CV_8]};
 
 // constexpr size_t snesBufferSize =
 // SNES::Echo::GetBufferDesiredSizeInt16s(SNES::kOriginalSampleRate);
@@ -18,14 +22,6 @@ int16_t DSY_SDRAM_BSS snesBuffer[snesBufferSize];
 SNES::Echo snes(snesBuffer, snesBufferSize);
 Resampler<float> snesSampler(SNES::kOriginalSampleRate, SNES::kOriginalSampleRate);
 
-float knobValue(int32_t cvEnum) {
-    return clamp(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
-}
-
-float jackValue(int32_t cvEnum) {
-    return clamp(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
-}
-
 void AudioCallback(AudioHandle::InputBuffer in,
                    AudioHandle::OutputBuffer out,
                    size_t size) {
@@ -33,19 +29,15 @@ void AudioCallback(AudioHandle::InputBuffer in,
     button.Debounce();
     toggle.Debounce();
 
-    snes.cfg.echoBufferSize = knobValue(CV_1);
-    snes.mod.echoBufferSize = jackValue(CV_5);
-    snes.cfg.echoFeedback = knobValue(CV_2);
-    snes.mod.echoFeedback = jackValue(CV_6);
-    snes.cfg.filterMix = knobValue(CV_3);
-    snes.mod.filterMix = jackValue(CV_7);
+    snes.cfg.echoBufferSize = GetKnob(hw.controls[CV_1]);
+    snes.mod.echoBufferSize = GetJack(hw.controls[CV_5]);
+    snes.cfg.echoFeedback = GetKnob(hw.controls[CV_2]);
+    snes.mod.echoFeedback = GetJack(hw.controls[CV_6]);
+    // unused
+    //GetKnob(hw.controls[CV_3]);
+    //GetJack(hw.controls[CV_7]);
 
-    // TODO
-    snes.cfg.echoDelayMod = 1.0f;
-    snes.mod.echoDelayMod = 1.0f;
-    snes.mod.freezeEcho = 0.0f;
-
-    float wetDry = clamp(knobValue(CV_4) + jackValue(CV_8), 0.0f, 1.0f);
+    float wetDry = wetDryMix.Get();
     hw.WriteCvOut(2, 2.5 * wetDry);
 
     snes.mod.clearBuffer = button.RisingEdge() || hw.gate_in_1.Trig();
