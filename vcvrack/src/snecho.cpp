@@ -1,26 +1,12 @@
+#include "kitdsp/dbMeter.h"
 #include "kitdsp/resampler.h"
 #include "kitdsp/snesEcho.h"
 #include "kitdsp/snesEchoFilterPresets.h"
-#include "kitdsp/dbMeter.h"
 #include "plugin.hpp"
 
 #define SAMPLE_RATE 32000
 
 using namespace kitdsp;
-
-namespace {
-constexpr size_t snesBufferSize = 7680UL;
-int16_t snesBuffer1[7680];
-SNES::Echo snes1(snesBuffer1, snesBufferSize);
-Resampler<float> snesSampler(SNES::kOriginalSampleRate, SAMPLE_RATE);
-size_t filterPreset = 0;
-rack::dsp::SchmittTrigger nextFilter;
-rack::dsp::SchmittTrigger freeze;
-rack::dsp::SchmittTrigger clear;
-rack::dsp::SchmittTrigger reset;
-rack::dsp::SchmittTrigger clockIn;
-rack::dsp::Timer clockTime;
-}  // namespace
 
 struct DelayQuantity : public rack::engine::ParamQuantity {
     void setDisplayValueString(std::string s) override {
@@ -65,16 +51,28 @@ struct Snecho : Module {
     enum OutputId { AUDIO_L_OUTPUT, AUDIO_R_OUTPUT, OUTPUTS_LEN };
     enum LightId { FILTER_1_LIGHT, FILTER_2_LIGHT, FILTER_3_LIGHT, FILTER_4_LIGHT, LIGHTS_LEN };
 
+    static constexpr size_t snesBufferSize = 7680UL * 10000;
+    int16_t snesBuffer1[snesBufferSize];
+    SNES::Echo snes1{snesBuffer1, snesBufferSize};
+    Resampler<float> snesSampler{SNES::kOriginalSampleRate, SAMPLE_RATE};
+    size_t filterPreset = 0;
+    rack::dsp::SchmittTrigger nextFilter;
+    rack::dsp::SchmittTrigger freeze;
+    rack::dsp::SchmittTrigger clear;
+    rack::dsp::SchmittTrigger reset;
+    rack::dsp::SchmittTrigger clockIn;
+    rack::dsp::Timer clockTime;
+
     Snecho() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
-        configParam(SIZE_PARAM, 0.f, 1.f, 0.f, "Echo buffer size");
+        configParam(SIZE_PARAM, 0.f, 1.f, 0.5f, "Echo buffer size");
         configParam(FEEDBACK_PARAM, -1.f, 1.f, 0.f, "Feedback", "%", 0.0f, 100.0f);
         configButton(FILTER_PRESET_PARAM, "Swap out FIR Filter setting");
-        configParam(MIX_PARAM, 0.f, 1.f, 0.f, "Mix", "%", 0.0f, 100.0f);
+        configParam(MIX_PARAM, 0.f, 1.f, .5f, "Mix", "%", 0.0f, 100.0f);
         configSwitch(FREEZE_PARAM, 0.f, 1.f, 0.f, "Freeze Input");
         configParam(MOD_PARAM, 0.f, 1.f, 0.f, "Delay modulation/wiggle");
-        configParam(FILTER_MIX_PARAM, 0.f, 1.f, 0.f, "Filter Mix", "%", 0.0f, 100.0f);
+        configParam(FILTER_MIX_PARAM, 0.f, 1.f, 1.f, "Filter Mix", "%", 0.0f, 100.0f);
         configSwitch(SIZE_RANGE_PARAM, 0.f, 2.f, 0.f, "Buffer Size Range", {"Standard", "Medium", "Long"});
         configButton(CLEAR_PARAM, "Clear Delay Buffer");
         configButton(RESET_PARAM, "Reset playhead to start");
@@ -113,14 +111,23 @@ struct Snecho : Module {
         snes1.mod.echoFeedback = inputs[FEEDBACK_CV_INPUT].getVoltage() * 0.1f;
 
         if (nextFilter.process(params[FILTER_PRESET_PARAM].getValue())) {
-            filterPreset = filterPreset + 1 % SNES::kNumFilterPresets;
+            filterPreset = (filterPreset + 1) % SNES::kNumFilterPresets;
             memcpy(snes1.cfg.filterCoefficients, SNES::kFilterPresets[filterPreset].data, SNES::kFIRTaps);
-            snes1.cfg.filterGain = dbToRatio(-SNES::kFilterPresets[filterPreset].maxGainDb);
+            // snes1.cfg.filterGain = dbToRatio(-SNES::kFilterPresets[filterPreset].maxGainDb);
         }
         lights[FILTER_1_LIGHT].setBrightness(filterPreset & 1);
-        lights[FILTER_2_LIGHT].setBrightness(filterPreset & 2 >> 1);
-        lights[FILTER_3_LIGHT].setBrightness(filterPreset & 4 >> 2);
-        lights[FILTER_4_LIGHT].setBrightness(filterPreset & 8 >> 3);
+        lights[FILTER_2_LIGHT].setBrightness((filterPreset & 2) >> 1);
+        lights[FILTER_3_LIGHT].setBrightness((filterPreset & 4) >> 2);
+        lights[FILTER_4_LIGHT].setBrightness((filterPreset & 8) >> 3);
+
+        size_t range = round(params[SIZE_RANGE_PARAM].getValue());
+        if (range == 0) {
+            snes1.cfg.echoBufferRangeMaxSamples = SNES::kOriginalMaxEchoSamples;
+        } else if (range == 1) {
+            snes1.cfg.echoBufferRangeMaxSamples = SNES::kExtremeMaxEchoSamples;
+        } else {
+            snes1.cfg.echoBufferRangeMaxSamples = SNES::MsToSamples(10000.0f);
+        }
 
         float wetDryMix = clamp(params[MIX_PARAM].getValue() + inputs[MIX_CV_INPUT].getVoltage() * 0.1f, 0.0f, 1.0f);
 
@@ -153,7 +160,7 @@ struct Snecho : Module {
         // processing
         float drySignal = inputs[AUDIO_INPUT].getVoltage() / 5.0f;
         float wetSignal = snesSampler.Process<kitdsp::InterpolationStrategy::None>(
-            drySignal, [](float in, float& out) { out = snes1.Process(in * 0.5f) * 2.0f; });
+            drySignal, [this](float in, float& out) { out = snes1.Process(in * 0.5f) * 2.0f; });
 
         // outputs
         outputs[AUDIO_L_OUTPUT].setVoltage(5.0f * lerpf(drySignal, wetSignal, wetDryMix));

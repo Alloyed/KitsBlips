@@ -132,7 +132,7 @@ float SNES::Echo::Process(float input) {
 
     size_t delayModSamples = GetDelayModSamples(delayMod);
 
-    size_t delayIndex = (mBufferIndex - delayModSamples) % mEchoBufferSize;
+    size_t delayIndex = (mBufferIndex + delayModSamples) % mEchoBufferSize;
 
     // shift echo buffer from 15-bit -> 16-bit
     int16_t delayedSample = mEchoBuffer[delayIndex] << 1;
