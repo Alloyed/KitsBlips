@@ -7,7 +7,9 @@
 #include "kitdsp/osc/oscillatorUtil.h"
 
 namespace kitdsp {
+namespace naive {
 class RampUpOscillator : public Phasor {
+    public:
     float Process() {
         Advance();
         return mPhase * 2.0f - 1.0f;
@@ -15,6 +17,7 @@ class RampUpOscillator : public Phasor {
 };
 
 class RampDownOscillator : public Phasor {
+    public:
     float Process() {
         Advance();
         return 1.0f - (mPhase * 2.0f);
@@ -47,4 +50,5 @@ class TriangleOscillator : public Phasor {
         return fabsf(mPhase - 0.5f) * 4.0f - 1.0f;
     }
 };
+}  // namespace naive
 }  // namespace kitdsp

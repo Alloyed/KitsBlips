@@ -8,6 +8,8 @@
 #include <kitdsp/filters/onePole.h>
 #include <kitdsp/math/util.h>
 
+#include "kitDaisy/controls.h"
+
 /**
  * multi-algorithm distortion
  */
@@ -68,6 +70,10 @@ class ToneFilter {
 
 DaisyPatchSM hw;
 Switch button, toggle;
+kitDaisy::controls::LinearControl gainDb{hw.controls[CV_1], &hw.controls[CV_5], 0.0f, 4.0f};
+kitDaisy::controls::LinearControl tone{hw.controls[CV_2], &hw.controls[CV_6], 0.0f, 1.0f};
+kitDaisy::controls::LinearControl makeupGainDb{hw.controls[CV_3], &hw.controls[CV_7], -3.0f, 3.0f};
+kitDaisy::controls::LinearControl mix{hw.controls[CV_4], &hw.controls[CV_8], 0.0f, 1.0f};
 
 constexpr float cSampleRate = 96000.0f;
 constexpr auto cSamplerateEnum = SaiHandle::Config::SampleRate::SAI_96KHZ;
@@ -78,14 +84,6 @@ ToneFilter tonePreRight(cSampleRate);
 ToneFilter tonePostLeft(cSampleRate);
 ToneFilter tonePostRight(cSampleRate);
 
-float knobValue(int32_t cvEnum) {
-    return clamp(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
-}
-
-float jackValue(int32_t cvEnum) {
-    return clamp(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
-}
-
 void AudioCallback(AudioHandle::InputBuffer in,
                    AudioHandle::OutputBuffer out,
                    size_t size) {
@@ -93,10 +91,10 @@ void AudioCallback(AudioHandle::InputBuffer in,
     button.Debounce();
     toggle.Debounce();
 
-    float gain = kitdsp::dbToRatio(lerpf(0.f, 4.0f, knobValue(CV_1)));
-    float tone = lerpf(.0f, 1.0f, knobValue(CV_2));
-    float makeup = kitdsp::dbToRatio(lerpf(-3.f, 3.f, knobValue(CV_3)));
-    float mix = lerpf(.0f, 1.0f, knobValue(CV_4));
+    float gain = kitdsp::dbToRatio(gainDb.Get());
+    float tonef = tone.Get();
+    float makeup = kitdsp::dbToRatio(makeupGainDb.Get());
+    float mixf = mix.Get();
 
     if (button.RisingEdge()) {
         algorithm =
@@ -118,7 +116,7 @@ void AudioCallback(AudioHandle::InputBuffer in,
         }
 
         // strong pre tone
-        float preTone = lerpf(0.1f, 0.9f, tone);
+        float preTone = lerpf(0.1f, 0.9f, tonef);
         float leftPre = tonePreLeft.Process(left, preTone);
         float rightPre = tonePreRight.Process(right, preTone);
 
@@ -127,7 +125,7 @@ void AudioCallback(AudioHandle::InputBuffer in,
         float crunchedRight = crunch(rightPre * gain);
 
         // weak post tone
-        float postTone = lerpf(0.4f, 0.6f, tone);
+        float postTone = lerpf(0.4f, 0.6f, tonef);
         float processedLeft =
             dcLeft.Process(tonePostLeft.Process(crunchedLeft, postTone)) *
             makeup;
@@ -135,8 +133,8 @@ void AudioCallback(AudioHandle::InputBuffer in,
             dcRight.Process(tonePostRight.Process(crunchedRight, postTone)) *
             makeup;
 
-        outleft = lerpf(left, processedLeft, mix);
-        outright = lerpf(right, processedRight, mix);
+        outleft = lerpf(left, processedLeft, mixf);
+        outright = lerpf(right, processedRight, mixf);
     }
 }
 
