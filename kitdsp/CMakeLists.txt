@@ -25,6 +25,9 @@ endif()
 
 # when built standalone, enable tests
 if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+	file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/CTestCustom.cmake
+	"set(CTEST_CUSTOM_POST_TEST \"${CMAKE_CURRENT_SOURCE_DIR}/test/spectrograms.sh\")")
+
 	include(CTest)
 	add_subdirectory(test)
 endif()
