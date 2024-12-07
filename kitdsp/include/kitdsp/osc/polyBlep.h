@@ -86,8 +86,8 @@ class PolyBlepProcessor {
      * @param magnitudeAndDirection how big was the discontinuity, and was it jumping from high or low or the reverse?
      */
     void InsertDiscontinuity(SAMPLE timeSinceDiscontinuitySamples, SAMPLE magnitudeAndDirection) {
-        mThisSample = ThisBlepSample(timeSinceDiscontinuitySamples) * magnitudeAndDirection * 0.5f;
-        mNextSample = NextBlepSample(timeSinceDiscontinuitySamples) * magnitudeAndDirection * 0.5f;
+        mThisSample += ThisBlepSample(timeSinceDiscontinuitySamples) * magnitudeAndDirection;
+        mNextSample += NextBlepSample(timeSinceDiscontinuitySamples) * magnitudeAndDirection;
     }
 
     /**
@@ -96,8 +96,8 @@ class PolyBlepProcessor {
      * @param magnitudeAndDirection how big was the discontinuity, and was it jumping from high or low or the reverse?
      */
     void InsertIntegratedDiscontinuity(SAMPLE timeSinceDiscontinuitySamples, SAMPLE magnitudeAndDirection) {
-        mThisSample = ThisIntegratedBlepSample(timeSinceDiscontinuitySamples) * magnitudeAndDirection * 0.5f;
-        mNextSample = NextIntegratedBlepSample(timeSinceDiscontinuitySamples) * magnitudeAndDirection * 0.5f;
+        mThisSample += ThisIntegratedBlepSample(timeSinceDiscontinuitySamples) * magnitudeAndDirection;
+        mNextSample += NextIntegratedBlepSample(timeSinceDiscontinuitySamples) * magnitudeAndDirection;
     }
 
     SAMPLE Process(SAMPLE input) {

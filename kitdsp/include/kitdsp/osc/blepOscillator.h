@@ -21,11 +21,10 @@ class RampUpOscillator : public Phasor {
    public:
     float Process() {
         float oldPhase = mPhase;
-        Advance();
-        if (oldPhase > mPhase) {
-            mBlep.InsertDiscontinuity(mPhase * mAdvance, -2.0f);
+        if (Advance()) {
+            mBlep.InsertDiscontinuity(mPhase / mAdvance, -1.0f);
         }
-        return mBlep.Process(Wave(mPhase));
+        return Wave(mBlep.Process(mPhase));
     }
 
     void HardSync() {
@@ -56,10 +55,10 @@ class PulseOscillator : public Phasor {
 
         if (oldPhase > mPhase) {
             // crossed 0
-            mBlep.InsertDiscontinuity(mPhase / mAdvance, 2.0f);
+            mBlep.InsertDiscontinuity(mPhase / mAdvance, 1.0f);
         } else if (mPhase > mDuty && oldPhase <= mDuty) {
             // crossed midpoint
-            mBlep.InsertDiscontinuity((mPhase - mDuty) / mAdvance, -2.0f);
+            mBlep.InsertDiscontinuity((mPhase - mDuty) / mAdvance, -1.0f);
         }
         return mBlep.Process(Wave(mPhase, mDuty));
     }

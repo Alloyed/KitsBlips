@@ -12,8 +12,7 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(testdsp
     dsfOscillator.test.cpp
-    naiveOscillator.test.cpp
-    blepOscillator.test.cpp
+    oscillatorSweeps.test.cpp
     snesEcho.test.cpp
     psxReverb.test.cpp
 )

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include "kitdsp/math/util.h"
 
 namespace kitdsp {
@@ -39,5 +40,33 @@ class OnePole {
     float mG;
     float mGi;
     float mState;
+};
+
+// multiple OnePole filters in series
+template <size_t NUM_POLES>
+class OnePoleSeries {
+   public:
+    inline void Reset() {
+        for (auto& pole : mPoles) {
+            pole.Reset();
+        }
+    }
+
+    inline void SetFrequency(float frequencyHz, float sampleRate) {
+        for (auto& pole : mPoles) {
+            pole.SetFrequency(frequencyHz, sampleRate);
+        }
+    }
+
+    inline float Process(float in) {
+        float out = in;
+        for (auto& pole : mPoles) {
+            out = pole.Process(out);
+        }
+        return out;
+    }
+
+   private:
+    std::array<OnePole, NUM_POLES> mPoles;
 };
 }  // namespace kitdsp

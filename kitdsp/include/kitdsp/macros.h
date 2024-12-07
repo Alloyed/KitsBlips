@@ -21,3 +21,9 @@
 #else
 #define KITDSP_CONSTEXPR
 #endif
+
+#if KITDSP_HAS_CPP20
+#define KITDSP_UNUSED [[maybe_unused]]
+#else
+#define KITDSP_UNUSED
+#endif

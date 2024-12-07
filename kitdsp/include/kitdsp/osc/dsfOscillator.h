@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 #include "kitdsp/filters/dcBlocker.h"
+#include "kitdsp/macros.h"
 
 namespace kitdsp {
 /**
