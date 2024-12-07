@@ -8,19 +8,27 @@ constexpr float kTwoPi = 6.28318530718;
 constexpr float kPi = 3.14159265359;
 constexpr float kHalfPi = 1.57079632679;
 
-template<typename F>
+template <typename F>
 inline F min(F a, F b) {
     return a < b ? a : b;
 }
 
-template<typename F>
+template <typename F>
 inline F max(F a, F b) {
     return a > b ? a : b;
 }
 
-template<typename F>
+template <typename F>
 inline F clamp(F in, F min, F max) {
     return in > max ? max : in < min ? min : in;
+}
+
+template <typename F>
+F fade(F a, F b, float t) {
+    // this looks like lerp, but it's designed to more precisely replicate the
+    // input a/b signals. it does not behave monotonically outside of the 0-1
+    // range, which may be annoying in some cases.
+    return a * (F(1) - t) + b * t;
 }
 
 inline float fadeCpowf(float a, float b, float t) {

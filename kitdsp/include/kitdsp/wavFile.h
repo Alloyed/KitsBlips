@@ -1,8 +1,8 @@
 #pragma once
 
-#include "kitdsp/math/vector.h"
 #include <cstdint>
 #include <cstdio>
+#include "kitdsp/math/vector.h"
 
 // convenience wrapper for writing wav files using cstdio (mostly for debugging)
 
@@ -10,8 +10,7 @@ namespace kitdsp {
 template <size_t NUM_CHANNELS>
 class WavFile {
    public:
-    WavFile(float sampleRate, FILE* fp)
-        : mFp(fp), mSampleRate(static_cast<uint32_t>(sampleRate)) {}
+    WavFile(float sampleRate, FILE* fp) : mFp(fp), mSampleRate(static_cast<uint32_t>(sampleRate)) {}
 
     void Start() {
         // implied
@@ -37,8 +36,7 @@ class WavFile {
         uint32_t bytesPerSecond = mBytesPerSample * NUM_CHANNELS * mSampleRate;
         fwrite(&bytesPerSecond, sizeof(bytesPerSecond), 1, mFp);
         uint16_t bytesPerSampleAllChannels = mBytesPerSample * NUM_CHANNELS;
-        fwrite(&bytesPerSampleAllChannels, sizeof(bytesPerSampleAllChannels), 1,
-               mFp);
+        fwrite(&bytesPerSampleAllChannels, sizeof(bytesPerSampleAllChannels), 1, mFp);
         uint16_t bitsPerSample = mBytesPerSample * bitsPerByte;
         fwrite(&bitsPerSample, sizeof(bitsPerSample), 1, mFp);
 
@@ -50,10 +48,9 @@ class WavFile {
     }
 
     void Add(float in) { mNumSamples += fwrite(&in, mBytesPerSample, 1, mFp); }
-    
+
     void Add(Vector<float, NUM_CHANNELS> in) {
-        for (size_t i = 0; i < NUM_CHANNELS; ++i)
-        {
+        for (size_t i = 0; i < NUM_CHANNELS; ++i) {
             Add(in.data[i]);
         }
     }
@@ -69,6 +66,8 @@ class WavFile {
         uint32_t wavDataSize = mNumSamples * NUM_CHANNELS * mBytesPerSample;
         fwrite(&fileSize, sizeof(fileSize), 1, mFp);
     }
+
+    uint32_t GetSampleRate() { return mSampleRate; }
 
    private:
     // configuration

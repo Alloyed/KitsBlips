@@ -9,7 +9,7 @@
 namespace kitdsp {
 namespace naive {
 class RampUpOscillator : public Phasor {
-    public:
+   public:
     float Process() {
         Advance();
         return mPhase * 2.0f - 1.0f;
@@ -17,7 +17,7 @@ class RampUpOscillator : public Phasor {
 };
 
 class RampDownOscillator : public Phasor {
-    public:
+   public:
     float Process() {
         Advance();
         return 1.0f - (mPhase * 2.0f);
@@ -39,7 +39,7 @@ class PulseOscillator : public Phasor {
     }
 
    private:
-    float mHalfDuty;
+    float mHalfDuty = 0.25f;
 };
 
 class TriangleOscillator : public Phasor {
