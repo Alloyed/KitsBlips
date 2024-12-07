@@ -1,6 +1,7 @@
 #include <daisy.h>
 #include <daisy_patch_sm.h>
 #include <kitdsp/osc/naiveOscillator.h>
+#include "kitDaisy/controls.h"
 
 /**
  * Patch.init() starting vco
@@ -18,20 +19,19 @@ kitdsp::naive::PulseOscillator pulse;
 kitdsp::naive::TriangleOscillator tri;
 kitdsp::naive::PulseOscillator sub;
 
-void AudioCallback(AudioHandle::InputBuffer in,
-                   AudioHandle::OutputBuffer out,
-                   size_t size) {
+void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size) {
     hw.ProcessAllControls();
     button.Debounce();
     toggle.Debounce();
 
-    float freq = 220.0f;
+    float freq = 260 * pow(2, kitDaisy::controls::GetKnob(hw.controls[CV_1]) * 5.0f +
+                                  kitDaisy::controls::GetJack(hw.controls[CV_5]) * 5.0f);
     float duty = 0.5f;
-    
+
     saw.SetFrequency(freq, hw.AudioSampleRate());
     pulse.SetFrequency(freq, hw.AudioSampleRate());
     tri.SetFrequency(freq, hw.AudioSampleRate());
-    sub.SetFrequency(freq, hw.AudioSampleRate());
+    sub.SetFrequency(freq * 0.5f, hw.AudioSampleRate());
     pulse.SetDuty(duty);
     sub.SetDuty(duty);
 

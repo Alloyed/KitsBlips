@@ -1,7 +1,7 @@
 #include <daisy.h>
 #include <daisy_patch_sm.h>
-#include <kitdsp/math/util.h>
 #include <kitdsp/dbMeter.h>
+#include <kitdsp/math/util.h>
 #include "kitDaisy/controls.h"
 
 /**
@@ -10,6 +10,7 @@
 
 using namespace daisy;
 using namespace kitdsp;
+using namespace kitDaisy::controls;
 using namespace patch_sm;
 
 DaisyPatchSM hw;
@@ -20,19 +21,17 @@ kitDaisy::controls::LinearControl baseGain2(hw.controls[CV_2], nullptr, 0.0f, 1.
 kitDaisy::controls::AttenuvertedControl vc1(nullptr, hw.controls[CV_3], hw.controls[CV_5], 0.0f, 1.0f);
 kitDaisy::controls::AttenuvertedControl vc2(nullptr, hw.controls[CV_4], hw.controls[CV_7], 0.0f, 1.0f);
 
-void AudioCallback(AudioHandle::InputBuffer in,
-                   AudioHandle::OutputBuffer out,
-                   size_t size) {
+void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size) {
     hw.ProcessAllControls();
     button.Debounce();
     toggle.Debounce();
-    
-    float basegain1 = powf(knobValue(CV_1), 2);
-    float basegain2 = powf(knobValue(CV_2), 2);
-    float vcgain1 = powf(kitdsp::lerpf(-1.f, 1.f, knobValue(CV_3)), 2);
-    float vcgain2 = powf(kitdsp::lerpf(-1.f, 1.f, knobValue(CV_4)), 2);
-    float vc1 = jackValue(CV_5);
-    float vc2 = jackValue(CV_7);
+
+    float basegain1 = powf(GetKnob(hw.controls[CV_1]), 2);
+    float basegain2 = powf(GetKnob(hw.controls[CV_2]), 2);
+    float vcgain1 = powf(kitdsp::lerpf(-1.f, 1.f, GetKnob(hw.controls[CV_3])), 2);
+    float vcgain2 = powf(kitdsp::lerpf(-1.f, 1.f, GetKnob(hw.controls[CV_4])), 2);
+    float vc1 = GetJack(hw.controls[CV_5]);
+    float vc2 = GetJack(hw.controls[CV_7]);
     float gain1 = basegain1 + (vc1 * vcgain1);
     float gain2 = basegain2 + (vc2 * vcgain2);
 
