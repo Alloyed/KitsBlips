@@ -1,0 +1,32 @@
+{
+  "tasks": [
+    {
+      "command": "make clean; make; make program-dfu",
+      "label": "program",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": ["$gcc"],
+      "type": "shell"
+    },
+    {
+      "type": "cmake",
+      "label": "build project",
+      "command": "build",
+      "targets": ["Calibrate"],
+      "group": "build",
+      "problemMatcher": ["$gcc"],
+      "detail": "Build local project"
+    },
+    {
+      "type": "cmake",
+      "label": "build all (cmake)",
+      "command": "build",
+      "targets": ["all"],
+      "group": "build",
+      "problemMatcher": ["$gcc"],
+      "detail": "Build All projects"
+    }
+  ],
+  "version": "2.0.0"
+}

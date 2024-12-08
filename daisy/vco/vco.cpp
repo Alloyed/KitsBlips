@@ -1,6 +1,7 @@
 #include <daisy.h>
 #include <daisy_patch_sm.h>
-#include <kitdsp/osc/naiveOscillator.h>
+#include <kitdsp/osc/blepOscillator.h>
+#include <kitdsp/osc/oscillatorUtil.h>
 #include "kitDaisy/controls.h"
 
 /**
@@ -13,27 +14,26 @@ using namespace patch_sm;
 DaisyPatchSM hw;
 Switch button, toggle;
 
-// TODO: minbleps
-kitdsp::naive::RampUpOscillator saw;
-kitdsp::naive::PulseOscillator pulse;
-kitdsp::naive::TriangleOscillator tri;
-kitdsp::naive::PulseOscillator sub;
+kitdsp::OversampledOscillator<kitdsp::blep::RampUpOscillator, 2> saw;
+kitdsp::OversampledOscillator<kitdsp::blep::PulseOscillator, 2> pulse;
+kitdsp::OversampledOscillator<kitdsp::blep::TriangleOscillator, 2> tri;
+kitdsp::OversampledOscillator<kitdsp::blep::PulseOscillator, 2> sub;
 
 void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size) {
     hw.ProcessAllControls();
     button.Debounce();
     toggle.Debounce();
 
-    float freq = 260 * pow(2, kitDaisy::controls::GetKnob(hw.controls[CV_1]) * 5.0f +
-                                  kitDaisy::controls::GetJack(hw.controls[CV_5]) * 5.0f);
+    float freq = 260 * pow(2, kitDaisy::controls::GetKnobN(hw.controls[CV_1]) * 5.0f +
+                                  kitDaisy::controls::GetJackN(hw.controls[CV_5]) * 5.0f);
     float duty = 0.5f;
 
     saw.SetFrequency(freq, hw.AudioSampleRate());
     pulse.SetFrequency(freq, hw.AudioSampleRate());
     tri.SetFrequency(freq, hw.AudioSampleRate());
     sub.SetFrequency(freq * 0.5f, hw.AudioSampleRate());
-    pulse.SetDuty(duty);
-    sub.SetDuty(duty);
+    pulse.GetOscillator().SetDuty(duty);
+    sub.GetOscillator().SetDuty(duty);
 
     for (size_t i = 0; i < size; i++) {
         float sawf = saw.Process();
@@ -45,11 +45,15 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
 }
 
 int main(void) {
+    kitDaisy::controls::ControlCalibrator calibrate{hw.qspi};
     hw.Init();
     hw.SetAudioBlockSize(4);
     hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_96KHZ);
     button.Init(DaisyPatchSM::B7, hw.AudioCallbackRate());
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
+    calibrate.Init();
+    calibrate.ApplyControlCalibration(hw);
+
     hw.StartAudio(AudioCallback);
 
     for (;;) {

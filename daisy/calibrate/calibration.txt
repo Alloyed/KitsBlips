@@ -1,0 +1,4 @@
+CV_5: {scale: 5.177, offset: -0.158 }
+CV_6: {scale: 5.163, offset: -0.182 }
+CV_7: {scale: 5.174, offset: -0.157 }
+CV_8: {scale: 5.155, offset: -0.129 }

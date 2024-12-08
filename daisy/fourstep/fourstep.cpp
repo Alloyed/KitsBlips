@@ -22,18 +22,16 @@ size_t indexInternal = 0;
 bool hasWrapped = false;
 kitdsp::ScaleQuantizer quantizer(kitdsp::kChromaticScale, 12);
 
-void AudioCallback(AudioHandle::InputBuffer in,
-                   AudioHandle::OutputBuffer out,
-                   size_t size) {
+void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size) {
     hw.ProcessAllControls();
     button.Debounce();
     toggle.Debounce();
 
     // TODO: calibration on these seems way off
-    sequence[0] = lerpf(-1.0f, 1.0f, GetKnob(hw.controls[CV_1]));
-    sequence[1] = lerpf(-1.0f, 1.0f, GetKnob(hw.controls[CV_2]));
-    sequence[2] = lerpf(-1.0f, 1.0f, GetKnob(hw.controls[CV_3]));
-    sequence[3] = lerpf(-1.0f, 1.0f, GetKnob(hw.controls[CV_4]));
+    sequence[0] = lerpf(-1.0f, 1.0f, GetKnobN(hw.controls[CV_1]));
+    sequence[1] = lerpf(-1.0f, 1.0f, GetKnobN(hw.controls[CV_2]));
+    sequence[2] = lerpf(-1.0f, 1.0f, GetKnobN(hw.controls[CV_3]));
+    sequence[3] = lerpf(-1.0f, 1.0f, GetKnobN(hw.controls[CV_4]));
 
     if (hw.gate_in_1.Trig() || button.RisingEdge()) {
         size_t lastIndex = indexInternal;
@@ -45,9 +43,7 @@ void AudioCallback(AudioHandle::InputBuffer in,
         indexInternal = 0;
     }
 
-    size_t index = (indexInternal +
-                    static_cast<size_t>(GetJack(hw.controls[CV_5]) * cNumSteps + 0.5f)) %
-                   4;
+    size_t index = (indexInternal + static_cast<size_t>(GetJackN(hw.controls[CV_5]) * cNumSteps + 0.5f)) % 4;
 
     // hehe
     float outBi = sequence[index];

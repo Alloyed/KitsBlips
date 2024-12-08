@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include "kitdsp/macros.h"
 
 namespace kitdsp {
 constexpr float kTwoPi = 6.28318530718;
@@ -13,10 +14,28 @@ inline F min(F a, F b) {
     return a < b ? a : b;
 }
 
+#ifdef __arm__
+template <>
+inline float min<float>(float a, float b) {
+    float r;
+    asm("vminnm.f32 %[d], %[n], %[m]" : [d] "=t"(r) : [n] "t"(a), [m] "t"(b) :);
+    return r;
+}
+#endif
+
 template <typename F>
 inline F max(F a, F b) {
     return a > b ? a : b;
 }
+
+#ifdef __arm__
+template <>
+inline float max<float>(float a, float b) {
+    float r;
+    asm("vmaxnm.f32 %[d], %[n], %[m]" : [d] "=t"(r) : [n] "t"(a), [m] "t"(b) :);
+    return r;
+}
+#endif
 
 template <typename F>
 inline F clamp(F in, F min, F max) {
@@ -37,11 +56,11 @@ inline float fadeCpowf(float a, float b, float t) {
     return (a * scalar_2) + (b * scalar_1);
 }
 
-inline float roundTo(float in, float increment) {
+inline constexpr float roundTo(float in, float increment) {
     return in - std::remainder(in, increment);
 }
 
-inline uint32_t ceilToPowerOf2(uint32_t x) {
+inline KITDSP_CONSTEXPR uint32_t ceilToPowerOf2(uint32_t x) {
     x--;
     x |= x >> 1;
     x |= x >> 2;
@@ -52,7 +71,7 @@ inline uint32_t ceilToPowerOf2(uint32_t x) {
     return x;
 }
 
-inline uint32_t ceilToPowerOf2(float f) {
+inline KITDSP_CONSTEXPR uint32_t ceilToPowerOf2(float f) {
     return ceilToPowerOf2(static_cast<uint32_t>(ceilf(f)));
 }
 
@@ -82,5 +101,13 @@ inline F lerpHermite4pt3oXf(F x0, F x1, F x2, F x3, float t) {
 
 inline float blockNanf(float in, float valueIfNan = 0.0f) {
     return std::isfinite(in) ? in : valueIfNan;
+}
+
+/**
+ * turns a midi note number (fractional allowed) into a frequence in standard A4=440 western tuning.
+ * for ref: midi note 69 is A4, 48 is C3
+ */
+inline float midiToFrequency(float midiNote) {
+    return exp2((midiNote - 69.0f) / 12.0f) * 440.0f;
 }
 }  // namespace kitdsp

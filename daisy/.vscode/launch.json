@@ -1,0 +1,31 @@
+{
+  "configurations": [
+    {
+      "type": "cortex-debug",
+      "name": "Cortex Debug",
+      "configFiles": ["interface/stlink.cfg", "target/stm32h7x.cfg"],
+      "cwd": "${workspaceFolder}",
+      "debuggerArgs": ["-d", "${workspaceRoot}"],
+      "executable": "${workspaceRoot}/build/calibrate/Calibrate.elf",
+      "interface": "swd",
+      "openOCDLaunchCommands": ["init", "reset init"],
+      "preLaunchTask": "build-project",
+      "preRestartCommands": ["load", "enable breakpoint", "monitor reset"],
+      "request": "launch",
+      //"runToEntryPoint": "main",
+      "servertype": "openocd",
+      "svdFile": "${workspaceRoot}/.vscode/STM32H750x.svd",
+      "rttConfig": {
+        "enabled": true,
+        "address": "auto",
+        "decoders": [
+          {
+            "port": 0, // In RTT lingo, this is the buffer index (or channel)
+            "type": "console"
+          }
+        ]
+      }
+    }
+  ],
+  "version": "0.2.0"
+}

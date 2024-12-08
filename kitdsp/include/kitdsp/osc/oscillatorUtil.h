@@ -9,12 +9,13 @@
 namespace kitdsp {
 class Phasor {
    public:
-    void SetFrequency(float frequencyHz, float sampleRate) {
-        mAdvance = frequencyHz / sampleRate;
-    }
+    void SetFrequency(float frequencyHz, float sampleRate) { mAdvance = frequencyHz / sampleRate; }
     void HardSync() { mPhase = 0.0f; }
     float GetPhase() { return mPhase; }
-    void Reset() { mPhase = 0.0f; mAdvance = 0.0f; }
+    void Reset() {
+        mPhase = 0.0f;
+        mAdvance = 0.0f;
+    }
     static float WrapPhase(float phase) { return phase - floor(phase); }
 
    protected:
@@ -28,20 +29,25 @@ class Phasor {
     float mAdvance = 0.0f;
 };
 
-template<typename OSC, size_t FACTOR>
+template <typename OSC, size_t FACTOR>
 class OversampledOscillator {
-    public:
+   public:
     void SetFrequency(float frequencyHz, float sampleRate) {
         mSampler.SetSampleRate(sampleRate);
         mOsc.SetFrequency(frequencyHz, mSampler.GetTargetSampleRate());
     }
     void HardSync() { mOsc.HardSync(); }
     float GetPhase() { return mOsc.GetPhase(); }
-    void Reset() { mOsc.Reset(); mSampler.Reset(); }
-    float Process() {
-         return mSampler.Process([&](float& out) { out = mOsc.Process(); });
+    void Reset() {
+        mOsc.Reset();
+        mSampler.Reset();
     }
-    private:
+    float Process() {
+        return mSampler.Process([&](float& out) { out = mOsc.Process(); });
+    }
+    OSC& GetOscillator() { return mOsc; }
+
+   private:
     OSC mOsc;
     Oversampler<float, FACTOR> mSampler{48000.0f};
 };
