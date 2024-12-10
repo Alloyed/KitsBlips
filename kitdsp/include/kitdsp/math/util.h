@@ -56,7 +56,7 @@ inline float fadeCpowf(float a, float b, float t) {
     return (a * scalar_2) + (b * scalar_1);
 }
 
-inline constexpr float roundTo(float in, float increment) {
+inline float roundTo(float in, float increment) {
     return in - std::remainder(in, increment);
 }
 
