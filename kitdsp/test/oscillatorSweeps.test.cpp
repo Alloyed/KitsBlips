@@ -18,13 +18,23 @@ void Sweep(WavFile<2>& f, OSC1& osc1, OSC2& osc2) {
     osc2.Reset();
     for (size_t i = 0; i < len; ++i) {
         float t = i / static_cast<float>(len);
-        osc1.SetFrequency(t * f.GetSampleRate() * 0.1f, f.GetSampleRate());
-        osc2.SetFrequency(t * f.GetSampleRate() * 0.1f, f.GetSampleRate());
+        osc1.SetFrequency(t * 13000.0f, f.GetSampleRate());
+        osc2.SetFrequency(t * 13000.0f, f.GetSampleRate());
         f.Add(osc1.Process() * 0.5f);
         f.Add(osc2.Process() * 0.5f);
     }
 }
 
+template <typename OSC1>
+void Sweep(WavFile<1>& f, OSC1& osc1) {
+    size_t len = static_cast<size_t>(4.0f * f.GetSampleRate());
+    osc1.Reset();
+    for (size_t i = 0; i < len; ++i) {
+        float t = i / static_cast<float>(len);
+        osc1.SetFrequency(t * 13000.0f, f.GetSampleRate());
+        f.Add(osc1.Process() * 0.5f);
+    }
+}
 
 class TestPolyOsc : public Phasor {
     //float t = 0.; // 0 <= t < 1
@@ -70,18 +80,21 @@ class TestPolyOsc : public Phasor {
 TEST(blepOscillator, sweep) {
     {
         naive::RampUpOscillator osc1;
-        blep::RampUpOscillator osc1b;
-        TestPolyOsc osc1c;
-        OversampledOscillator<blep::RampUpOscillator, 4> osc1d;
+        blep::RampUpOscillator osc2;
+        OversampledOscillator<naive::RampUpOscillator, 8> osc3;
+        OversampledOscillator<blep::RampUpOscillator, 8> osc4;
+        OversampledOscillator<TestPolyOsc, 8> osc5;
 
         FILE* fp = fopen("saw_sweeps.wav", "wb");
         ASSERT_NE(fp, nullptr);
-        WavFile<2> f{SR, fp};
+        WavFile<1> f{SR, fp};
 
         f.Start();
-        Sweep(f, osc1, osc1b);
-        Sweep(f, osc1, osc1c);
-        Sweep(f, osc1, osc1d);
+        Sweep(f, osc1);
+        Sweep(f, osc2);
+        Sweep(f, osc3);
+        Sweep(f, osc4);
+        Sweep(f, osc5);
         f.Finish();
 
         fclose(fp);
