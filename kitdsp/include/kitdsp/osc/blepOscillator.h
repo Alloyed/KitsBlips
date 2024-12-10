@@ -22,9 +22,9 @@ class RampUpOscillator : public Phasor {
     float Process() {
         float oldPhase = mPhase;
         if (Advance()) {
-            mBlep.InsertDiscontinuity(mPhase / mAdvance, -1.0f);
+            mBlep.InsertDiscontinuity(mPhase / mAdvance, 1.0f);
         }
-        return Wave(mBlep.Process(mPhase));
+        return mBlep.Process(Wave(mPhase));
     }
 
     void HardSync() {

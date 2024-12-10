@@ -24,8 +24,8 @@ class Oversampler {
         if(sourceRate != mSampleRate)
         {
             mSampleRate = sourceRate;
-            mFilterUp.SetFrequency(sourceRate * 0.45f, sourceRate * FACTOR);
-            mFilterDown.SetFrequency(sourceRate * 0.45f, sourceRate * FACTOR);
+            mFilterUp.SetFrequency(sourceRate * 0.25f, sourceRate * FACTOR);
+            mFilterDown.SetFrequency(sourceRate * 0.25f, sourceRate * FACTOR);
         }
     }
 
@@ -80,7 +80,7 @@ class Oversampler {
     // These are IIR filters with a relatively shallow slope, which means to cut off most high frequency content they
     // need to cut off some audible content as well.
     // Ideally we could make a dedicated HalfBandFilter type
-    OnePoleSeries<2> mFilterUp;
-    OnePoleSeries<2> mFilterDown;
+    OnePoleSeries<4> mFilterUp;
+    OnePoleSeries<4> mFilterDown;
 };
 }  // namespace kitdsp
