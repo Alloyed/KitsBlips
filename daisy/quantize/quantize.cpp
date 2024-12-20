@@ -1,10 +1,9 @@
+#include <kitdsp/math/util.h>
 #include <kitdsp/ScaleQuantizer.h>
 #include "daisy_patch_sm.h"
-#include "daisysp.h"
 
 using namespace daisy;
 using namespace patch_sm;
-using namespace daisysp;
 
 /**
  * Quantizer module:
@@ -26,8 +25,7 @@ using namespace daisysp;
 DaisyPatchSM hw;
 Switch updateTransposeRoot;
 // ScaleQuantizer quantizer(kChromaticScale, DSY_COUNTOF(kChromaticScale));
-kitdsp::ScaleQuantizer quantizer(kitdsp::kPentatonic,
-                                 DSY_COUNTOF(kitdsp::kPentatonic));
+kitdsp::ScaleQuantizer quantizer(kitdsp::kPentatonic, 5);
 // ScaleQuantizer quantizer(kMajorScale, DSY_COUNTOF(kMajorScale));
 
 struct State {
@@ -50,7 +48,7 @@ void CvCallback() {
     hw.ProcessAllControls();
     Controls();
 
-    float inputNote = fmap(state.input, 0.0f, 60.0f);
+    float inputNote = kitdsp::lerpf(0.0f, 60.0f, state.input);
     /*
     float transposeNote = fmap(state.transpose, 0.0f, 60.0f)
                           - fmap(state.transposeRoot, 0.0f, 60.0f);
@@ -61,7 +59,7 @@ void CvCallback() {
         state.hasNoteChanged++;
         state.lastNote = quantizedNote;
     }
-    float noteOut = (fclamp(quantizedNote, 0.f, 60.f) / 60.0f) * 5.0f;
+    float noteOut = (kitdsp::clamp(quantizedNote, 0.f, 60.f) / 60.0f) * 5.0f;
     hw.WriteCvOut(CV_OUT_1, noteOut);
 }
 

@@ -1,10 +1,8 @@
 #include <string>
 #include "daisy_patch_sm.h"
-#include "daisysp.h"
 
 using namespace daisy;
 using namespace patch_sm;
-using namespace daisysp;
 
 /**
  * sum is a simple cv/audio/gate mixer:

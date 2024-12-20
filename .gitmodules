@@ -1,9 +1,6 @@
 [submodule "sdk/JUCE"]
 	path = sdk/JUCE
 	url = git@github.com:juce-framework/JUCE.git
-[submodule "sdk/DaisySP"]
-	path = sdk/DaisySP
-	url = git@github.com:electro-smith/DaisySP.git
 [submodule "sdk/libDaisy"]
 	path = sdk/libDaisy
 	url = git@github.com:Alloyed/libDaisy.git
