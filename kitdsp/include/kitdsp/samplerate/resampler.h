@@ -34,18 +34,19 @@ class Resampler {
         float t = mSampleCounter / mPeriod;
 
         // Linear interpolation
+        using namespace interpolate;
         switch (strategy) {
             case InterpolationStrategy::None: {
                 return mOutput[3];
             };
             case InterpolationStrategy::Linear: {
-                return interpolate::linear(mOutput[2], mOutput[3], t);
+                return linear(mOutput[2], mOutput[3], t);
             };
             case InterpolationStrategy::Hermite: {
-                return interpolate::hermite4pt3oX(mOutput[0], mOutput[1], mOutput[2], mOutput[3], t);
+                return hermite4pt3oX(mOutput[0], mOutput[1], mOutput[2], mOutput[3], t);
             };
             case InterpolationStrategy::Cubic: {
-                return interpolate::cubic(mOutput[0], mOutput[1], mOutput[2], mOutput[3], t);
+                return cubic(mOutput[0], mOutput[1], mOutput[2], mOutput[3], t);
             };
         }
     }

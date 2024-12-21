@@ -2,7 +2,7 @@
 
 #include "kitdsp/math/vector.h"
 #include "kitdsp/psxReverb.h"
-#include "kitdsp/resampler.h"
+#include "kitdsp/samplerate/resampler.h"
 #include "kitdsp/math/util.h"
 
 using namespace daisy;
@@ -46,7 +46,7 @@ void AudioCallback(AudioHandle::InputBuffer in,
         float_2 dry = float_2{IN_L[i] * 0.5f, IN_R[i] * 0.5f};
         float_2 wet =
             psxSampler
-                .Process<kitdsp::InterpolationStrategy::Linear>(
+                .Process<kitdsp::interpolate::InterpolationStrategy::Linear>(
                     dry,
                     [](float_2 in, float_2& out) { out = psx.Process(in); });
 

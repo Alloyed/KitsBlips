@@ -1,6 +1,6 @@
 #include "kitdsp/psxReverb.h"
 #include "kitdsp/psxReverbPresets.h"
-#include "kitdsp/resampler.h"
+#include "kitdsp/samplerate/resampler.h"
 #include "plugin.hpp"
 
 using namespace kitdsp;
@@ -53,7 +53,7 @@ struct PSXVerb : Module {
                       inputs[AUDIO_R_INPUT].isConnected() ? inputs[AUDIO_R_INPUT].getVoltage() / 5.0f : inputLeft};
         float_2 out;
 
-        out = psxSampler.Process<kitdsp::InterpolationStrategy::Cubic>(
+        out = psxSampler.Process<kitdsp::interpolate::InterpolationStrategy::Cubic>(
             in, [this](float_2 in, float_2& out) { out = psx.Process(in); });
 
         outputs[AUDIO_L_OUTPUT].setVoltage(5.0f * lerpf(in.left, out.left, wetDryMix));

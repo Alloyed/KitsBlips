@@ -1,7 +1,7 @@
 #include "daisy_patch_sm.h"
 
 #include <kitdsp/math/util.h>
-#include <kitdsp/resampler.h>
+#include <kitdsp/samplerate/resampler.h>
 #include <kitdsp/snesEcho.h>
 
 #include "kitDaisy/controls.h"
@@ -49,7 +49,7 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
     for (size_t i = 0; i < size; i++) {
         // signals are scaled to get a more appropriate clipping level for
         // eurorack's (often very loud) signal values
-        float delayed = snesSampler.Process<InterpolationStrategy::Linear>(
+        float delayed = snesSampler.Process<interpolate::InterpolationStrategy::Linear>(
             IN_L[i] * 0.5f, [](float in, float& out) { out = snes.Process(in); });
 
         OUT_L[i] = lerpf(IN_L[i], delayed * 2.0f, wetDry);

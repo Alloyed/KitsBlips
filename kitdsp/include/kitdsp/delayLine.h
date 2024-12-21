@@ -37,18 +37,19 @@ class DelayLine {
         int32_t idx = static_cast<int32_t>(delay);
         float frac = delay - static_cast<float>(idx);
 
+        using namespace interpolate;
         switch (strategy) {
             case InterpolationStrategy::None: {
                 return Read(idx);
             };
             case InterpolationStrategy::Linear: {
-                return interpolate::linear(Read(idx), Read(idx+1), frac);
+                return linear(Read(idx), Read(idx+1), frac);
             };
             case InterpolationStrategy::Hermite: {
-                return interpolate::hermite4pt3oX(Read(idx - 1), Read(idx), Read(idx + 1), Read(idx + 2), frac);
+                return hermite4pt3oX(Read(idx - 1), Read(idx), Read(idx + 1), Read(idx + 2), frac);
             };
             case InterpolationStrategy::Cubic: {
-                return interpolate::cubic(Read(idx - 1), Read(idx), Read(idx + 1), Read(idx + 2), frac);
+                return cubic(Read(idx - 1), Read(idx), Read(idx + 1), Read(idx + 2), frac);
             };
         }
     }
