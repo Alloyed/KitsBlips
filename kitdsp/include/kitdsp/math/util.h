@@ -58,27 +58,8 @@ inline KITDSP_CONSTEXPR uint32_t ceilToPowerOf2(float f) {
 }
 
 template <typename F>
-F lerpf(F a, F b, float t) {
-    return a + (b - a) * t;
-}
-
-template <typename F>
-inline F lerpCubicf(F x0, F x1, F x2, F x3, float t) {
-    F a0, a1, a2, a3;
-    a0 = x3 - x2 - x0 + x1;
-    a1 = x0 - x1 - a0;
-    a2 = x2 - x0;
-    a3 = x1;
-    return (a0 * (t * t * t)) + (a1 * (t * t)) + (a2 * t) + (a3);
-}
-
-template <typename F>
-inline F lerpHermite4pt3oXf(F x0, F x1, F x2, F x3, float t) {
-    F c0 = x1;
-    F c1 = (x2 - x0) * 0.5f;
-    F c2 = x0 - (x1 * 2.5f) + (x2 * 2.0f) - (x3 * .5f);
-    F c3 = ((x3 - x0) * .5f) + ((x1 - x2) * 1.5f);
-    return (((((c3 * t) + c2) * t) + c1) * t) + c0;
+F lerpf(F x0, F x1, float t) {
+    return x0 + (x1 - x0) * t;
 }
 
 inline float blockNanf(float in, float valueIfNan = 0.0f) {
