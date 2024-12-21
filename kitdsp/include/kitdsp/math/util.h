@@ -14,28 +14,10 @@ inline F min(F a, F b) {
     return a < b ? a : b;
 }
 
-#ifdef __arm__
-template <>
-inline float min<float>(float a, float b) {
-    float r;
-    asm("vminnm.f32 %[d], %[n], %[m]" : [d] "=t"(r) : [n] "t"(a), [m] "t"(b) :);
-    return r;
-}
-#endif
-
 template <typename F>
 inline F max(F a, F b) {
     return a > b ? a : b;
 }
-
-#ifdef __arm__
-template <>
-inline float max<float>(float a, float b) {
-    float r;
-    asm("vmaxnm.f32 %[d], %[n], %[m]" : [d] "=t"(r) : [n] "t"(a), [m] "t"(b) :);
-    return r;
-}
-#endif
 
 template <typename F>
 inline F clamp(F in, F min, F max) {
@@ -111,3 +93,5 @@ inline float midiToFrequency(float midiNote) {
     return exp2((midiNote - 69.0f) / 12.0f) * 440.0f;
 }
 }  // namespace kitdsp
+
+#include "kitdsp/math/util_arm.inl"

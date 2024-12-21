@@ -6,6 +6,14 @@ FetchContent_Declare(
     SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/libDaisy
 )
 FetchContent_Declare(
+    CMSIS_5 
+    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/libDaisy/Drivers/CMSIS_5
+)
+FetchContent_Declare(
+    CMSIS-DSP
+    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/libDaisy/Drivers/CMSIS-DSP
+)
+FetchContent_Declare(
     KitDSP
     SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/kitdsp
 )
