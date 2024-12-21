@@ -42,6 +42,13 @@ class ControlCalibrator {
         }
     }
 
+    void StoreKnobCalibration(int32_t pin, float zeroVolt, float fiveVolt) {
+        auto& values = mStorage.GetSettings().adcValues[pin];
+        // rescaled to voltage equivalents
+        values.scale = 5.0f / (fiveVolt - zeroVolt);
+        values.offset = -zeroVolt;
+    }
+
     void StorePinCalibration(int32_t pin, float oneVolt, float threeVolt) {
         auto& values = mStorage.GetSettings().adcValues[pin];
         // rescaled to voltage equivalents

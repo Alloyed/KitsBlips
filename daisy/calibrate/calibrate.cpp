@@ -52,8 +52,6 @@ int main(void) {
     button.Init(DaisyPatchSM::B7, hw.AudioCallbackRate());
     // hw.StartAudio(AudioCallback);
 
-    // TODO: calibrate knobs
-
     System::Delay(10);
     Log::PrintLine("Current Calibration:");
     for (int32_t pin = CV_5; pin <= CV_8; ++pin) {
@@ -61,6 +59,28 @@ int main(void) {
         calibrator.GetPinCalibration(pin, scale, offset);
         Log::PrintLine("CV_%d: {scale: %s, offset: %s }", pin - CV_1 + 1, Float(scale), Float2(offset));
     }
+    
+    // calibrate knobs
+    float rawZeroVolt[ADC_LAST];
+    float rawFiveVolt[ADC_LAST];
+    Log::PrintLine("Calibrating knobs");
+
+    Log::PrintLine("----");
+    Log::PrintLine("Turn all knobs to the left (counter-clockwise), press and release button when ready");
+    WaitForButton();
+    for (int32_t pin = CV_1; pin <= CV_4; ++pin) {
+        rawZeroVolt[pin] = hw.controls[pin].Value();
+        Log::PrintLine("CV_%d error: %s, got it!", pin - CV_1 + 1, Float(rawZeroVolt[pin]));
+    }
+
+    Log::PrintLine("----");
+    Log::PrintLine("Turn all knobs to the right (clockwise), press and release button when ready");
+    WaitForButton();
+    for (int32_t pin = CV_1; pin <= CV_4; ++pin) {
+        rawFiveVolt[pin] = hw.controls[pin].Value();
+        Log::PrintLine("CV_%d error: %s, got it!", pin - CV_1 + 1, Float(rawFiveVolt[pin]));
+    }
+
 
     // calibrate jacks
     float rawOneVolt[ADC_LAST];
@@ -83,14 +103,21 @@ int main(void) {
         Log::PrintLine("error: %s, got it!", Float(rawThreeVolt[pin] / threeVolt));
     }
 
+    // TODO: calibrate outputs
+    
+    // store
+    for (int32_t pin = CV_1; pin <= CV_4; ++pin) {
+        calibrator.StoreKnobCalibration(pin, rawZeroVolt[pin], rawFiveVolt[pin]);
+        float offset, scale;
+        calibrator.GetPinCalibration(pin, scale, offset);
+        Log::PrintLine("CV_%d: {scale: %s, offset: %s }", pin - CV_1 + 1, Float(scale), Float2(offset));
+    }
     for (int32_t pin = CV_5; pin <= CV_8; ++pin) {
         calibrator.StorePinCalibration(pin, rawOneVolt[pin], rawThreeVolt[pin]);
         float offset, scale;
         calibrator.GetPinCalibration(pin, scale, offset);
         Log::PrintLine("CV_%d: {scale: %s, offset: %s }", pin - CV_1 + 1, Float(scale), Float2(offset));
     }
-
-    // TODO: calibrate outputs
 
     calibrator.Save();
     Log::PrintLine("---------");
