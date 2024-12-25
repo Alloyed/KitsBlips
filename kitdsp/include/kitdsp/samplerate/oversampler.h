@@ -29,7 +29,7 @@ class Oversampler {
         }
     }
 
-    float GetTargetSampleRate() {
+    float GetTargetSampleRate() const {
         return mSampleRate * FACTOR;
     }
 

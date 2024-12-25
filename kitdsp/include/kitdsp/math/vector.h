@@ -8,6 +8,7 @@ namespace kitdsp {
 template <typename TYPE, size_t SIZE>
 struct Vector;
 
+/** This is a math vector type and not a C++ vector type. */
 template <typename TYPE>
 struct Vector<TYPE, 2> {
     using type = TYPE;

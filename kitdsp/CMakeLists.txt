@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.26)
 project(KitDSP)
 
+include(../content.cmake)
+FetchContent_MakeAvailable(etl)
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM")
+	FetchContent_MakeAvailable(CMSIS-DSP)
+endif()
+
 add_library(KitDSP STATIC
 	src/psxReverb.cpp
 	src/snesEcho.cpp
@@ -18,6 +24,8 @@ target_include_directories(KitDSP PUBLIC
 	PRIVATE
 	src
 )
+
+target_link_libraries(KitDSP PUBLIC etl::etl)
 
 # when built standalone, enable tests
 if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)

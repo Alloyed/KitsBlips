@@ -1,7 +1,7 @@
 #pragma once
 
 #include "kitdsp/math/util.h"
-#include "kitdsp/oversampler.h"
+#include "kitdsp/samplerate/oversampler.h"
 /**
  * base implementation of common oscillator utils
  */
@@ -11,7 +11,7 @@ class Phasor {
    public:
     void SetFrequency(float frequencyHz, float sampleRate) { mAdvance = frequencyHz / sampleRate; }
     void HardSync() { mPhase = 0.0f; }
-    float GetPhase() { return mPhase; }
+    float GetPhase() const { return mPhase; }
     void Reset() {
         mPhase = 0.0f;
         mAdvance = 0.0f;
@@ -37,7 +37,7 @@ class OversampledOscillator {
         mOsc.SetFrequency(frequencyHz, mSampler.GetTargetSampleRate());
     }
     void HardSync() { mOsc.HardSync(); }
-    float GetPhase() { return mOsc.GetPhase(); }
+    float GetPhase() const { return mOsc.GetPhase(); }
     void Reset() {
         mOsc.Reset();
         mSampler.Reset();

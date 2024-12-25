@@ -1,5 +1,5 @@
 #include "kitdsp/dbMeter.h"
-#include "kitdsp/resampler.h"
+#include "kitdsp/samplerate/resampler.h"
 #include "kitdsp/snesEcho.h"
 #include "kitdsp/snesEchoFilterPresets.h"
 #include "plugin.hpp"
@@ -159,7 +159,7 @@ struct Snecho : Module {
 
         // processing
         float drySignal = inputs[AUDIO_INPUT].getVoltage() / 5.0f;
-        float wetSignal = snesSampler.Process<kitdsp::InterpolationStrategy::None>(
+        float wetSignal = snesSampler.Process<kitdsp::interpolate::InterpolationStrategy::None>(
             drySignal, [this](float in, float& out) { out = snes1.Process(in * 0.5f) * 2.0f; });
 
         // outputs

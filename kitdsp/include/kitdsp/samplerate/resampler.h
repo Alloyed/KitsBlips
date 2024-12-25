@@ -3,10 +3,9 @@
 #include <cstddef>
 #include <cstdint>
 #include "kitdsp/math/util.h"
+#include "kitdsp/math/interpolate.h"
 
 namespace kitdsp {
-enum class InterpolationStrategy { None, Linear, Hermite, Cubic };
-
 template<typename SAMPLE>
 class Resampler {
     // TODO: we should filter the inputs to avoid aliasing
@@ -15,7 +14,7 @@ class Resampler {
     Resampler(float sourceRate, float targetRate)
         : mPeriod(targetRate / sourceRate) {}
 
-    template <InterpolationStrategy strategy, typename F>
+    template <interpolate::InterpolationStrategy strategy, typename F>
     SAMPLE Process(SAMPLE in, F&& callback) {
         mSampleCounter += 1.0f;
         if (mSampleCounter > mPeriod * 10000.0f) {
@@ -35,20 +34,19 @@ class Resampler {
         float t = mSampleCounter / mPeriod;
 
         // Linear interpolation
+        using namespace interpolate;
         switch (strategy) {
             case InterpolationStrategy::None: {
                 return mOutput[3];
             };
             case InterpolationStrategy::Linear: {
-                return lerpf(mOutput[2], mOutput[3], t);
+                return linear(mOutput[2], mOutput[3], t);
             };
             case InterpolationStrategy::Hermite: {
-                return lerpHermite4pt3oXf(mOutput[0], mOutput[1], mOutput[2],
-                                          mOutput[3], t);
+                return hermite4pt3oX(mOutput[0], mOutput[1], mOutput[2], mOutput[3], t);
             };
             case InterpolationStrategy::Cubic: {
-                return lerpCubicf(mOutput[0], mOutput[1], mOutput[2],
-                                  mOutput[3], t);
+                return cubic(mOutput[0], mOutput[1], mOutput[2], mOutput[3], t);
             };
         }
     }

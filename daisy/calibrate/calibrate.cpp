@@ -1,10 +1,8 @@
 #include "daisy_patch_sm.h"
-#include "daisysp.h"
 #include "kitDaisy/controls.h"
 
 using namespace daisy;
 using namespace patch_sm;
-using namespace daisysp;
 
 DaisyPatchSM hw;
 Switch button;
