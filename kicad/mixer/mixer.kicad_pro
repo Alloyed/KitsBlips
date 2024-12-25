@@ -444,7 +444,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "4gates.kicad_pro",
+    "filename": "mixer.kicad_pro",
     "version": 1
   },
   "net_settings": {
@@ -483,7 +483,7 @@
       "pos_files": "",
       "specctra_dsn": "",
       "step": "",
-      "svg": "",
+      "svg": "svg_ref/",
       "vrml": ""
     },
     "page_layout_descr_file": ""
@@ -521,10 +521,10 @@
           "group_by": false,
           "label": "Datasheet",
           "name": "Datasheet",
-          "show": false
+          "show": true
         },
         {
-          "group_by": false,
+          "group_by": true,
           "label": "Footprint",
           "name": "Footprint",
           "show": true
@@ -543,6 +543,24 @@
         },
         {
           "group_by": false,
+          "label": "Exclude from Board",
+          "name": "${EXCLUDE_FROM_BOARD}",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Exclude from Simulation",
+          "name": "${EXCLUDE_FROM_SIM}",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Exclude from BOM",
+          "name": "${EXCLUDE_FROM_BOM}",
+          "show": false
+        },
+        {
+          "group_by": false,
           "label": "#",
           "name": "${ITEM_NUMBER}",
           "show": false
@@ -551,7 +569,7 @@
           "group_by": false,
           "label": "Description",
           "name": "Description",
-          "show": true
+          "show": false
         }
       ],
       "filter_string": "",
@@ -614,19 +632,11 @@
     ],
     [
       "f765f6b7-0977-4652-ae5d-8c5e5aa74b64",
-      "front_panel"
+      "controls"
     ],
     [
       "bd678a3f-881e-490e-90d4-0127aa4aa2e0",
       "power"
-    ],
-    [
-      "ece89812-8d9b-443c-a076-081a4366d837",
-      "A"
-    ],
-    [
-      "072300b4-0bfd-408d-8bb8-c0f2a345147e",
-      "B"
     ]
   ],
   "text_variables": {}

@@ -209,7 +209,7 @@
 		(uuid "90a25ae7-8d25-4abc-9ada-f1626fd8aa97")
 	)
 	(fp_text user "-12V"
-		(at 0.23 6.96 0)
+		(at 0.23 7.5 0)
 		(layer "F.SilkS")
 		(uuid "8ea6fd61-fbd3-46bd-b5c4-d16428d93680")
 		(effects
