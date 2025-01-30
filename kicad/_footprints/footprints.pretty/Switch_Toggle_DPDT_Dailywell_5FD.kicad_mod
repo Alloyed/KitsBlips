@@ -1,0 +1,159 @@
+(footprint "Switch_Toggle_DPDT_Dailywell_5FD"
+	(version 20240108)
+	(generator "pcbnew")
+	(generator_version "8.0")
+	(layer "F.Cu")
+	(descr "Dual Pole Dual Throw slide switch, conveniently 2.54mm apart https://www.mouser.com/datasheet/2/979/Dailywell_01132020_5F_Series-1708815.pdf")
+	(tags "switch, toggle, DPDT, slide")
+	(property "Reference" "REF**"
+		(at 2.5 -3 180)
+		(layer "F.SilkS")
+		(uuid "45725e25-1c07-4ea1-9b60-98d4c8fb7d98")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "Val**"
+		(at 2.47 -4.4 0)
+		(layer "F.SilkS")
+		(uuid "7b1f926b-404a-4e5c-97a4-b2309e94c214")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Footprint" ""
+		(at 2.01 2.525 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "f26f3599-37f2-4e9e-a9af-989994a1642d")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 2.01 2.525 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "c5d5a82a-3e9a-4d7b-b30e-3cd035adc5f2")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 2.01 2.525 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "36c18dde-9619-4316-b7d7-e654617030b1")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr through_hole)
+	(fp_rect
+		(start -2.58 -2)
+		(end 7.58 7)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill none)
+		(layer "F.SilkS")
+		(uuid "97325e89-ed82-4a8d-b70e-83b8e3020139")
+	)
+	(fp_rect
+		(start -2.58 -2)
+		(end 7.58 7)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill none)
+		(layer "F.CrtYd")
+		(uuid "0a007284-8080-4771-9dff-351847f92353")
+	)
+	(fp_text user ""
+		(at 2.06 -2.275 0)
+		(layer "F.SilkS")
+		(uuid "806b7b46-9c10-4806-841e-86066c869121")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "1" thru_hole rect
+		(at 0 0)
+		(size 1.7 1.7)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "d3c8febd-29da-4e6c-804b-a9b0a3492e8b")
+	)
+	(pad "2" thru_hole oval
+		(at 0 2.54)
+		(size 1.7 1.7)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "9baa7939-8248-46a3-b68f-0d33e3c275b5")
+	)
+	(pad "3" thru_hole oval
+		(at 0 5.08)
+		(size 1.7 1.7)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "07953e13-d3e9-4354-981a-dcfc0e74c887")
+	)
+	(pad "4" thru_hole oval
+		(at 5.08 0)
+		(size 1.7 1.7)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "d04da1f8-e121-4bab-b4b2-eccf71f1e028")
+	)
+	(pad "5" thru_hole oval
+		(at 5.08 2.54)
+		(size 1.7 1.7)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "0a93b401-4dd9-4533-8bf3-a0e6c6b5df26")
+	)
+	(pad "6" thru_hole oval
+		(at 5.08 5.08)
+		(size 1.7 1.7)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "d5f10d45-0ca9-4d61-a007-fb35e939c88a")
+	)
+	(model "${KISYS3DMOD}/Pin_Headers.3dshapes/Pin_Header_Straight_2x03_Pitch2.54mm.wrl"
+		(offset
+			(xyz 1.269999981 -2.539999962 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 90)
+		)
+	)
+)

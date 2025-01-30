@@ -116,9 +116,9 @@
       },
       "rules": {
         "max_error": 0.005,
-        "min_clearance": 0.0,
+        "min_clearance": 0.16,
         "min_connection": 0.0,
-        "min_copper_edge_clearance": 0.5,
+        "min_copper_edge_clearance": 0.2,
         "min_hole_clearance": 0.25,
         "min_hole_to_hole": 0.25,
         "min_microvia_diameter": 0.2,
@@ -128,7 +128,7 @@
         "min_text_height": 0.8,
         "min_text_thickness": 0.08,
         "min_through_hole_diameter": 0.3,
-        "min_track_width": 0.0,
+        "min_track_width": 0.16,
         "min_via_annular_width": 0.1,
         "min_via_diameter": 0.5,
         "solder_mask_to_copper_clearance": 0.005,
@@ -461,9 +461,9 @@
         "name": "Default",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "schematic_color": "rgba(0, 0, 0, 0.000)",
-        "track_width": 0.2,
-        "via_diameter": 0.6,
-        "via_drill": 0.3,
+        "track_width": 0.25,
+        "via_diameter": 0.8,
+        "via_drill": 0.4,
         "wire_width": 6
       }
     ],
@@ -637,6 +637,26 @@
     [
       "bd678a3f-881e-490e-90d4-0127aa4aa2e0",
       "power"
+    ],
+    [
+      "2d5e48ff-3abf-4113-ac59-76dc825d8155",
+      "mono_channel"
+    ],
+    [
+      "30fa8627-2550-4c6e-b4cc-c8c2a0eb6810",
+      "mono_channel1"
+    ],
+    [
+      "0f6c7190-150f-453b-bfdb-bf7ba448e588",
+      "mono_channel2"
+    ],
+    [
+      "22bda9a0-a722-419e-9e25-4be223c3e801",
+      "mono_channel3"
+    ],
+    [
+      "58723cb8-0684-4738-ab51-106a7015eb61",
+      "mono_channel4"
     ]
   ],
   "text_variables": {}

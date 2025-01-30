@@ -1,0 +1,22 @@
+12-27 05:53:53 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 647:Plugin executed on: 'win32'
+12-27 05:53:53 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 648:Plugin executed with python version: '3.11.5 (main, Nov  3 2024, 06:58:22) [MSC v.1939 64 bit (AMD64)]'
+12-27 05:53:53 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 649:KiCad build version: 8.0.7
+12-27 05:53:53 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 650:Plugin version: 3.0.0
+12-27 05:53:53 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 651:Frame repr: <wx._core.Frame object at 0x000001DD73869A20>
+12-27 05:53:53 com_github_MitjaNemec_PlaceFootprints.place_footprints 121:getting a list of all footprints on board
+12-27 05:54:02 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 830:Reference designator is: J
+12-27 05:54:02 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 831:Reference number is: 7
+12-27 05:54:02 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 863:Sorted and filtered list:
+['J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7', 'J8']
+12-27 05:54:02 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 359:wx.Colour(240, 240, 240, 255)
+12-27 05:54:15 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 490:'11'
+12-27 05:54:18 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 490:'11'
+12-27 05:54:27 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 490:'11'
+12-27 05:54:34 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 490:'11'
+12-27 05:54:34 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 536:Preparing config for reference linear
+12-27 05:54:34 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 556:Saving config file
+12-27 05:54:34 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 558:Saved the config file
+12-27 05:54:34 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 901:Footprints to place:
+['J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7', 'J8']
+12-27 05:54:34 com_github_MitjaNemec_PlaceFootprints.place_footprints 367:Starting placing with linear layout
+12-27 05:54:34 com_github_MitjaNemec_PlaceFootprints.action_place_footprints 942:Placing complete

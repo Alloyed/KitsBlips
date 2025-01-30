@@ -2,10 +2,10 @@
 #include <daisy_patch_sm.h>
 #include <cstdint>
 
-#include <kitdsp/math/approx.h>
 #include <kitdsp/dbMeter.h>
 #include <kitdsp/filters/dcBlocker.h>
 #include <kitdsp/filters/onePole.h>
+#include <kitdsp/math/approx.h>
 #include <kitdsp/math/util.h>
 
 #include "kitDaisy/controls.h"
@@ -70,7 +70,7 @@ class ToneFilter {
 
 DaisyPatchSM hw;
 Switch button, toggle;
-kitDaisy::controls::LinearControl gainDb{hw.controls[CV_1], &hw.controls[CV_5], 0.0f, 4.0f};
+kitDaisy::controls::LinearControl gainDb{hw.controls[CV_1], &hw.controls[CV_5], 0.0f, 16.0f};
 kitDaisy::controls::LinearControl tone{hw.controls[CV_2], &hw.controls[CV_6], 0.0f, 1.0f};
 kitDaisy::controls::LinearControl makeupGainDb{hw.controls[CV_3], &hw.controls[CV_7], -3.0f, 3.0f};
 kitDaisy::controls::LinearControl mix{hw.controls[CV_4], &hw.controls[CV_8], 0.0f, 1.0f};
@@ -84,9 +84,7 @@ ToneFilter tonePreRight(cSampleRate);
 ToneFilter tonePostLeft(cSampleRate);
 ToneFilter tonePostRight(cSampleRate);
 
-void AudioCallback(AudioHandle::InputBuffer in,
-                   AudioHandle::OutputBuffer out,
-                   size_t size) {
+void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size) {
     hw.ProcessAllControls();
     button.Debounce();
     toggle.Debounce();
@@ -98,8 +96,7 @@ void AudioCallback(AudioHandle::InputBuffer in,
 
     if (button.RisingEdge()) {
         algorithm =
-            static_cast<Algorithm>((static_cast<int32_t>(algorithm) + 1) %
-                                   static_cast<int32_t>(Algorithm::Count));
+            static_cast<Algorithm>((static_cast<int32_t>(algorithm) + 1) % static_cast<int32_t>(Algorithm::Count));
     }
 
     float dbfs;
@@ -126,12 +123,8 @@ void AudioCallback(AudioHandle::InputBuffer in,
 
         // weak post tone
         float postTone = lerpf(0.4f, 0.6f, tonef);
-        float processedLeft =
-            dcLeft.Process(tonePostLeft.Process(crunchedLeft, postTone)) *
-            makeup;
-        float processedRight =
-            dcRight.Process(tonePostRight.Process(crunchedRight, postTone)) *
-            makeup;
+        float processedLeft = dcLeft.Process(tonePostLeft.Process(crunchedLeft, postTone)) * makeup;
+        float processedRight = dcRight.Process(tonePostRight.Process(crunchedRight, postTone)) * makeup;
 
         outleft = lerpf(left, processedLeft, mixf);
         outright = lerpf(right, processedRight, mixf);

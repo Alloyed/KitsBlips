@@ -1,0 +1,329 @@
+(footprint "Jack_3.5mm_Thonk_Stereo_PJ366ST"
+	(version 20240108)
+	(generator "pcbnew")
+	(generator_version "8.0")
+	(layer "F.Cu")
+	(descr "Green, Stereo jack, PCB Mount, (http://qingpu-electronics.com/en/products/WQP-PJ366ST-364.html)")
+	(property "Reference" "REF**"
+		(at -7 -5.5 180)
+		(layer "F.SilkS")
+		(uuid "a9511e09-14d6-46eb-b8d9-0fe9878a63b5")
+		(effects
+			(font
+				(size 1.2065 1.2065)
+				(thickness 0.1524)
+			)
+			(justify left bottom)
+		)
+	)
+	(property "Value" "Val**"
+		(at 5.7404 6.0198 90)
+		(layer "F.SilkS")
+		(hide yes)
+		(uuid "1b8ad62a-9323-4aa0-a915-277041b0fa15")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.25)
+			)
+			(justify left bottom)
+		)
+	)
+	(property "Footprint" ""
+		(at 0 0 90)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "1b9c7125-b42b-4093-b3c3-53bd89cc22eb")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 -9 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "678eac4a-14d7-41d0-890e-6140b640a13f")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at -6.5 0.25 90)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "6c1a644b-d44b-4e0b-960f-7c932337bfe7")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr through_hole)
+	(fp_line
+		(start -5 -4.5)
+		(end -1 -4.5)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "72c9a492-5064-40eb-8dfb-c021bf8c8916")
+	)
+	(fp_line
+		(start -5 6)
+		(end -5 -4.5)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "ded2ab47-fdb3-4821-aae3-0bae102f13f0")
+	)
+	(fp_line
+		(start -5 6)
+		(end -1 6)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "6c1ee74d-96ac-44e0-9a22-e26c41f1e93c")
+	)
+	(fp_line
+		(start -1.23 -7.65)
+		(end -1.23 -6.85)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "02172a70-747c-4c10-95de-cc716c4fe8b7")
+	)
+	(fp_line
+		(start -1.23 -7.65)
+		(end -0.37 -7.65)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "f232c4d5-06d2-4ce6-b53c-c739092a7731")
+	)
+	(fp_line
+		(start 1 -4.5)
+		(end 5 -4.5)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "0830a164-aed4-42de-b371-12c3604393ff")
+	)
+	(fp_line
+		(start 1 6)
+		(end 5 6)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "713b409f-841f-4519-9caf-74b0d13ea1ea")
+	)
+	(fp_line
+		(start 5 -4.5)
+		(end 5 6)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "5468204b-48d1-4370-bb0e-01b7bf389094")
+	)
+	(fp_circle
+		(center 0 0)
+		(end 1.8 0)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(fill none)
+		(layer "F.SilkS")
+		(uuid "65cca331-e44c-4ecc-8232-846edd53b953")
+	)
+	(fp_circle
+		(center 0 0)
+		(end 3.175 0)
+		(stroke
+			(width 0.0254)
+			(type solid)
+		)
+		(fill none)
+		(layer "Cmts.User")
+		(uuid "883b6c9c-80ec-4d86-92e5-160902c253c0")
+	)
+	(fp_rect
+		(start -5 -7.9)
+		(end 5 6.5)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(fill none)
+		(layer "F.CrtYd")
+		(uuid "52c376ec-8fbc-4b14-a894-85c45408f9ee")
+	)
+	(fp_line
+		(start 0 -6.48)
+		(end 0 -4.45)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "f4eae043-0e39-43d3-962e-4d91843f6dc3")
+	)
+	(fp_rect
+		(start -5 -4.5)
+		(end 5 6)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill none)
+		(layer "F.Fab")
+		(uuid "87417fca-56e2-4815-b55b-113b1f61a9d3")
+	)
+	(fp_circle
+		(center 0 0)
+		(end 1.8 0)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill none)
+		(layer "F.Fab")
+		(uuid "52132766-1920-44e7-9444-3f82b847a4f4")
+	)
+	(fp_text user "GREEN"
+		(at -4 3.5 90)
+		(layer "F.SilkS")
+		(uuid "80cb181a-846a-48e1-a741-cb9e31e67085")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(fp_text user "STEREO"
+		(at 4 -1.5 90)
+		(layer "F.SilkS")
+		(uuid "bbefa49e-42aa-4f44-ba42-13e2048519b6")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(fp_text user "KEEPOUT"
+		(at 0 0 0)
+		(layer "Cmts.User")
+		(uuid "f2a76921-e9b7-48f9-acfe-3f7b3a01c7ae")
+		(effects
+			(font
+				(size 0.4 0.4)
+				(thickness 0.051)
+			)
+		)
+	)
+	(fp_text user "${REFERENCE}"
+		(at 0 7.5 180)
+		(layer "F.Fab")
+		(uuid "628ec7af-45e8-461b-a63d-e0230951ffe2")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "R" thru_hole circle
+		(at 0 -3.38 180)
+		(size 2.13 2.13)
+		(drill 1.42)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "60373a16-00f6-411e-b132-4d5c4ae2f7c1")
+	)
+	(pad "S" thru_hole rect
+		(at 0 -6.48 180)
+		(size 1.93 1.83)
+		(drill 1.22)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "514d5019-2d79-4098-a6b8-335963d25110")
+	)
+	(pad "T" thru_hole circle
+		(at 0 4.92 180)
+		(size 2.13 2.13)
+		(drill 1.43)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "cb7358b2-6b70-46b0-8526-f6f3b5cd0df2")
+	)
+	(zone
+		(net 0)
+		(net_name "")
+		(layer "F.Cu")
+		(uuid "920dcf2e-9013-462d-baaf-08636a176636")
+		(hatch full 0.508)
+		(connect_pads
+			(clearance 0)
+		)
+		(min_thickness 0.254)
+		(filled_areas_thickness no)
+		(keepout
+			(tracks not_allowed)
+			(vias not_allowed)
+			(pads not_allowed)
+			(copperpour not_allowed)
+			(footprints not_allowed)
+		)
+		(fill
+			(thermal_gap 0.508)
+			(thermal_bridge_width 0.508)
+		)
+		(polygon
+			(pts
+				(xy 1.505141 0) (xy 1.48493 -0.245829) (xy 1.424841 -0.485055) (xy 1.326486 -0.711256) (xy 1.192508 -0.918355)
+				(xy 1.026504 -1.10079) (xy 0.832932 -1.253664) (xy 0.616992 -1.372869) (xy 0.384482 -1.455206) (xy 0.141646 -1.498461)
+				(xy -0.104993 -1.501475) (xy -0.348813 -1.464165) (xy -0.583266 -1.387534) (xy -0.802054 -1.27364)
+				(xy -0.999303 -1.125542) (xy -1.169714 -0.947216) (xy -1.308712 -0.743452) (xy -1.412564 -0.519722)
+				(xy -1.478481 -0.282035) (xy -1.504692 -0.036774) (xy -1.490493 0.209475) (xy -1.436266 0.450099)
+				(xy -1.343468 0.678634) (xy -1.214589 0.888945) (xy -1.053092 1.075382) (xy -0.863313 1.232939)
+				(xy -0.65035 1.357385) (xy -0.419921 1.445377) (xy -0.178215 1.494553) (xy 0.068278 1.503592) (xy 0.312936 1.47225)
+				(xy 0.549191 1.40137) (xy 0.770697 1.292856) (xy 0.971505 1.149621) (xy 1.146223 0.975512) (xy 1.290158 0.775205)
+				(xy 1.399445 0.554079) (xy 1.471149 0.318074) (xy 1.503344 0.073526)
+			)
+		)
+	)
+	(model "E:/code/KitsBlips/kicad/_footprints/footprints.3dshapes/PJ301M-12.WRL"
+		(offset
+			(xyz -0.24 -0.75 0)
+		)
+		(scale
+			(xyz 393 393 393)
+		)
+		(rotate
+			(xyz 0 0 180)
+		)
+	)
+)

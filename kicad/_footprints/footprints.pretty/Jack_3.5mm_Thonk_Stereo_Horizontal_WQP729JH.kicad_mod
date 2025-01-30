@@ -1,0 +1,224 @@
+(footprint "Jack_3.5mm_Thonk_Stereo_Horizontal_WQP729JH"
+	(version 20240108)
+	(generator "pcbnew")
+	(generator_version "8.0")
+	(layer "F.Cu")
+	(descr "Blue, Switched Stereo jack, PCB mount, (http://www.qingpu-electronics.com/en/products/WQP-WQP729JH-375.html)")
+	(tags "WQP729JH-R TRS 3.5mm stereo right-angle jack qingpu")
+	(property "Reference" "REF**"
+		(at 4.2 0 180)
+		(layer "F.SilkS")
+		(uuid "ff79a596-1913-4551-9f28-0f12a44b1cd7")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "Val**"
+		(at 0.05 4.15 180)
+		(layer "F.Fab")
+		(uuid "464b1a29-49d5-4249-ad50-092cf78383c9")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+			(justify left)
+		)
+	)
+	(property "Footprint" ""
+		(at -5.3 -6.48 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "5a58a5c7-6159-42ff-93a4-6f97ad8902bc")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at -5.3 -6.48 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "50e3a457-a552-424e-99bb-2209dd68bcb0")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at -5.3 -6.48 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "db1cec70-57ad-4179-b14c-f9a9cc19ed04")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr through_hole)
+	(fp_line
+		(start 0 -2)
+		(end 0 -5)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "85c0a90c-a288-48be-95a1-7904e67e6a50")
+	)
+	(fp_line
+		(start 0 5)
+		(end 0 2)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "e0b8802d-0851-44f2-9a66-1019c9a020c3")
+	)
+	(fp_line
+		(start 11.2 -5)
+		(end 0 -5)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "3dd6c052-560c-48bb-b6c9-0b23e1360168")
+	)
+	(fp_line
+		(start 11.2 5)
+		(end 0 5)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "74d8d2e8-5478-41f4-8ae9-8bb6a14aaec6")
+	)
+	(fp_line
+		(start 15 -2)
+		(end 15 -5)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "c6384537-023c-4983-bf98-452781abe754")
+	)
+	(fp_line
+		(start 15 5)
+		(end 15 2)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "edb774c6-7c89-425d-9f23-a0fd72ef2ed4")
+	)
+	(fp_rect
+		(start 0 -6)
+		(end 16 6)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(fill none)
+		(layer "F.CrtYd")
+		(uuid "7d6786a9-c8b6-4332-9c09-fe83e7b12e92")
+	)
+	(fp_rect
+		(start -5.35 -3.05)
+		(end -1.05 2.95)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill none)
+		(layer "F.Fab")
+		(uuid "e1447c32-22df-42ce-a724-8981dffb497c")
+	)
+	(fp_rect
+		(start -1.05 -4.05)
+		(end -0.05 4.05)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill none)
+		(layer "F.Fab")
+		(uuid "666d256a-823d-4b21-800b-1ef365037704")
+	)
+	(fp_text user "UNTESTED!"
+		(at 5.95 2.05 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "ddd820d3-2151-4ccb-a3c7-b0877ef6ccae")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.1)
+			)
+			(justify left bottom)
+		)
+	)
+	(fp_text user "${REFERENCE}"
+		(at 7.2 -3.5 180)
+		(layer "F.Fab")
+		(uuid "102a9c00-053f-46d1-a5d5-528ae70b297c")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "R" thru_hole oval
+		(at 13 -4.9 90)
+		(size 1.4 3.2)
+		(drill oval 0.8 2.5)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(thermal_bridge_angle 45)
+		(uuid "78b11764-adfd-4bdd-a7ed-b3fc3aa2ffc1")
+	)
+	(pad "S" thru_hole oval
+		(at 0.75 0)
+		(size 1.4 3.2)
+		(drill oval 0.8 2.5)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(thermal_bridge_angle 45)
+		(uuid "70b06e1a-a53a-4366-9e8a-f0803d26dd80")
+	)
+	(pad "T" thru_hole oval
+		(at 14.9 0 180)
+		(size 1.4 3.2)
+		(drill oval 0.8 2.5)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(thermal_bridge_angle 45)
+		(uuid "772251f5-3cbf-41f1-bf0f-78a959070e6e")
+	)
+	(pad "TN" thru_hole oval
+		(at 13 5.1 90)
+		(size 1.4 3.2)
+		(drill oval 0.8 2.5)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(thermal_bridge_angle 45)
+		(uuid "1966300f-3359-409d-803f-6dd1b7a0aaf4")
+	)
+)

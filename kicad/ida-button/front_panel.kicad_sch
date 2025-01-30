@@ -2594,7 +2594,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "8e0c0e13-87bb-428c-aeb8-dc3b515bea8f")
-		(property "Reference" "R31"
+		(property "Reference" "R?"
 			(at 111.76 16.51 90)
 			(effects
 				(font
@@ -2643,7 +2643,14 @@
 		(pin "2"
 			(uuid "601155c8-46d4-4554-86ac-3f9a35cc340b")
 		)
-		(instances)
+		(instances
+			(project "4gates"
+				(path "/373e077e-bfc7-40f9-b9b8-adde168d27e9/f765f6b7-0977-4652-ae5d-8c5e5aa74b64"
+					(reference "R?")
+					(unit 1)
+				)
+			)
+		)
 	)
 	(symbol
 		(lib_id "Connector_Audio:AudioJack2_SwitchT")

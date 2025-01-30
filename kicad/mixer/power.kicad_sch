@@ -299,7 +299,7 @@
 				)
 			)
 		)
-		(symbol "Diode:1N5817"
+		(symbol "Diode:SS14"
 			(pin_numbers hide)
 			(pin_names
 				(offset 1.016) hide)
@@ -314,7 +314,7 @@
 					)
 				)
 			)
-			(property "Value" "1N5817"
+			(property "Value" "SS14"
 				(at 0 -2.54 0)
 				(effects
 					(font
@@ -322,7 +322,7 @@
 					)
 				)
 			)
-			(property "Footprint" "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal"
+			(property "Footprint" "Diode_SMD:D_SMA"
 				(at 0 -4.445 0)
 				(effects
 					(font
@@ -331,7 +331,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "http://www.vishay.com/docs/88525/1n5817.pdf"
+			(property "Datasheet" "https://www.vishay.com/docs/88746/ss12.pdf"
 				(at 0 0 0)
 				(effects
 					(font
@@ -340,7 +340,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "20V 1A Schottky Barrier Rectifier Diode, DO-41"
+			(property "Description" "40V 1A Schottky Diode, SMA"
 				(at 0 0 0)
 				(effects
 					(font
@@ -358,7 +358,7 @@
 					(hide yes)
 				)
 			)
-			(property "ki_fp_filters" "D*DO?41*"
+			(property "ki_fp_filters" "D*SMA*"
 				(at 0 0 0)
 				(effects
 					(font
@@ -367,7 +367,7 @@
 					(hide yes)
 				)
 			)
-			(symbol "1N5817_0_1"
+			(symbol "SS14_0_1"
 				(polyline
 					(pts
 						(xy 1.27 0) (xy -1.27 0)
@@ -405,7 +405,7 @@
 					)
 				)
 			)
-			(symbol "1N5817_1_1"
+			(symbol "SS14_1_1"
 				(pin passive line
 					(at -3.81 0 0)
 					(length 2.54)
@@ -435,6 +435,259 @@
 						)
 					)
 					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
+		(symbol "KitsBlips:TL072"
+			(pin_names
+				(offset 0.127)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "U"
+				(at 0 5.08 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Value" "TL072"
+				(at 0 -5.08 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "http://www.ti.com/lit/ds/symlink/tl071.pdf"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Dual Low-Noise JFET-Input Operational Amplifiers, DIP-8/SOIC-8"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_locked" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "dual opamp"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "SOIC*3.9x4.9mm*P1.27mm* DIP*W7.62mm* TO*99* OnSemi*Micro8* TSSOP*3x3mm*P0.65mm* TSSOP*4.4x3mm*P0.65mm* MSOP*3x3mm*P0.65mm* SSOP*3.9x4.9mm*P0.635mm* LFCSP*2x2mm*P0.5mm* *SIP* SOIC*5.3x6.2mm*P1.27mm*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "TL072_1_1"
+				(polyline
+					(pts
+						(xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(pin output line
+					(at 7.62 0 180)
+					(length 2.54)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -7.62 -2.54 0)
+					(length 2.54)
+					(name "-"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -7.62 2.54 0)
+					(length 2.54)
+					(name "+"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(symbol "TL072_2_1"
+				(polyline
+					(pts
+						(xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(pin input line
+					(at -7.62 2.54 0)
+					(length 2.54)
+					(name "+"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -7.62 -2.54 0)
+					(length 2.54)
+					(name "-"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin output line
+					(at 7.62 0 180)
+					(length 2.54)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "7"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(symbol "TL072_3_1"
+				(pin power_in line
+					(at -2.54 -7.62 90)
+					(length 3.81)
+					(name "V-"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -2.54 7.62 270)
+					(length 3.81)
+					(name "V+"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "8"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1873,7 +2126,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Diode:1N5817")
+		(lib_id "Diode:SS14")
 		(at 53.34 59.69 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -1890,7 +2143,7 @@
 				)
 			)
 		)
-		(property "Value" "B140-E3/61T"
+		(property "Value" "SS14"
 			(at 53.0225 55.88 0)
 			(effects
 				(font
@@ -1898,7 +2151,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Diode_SMD:D_SMA-SMB_Universal_Handsoldering"
+		(property "Footprint" "Diode_SMD:D_SMA"
 			(at 53.34 64.135 0)
 			(effects
 				(font
@@ -1907,7 +2160,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "http://www.vishay.com/docs/88525/1n5817.pdf"
+		(property "Datasheet" "https://www.vishay.com/docs/88746/ss12.pdf"
 			(at 53.34 59.69 0)
 			(effects
 				(font
@@ -1916,7 +2169,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "20V 1A Schottky Barrier Rectifier Diode, DO-41"
+		(property "Description" "40V 1A Schottky Diode, SMA"
 			(at 53.34 59.69 0)
 			(effects
 				(font
@@ -2007,7 +2260,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Diode:1N5817")
+		(lib_id "Diode:SS14")
 		(at 53.34 30.48 180)
 		(unit 1)
 		(exclude_from_sim no)
@@ -2024,7 +2277,7 @@
 				)
 			)
 		)
-		(property "Value" "B140-E3/61T"
+		(property "Value" "SS14"
 			(at 53.6575 26.67 0)
 			(effects
 				(font
@@ -2032,7 +2285,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Diode_SMD:D_SMA-SMB_Universal_Handsoldering"
+		(property "Footprint" "Diode_SMD:D_SMA"
 			(at 53.34 26.035 0)
 			(effects
 				(font
@@ -2041,7 +2294,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "http://www.vishay.com/docs/88525/1n5817.pdf"
+		(property "Datasheet" "https://www.vishay.com/docs/88746/ss12.pdf"
 			(at 53.34 30.48 0)
 			(effects
 				(font
@@ -2050,7 +2303,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "20V 1A Schottky Barrier Rectifier Diode, DO-41"
+		(property "Description" "40V 1A Schottky Diode, SMA"
 			(at 53.34 30.48 0)
 			(effects
 				(font
@@ -2070,6 +2323,94 @@
 				(path "/373e077e-bfc7-40f9-b9b8-adde168d27e9/bd678a3f-881e-490e-90d4-0127aa4aa2e0"
 					(reference "D1")
 					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "KitsBlips:TL072")
+		(at 107.95 43.18 0)
+		(unit 3)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "404321f5-a53d-4204-8943-bc8f22277e06")
+		(property "Reference" "U2"
+			(at 106.68 41.9099 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "TL072"
+			(at 106.68 44.4499 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm"
+			(at 107.95 43.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "http://www.ti.com/lit/ds/symlink/tl071.pdf"
+			(at 107.95 43.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Dual Low-Noise JFET-Input Operational Amplifiers, DIP-8/SOIC-8"
+			(at 107.95 43.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "c65cd46a-2e5e-444d-817d-719efa562036")
+		)
+		(pin "6"
+			(uuid "3d50b94c-1edc-4e16-a459-f740fbf03e2c")
+		)
+		(pin "5"
+			(uuid "d520bc4c-4b3f-46f4-90ae-fbd534a6f475")
+		)
+		(pin "2"
+			(uuid "83d07692-2a18-42da-a42f-371a41807129")
+		)
+		(pin "3"
+			(uuid "3675bc10-5c78-4e86-be73-a249ecdcd4d1")
+		)
+		(pin "8"
+			(uuid "c6eb477d-43de-4762-a29e-ab3cac590c62")
+		)
+		(pin "4"
+			(uuid "6db994da-2af5-43e5-af6a-e89ba258c8ac")
+		)
+		(pin "7"
+			(uuid "f48956b6-d92f-45db-a981-bc4833dc8644")
+		)
+		(instances
+			(project "mixer"
+				(path "/373e077e-bfc7-40f9-b9b8-adde168d27e9/bd678a3f-881e-490e-90d4-0127aa4aa2e0"
+					(reference "U2")
+					(unit 3)
 				)
 			)
 		)
@@ -2168,7 +2509,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_SO:SSOP-14_5.3x6.2mm_P0.65mm"
+		(property "Footprint" "Package_SO:SOIC-14_3.9x8.7mm_P1.27mm"
 			(at 128.27 40.64 0)
 			(effects
 				(font
@@ -2699,7 +3040,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:CP_Elec_5x5.3"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder"
 			(at 65.0748 59.69 0)
 			(effects
 				(font
@@ -2870,112 +3211,6 @@
 				(path "/373e077e-bfc7-40f9-b9b8-adde168d27e9/bd678a3f-881e-490e-90d4-0127aa4aa2e0"
 					(reference "C5")
 					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "KitsBlips:TL074")
-		(at 107.95 43.18 0)
-		(unit 5)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "9cde7357-c3a9-43e9-8ef5-f609e4acff18")
-		(property "Reference" "U2"
-			(at 106.68 41.9099 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "TL074"
-			(at 106.68 44.4499 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Package_SO:SSOP-14_5.3x6.2mm_P0.65mm"
-			(at 106.68 40.64 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "http://www.ti.com/lit/ds/symlink/tl071.pdf"
-			(at 109.22 38.1 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Quad Low-Noise JFET-Input Operational Amplifiers, DIP-14/SOIC-14"
-			(at 107.95 43.18 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "abf01241-db3c-481f-a6d0-3c8d1b39fb09")
-		)
-		(pin "7"
-			(uuid "4d695b8a-7258-4a6e-be2c-2fa0cd6a4e36")
-		)
-		(pin "8"
-			(uuid "0f290a4a-0505-4535-8ffa-87c82f274be9")
-		)
-		(pin "4"
-			(uuid "46cf0efa-23d2-44c0-bb47-958dd9d6b79b")
-		)
-		(pin "14"
-			(uuid "f0cda9ba-3ee4-4b22-971c-5826e5a40449")
-		)
-		(pin "3"
-			(uuid "a27a4068-131d-4cb0-91f6-b40a59cc7265")
-		)
-		(pin "10"
-			(uuid "36e52445-01e3-494b-81e8-50615bb00160")
-		)
-		(pin "6"
-			(uuid "c18debdc-da80-495b-91db-264f51ad520d")
-		)
-		(pin "5"
-			(uuid "52cf2dce-4ad2-4ccc-bd8f-2fb22d335268")
-		)
-		(pin "12"
-			(uuid "e510d6cb-7950-4929-8ecb-1de29112160e")
-		)
-		(pin "11"
-			(uuid "80d04ba1-3ae6-4f0f-9a33-037cfa4858d0")
-		)
-		(pin "13"
-			(uuid "26aaf1ee-87bd-4a43-b65c-4aef6408a0ef")
-		)
-		(pin "1"
-			(uuid "54cd711e-10b9-4d72-a734-7fd971518fa8")
-		)
-		(pin "9"
-			(uuid "8bca1eca-d4b0-4ba5-8c33-cfb8145af552")
-		)
-		(instances
-			(project "4gates"
-				(path "/373e077e-bfc7-40f9-b9b8-adde168d27e9/bd678a3f-881e-490e-90d4-0127aa4aa2e0"
-					(reference "U2")
-					(unit 5)
 				)
 			)
 		)
@@ -3408,7 +3643,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:CP_Elec_5x5.3"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder"
 			(at 67.0052 40.64 0)
 			(effects
 				(font
