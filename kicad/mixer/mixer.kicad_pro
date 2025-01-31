@@ -631,32 +631,28 @@
       "Root"
     ],
     [
-      "f765f6b7-0977-4652-ae5d-8c5e5aa74b64",
-      "controls"
+      "cb5e0029-0fb7-4c08-b43e-bbd20c11a435",
+      "mono_channel"
+    ],
+    [
+      "8f6903c9-7581-4eeb-bc4d-5c4a786a47a0",
+      "mono_channel1"
+    ],
+    [
+      "d10be217-7190-450d-8931-1c46a8f6bfaa",
+      "mono_channel2"
+    ],
+    [
+      "c6d95989-3bde-4d66-8190-5818fbc54f6b",
+      "mono_channel3"
+    ],
+    [
+      "7cdbd685-3874-4923-8c51-9b8af47285a5",
+      "mono_channel4"
     ],
     [
       "bd678a3f-881e-490e-90d4-0127aa4aa2e0",
       "power"
-    ],
-    [
-      "2d5e48ff-3abf-4113-ac59-76dc825d8155",
-      "mono_channel"
-    ],
-    [
-      "30fa8627-2550-4c6e-b4cc-c8c2a0eb6810",
-      "mono_channel1"
-    ],
-    [
-      "0f6c7190-150f-453b-bfdb-bf7ba448e588",
-      "mono_channel2"
-    ],
-    [
-      "22bda9a0-a722-419e-9e25-4be223c3e801",
-      "mono_channel3"
-    ],
-    [
-      "58723cb8-0684-4738-ab51-106a7015eb61",
-      "mono_channel4"
     ]
   ],
   "text_variables": {}

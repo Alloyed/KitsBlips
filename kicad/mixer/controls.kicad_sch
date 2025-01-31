@@ -1317,6 +1317,12 @@
 		(uuid "6d8a991b-240a-4f3d-8c7a-75e47b4d80bd")
 	)
 	(junction
+		(at 199.39 109.22)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "87b53dd4-9c02-4525-abdf-ad7d1f25280f")
+	)
+	(junction
 		(at 214.63 109.22)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -1934,9 +1940,9 @@
 		)
 		(uuid "ffaf2469-2004-4f6c-b472-df648384979a")
 	)
-	(text "All Mix/Send inputs expected to have effective resistance of 100k-130k"
+	(text "All Mix/Send inputs expected to have 100k resistance"
 		(exclude_from_sim no)
-		(at 226.568 22.098 0)
+		(at 153.67 24.892 0)
 		(effects
 			(font
 				(size 1.27 1.27)
