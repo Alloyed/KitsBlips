@@ -5,6 +5,7 @@
 #include <cmath>
 #include <vector>
 #include <unordered_map>
+#include <memory>
 
 #include "clap/clap.h"
 #include "gui.h"
@@ -16,7 +17,7 @@
  */
 
 struct SharedState {
-	Gui mGui;
+	std::unique_ptr<Gui> mGui;
 	clap_plugin_t plugin;
 	const clap_host_t *host;
 	float sampleRate;
@@ -80,75 +81,102 @@ namespace {
 		},
 	};
 
+	Gui::WindowingApi toApiEnum(const char* api) 
+	{
+		// clap promises that equal api types are the same pointer
+		if(api == CLAP_WINDOW_API_X11) { return Gui::WindowingApi::X11; }
+		if(api == CLAP_WINDOW_API_WAYLAND) { return Gui::WindowingApi::Wayland; }
+		if(api == CLAP_WINDOW_API_WIN32) { return Gui::WindowingApi::Win32; }
+		if(api == CLAP_WINDOW_API_COCOA) { return Gui::WindowingApi::Cocoa; }
+		// should never happen
+		return Gui::WindowingApi::Cocoa;
+	}
+
 	const clap_plugin_gui_t extensionGUI = {
 		.is_api_supported = [] (const clap_plugin_t *plugin, const char *api, bool isFloating) -> bool {
-			return Gui::API == api && !isFloating;
+			return Gui::IsApiSupported(toApiEnum(api), isFloating);
 		},
 
-		.get_preferred_api = [] (const clap_plugin_t *plugin, const char **api, bool *isFloating) -> bool {
-			*api = Gui::API.data();
-			*isFloating = false;
+		.get_preferred_api = [] (const clap_plugin_t *plugin, const char **apiString, bool *isFloating) -> bool {
+			Gui::WindowingApi api;
+			bool success = Gui::GetPreferredApi(api, *isFloating);
+			if(!success){return false;}
+			switch(api) {
+				case Gui::WindowingApi::X11: { *apiString = CLAP_WINDOW_API_X11; break; }
+				case Gui::WindowingApi::Wayland: { *apiString = CLAP_WINDOW_API_WAYLAND; break; }
+				case Gui::WindowingApi::Win32: { *apiString = CLAP_WINDOW_API_WIN32; break; }
+				case Gui::WindowingApi::Cocoa: { *apiString = CLAP_WINDOW_API_COCOA; break; }
+			}
 			return true;
 		},
 
-		.create = [] (const clap_plugin_t *plugin, const char *api, bool isFloating) -> bool {
-			if (!extensionGUI.is_api_supported(plugin, api, isFloating)) return false;
-			GetSharedState(plugin)->mGui.OnCreate();
+		.create = [] (const clap_plugin_t *plugin, const char *apiString, bool isFloating) -> bool {
+			Gui::WindowingApi api = toApiEnum(apiString);
+			if (!Gui::IsApiSupported(api, isFloating)) {
+				return false;
+			}
+			GetSharedState(plugin)->mGui = std::make_unique<Gui>(api, isFloating);
 			return true;
 		},
 
 		.destroy = [] (const clap_plugin_t *plugin) {
-			GetSharedState(plugin)->mGui.OnDestroy();
+			GetSharedState(plugin)->mGui.reset();
 		},
 
 		.set_scale = [] (const clap_plugin_t *plugin, double scale) -> bool {
-			return false;
+			return GetSharedState(plugin)->mGui->SetScale(scale);
 		},
 
 		.get_size = [] (const clap_plugin_t *plugin, uint32_t *width, uint32_t *height) -> bool {
-			*width = Gui::WINDOW_WIDTH;
-			*height = Gui::WINDOW_HEIGHT;
-			return true;
+			return GetSharedState(plugin)->mGui->GetSize(*width, *height);
 		},
 
 		.can_resize = [] (const clap_plugin_t *plugin) -> bool {
-			return false;
+			return GetSharedState(plugin)->mGui->CanResize();
 		},
 
 		.get_resize_hints = [] (const clap_plugin_t *plugin, clap_gui_resize_hints_t *hints) -> bool {
-			return false;
+			Gui::ResizeHints guiHints;
+			bool success = GetSharedState(plugin)->mGui->GetResizeHints(guiHints);
+			if(!success) {
+				return false;
+			}
+			hints->can_resize_horizontally = guiHints.canResizeHorizontally;
+			hints->can_resize_vertically = guiHints.canResizeVertically;
+			hints->preserve_aspect_ratio = guiHints.preserveAspectRatio;
+			hints->aspect_ratio_width = guiHints.aspectRatioWidth;
+			hints->aspect_ratio_height = guiHints.aspectRatioHeight;
+			return true;
 		},
 
 		.adjust_size = [] (const clap_plugin_t *plugin, uint32_t *width, uint32_t *height) -> bool {
-			return extensionGUI.get_size(plugin, width, height);
+			return GetSharedState(plugin)->mGui->AdjustSize(*width, *height);
 		},
 
 		.set_size = [] (const clap_plugin_t *plugin, uint32_t width, uint32_t height) -> bool {
-			return true;
+			return GetSharedState(plugin)->mGui->SetSize(width, height);
 		},
 
 		.set_parent = [] (const clap_plugin_t *plugin, const clap_window_t *window) -> bool {
-			assert(Gui::API == window->api);
-			GetSharedState(plugin)->mGui.SetParent();
-			return true;
+			Gui::WindowingApi api = toApiEnum(window->api);
+			return GetSharedState(plugin)->mGui->SetParent(api, window->ptr);
 		},
 
 		.set_transient = [] (const clap_plugin_t *plugin, const clap_window_t *window) -> bool {
-			return false;
+			Gui::WindowingApi api = toApiEnum(window->api);
+			return GetSharedState(plugin)->mGui->SetTransient(api, window->ptr);
 		},
 
 		.suggest_title = [] (const clap_plugin_t *plugin, const char *title) {
+			return GetSharedState(plugin)->mGui->SuggestTitle(title);
 		},
 
 		.show = [] (const clap_plugin_t *plugin) -> bool {
-			// We'll define GUISetVisible in our platform specific code file.
-			GetSharedState(plugin)->mGui.OnShow();
-			return true;
+			return GetSharedState(plugin)->mGui->Show();
 		},
 
 		.hide = [] (const clap_plugin_t *plugin) -> bool {
-			GetSharedState(plugin)->mGui.OnHide();
-			return true;
+			return GetSharedState(plugin)->mGui->Hide();
 		},
 	};
 
