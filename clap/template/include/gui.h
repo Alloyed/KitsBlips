@@ -5,6 +5,9 @@
 #include <cstdint>
 #include <memory>
 
+// Forward declares
+class PluginHost;
+
 // from reddit
 template<typename T>
 struct c_deleter;
@@ -18,10 +21,16 @@ struct c_deleter<SDL_Window> final {
 	}
 };
 
+/**
+ * Gui is the main abstraction for windowing and graphics.
+ * Right now we use SDL_Video to manage the window on all platforms, OpenGL for rendering, and imgui as the UI toolkit.
+ * Future version may make this an abstract class that can have multiple different implementations for different toolkits.
+ */
 class Gui {
 	// constants
 	public:
 		enum class WindowingApi {
+			None = 0,
 			X11,
 			Wayland,
 			Win32,
@@ -34,13 +43,19 @@ class Gui {
 			uint32_t aspectRatioWidth;
 			uint32_t aspectRatioHeight;
 		};
+		static constexpr char kDefaultWindowTitle[] = "Template";
+		static constexpr int32_t kDefaultWindowWidth = 400;
+		static constexpr int32_t kDefaultWindowHeight = 400;
 
 	// API methods
 	public:
 		static bool IsApiSupported(WindowingApi api, bool isFloating);
 		static bool GetPreferredApi(WindowingApi& outApi, bool& outIsFloating);
 
-		Gui(WindowingApi api, bool isFloating); // Create
+		static bool OnAppInit();
+		static bool OnAppQuit();
+
+		Gui(PluginHost* host, WindowingApi api, bool isFloating); // Create
 		~Gui(); // Destroy
 
 		bool SetScale(double scale);
@@ -51,7 +66,8 @@ class Gui {
 		bool SetSize(uint32_t width, uint32_t height);
 		bool SetParent(WindowingApi api, void* windowPointer);
 		bool SetTransient(WindowingApi api, void* windowPointer);
-		void SuggestTitle(std::string_view title);
+		// _must_ be c-string
+		void SuggestTitle(const char* title);
 		bool Show();
 		bool Hide();
 		void Update(float dt);
@@ -60,7 +76,10 @@ class Gui {
 	private:
 		c_unique_ptr<SDL_Window> mWindowHandle;
 		c_unique_ptr<SDL_Window> mParentHandle;
+		PluginHost* mHost;
+		SDL_GLContext mCtx;
 
 		void CreateWindow();
 		void CreateParentWindow(WindowingApi api, void* windowPointer);
+		void OnGui();
 };

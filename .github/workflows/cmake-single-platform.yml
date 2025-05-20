@@ -21,18 +21,15 @@ defaults:
     shell: bash
 
 jobs:
-  build-vst:
-    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
-    # You can convert this to a matrix build if you need cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    name: vst ${{ matrix.name }}
+  build-clap:
+    name: clap ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
       matrix:
         include:
           - name: Linux
-            os: ubuntu-22.04
+            os: ubuntu-24.04
           # - name: macOS
           #   os: macos-14
           #   extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
@@ -40,11 +37,13 @@ jobs:
             os: windows-latest
 
     steps:
-      - name: Install JUCE's Linux Deps
+      - name: Set up Linux deps
         if: runner.os == 'Linux'
-        # Thanks to McMartin & co https://forum.juce.com/t/list-of-juce-dependencies-under-linux/15121/44
-        run: |
-          sudo apt-get update && sudo apt install libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libwebkit2gtk-4.0-dev libglu1-mesa-dev xvfb ninja-build
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+        # this list is libsdl3-dev, which is not yet available on github actions
+          packages: build-essential cmake ninja-build debhelper-compat fcitx-libs-dev glslang-tools libasound2-dev libdbus-1-dev libdecor-0-dev libdrm-dev libegl-dev libgbm-dev libgl-dev libgles-dev libibus-1.0-dev libpipewire-0.3-dev libpulse-dev libsndio-dev libudev-dev liburing-dev libusb2-dev libusbhid-dev libvulkan-dev libwayland-dev libx11-dev libxcursor-dev libxext-dev libxfixes-dev libxi-dev libxinerama-dev libxkbcommon-dev libxrandr-dev libxss-dev libxt-dev libxv-dev libxxf86vm-dev pkgconf wayland-protocols xxd
+          version: 1.0
 
       - uses: actions/checkout@v4
         with:
@@ -53,7 +52,7 @@ jobs:
       - name: Configure CMake
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} "${{github.workspace}}/juce" ${{matrix.extra-flags}}
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} "${{github.workspace}}/clap" ${{matrix.extra-flags}}
 
       - name: Build
         # Build your program with the given configuration

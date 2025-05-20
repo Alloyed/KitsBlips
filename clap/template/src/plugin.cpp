@@ -9,6 +9,8 @@
 
 #include "clap/clap.h"
 #include "gui.h"
+#include "audio.h"
+#include "PluginHost.h"
 
 /*
  * Adapted from
@@ -16,20 +18,20 @@
  * but heavily modified to use C++ features
  */
 
-struct SharedState {
-	std::unique_ptr<Gui> mGui;
-	clap_plugin_t plugin;
-	const clap_host_t *host;
-	float sampleRate;
-};
-
-SharedState* GetSharedState(const clap_plugin_t* plugin) {
-	// fixme this is definitely incorrect: casts away const, isn't careful about thread access, and so on
-	SharedState* pState = (SharedState*)(plugin->plugin_data);
-	return pState;
-}
-
 namespace {
+	struct SharedState {
+		std::unique_ptr<Gui> mGui;
+		std::unique_ptr<PluginHost> mHost;
+		clap_plugin_t plugin;
+		float sampleRate;
+	};
+
+	SharedState* GetSharedState(const clap_plugin_t* plugin) {
+		// fixme this is definitely incorrect: casts away const, isn't careful about thread access, and so on
+		SharedState* pState = (SharedState*)(plugin->plugin_data);
+		return pState;
+	}
+
 	const clap_plugin_descriptor_t pluginDescriptor = {
 		.clap_version = CLAP_VERSION_INIT,
 		.id = "nakst.HelloCLAP",
@@ -89,7 +91,7 @@ namespace {
 		if(api == CLAP_WINDOW_API_WIN32) { return Gui::WindowingApi::Win32; }
 		if(api == CLAP_WINDOW_API_COCOA) { return Gui::WindowingApi::Cocoa; }
 		// should never happen
-		return Gui::WindowingApi::Cocoa;
+		return Gui::WindowingApi::None;
 	}
 
 	const clap_plugin_gui_t extensionGUI = {
@@ -106,6 +108,7 @@ namespace {
 				case Gui::WindowingApi::Wayland: { *apiString = CLAP_WINDOW_API_WAYLAND; break; }
 				case Gui::WindowingApi::Win32: { *apiString = CLAP_WINDOW_API_WIN32; break; }
 				case Gui::WindowingApi::Cocoa: { *apiString = CLAP_WINDOW_API_COCOA; break; }
+				case Gui::WindowingApi::None: { return false; }
 			}
 			return true;
 		},
@@ -115,7 +118,8 @@ namespace {
 			if (!Gui::IsApiSupported(api, isFloating)) {
 				return false;
 			}
-			GetSharedState(plugin)->mGui = std::make_unique<Gui>(api, isFloating);
+			GetSharedState(plugin)->mGui = std::make_unique<Gui>(
+				GetSharedState(plugin)->mHost.get(), api, isFloating);
 			return true;
 		},
 
@@ -180,17 +184,25 @@ namespace {
 		},
 	};
 
+	const clap_plugin_timer_support_t extensionTimer = {
+		.on_timer = [] (const clap_plugin *plugin, clap_id timer_id) {
+			GetSharedState(plugin)->mHost->OnTimer(timer_id);
+		}
+	};
+
 	const clap_plugin_t pluginClass = {
 		.desc = &pluginDescriptor,
 		.plugin_data = nullptr,
 
 		.init = [] (const clap_plugin *_plugin) -> bool {
+			Gui::OnAppInit();
 			return true;
 		},
 
 		.destroy = [] (const clap_plugin *plugin) {
 			auto* pState = GetSharedState(plugin);
 			delete pState;
+			Gui::OnAppQuit();
 		},
 
 		.activate = [] (const clap_plugin *plugin, double sampleRate, uint32_t minimumFramesCount, uint32_t maximumFramesCount) -> bool {
@@ -240,7 +252,7 @@ namespace {
 						break;
 					}
 				}
-				//audio::Render(i, nextEventFrame, process->audio_outputs[0].data32[0], process->audio_outputs[0].data32[1]);
+				Audio::Render(i, nextEventFrame, process->audio_outputs[0].data32[0], process->audio_outputs[0].data32[1]);
 				i = nextEventFrame;
 			}
 
@@ -252,6 +264,7 @@ namespace {
 				{CLAP_EXT_NOTE_PORTS, &extensionNotePorts},
 				{CLAP_EXT_AUDIO_PORTS, &extensionAudioPorts},
 				{CLAP_EXT_GUI, &extensionGUI},
+				{CLAP_EXT_TIMER_SUPPORT, &extensionTimer},
 			};
 			if (auto search = extensions.find(id); search != extensions.end()) {
 				return search->second;
@@ -274,15 +287,15 @@ namespace {
 		},
 
 		.create_plugin = [] (const clap_plugin_factory *factory, const clap_host_t *host, const char *pluginID) -> const clap_plugin_t * {
-			if (!clap_version_is_compatible(host->clap_version) || strcmp(pluginID, pluginDescriptor.id)) {
+			if (!clap_version_is_compatible(host->clap_version) || std::string_view(pluginID) == pluginDescriptor.id) {
 				return nullptr;
 			}
 
-			SharedState *plugin = new SharedState();
-			plugin->host = host;
-			plugin->plugin = pluginClass;
-			plugin->plugin.plugin_data = plugin;
-			return &plugin->plugin;
+			SharedState *state = new SharedState();
+			state->mHost = std::make_unique<PluginHost>(host);
+			state->plugin = pluginClass;
+			state->plugin.plugin_data = state;
+			return &state->plugin;
 		},
 	};
 }
@@ -293,11 +306,9 @@ extern "C" const clap_plugin_entry_t clap_entry = {
 	.init = [] (const char *path) -> bool { 
 		return true; 
 	},
-
 	.deinit = [] () {},
-
 	.get_factory = [] (const char *factoryID) -> const void * {
-		return strcmp(factoryID, CLAP_PLUGIN_FACTORY_ID) ? nullptr : &pluginFactory;
+		return std::string_view(CLAP_PLUGIN_FACTORY_ID) == factoryID ? &pluginFactory : nullptr;
 	},
 };
 

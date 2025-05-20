@@ -6,6 +6,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_library(${PROJECT_NAME} MODULE 
 	src/plugin.cpp
+	src/PluginHost.cpp
 	src/gui.cpp
 	src/audio.cpp
 )
@@ -16,7 +17,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 	src
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE KitDSP clap etl SDL3 imgui imgui_impl OpenGL::OpenGL OpenGL::EGL)
+target_link_libraries(${PROJECT_NAME} PRIVATE KitDSP clap etl SDL3 imgui imgui_impl OpenGL::GL)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".clap")
 
