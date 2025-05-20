@@ -22,6 +22,9 @@ FetchContent_Declare(
     SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/kitdsp-gpl
 )
 
+# TODO: switch to FetchContent?
+set(IMGUI_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/imgui)
+
 # remote
 FetchContent_Declare(
     etl
@@ -47,4 +50,10 @@ FetchContent_Declare(
     clap-wrapper
     GIT_REPOSITORY https://github.com/free-audio/clap-wrapper.git
     GIT_TAG main
+)
+FetchContent_Declare(
+    SDL3
+    GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+    GIT_TAG release-3.2.14
+    FIND_PACKAGE_ARGS
 )

@@ -5,6 +5,6 @@ project(KitsClaps)
 # shared libs
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
 include(../content.cmake)
-FetchContent_MakeAvailable(clap clap-helpers clap-wrapper KitDSP)
+FetchContent_MakeAvailable(clap clap-wrapper SDL3 KitDSP)
 
 add_subdirectory(template)
