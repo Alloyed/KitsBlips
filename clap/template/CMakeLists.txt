@@ -3,6 +3,7 @@ find_package(OpenGL REQUIRED)
 project(Template)
 # TODO: needed for clap-wrapper, who should really be doing this for us
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CXX_STANDARD 20)
 
 add_library(${PROJECT_NAME} MODULE 
 	src/plugin.cpp
@@ -17,7 +18,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 	src
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE KitDSP clap etl SDL3 imgui imgui_impl OpenGL::GL)
+target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3-static PRIVATE KitDSP clap etl imgui imgui_impl OpenGL::GL)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".clap")
 

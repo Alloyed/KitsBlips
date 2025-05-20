@@ -51,9 +51,13 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/free-audio/clap-wrapper.git
     GIT_TAG main
 )
+
+set(SDL_SHARED OFF)
+set(SDL_STATIC ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 FetchContent_Declare(
     SDL3
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
     GIT_TAG release-3.2.14
-    FIND_PACKAGE_ARGS
+    OVERRIDE_FIND_PACKAGE
 )
