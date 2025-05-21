@@ -31,58 +31,51 @@ namespace {
 		SharedState* pState = (SharedState*)(plugin->plugin_data);
 		return pState;
 	}
+}
 
-	const clap_plugin_descriptor_t pluginDescriptor = {
-		.clap_version = CLAP_VERSION_INIT,
-		.id = PRODUCT_ID,
-		.name = PRODUCT_NAME,
-		.vendor = "nakst",
-		.url = "https://nakst.gitlab.io",
-		.manual_url = "https://nakst.gitlab.io",
-		.support_url = "https://nakst.gitlab.io",
-		.version = PRODUCT_VERSION,
-		.description = "The best audio plugin ever.",
+namespace NotePortsExt {
+	uint32_t count(const clap_plugin_t *plugin, bool isInput) {
+		return isInput ? 1 : 0;
+	}
 
-		.features = (const char *[]) {
-			CLAP_PLUGIN_FEATURE_INSTRUMENT,
-			CLAP_PLUGIN_FEATURE_SYNTHESIZER,
-			CLAP_PLUGIN_FEATURE_STEREO,
-			NULL,
-		},
+	bool get(const clap_plugin_t *plugin, uint32_t index, bool isInput, clap_note_port_info_t *info)   {
+		if (!isInput || index) return false;
+		info->id = 0;
+		info->supported_dialects = CLAP_NOTE_DIALECT_CLAP;
+		info->preferred_dialect = CLAP_NOTE_DIALECT_CLAP;
+		snprintf(info->name, sizeof(info->name), "%s", "Note Port");
+		return true;
+	}
+
+	const clap_plugin_note_ports_t value = {
+		&count,
+		&get,
 	};
+}
 
-	const clap_plugin_note_ports_t extensionNotePorts = {
-		.count = [] (const clap_plugin_t *plugin, bool isInput) -> uint32_t {
-			return isInput ? 1 : 0;
-		},
+namespace AudioPortsExt {
+	uint32_t count(const clap_plugin_t *plugin, bool isInput) { 
+		return isInput ? 0 : 1; 
+	}
 
-		.get = [] (const clap_plugin_t *plugin, uint32_t index, bool isInput, clap_note_port_info_t *info) -> bool {
-			if (!isInput || index) return false;
-			info->id = 0;
-			info->supported_dialects = CLAP_NOTE_DIALECT_CLAP;
-			info->preferred_dialect = CLAP_NOTE_DIALECT_CLAP;
-			snprintf(info->name, sizeof(info->name), "%s", "Note Port");
-			return true;
-		},
+	bool get(const clap_plugin_t *plugin, uint32_t index, bool isInput, clap_audio_port_info_t *info) {
+		if (isInput || index) return false;
+		info->id = 0;
+		info->channel_count = 2;
+		info->flags = CLAP_AUDIO_PORT_IS_MAIN;
+		info->port_type = CLAP_PORT_STEREO;
+		info->in_place_pair = CLAP_INVALID_ID;
+		snprintf(info->name, sizeof(info->name), "%s", "Audio Output");
+		return true;
+	}
+
+	const clap_plugin_audio_ports_t value = {
+		&count,
+		&get,
 	};
+}
 
-	const clap_plugin_audio_ports_t extensionAudioPorts = {
-		.count = [] (const clap_plugin_t *plugin, bool isInput) -> uint32_t { 
-			return isInput ? 0 : 1; 
-		},
-
-		.get = [] (const clap_plugin_t *plugin, uint32_t index, bool isInput, clap_audio_port_info_t *info) -> bool {
-			if (isInput || index) return false;
-			info->id = 0;
-			info->channel_count = 2;
-			info->flags = CLAP_AUDIO_PORT_IS_MAIN;
-			info->port_type = CLAP_PORT_STEREO;
-			info->in_place_pair = CLAP_INVALID_ID;
-			snprintf(info->name, sizeof(info->name), "%s", "Audio Output");
-			return true;
-		},
-	};
-
+namespace GuiExt {
 	Gui::WindowingApi toApiEnum(const char* api) 
 	{
 		// clap promises that equal api types are the same pointer
@@ -94,221 +87,286 @@ namespace {
 		return Gui::WindowingApi::None;
 	}
 
-	const clap_plugin_gui_t extensionGUI = {
-		.is_api_supported = [] (const clap_plugin_t *plugin, const char *api, bool isFloating) -> bool {
-			return Gui::IsApiSupported(toApiEnum(api), isFloating);
-		},
+	bool is_api_supported (const clap_plugin_t *plugin, const char *api, bool isFloating) {
+		return Gui::IsApiSupported(toApiEnum(api), isFloating);
+	}
 
-		.get_preferred_api = [] (const clap_plugin_t *plugin, const char **apiString, bool *isFloating) -> bool {
-			Gui::WindowingApi api;
-			bool success = Gui::GetPreferredApi(api, *isFloating);
-			if(!success){return false;}
-			switch(api) {
-				case Gui::WindowingApi::X11: { *apiString = CLAP_WINDOW_API_X11; break; }
-				case Gui::WindowingApi::Wayland: { *apiString = CLAP_WINDOW_API_WAYLAND; break; }
-				case Gui::WindowingApi::Win32: { *apiString = CLAP_WINDOW_API_WIN32; break; }
-				case Gui::WindowingApi::Cocoa: { *apiString = CLAP_WINDOW_API_COCOA; break; }
-				case Gui::WindowingApi::None: { return false; }
-			}
-			return true;
-		},
-
-		.create = [] (const clap_plugin_t *plugin, const char *apiString, bool isFloating) -> bool {
-			Gui::WindowingApi api = toApiEnum(apiString);
-			if (!Gui::IsApiSupported(api, isFloating)) {
-				return false;
-			}
-			GetSharedState(plugin)->mGui = std::make_unique<Gui>(
-				GetSharedState(plugin)->mHost.get(), api, isFloating);
-			return true;
-		},
-
-		.destroy = [] (const clap_plugin_t *plugin) {
-			GetSharedState(plugin)->mGui.reset();
-		},
-
-		.set_scale = [] (const clap_plugin_t *plugin, double scale) -> bool {
-			return GetSharedState(plugin)->mGui->SetScale(scale);
-		},
-
-		.get_size = [] (const clap_plugin_t *plugin, uint32_t *width, uint32_t *height) -> bool {
-			return GetSharedState(plugin)->mGui->GetSize(*width, *height);
-		},
-
-		.can_resize = [] (const clap_plugin_t *plugin) -> bool {
-			return GetSharedState(plugin)->mGui->CanResize();
-		},
-
-		.get_resize_hints = [] (const clap_plugin_t *plugin, clap_gui_resize_hints_t *hints) -> bool {
-			Gui::ResizeHints guiHints;
-			bool success = GetSharedState(plugin)->mGui->GetResizeHints(guiHints);
-			if(!success) {
-				return false;
-			}
-			hints->can_resize_horizontally = guiHints.canResizeHorizontally;
-			hints->can_resize_vertically = guiHints.canResizeVertically;
-			hints->preserve_aspect_ratio = guiHints.preserveAspectRatio;
-			hints->aspect_ratio_width = guiHints.aspectRatioWidth;
-			hints->aspect_ratio_height = guiHints.aspectRatioHeight;
-			return true;
-		},
-
-		.adjust_size = [] (const clap_plugin_t *plugin, uint32_t *width, uint32_t *height) -> bool {
-			return GetSharedState(plugin)->mGui->AdjustSize(*width, *height);
-		},
-
-		.set_size = [] (const clap_plugin_t *plugin, uint32_t width, uint32_t height) -> bool {
-			return GetSharedState(plugin)->mGui->SetSize(width, height);
-		},
-
-		.set_parent = [] (const clap_plugin_t *plugin, const clap_window_t *window) -> bool {
-			Gui::WindowingApi api = toApiEnum(window->api);
-			return GetSharedState(plugin)->mGui->SetParent(api, window->ptr);
-		},
-
-		.set_transient = [] (const clap_plugin_t *plugin, const clap_window_t *window) -> bool {
-			Gui::WindowingApi api = toApiEnum(window->api);
-			return GetSharedState(plugin)->mGui->SetTransient(api, window->ptr);
-		},
-
-		.suggest_title = [] (const clap_plugin_t *plugin, const char *title) {
-			return GetSharedState(plugin)->mGui->SuggestTitle(title);
-		},
-
-		.show = [] (const clap_plugin_t *plugin) -> bool {
-			return GetSharedState(plugin)->mGui->Show();
-		},
-
-		.hide = [] (const clap_plugin_t *plugin) -> bool {
-			return GetSharedState(plugin)->mGui->Hide();
-		},
-	};
-
-	const clap_plugin_timer_support_t extensionTimer = {
-		.on_timer = [] (const clap_plugin *plugin, clap_id timer_id) {
-			GetSharedState(plugin)->mHost->OnTimer(timer_id);
+	bool get_preferred_api(const clap_plugin_t *plugin, const char **apiString, bool *isFloating)  {
+		Gui::WindowingApi api;
+		bool success = Gui::GetPreferredApi(api, *isFloating);
+		if(!success){return false;}
+		switch(api) {
+			case Gui::WindowingApi::X11: { *apiString = CLAP_WINDOW_API_X11; break; }
+			case Gui::WindowingApi::Wayland: { *apiString = CLAP_WINDOW_API_WAYLAND; break; }
+			case Gui::WindowingApi::Win32: { *apiString = CLAP_WINDOW_API_WIN32; break; }
+			case Gui::WindowingApi::Cocoa: { *apiString = CLAP_WINDOW_API_COCOA; break; }
+			case Gui::WindowingApi::None: { return false; }
 		}
-	};
+		return true;
+	}
 
-	const clap_plugin_t pluginClass = {
-		.desc = &pluginDescriptor,
-		.plugin_data = nullptr,
+	bool create(const clap_plugin_t *plugin, const char *apiString, bool isFloating) {
+		Gui::WindowingApi api = toApiEnum(apiString);
+		if (!Gui::IsApiSupported(api, isFloating)) {
+			return false;
+		}
+		GetSharedState(plugin)->mGui = std::make_unique<Gui>(
+				GetSharedState(plugin)->mHost.get(), api, isFloating);
+		return true;
+	}
 
-		.init = [] (const clap_plugin *_plugin) -> bool {
-			Gui::OnAppInit();
-			return true;
-		},
+	void destroy (const clap_plugin_t *plugin) {
+		GetSharedState(plugin)->mGui.reset();
+	}
 
-		.destroy = [] (const clap_plugin *plugin) {
-			auto* pState = GetSharedState(plugin);
-			delete pState;
-			Gui::OnAppQuit();
-		},
+	bool set_scale (const clap_plugin_t *plugin, double scale)  {
+		return GetSharedState(plugin)->mGui->SetScale(scale);
+	}
 
-		.activate = [] (const clap_plugin *plugin, double sampleRate, uint32_t minimumFramesCount, uint32_t maximumFramesCount) -> bool {
-			auto* pState = GetSharedState(plugin);
-			pState->sampleRate = sampleRate;
-			return true;
-		},
+	bool get_size (const clap_plugin_t *plugin, uint32_t *width, uint32_t *height)  {
+		return GetSharedState(plugin)->mGui->GetSize(*width, *height);
+	}
 
-		.deactivate = [] (const clap_plugin *_plugin) {
-		},
+	bool can_resize (const clap_plugin_t *plugin)  {
+		return GetSharedState(plugin)->mGui->CanResize();
+	}
 
-		.start_processing = [] (const clap_plugin *_plugin) -> bool {
-			return true;
-		},
+	bool get_resize_hints (const clap_plugin_t *plugin, clap_gui_resize_hints_t *hints)  {
+		Gui::ResizeHints guiHints;
+		bool success = GetSharedState(plugin)->mGui->GetResizeHints(guiHints);
+		if(!success) {
+			return false;
+		}
+		hints->can_resize_horizontally = guiHints.canResizeHorizontally;
+		hints->can_resize_vertically = guiHints.canResizeVertically;
+		hints->preserve_aspect_ratio = guiHints.preserveAspectRatio;
+		hints->aspect_ratio_width = guiHints.aspectRatioWidth;
+		hints->aspect_ratio_height = guiHints.aspectRatioHeight;
+		return true;
+	}
 
-		.stop_processing = [] (const clap_plugin *_plugin) {
-		},
+	bool adjust_size (const clap_plugin_t *plugin, uint32_t *width, uint32_t *height)  {
+		return GetSharedState(plugin)->mGui->AdjustSize(*width, *height);
+	}
 
-		.reset = [] (const clap_plugin *_plugin) {
-		},
+	bool set_size (const clap_plugin_t *plugin, uint32_t width, uint32_t height)  {
+		return GetSharedState(plugin)->mGui->SetSize(width, height);
+	}
 
-		.process = [] (const clap_plugin *plugin, const clap_process_t *process) -> clap_process_status {
-			auto* pState = GetSharedState(plugin);
+	bool set_parent (const clap_plugin_t *plugin, const clap_window_t *window)  {
+		Gui::WindowingApi api = toApiEnum(window->api);
+		return GetSharedState(plugin)->mGui->SetParent(api, window->ptr);
+	}
 
-			assert(process->audio_outputs_count == 1);
-			assert(process->audio_inputs_count == 0);
+	bool set_transient (const clap_plugin_t *plugin, const clap_window_t *window)  {
+		Gui::WindowingApi api = toApiEnum(window->api);
+		return GetSharedState(plugin)->mGui->SetTransient(api, window->ptr);
+	}
 
-			const uint32_t frameCount = process->frames_count;
-			const uint32_t inputEventCount = process->in_events->size(process->in_events);
-			uint32_t eventIndex = 0;
-			uint32_t nextEventFrame = inputEventCount ? 0 : frameCount;
+	void suggest_title (const clap_plugin_t *plugin, const char *title) {
+		GetSharedState(plugin)->mGui->SuggestTitle(title);
+	}
 
-			for (uint32_t i = 0; i < frameCount; ) {
-				while (eventIndex < inputEventCount && nextEventFrame == i) {
-					const clap_event_header_t *event = process->in_events->get(process->in_events, eventIndex);
+	bool show (const clap_plugin_t *plugin)  {
+		return GetSharedState(plugin)->mGui->Show();
+	}
 
-					if (event->time != i) {
-						nextEventFrame = event->time;
-						break;
-					}
+	bool hide (const clap_plugin_t *plugin)  {
+		return GetSharedState(plugin)->mGui->Hide();
+	}
 
-					//PluginProcessEvent(pState, event);
-					eventIndex++;
-
-					if (eventIndex == inputEventCount) {
-						nextEventFrame = frameCount;
-						break;
-					}
-				}
-				Audio::Render(i, nextEventFrame, process->audio_outputs[0].data32[0], process->audio_outputs[0].data32[1]);
-				i = nextEventFrame;
-			}
-
-			return CLAP_PROCESS_CONTINUE;
-		},
-
-		.get_extension = [] (const clap_plugin *plugin, const char *id) -> const void * {
-			static const std::unordered_map<std::string_view, const void*> extensions = {
-				{CLAP_EXT_NOTE_PORTS, &extensionNotePorts},
-				{CLAP_EXT_AUDIO_PORTS, &extensionAudioPorts},
-				{CLAP_EXT_GUI, &extensionGUI},
-				{CLAP_EXT_TIMER_SUPPORT, &extensionTimer},
-			};
-			if (auto search = extensions.find(id); search != extensions.end()) {
-				return search->second;
-			} else {
-				return nullptr;
-			}
-		},
-
-		.on_main_thread = [] (const clap_plugin *_plugin) {
-		},
-	};
-
-	const clap_plugin_factory_t pluginFactory = {
-		.get_plugin_count = [] (const clap_plugin_factory *factory) -> uint32_t { 
-			return 1; 
-		},
-
-		.get_plugin_descriptor = [] (const clap_plugin_factory *factory, uint32_t index) -> const clap_plugin_descriptor_t * { 
-			return index == 0 ? &pluginDescriptor : nullptr; 
-		},
-
-		.create_plugin = [] (const clap_plugin_factory *factory, const clap_host_t *host, const char *pluginID) -> const clap_plugin_t * {
-			if (!clap_version_is_compatible(host->clap_version) || std::string_view(pluginID) != pluginDescriptor.id) {
-				return nullptr;
-			}
-
-			SharedState *state = new SharedState();
-			state->mHost = std::make_unique<PluginHost>(host);
-			state->plugin = pluginClass;
-			state->plugin.plugin_data = state;
-			return &state->plugin;
-		},
+	const clap_plugin_gui_t value = {
+		&is_api_supported,
+		&get_preferred_api,
+		&create,
+		&destroy,
+		&set_scale,
+		&get_size,
+		&can_resize,
+		&get_resize_hints,
+		&adjust_size,
+		&set_size,
+		&set_parent,
+		&set_transient,
+		&suggest_title,
+		&show,
+		&hide,
 	};
 }
 
-extern "C" const clap_plugin_entry_t clap_entry = {
-	.clap_version = CLAP_VERSION_INIT,
+namespace TimerSupportExt {
+	const clap_plugin_timer_support_t value = {
+		[] (const clap_plugin *plugin, clap_id timer_id) {
+			GetSharedState(plugin)->mHost->OnTimer(timer_id);
+		}
+	};
+}
 
-	.init = [] (const char *path) -> bool { 
-		return true; 
-	},
-	.deinit = [] () {},
-	.get_factory = [] (const char *factoryID) -> const void * {
-		return std::string_view(CLAP_PLUGIN_FACTORY_ID) == factoryID ? &pluginFactory : nullptr;
-	},
+namespace Plugin {
+	constexpr auto PRODUCT_VENDOR = "Alloyed";
+	constexpr auto PRODUCT_URL = "https://github.com/Alloyed/KitsBlips";
+	constexpr auto PRODUCT_DESCRIPTION = "https://github.com/Alloyed/KitsBlips";
+	const clap_plugin_descriptor_t pluginDescriptor = {
+		CLAP_VERSION_INIT,
+		PRODUCT_ID,
+		PRODUCT_NAME,
+		PRODUCT_VENDOR,
+		PRODUCT_URL,
+		PRODUCT_URL, // manual url
+		PRODUCT_URL, // support url
+		PRODUCT_VERSION,
+		PRODUCT_DESCRIPTION,
+		// Features
+		(const char *[]) {
+			CLAP_PLUGIN_FEATURE_INSTRUMENT,
+			CLAP_PLUGIN_FEATURE_SYNTHESIZER,
+			CLAP_PLUGIN_FEATURE_STEREO,
+			NULL,
+		},
+	};
+
+	bool init(const clap_plugin *_plugin) {
+		Gui::OnAppInit();
+		return true;
+	}
+
+	void destroy(const clap_plugin *plugin) {
+		auto* pState = GetSharedState(plugin);
+		delete pState;
+		Gui::OnAppQuit();
+	}
+
+	bool activate(const clap_plugin *plugin, double sampleRate, uint32_t minimumFramesCount, uint32_t maximumFramesCount) {
+		auto* pState = GetSharedState(plugin);
+		pState->sampleRate = sampleRate;
+		return true;
+	}
+
+	void deactivate(const clap_plugin *_plugin) {
+	}
+
+	bool start_processing(const clap_plugin *_plugin) {
+		return true;
+	}
+
+	void stop_processing(const clap_plugin *_plugin) {
+	}
+
+	void reset(const clap_plugin *_plugin) {
+	}
+
+	clap_process_status process(const clap_plugin *plugin, const clap_process_t *process) {
+		auto* pState = GetSharedState(plugin);
+
+		assert(process->audio_outputs_count == 1);
+		assert(process->audio_inputs_count == 0);
+
+		const uint32_t frameCount = process->frames_count;
+		const uint32_t inputEventCount = process->in_events->size(process->in_events);
+		uint32_t eventIndex = 0;
+		uint32_t nextEventFrame = inputEventCount ? 0 : frameCount;
+
+		for (uint32_t i = 0; i < frameCount; ) {
+			while (eventIndex < inputEventCount && nextEventFrame == i) {
+				const clap_event_header_t *event = process->in_events->get(process->in_events, eventIndex);
+
+				if (event->time != i) {
+					nextEventFrame = event->time;
+					break;
+				}
+
+				//PluginProcessEvent(pState, event);
+				eventIndex++;
+
+				if (eventIndex == inputEventCount) {
+					nextEventFrame = frameCount;
+					break;
+				}
+			}
+			Audio::Render(i, nextEventFrame, process->audio_outputs[0].data32[0], process->audio_outputs[0].data32[1]);
+			i = nextEventFrame;
+		}
+
+		return CLAP_PROCESS_CONTINUE;
+	}
+
+	static const std::unordered_map<std::string_view, const void*> extensions = {
+		{CLAP_EXT_NOTE_PORTS, &NotePortsExt::value},
+		{CLAP_EXT_AUDIO_PORTS, &AudioPortsExt::value},
+		{CLAP_EXT_GUI, &GuiExt::value},
+		{CLAP_EXT_TIMER_SUPPORT, &TimerSupportExt::value},
+	};
+
+	const void* get_extension(const clap_plugin *plugin, const char *id) {
+		if (auto search = extensions.find(id); search != extensions.end()) {
+			return search->second;
+		} else {
+			return nullptr;
+		}
+	}
+
+	void on_main_thread(const clap_plugin *_plugin) {
+	}
+
+	const clap_plugin_t value = {
+		&pluginDescriptor,
+		/* plugin_data = */ nullptr,
+		Plugin::init,
+		Plugin::destroy,
+		Plugin::activate,
+		Plugin::deactivate,
+		Plugin::start_processing,
+		Plugin::stop_processing,
+		Plugin::reset,
+		Plugin::process,
+		Plugin::get_extension,
+		Plugin::on_main_thread,
+	};
+}
+
+namespace PluginFactory {
+	uint32_t get_plugin_count(const clap_plugin_factory *factory) { 
+		return 1; 
+	}
+
+	const clap_plugin_descriptor_t* get_plugin_descriptor(const clap_plugin_factory *factory, uint32_t index) { 
+		return index == 0 ? &Plugin::pluginDescriptor : nullptr; 
+	}
+
+	const clap_plugin_t* create_plugin(const clap_plugin_factory *factory, const clap_host_t *host, const char *pluginID) {
+		if (!clap_version_is_compatible(host->clap_version) || std::string_view(pluginID) != PRODUCT_ID) {
+			return nullptr;
+		}
+
+		SharedState *state = new SharedState();
+		state->mHost = std::make_unique<PluginHost>(host);
+		state->plugin = Plugin::value;
+		state->plugin.plugin_data = state;
+		return &state->plugin;
+	}
+
+	const clap_plugin_factory_t value = {
+		get_plugin_count,
+		get_plugin_descriptor,
+		create_plugin,
+	};
+}
+
+namespace EntryPoint {
+	bool init(const char* path) {
+		return true;
+	}
+	void deinit() {
+	}
+	const void* get_factory(const char* factoryId) {
+			return std::string_view(CLAP_PLUGIN_FACTORY_ID) == factoryId ? &PluginFactory::value: nullptr;
+	}
+}
+
+extern "C" const clap_plugin_entry_t clap_entry = {
+	CLAP_VERSION_INIT,
+	EntryPoint::init,
+	EntryPoint::deinit,
+	EntryPoint::get_factory,
 };
 
