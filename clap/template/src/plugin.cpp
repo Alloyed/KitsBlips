@@ -206,6 +206,12 @@ namespace Plugin {
 	constexpr auto PRODUCT_VENDOR = "Alloyed";
 	constexpr auto PRODUCT_URL = "https://github.com/Alloyed/KitsBlips";
 	constexpr auto PRODUCT_DESCRIPTION = "https://github.com/Alloyed/KitsBlips";
+	constexpr const char *PRODUCT_FEATURES[] = {
+		CLAP_PLUGIN_FEATURE_INSTRUMENT,
+		CLAP_PLUGIN_FEATURE_SYNTHESIZER,
+		CLAP_PLUGIN_FEATURE_STEREO,
+		nullptr,
+	};
 	const clap_plugin_descriptor_t pluginDescriptor = {
 		CLAP_VERSION_INIT,
 		PRODUCT_ID,
@@ -216,13 +222,7 @@ namespace Plugin {
 		PRODUCT_URL, // support url
 		PRODUCT_VERSION,
 		PRODUCT_DESCRIPTION,
-		// Features
-		(const char *[]) {
-			CLAP_PLUGIN_FEATURE_INSTRUMENT,
-			CLAP_PLUGIN_FEATURE_SYNTHESIZER,
-			CLAP_PLUGIN_FEATURE_STEREO,
-			NULL,
-		},
+		PRODUCT_FEATURES
 	};
 
 	bool init(const clap_plugin *_plugin) {

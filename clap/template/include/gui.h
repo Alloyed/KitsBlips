@@ -79,7 +79,7 @@ class Gui {
 		PluginHost* mHost;
 		SDL_GLContext mCtx;
 
-		void CreateWindow();
+		void CreatePluginWindow();
 		void CreateParentWindow(WindowingApi api, void* windowPointer);
 		void OnGui();
 };

@@ -51,7 +51,7 @@ bool Gui::OnAppQuit() {
 }
 
 Gui::Gui(PluginHost* host, Gui::WindowingApi api, bool isFloating): mHost(host) {
-	CreateWindow();
+	CreatePluginWindow();
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -150,7 +150,7 @@ void Gui::Update(float dt){
 	}
 }
 
-void Gui::CreateWindow() {
+void Gui::CreatePluginWindow() {
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
