@@ -3,9 +3,15 @@ cmake_policy(SET CMP0048 NEW)
 
 # TODO: needed for clap-wrapper, who should really be doing this for us
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+# 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.14 CACHE STRING "Build for 10.14")
+# VSTs require <= 17 for codecvt, and CLAP requires >= 17 for std::filesystem :/
 set(CMAKE_CXX_STANDARD 17)
+# https://github.com/libsdl-org/SDL/issues/6454
+if(APPLE)
+    enable_language(OBJC)
+endif()
 
 project(KitsClaps)
 
