@@ -216,6 +216,6 @@ void Gui::CreateParentWindow(Gui::WindowingApi api, void* windowPtr)
 }
 
 
-void OnGui() {
+void Gui::OnGui() {
 	ImGui::ShowDemoWindow();
 }

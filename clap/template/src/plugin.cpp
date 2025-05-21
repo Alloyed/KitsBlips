@@ -34,13 +34,13 @@ namespace {
 
 	const clap_plugin_descriptor_t pluginDescriptor = {
 		.clap_version = CLAP_VERSION_INIT,
-		.id = "nakst.HelloCLAP",
-		.name = "HelloCLAP",
+		.id = PRODUCT_ID,
+		.name = PRODUCT_NAME,
 		.vendor = "nakst",
 		.url = "https://nakst.gitlab.io",
 		.manual_url = "https://nakst.gitlab.io",
 		.support_url = "https://nakst.gitlab.io",
-		.version = "1.0.0",
+		.version = PRODUCT_VERSION,
 		.description = "The best audio plugin ever.",
 
 		.features = (const char *[]) {
@@ -287,7 +287,7 @@ namespace {
 		},
 
 		.create_plugin = [] (const clap_plugin_factory *factory, const clap_host_t *host, const char *pluginID) -> const clap_plugin_t * {
-			if (!clap_version_is_compatible(host->clap_version) || std::string_view(pluginID) == pluginDescriptor.id) {
+			if (!clap_version_is_compatible(host->clap_version) || std::string_view(pluginID) != pluginDescriptor.id) {
 				return nullptr;
 			}
 

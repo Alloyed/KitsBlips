@@ -54,6 +54,7 @@ FetchContent_Declare(
 
 set(SDL_SHARED OFF)
 set(SDL_STATIC ON)
+set(SDL_TESTS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 FetchContent_Declare(
     SDL3

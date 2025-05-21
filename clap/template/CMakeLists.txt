@@ -1,45 +1,71 @@
 find_package(OpenGL REQUIRED)
 
-project(Template)
+project(Template VERSION 0.0.0)
+set(PRODUCT_NAME "Template")
+set(PRODUCT_ID "KitsBlips.Template")
+
 # TODO: needed for clap-wrapper, who should really be doing this for us
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 
-add_library(${PROJECT_NAME} MODULE 
+add_library(${PROJECT_NAME}-impl STATIC 
 	src/plugin.cpp
 	src/PluginHost.cpp
 	src/gui.cpp
 	src/audio.cpp
 )
 
-target_include_directories(${PROJECT_NAME} PUBLIC
+target_include_directories(${PROJECT_NAME}-impl PUBLIC
 	include
 	PRIVATE
 	src
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3-static PRIVATE KitDSP clap etl imgui imgui_impl OpenGL::GL)
-
-set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".clap")
-
-add_library(${PROJECT_NAME}_vst3 MODULE)
-set_property(TARGET ${PROJECT_NAME}_vst3 PROPERTY POSITION_INDEPENDENT_CODE ON)
-target_add_vst3_wrapper(TARGET ${PROJECT_NAME}_vst3
-	OUTPUT_NAME "${PROJECT_NAME}"
-	SUPPORTS_ALL_NOTE_EXPRESSIONS TRUE
+target_link_libraries(${PROJECT_NAME}-impl PUBLIC
+	SDL3::SDL3-static
+	KitDSP
+	clap
+	etl
+	imgui
+	imgui_impl
+	OpenGL::GL
 )
 
-add_library(imgui INTERFACE
-	${IMGUI_DIR}/imgui.cpp
-	${IMGUI_DIR}/imgui_demo.cpp
-	${IMGUI_DIR}/imgui_draw.cpp
-	${IMGUI_DIR}/imgui_tables.cpp
-	${IMGUI_DIR}/imgui_widgets.cpp
+target_compile_definitions(${PROJECT_NAME}-impl PUBLIC
+	PRODUCT_NAME="${PRODUCT_NAME}"
+	PRODUCT_ID="${PRODUCT_ID}"
+	PRODUCT_VERSION="${PROJECT_VERSION}"
 )
-target_include_directories(imgui INTERFACE ${IMGUI_DIR})
-add_library(imgui_impl INTERFACE
-	${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
-	${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
+
+make_clapfirst_plugins(
+        TARGET_NAME ${PROJECT_NAME}
+        IMPL_TARGET ${PROJECT_NAME}-impl
+
+        OUTPUT_NAME "${PRODUCT_NAME}"
+
+        ENTRY_SOURCE src/plugin.cpp
+
+	BUNDLE_IDENTIFER "${PRODUCT_ID}"
+        BUNDLE_VERSION ${PROJECT_VERSION}
+
+        COPY_AFTER_BUILD FALSE
+
+        PLUGIN_FORMATS CLAP VST3 # AUV2 WCLAP
+
+        ASSET_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}_assets
+
+        # You can set up the AUv2 for a single plugin here, or you can
+        # set it up with the auv2 extension in your clap
+	# AUV2_MANUFACTURER_NAME "Free Audio"
+        # AUV2_MANUFACTURER_CODE "FrAD"
+        # AUV2_SUBTYPE_CODE "BdDt"
+        # AUV2_INSTRUMENT_TYPE "aufx"
+
+        # You can add a target-per-standalone you want. Syntax here is
+        #   target-postfix output-name clap-id
+        # This allows you to make multiple standalones from a multi-plugin clap
+        # In this case, the standalone has no UI and is an audio to audio effect
+        # so it isn't very useful
+        STANDALONE_CONFIGURATIONS
+	standalone "${PRODUCT_NAME}" "${PRODUCT_ID}"
 )
-target_include_directories(imgui_impl INTERFACE ${IMGUI_DIR}/backends)
-target_link_libraries(imgui_impl INTERFACE imgui)
