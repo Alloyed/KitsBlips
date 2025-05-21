@@ -1,12 +1,6 @@
-find_package(OpenGL REQUIRED)
-
 project(Template VERSION 0.0.0)
 set(PRODUCT_NAME "Template")
 set(PRODUCT_ID "KitsBlips.Template")
-
-# TODO: needed for clap-wrapper, who should really be doing this for us
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_CXX_STANDARD 17)
 
 add_library(${PROJECT_NAME}-impl STATIC 
 	src/plugin.cpp
@@ -22,13 +16,11 @@ target_include_directories(${PROJECT_NAME}-impl PUBLIC
 )
 
 target_link_libraries(${PROJECT_NAME}-impl PUBLIC
-	SDL3::SDL3-static
 	KitDSP
 	clap
-	etl
 	imgui
-	imgui_impl
-	OpenGL::GL
+	imgui_opengl_sdl3
+	etl
 )
 
 target_compile_definitions(${PROJECT_NAME}-impl PUBLIC
