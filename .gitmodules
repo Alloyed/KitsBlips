@@ -1,6 +1,3 @@
-[submodule "sdk/JUCE"]
-	path = sdk/JUCE
-	url = git@github.com:juce-framework/JUCE.git
 [submodule "sdk/libDaisy"]
 	path = sdk/libDaisy
 	url = git@github.com:Alloyed/libDaisy.git

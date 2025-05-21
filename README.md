@@ -35,11 +35,11 @@ $ cp -r dist/* ~/.local/share/Rack2/plugins/lin-x64/
 $ cp -r dist/* $LOCALAPPDATA/Rack2/plugins/win-x64/
 ```
 
-### JUCE
-This folder is aggressively underutilized right now, but it's there!
+### CLAP
+To create VSTs, instead of using an existing mega-library I'm trying out writing directly to the CLAP plugin api and taking advantage of `clap-wrapper`, which is an upstream package to turn clap plugins into VSTs. We'll see how that goes!
 
 ```bash
-$ mkdir -p juce/build && cd juce/build
+$ mkdir -p clap/build && cd clap/build
 $ cmake ..
 $ cmake --build .
 ```
