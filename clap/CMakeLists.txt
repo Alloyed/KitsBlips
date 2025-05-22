@@ -1,17 +1,19 @@
 cmake_minimum_required(VERSION 3.22)
 cmake_policy(SET CMP0048 NEW)
 
-# TODO: needed for clap-wrapper, who should really be doing this for us
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-# 
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.14 CACHE STRING "Build for 10.14")
-# VSTs require <= 17 for codecvt, and CLAP requires >= 17 for std::filesystem :/
-set(CMAKE_CXX_STANDARD 17)
 # https://github.com/libsdl-org/SDL/issues/6454
 if(APPLE)
     enable_language(OBJC)
 endif()
+
+
+# TODO: needed for clap-wrapper, who should really be doing this for us
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Build for 10.14")
+
+# VSTs require <= 17 for codecvt, and CLAP requires >= 17 for std::filesystem :/
+set(CMAKE_CXX_STANDARD 17)
 
 project(KitsClaps)
 
@@ -35,6 +37,6 @@ add_library(imgui_opengl_sdl3 STATIC
 	${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
 )
 target_include_directories(imgui_opengl_sdl3 INTERFACE ${IMGUI_DIR}/backends)
-target_link_libraries(imgui_opengl_sdl3 PUBLIC imgui SDL3::SDL3-static OpenGL::GL)
+target_link_libraries(imgui_opengl_sdl3 PUBLIC imgui SDL3::SDL3 OpenGL::GL)
 
 add_subdirectory(template)

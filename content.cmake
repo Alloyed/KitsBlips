@@ -42,38 +42,14 @@ FetchContent_Declare(
     GIT_TAG        1.2.6
 )
 FetchContent_Declare(
-    clap-helpers
-    GIT_REPOSITORY https://github.com/free-audio/clap-helpers.git
-    GIT_TAG main
-)
-FetchContent_Declare(
     clap-wrapper
     GIT_REPOSITORY https://github.com/free-audio/clap-wrapper.git
     GIT_TAG main
 )
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(SDL_SHARED OFF)
-set(SDL_STATIC ON)
-set(SDL_TESTS OFF)
-# SDL subsystems
-set(SDL_AUDIO    OFF)
-set(SDL_VIDEO    ON)
-set(SDL_GPU      OFF)
-set(SDL_RENDER   OFF)
-set(SDL_CAMERA   OFF)
-set(SDL_JOYSTICK OFF)
-set(SDL_HAPTIC   OFF)
-set(SDL_HIDAPI   OFF)
-set(SDL_POWER    OFF)
-set(SDL_SENSOR   OFF)
-set(SDL_DIALOG   OFF)
-# https://github.com/libsdl-org/SDL/issues/6454
-if(APPLE)
-    enable_language(OBJC)
-endif()
 FetchContent_Declare(
     SDL3
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
     GIT_TAG release-3.2.14
+    FIND_PACKAGE_ARGS
 )

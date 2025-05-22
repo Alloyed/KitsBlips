@@ -176,21 +176,21 @@ namespace GuiExt {
 	}
 
 	const clap_plugin_gui_t value = {
-		&is_api_supported,
-		&get_preferred_api,
-		&create,
-		&destroy,
-		&set_scale,
-		&get_size,
-		&can_resize,
-		&get_resize_hints,
-		&adjust_size,
-		&set_size,
-		&set_parent,
-		&set_transient,
-		&suggest_title,
-		&show,
-		&hide,
+		is_api_supported,
+		get_preferred_api,
+		create,
+		destroy,
+		set_scale,
+		get_size,
+		can_resize,
+		get_resize_hints,
+		adjust_size,
+		set_size,
+		set_parent,
+		set_transient,
+		suggest_title,
+		show,
+		hide,
 	};
 }
 
@@ -311,16 +311,16 @@ namespace Plugin {
 	const clap_plugin_t value = {
 		&pluginDescriptor,
 		/* plugin_data = */ nullptr,
-		Plugin::init,
-		Plugin::destroy,
-		Plugin::activate,
-		Plugin::deactivate,
-		Plugin::start_processing,
-		Plugin::stop_processing,
-		Plugin::reset,
-		Plugin::process,
-		Plugin::get_extension,
-		Plugin::on_main_thread,
+		init,
+		destroy,
+		activate,
+		deactivate,
+		start_processing,
+		stop_processing,
+		reset,
+		process,
+		get_extension,
+		on_main_thread,
 	};
 }
 
