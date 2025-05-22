@@ -1,3 +1,9 @@
+# for clap-wrapper
+if(APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15")
+    enable_language(OBJC OBJCXX)
+endif()
+
 include(FetchContent)
 
 # local
