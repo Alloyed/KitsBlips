@@ -18,7 +18,7 @@ include(RackSDK.cmake)
 
 add_subdirectory(../kitdsp kitdsp)
 
-target_sources(${RACK_PLUGIN_LIB} PRIVATE
+target_sources(${RACK_PLUGIN_LIB} PUBLIC
     src/plugin.cpp
     src/snecho.cpp
     src/psxverb.cpp
@@ -26,6 +26,6 @@ target_sources(${RACK_PLUGIN_LIB} PRIVATE
     src/dsf.cpp
 )
 
-target_link_libraries(${RACK_PLUGIN_LIB} PRIVATE
+target_link_libraries(${RACK_PLUGIN_LIB} PUBLIC
     KitDSP
 )

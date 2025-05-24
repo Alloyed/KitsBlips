@@ -1,8 +1,9 @@
 #include "plugin.hpp"
+#include <kitdsp/macros.h>
 
 Plugin* pluginInstance;
 
-void init(Plugin* p) {
+KITDSP_DLLEXPORT void init(Plugin* p) {
     pluginInstance = p;
 
     // Add modules here
