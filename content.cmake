@@ -1,3 +1,9 @@
+# for clap-wrapper
+if(APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15")
+    enable_language(OBJC OBJCXX)
+endif()
+
 include(FetchContent)
 
 # local
@@ -22,6 +28,9 @@ FetchContent_Declare(
     SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/kitdsp-gpl
 )
 
+# TODO: switch to FetchContent?
+set(IMGUI_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/imgui)
+
 # remote
 FetchContent_Declare(
     etl
@@ -32,4 +41,21 @@ FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG        v1.15.2
+)
+FetchContent_Declare(
+    clap
+    GIT_REPOSITORY https://github.com/free-audio/clap.git
+    GIT_TAG        1.2.6
+)
+FetchContent_Declare(
+    clap-wrapper
+    GIT_REPOSITORY https://github.com/free-audio/clap-wrapper.git
+    GIT_TAG main
+)
+
+FetchContent_Declare(
+    SDL3
+    GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+    GIT_TAG release-3.2.14
+    FIND_PACKAGE_ARGS
 )
