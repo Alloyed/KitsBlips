@@ -7,16 +7,12 @@
 #include <unordered_map>
 #include <memory>
 
-#include "clap/clap.h"
-#include "gui.h"
-#include "audio.h"
-#include "PluginHost.h"
+#include <clap/clap.h>
 
-/*
- * Adapted from
- * https://nakst.gitlab.io/tutorial/clap-part-1.html
- * but heavily modified to use C++ features
- */
+#include "plugin/plugin.h"
+#include "plugin/PluginHost.h"
+#include "gui/gui.h"
+#include "audio.h"
 
 namespace {
 	struct SharedState {
@@ -203,27 +199,6 @@ namespace TimerSupportExt {
 }
 
 namespace Plugin {
-	constexpr auto PRODUCT_VENDOR = "Alloyed";
-	constexpr auto PRODUCT_URL = "https://github.com/Alloyed/KitsBlips";
-	constexpr auto PRODUCT_DESCRIPTION = "https://github.com/Alloyed/KitsBlips";
-	constexpr const char *PRODUCT_FEATURES[] = {
-		CLAP_PLUGIN_FEATURE_INSTRUMENT,
-		CLAP_PLUGIN_FEATURE_SYNTHESIZER,
-		CLAP_PLUGIN_FEATURE_STEREO,
-		nullptr,
-	};
-	const clap_plugin_descriptor_t pluginDescriptor = {
-		CLAP_VERSION_INIT,
-		PRODUCT_ID,
-		PRODUCT_NAME,
-		PRODUCT_VENDOR,
-		PRODUCT_URL,
-		PRODUCT_URL, // manual url
-		PRODUCT_URL, // support url
-		PRODUCT_VERSION,
-		PRODUCT_DESCRIPTION,
-		PRODUCT_FEATURES
-	};
 
 	bool init(const clap_plugin *_plugin) {
 		Gui::OnAppInit();
@@ -308,65 +283,28 @@ namespace Plugin {
 	void on_main_thread(const clap_plugin *_plugin) {
 	}
 
-	const clap_plugin_t value = {
-		&pluginDescriptor,
-		/* plugin_data = */ nullptr,
-		init,
-		destroy,
-		activate,
-		deactivate,
-		start_processing,
-		stop_processing,
-		reset,
-		process,
-		get_extension,
-		on_main_thread,
-	};
-}
 
-namespace PluginFactory {
-	uint32_t get_plugin_count(const clap_plugin_factory *factory) { 
-		return 1; 
-	}
-
-	const clap_plugin_descriptor_t* get_plugin_descriptor(const clap_plugin_factory *factory, uint32_t index) { 
-		return index == 0 ? &Plugin::pluginDescriptor : nullptr; 
-	}
-
-	const clap_plugin_t* create_plugin(const clap_plugin_factory *factory, const clap_host_t *host, const char *pluginID) {
-		if (!clap_version_is_compatible(host->clap_version) || std::string_view(pluginID) != PRODUCT_ID) {
-			return nullptr;
-		}
+    const clap_plugin_t* createPlugin(const clap_host_t *host) {
+        static clap_plugin_t plugin = {
+            &meta,
+            /* plugin_data = */ nullptr,
+            init,
+            destroy,
+            activate,
+            deactivate,
+            start_processing,
+            stop_processing,
+            reset,
+            process,
+            get_extension,
+            on_main_thread,
+        };
 
 		SharedState *state = new SharedState();
 		state->mHost = std::make_unique<PluginHost>(host);
-		state->plugin = Plugin::value;
+		state->plugin = plugin;
 		state->plugin.plugin_data = state;
-		return &state->plugin;
-	}
 
-	const clap_plugin_factory_t value = {
-		get_plugin_count,
-		get_plugin_descriptor,
-		create_plugin,
-	};
+		return &plugin;
+    }
 }
-
-namespace EntryPoint {
-	bool init(const char* path) {
-		return true;
-	}
-	void deinit() {
-	}
-	const void* get_factory(const char* factoryId) {
-			return std::string_view(CLAP_PLUGIN_FACTORY_ID) == factoryId ? &PluginFactory::value: nullptr;
-	}
-}
-
-extern "C" const clap_plugin_entry_t clap_entry = {
-	CLAP_VERSION_INIT,
-	EntryPoint::init,
-	EntryPoint::deinit,
-	EntryPoint::get_factory,
-};
-

@@ -12,8 +12,7 @@
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
 
-#include "PluginHost.h"
-
+#include "plugin/PluginHost.h"
 
 bool Gui::IsApiSupported(Gui::WindowingApi api, bool isFloating) {
 	// All APIs supported, but floating windows NYI
