@@ -6,18 +6,16 @@
 
 #include "clapApi/pluginHost.h"
 
+using ExtensionMap = std::unordered_map<std::string_view, const void*>;
+
 /* Override to create a new plugin */
 class BasePlugin
 {
     /* abstract interface */
     public:
-        using ExtensionMap = std::unordered_map<std::string_view, const void*>;
         virtual const clap_plugin_descriptor_t& GetPluginDescriptor() const = 0;
         virtual const ExtensionMap& GetExtensions() const = 0;
-
-        /* TODO: this may be a very bad idea */
-        //virtual const ExtensionMap& ProcessEvent() const = 0;
-        //virtual const ExtensionMap& ProcessAudio() const = 0;
+        virtual void ProcessRaw(const clap_process_t *process) = 0;
 
     /* public methods */
     public:

@@ -26,14 +26,11 @@ add_library(${PROJECT_NAME}-plugin STATIC
 
     src/clapApi/basePlugin.cpp
     src/clapApi/pluginHost.cpp
-    src/clapApi/ext/gui.cpp
-    src/clapApi/ext/timerSupport.cpp
-    src/clapApi/ext/audioPorts.cpp
-    src/clapApi/ext/notePorts.cpp
 
     #src/gui/sdlImgui.cpp
 
     src/template/plugin.cpp
+    src/snecho/plugin.cpp
 )
 
 target_include_directories(${PROJECT_NAME}-plugin
@@ -44,11 +41,11 @@ target_include_directories(${PROJECT_NAME}-plugin
 target_link_libraries(${PROJECT_NAME}-plugin
     PUBLIC
     clap
-    PRIVATE
     KitDSP
     etl
     #imgui
     #imgui_opengl_sdl3
+    PRIVATE
 )
 
 target_compile_definitions(${PROJECT_NAME}-plugin PUBLIC
