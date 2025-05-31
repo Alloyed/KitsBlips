@@ -2,7 +2,6 @@
 #include "kitdsp/osc/naiveOscillator.h"
 #include "kitdsp/osc/dsfOscillator.h"
 #include "kitdsp/osc/oscillatorUtil.h"
-#include "kitdsp/oversampler.h"
 #include <gtest/gtest.h>
 #include "kitdsp/wavFile.h"
 
