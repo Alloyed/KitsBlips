@@ -6,19 +6,16 @@
 #include <vector>
 #include <array>
 
-#include "template/plugin.h"
+#include "clapApi/basePlugin.h"
 
+#include "template/plugin.h"
+#include "snecho/plugin.h"
 
 namespace PluginFactory {
-    struct PluginEntry {
-        std::string_view id;
-        clap_plugin_descriptor_t* meta;
-        const clap_plugin_t* (*factory)(const clap_host_t* host);
-    };
 
     // Add your plugin here!
-    const std::array<PluginEntry, 0> plugins = {
-        //{Template::Id, &Template::Meta, Template::create},
+    const std::array<PluginEntry, 1> plugins {
+        Snecho::Entry,
     };
 
     uint32_t get_plugin_count(const clap_plugin_factory *factory) { 
@@ -30,7 +27,7 @@ namespace PluginFactory {
             return nullptr;
         }
         const PluginEntry& entry = plugins[index];
-        return entry.meta;
+        return &entry.meta;
     }
 
     const clap_plugin_t* create_plugin(const clap_plugin_factory *factory, const clap_host_t *host, const char *pluginId) {
@@ -38,9 +35,11 @@ namespace PluginFactory {
             return nullptr;
         }
 
+        static PluginHost cppHost(host);
+
         for(const auto& entry : plugins) {
-            if(entry.id == pluginId) {
-                return entry.factory(host);
+            if(entry.meta.id == pluginId) {
+                return entry.factory(cppHost)->GetOrCreatePluginObject(&entry.meta);
             }
         }
 

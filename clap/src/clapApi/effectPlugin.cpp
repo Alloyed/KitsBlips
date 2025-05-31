@@ -1,5 +1,6 @@
 #include "clapApi/effectPlugin.h"
 #include "clapApi/ext/all.h"
+#include "effectPlugin.h"
 
 void EffectPlugin::ProcessRaw(const clap_process_t* process) {
     const uint32_t frameCount = process->frames_count;
@@ -68,12 +69,7 @@ void EffectPlugin::ProcessEvent(const clap_event_header_t& event) {
     }
 }
 
-const ExtensionMap& EffectPlugin::GetExtensions() const {
-    static AudioPortsStereoEffectExt<1, 1> ports;
-    static ParametersExt parameters;
-    static const ExtensionMap map {
-        {ports.Name, ports.Extension()},
-        {parameters.Name, parameters.Extension()},
-    };
-    return map;
+void EffectPlugin::Config() {
+    ConfigExtension<StereoAudioPortsExt<1, 1>>();
+    ConfigExtension<ParametersExt<1>>();
 }

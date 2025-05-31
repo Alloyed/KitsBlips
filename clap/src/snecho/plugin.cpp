@@ -1,4 +1,21 @@
 #include "snecho/plugin.h"
+#include "descriptor.h"
+
+// clang-format off
+const PluginEntry Snecho::Entry{
+    // meta
+    AudioEffectDescriptor(
+        "alloyed.me/snecho",
+        "Snecho",
+        "A SNES-inspired mono delay effect"
+    ),
+    // factory
+    [](PluginHost& host) -> BasePlugin* {
+        static Snecho plugin(host);
+        return &plugin;
+    }
+};
+// clang-format on
 
 void Snecho::ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) {
     /*

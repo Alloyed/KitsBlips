@@ -10,7 +10,10 @@
 class Snecho : public EffectPlugin
 {
     public:
+    static const PluginEntry Entry;
+    Snecho(PluginHost& host): EffectPlugin(host) {}
     void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override;
+
     private:
     static constexpr size_t snesBufferSize = 7680UL * 10000;
     int16_t snesBuffer1[snesBufferSize];

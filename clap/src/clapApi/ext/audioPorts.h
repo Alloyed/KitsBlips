@@ -4,12 +4,16 @@
 #include <cstdint>
 #include <cstdio>
 
-template <size_t NUM_INPUTS, size_t NUM_OUTPUTS>
-class AudioPortsStereoEffectExt {
-   public:
-    static constexpr auto Name = CLAP_EXT_AUDIO_PORTS;
+#include "clapApi/basePlugin.h"
 
-    const void* Extension() {
+template <size_t NUM_INPUTS, size_t NUM_OUTPUTS>
+class StereoAudioPortsExt: public BaseExt {
+   public:
+    const char* Name() const override {
+        return CLAP_EXT_AUDIO_PORTS;
+    }
+
+    const void* Extension() const override {
         static const clap_plugin_audio_ports_t value = {
             &_count,
             &_get,

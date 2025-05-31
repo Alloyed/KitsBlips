@@ -4,34 +4,79 @@
 #include <cstdint>
 #include <cstdio>
 #include <memory>
+#include <array>
 
-class ParametersExt {
+#include "clapApi/basePlugin.h"
+
+using ParamId = clap_id;
+
+struct ParameterConfig {
+    ParamId id;
+    float min;
+    float max;
+    float initial;
+    std::string name;
+    std::string unit;
+    float displayBase;
+    float displayMultiplier;
+    float displayOffset;
+};
+
+template<size_t NUM_PARAMS>
+class ParametersExt : public BaseExt {
    public:
-    static constexpr auto Name = CLAP_EXT_PARAMS;
+    const char* Name() const override {
+        return CLAP_EXT_PARAMS;
+    }
 
-    const void* Extension() {
+    const void* Extension() const override {
         static const clap_plugin_params_t value = {
             &_count, &_get_info, &_get_value, &_value_to_text, &_text_to_value, &_flush,
         };
         return static_cast<const void*>(&value);
     }
 
-   private:
-    static uint32_t _count(const clap_plugin_t* plugin) { return 0; }
-    static bool _get_info(const clap_plugin_t* _plugin, uint32_t index, clap_param_info_t* information) {
-        return false;
-        // memset(information, 0, sizeof(clap_param_info_t));
-        // information->id = index;
-        //// These flags enable polyphonic modulation.
-        // information->flags =
-        //     CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_MODULATABLE | CLAP_PARAM_IS_MODULATABLE_PER_NOTE_ID;
-        // information->min_value = 0.0f;
-        // information->max_value = 1.0f;
-        // information->default_value = 0.5f;
-        // strcpy(information->name, "Volume");
+    /* This intentionally mirrors the configParam method from VCV rack */
+    void configParam(ParamId id,
+                     float min,
+                     float max,
+                     float default,
+                     std::string_view name = "",
+                     std::string_view unit = "",
+                     float displayBase = 0.0f,
+                     float displayMultiplier = 1.0f,
+                     float displayOffset = 0.0f) {
+        mParams[id] = { id, min, max, initial, name, unit, displayBase, displayMultiplier, displayOffset };
     }
 
-    static bool _get_value(const clap_plugin_t* _plugin, clap_id id, double* value) {
+   // internal state
+   private:
+   std::array<ParameterConfig, NUM_PARAMS> mParams;
+   std::array<double, NUM_PARAMS> mParamState;
+
+   // impl
+   private:
+    static uint32_t _count(const clap_plugin_t* plugin) { return NUM_PARAMS; }
+    static bool _get_info(const clap_plugin_t* plugin, uint32_t index, clap_param_info_t* information) {
+        ParametersExt& self = static_cast<ParametersExt&>(BasePlugin::GetExtensionFromPluginObject(plugin, CLAP_EXT_PARAMS));
+        if(index < self.mParams.size())
+        {
+            const auto& cfg = self.mParams[index];
+            memset(information, 0, sizeof(clap_param_info_t));
+            information->id = index;
+            // These flags enable polyphonic modulation.
+            information->flags = CLAP_PARAM_IS_AUTOMATABLE;
+            information->min_value = cfg.min;
+            information->max_value = cfg.max;
+            information->default_value = cfg.initial;
+            strcpy(information->name, cfg.name.c_str());
+            return true;
+        }
+        return false;
+    }
+
+    static bool _get_value(const clap_plugin_t* plugin, clap_id id, double* value) {
+        ParametersExt& self = static_cast<ParametersExt&>(BasePlugin::GetExtensionFromPluginObject(plugin, CLAP_EXT_PARAMS));
         // get_value is called on the main thread, but should return the value of the parameter according to the
         // audio thread, since the value on the audio thread is the one that host communicates with us via
         // CLAP_EVENT_PARAM_VALUE events. Since we're accessing the opposite thread's arrays, we must acquire the
