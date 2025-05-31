@@ -1,4 +1,4 @@
-#include "PluginHost.h"
+#include "clapApi/pluginHost.h"
 
 #include "clap/clap.h"
 
