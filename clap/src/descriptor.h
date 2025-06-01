@@ -6,7 +6,9 @@ static constexpr const char* const audio_effect_features[] = {
     CLAP_PLUGIN_FEATURE_AUDIO_EFFECT,
     nullptr,
 };
-inline constexpr clap_plugin_descriptor_t AudioEffectDescriptor(const char* id, const char* name, const char* description) {
+inline constexpr clap_plugin_descriptor_t AudioEffectDescriptor(const char* id,
+                                                                const char* name,
+                                                                const char* description) {
     clap_plugin_descriptor_t descriptor{};
     descriptor.clap_version = CLAP_VERSION;
     descriptor.id = id;

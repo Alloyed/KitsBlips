@@ -1,5 +1,7 @@
 #include "clapApi/instrumentPlugin.h"
-#include "clapApi/ext/all.h"
+#include "clapApi/ext/notePorts.h"
+#include "clapApi/ext/audioPorts.h"
+#include "clapApi/ext/parameters.h"
 
 void InstrumentPlugin::ProcessEvent(const clap_event_header_t& event) {
     if (event.space_id == CLAP_CORE_EVENT_SPACE_ID) {
