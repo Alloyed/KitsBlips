@@ -8,11 +8,20 @@
 
 #include "clapApi/pluginHost.h"
 
+class BasePlugin;
+
 class BaseExt {
     /* abstract interface */
     public:
     virtual const char* Name() const = 0;
     virtual const void* Extension() const = 0;
+
+    template<typename ExtType=BaseExt>
+    static ExtType& GetFromPlugin(BasePlugin& plugin);
+
+    protected:
+    template<typename ExtType=BaseExt>
+    static ExtType& GetFromPluginObject(const clap_plugin_t* plugin);
 };
 
 /* Override to create a new plugin */
@@ -20,6 +29,8 @@ class BasePlugin
 {
     /* abstract interface */
     public:
+        BasePlugin(PluginHost& host):mHost(host) {}
+        virtual ~BasePlugin() = default;
         // required
         virtual void Config() = 0;
         virtual void ProcessRaw(const clap_process_t *process) = 0;
@@ -31,102 +42,71 @@ class BasePlugin
         virtual void Reset() {}
         virtual void OnMainThread() {}
 
-    /* public methods */
-    public:
-        BasePlugin(PluginHost& host):mHost(host) {}
-        virtual ~BasePlugin() = default;
-
-        const clap_plugin_t* GetOrCreatePluginObject(const clap_plugin_descriptor_t* meta);
-        const clap_plugin_t* GetPluginObject() const {
-            return mPlugin.get();
-        }
-        static BasePlugin& GetFromPluginObject(const clap_plugin_t* plugin) {
-            BasePlugin* self = (BasePlugin*)(plugin->plugin_data);
-            return *self;
-        }
-        static BaseExt& GetExtensionFromPluginObject(const clap_plugin_t* plugin, const char* name) {
-            BasePlugin* self = (BasePlugin*)(plugin->plugin_data);
-            BaseExt* ext = self->TryGetExtension(name);
-            assert(ext);
-            return *ext;
-        }
-        BaseExt* TryGetExtension(const char* name) {
-            if (auto search = mExtensions.find(name); search != mExtensions.end()) {
-                return search->second.get();
-            } else {
-                return nullptr;
-            }
-        }
-
+    /* implementation methods */
+    protected:
         // TODO: concepts
         template<class BaseExtT, class... Args>
-        BaseExtT& ConfigExtension(Args&&... args) {
-            auto ptr = std::make_unique<BaseExtT>(std::forward<Args>(args)...);
-            const char* name = ptr->Name();
-            BaseExtT* out = ptr.get();
-            mExtensions.emplace(name, std::move(ptr));
-            return *out;
-        }
+        BaseExtT& ConfigExtension(Args&&... args);
 
+    /* helpers */
+    public:
+        const clap_plugin_t* GetOrCreatePluginObject(const clap_plugin_descriptor_t* meta);
+
+        template<typename PluginType=BasePlugin>
+        static PluginType& GetFromPluginObject(const clap_plugin_t* plugin);
+
+        BaseExt* TryGetExtension(const char* name);
+
+    /* internal implementation*/
     private:
         std::unique_ptr<clap_plugin_t> mPlugin;
         std::unordered_map<std::string, std::unique_ptr<BaseExt>> mExtensions;
         PluginHost& mHost;
-        private:
-    static bool _init(const clap_plugin *plugin) {
-        BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
-        self.Config();
-        return self.Init();
-    }
-
-    static void _destroy(const clap_plugin *plugin) {
-        BasePlugin* self = &BasePlugin::GetFromPluginObject(plugin);
-        delete self;
-    }
-
-    static bool _activate(const clap_plugin *plugin, double sampleRate, uint32_t minFramesCount, uint32_t maxFramesCount) {
-        BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
-        return self.Activate(sampleRate, minFramesCount, maxFramesCount);
-    }
-
-    static void _deactivate(const clap_plugin *plugin) {
-        BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
-        self.Deactivate();
-    }
-
-    static bool _start_processing(const clap_plugin *_plugin) {
-        return true;
-    }
-
-    static void _stop_processing(const clap_plugin *_plugin) {
-    }
-
-    static void _reset(const clap_plugin *plugin) {
-        BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
-        self.Reset();
-    }
-
-    static clap_process_status _process(const clap_plugin *plugin, const clap_process_t *process) {
-        BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
-
-        self.ProcessRaw(process);
-
-        return CLAP_PROCESS_CONTINUE;
-    }
-
-    static const void* _get_extension(const clap_plugin *plugin, const char *name) {
-        BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
-        const BaseExt* extension = self.TryGetExtension(name);
-        return extension != nullptr ? extension->Extension() : nullptr;
-    }
-
-    static void _on_main_thread(const clap_plugin *plugin) {
-        BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
-        self.OnMainThread();
-    }
+        static bool _init(const clap_plugin *plugin);
+        static void _destroy(const clap_plugin *plugin);
+        static bool _activate(const clap_plugin *plugin, double sampleRate, uint32_t minFramesCount, uint32_t maxFramesCount);
+        static void _deactivate(const clap_plugin *plugin);
+        static bool _start_processing(const clap_plugin *_plugin);
+        static void _stop_processing(const clap_plugin *_plugin);
+        static void _reset(const clap_plugin *plugin);
+        static clap_process_status _process(const clap_plugin *plugin, const clap_process_t *process);
+        static const void* _get_extension(const clap_plugin *plugin, const char *name);
+        static void _on_main_thread(const clap_plugin *plugin);
 };
 
 struct PluginEntry {
     clap_plugin_descriptor_t meta;
     BasePlugin* (*factory)(PluginHost& host);
 };
+
+// template implementations
+template<typename ExtType, typename... Args>
+ExtType& BasePlugin::ConfigExtension(Args&&... args) {
+    auto ptr = std::make_unique<ExtType>(std::forward<Args>(args)...);
+    const char* name = ptr->Name();
+    ExtType* out = ptr.get();
+    mExtensions.emplace(name, std::move(ptr));
+    return *out;
+}
+
+template<typename PluginType>
+PluginType& BasePlugin::GetFromPluginObject(const clap_plugin_t* plugin) {
+    BasePlugin* self = static_cast<BasePlugin*>(plugin->plugin_data);
+    return static_cast<PluginType&>(*self);
+}
+
+template<typename ExtType>
+ExtType& BaseExt::GetFromPluginObject(const clap_plugin_t* plugin) {
+    BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
+    BaseExt* ext = self.TryGetExtension(ExtType::NAME);
+    assert(ext);
+    return static_cast<ExtType&>(*ext);
+}
+
+template<typename ExtType>
+ExtType& BaseExt::GetFromPlugin(BasePlugin& self) {
+    BaseExt* ext = self.TryGetExtension(ExtType::NAME);
+    assert(ext);
+    return static_cast<ExtType&>(*ext);
+}
+

@@ -9,8 +9,9 @@
 template <size_t NUM_INPUTS, size_t NUM_OUTPUTS>
 class StereoAudioPortsExt: public BaseExt {
    public:
+    static constexpr auto NAME = CLAP_EXT_AUDIO_PORTS;
     const char* Name() const override {
-        return CLAP_EXT_AUDIO_PORTS;
+        return NAME;
     }
 
     const void* Extension() const override {

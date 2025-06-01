@@ -15,7 +15,7 @@ struct ParameterConfig {
     ParamId id;
     float min;
     float max;
-    float initial;
+    float defaultValue;
     const char* name;
     const char* unit;
     float displayBase;
@@ -31,8 +31,9 @@ using ParameterChangeQueue = etl::queue_spsc_atomic<ParameterChange, 100, etl::m
 
 class ParametersExt : public BaseExt {
    public:
+    static constexpr auto NAME = CLAP_EXT_PARAMS;
     const char* Name() const override {
-        return CLAP_EXT_PARAMS;
+        return NAME;
     }
 
     const void* Extension() const override {
@@ -131,13 +132,11 @@ class ParametersExt : public BaseExt {
    // impl
    private:
     static uint32_t _count(const clap_plugin_t* plugin) {
-        ParametersExt& self =
-            static_cast<ParametersExt&>(BasePlugin::GetExtensionFromPluginObject(plugin, CLAP_EXT_PARAMS));
+        ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
         return self.mNumParams;
     }
     static bool _get_info(const clap_plugin_t* plugin, uint32_t index, clap_param_info_t* information) {
-        ParametersExt& self =
-            static_cast<ParametersExt&>(BasePlugin::GetExtensionFromPluginObject(plugin, CLAP_EXT_PARAMS));
+        ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
         if(index < self.mParams.size())
         {
             const auto& cfg = self.mParams[index];
@@ -147,7 +146,7 @@ class ParametersExt : public BaseExt {
             information->flags = CLAP_PARAM_IS_AUTOMATABLE;
             information->min_value = cfg.min;
             information->max_value = cfg.max;
-            information->default_value = cfg.initial;
+            information->default_value = cfg.defaultValue;
             strcpy(information->name, cfg.name);
             return true;
         }
@@ -155,7 +154,7 @@ class ParametersExt : public BaseExt {
     }
 
     static bool _get_value(const clap_plugin_t* plugin, clap_id id, double* value) {
-        ParametersExt& self = static_cast<ParametersExt&>(BasePlugin::GetExtensionFromPluginObject(plugin, CLAP_EXT_PARAMS));
+        ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
         // called from main thread
         float valueFloat = self.Get(id);
         *value = static_cast<double>(valueFloat);
@@ -182,8 +181,7 @@ class ParametersExt : public BaseExt {
     static void _flush(const clap_plugin_t* plugin, const clap_input_events_t* in, const clap_output_events_t* out) {
         // called from audio thread when active(), main thread when inactive
         BasePlugin& basePlugin = BasePlugin::GetFromPluginObject(plugin);
-        ParametersExt& self =
-            static_cast<ParametersExt&>(BasePlugin::GetExtensionFromPluginObject(plugin, CLAP_EXT_PARAMS));
+        ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
         self.mAudioState.Flush();
 
         // Process events sent to our plugin from the host.

@@ -9,8 +9,9 @@
 /* Saves and loads parameter state. Depends on ParametersExt. */
 class StateExt: public BaseExt {
    public:
+    static constexpr auto NAME = CLAP_EXT_STATE;
     const char* Name() const override {
-        return CLAP_EXT_STATE;
+        return NAME;
     }
 
     const void* Extension() const override {
@@ -23,8 +24,7 @@ class StateExt: public BaseExt {
 
    private:
     static bool _save(const clap_plugin_t* plugin, const clap_ostream_t* out) {
-        ParametersExt& params =
-            static_cast<ParametersExt&>(BasePlugin::GetExtensionFromPluginObject(plugin, CLAP_EXT_PARAMS));
+        ParametersExt& params = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
 
         params.Flush();
 
@@ -41,8 +41,7 @@ class StateExt: public BaseExt {
     }
 
     static bool _load(const clap_plugin_t* plugin, const clap_istream_t* in) {
-        ParametersExt& params =
-            static_cast<ParametersExt&>(BasePlugin::GetExtensionFromPluginObject(plugin, CLAP_EXT_PARAMS));
+        ParametersExt& params = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
 
         size_t numParams = params.GetNumParams();
         for(ParamId id = 0; id < numParams; ++id)

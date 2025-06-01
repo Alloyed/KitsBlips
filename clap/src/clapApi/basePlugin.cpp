@@ -2,6 +2,66 @@
 
 #include <cassert>
 
+BaseExt* BasePlugin::TryGetExtension(const char* name) {
+    if (auto search = mExtensions.find(name); search != mExtensions.end()) {
+        return search->second.get();
+    } else {
+        return nullptr;
+    }
+}
+
+bool BasePlugin::_init(const clap_plugin *plugin) {
+    BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
+    self.Config();
+    return self.Init();
+}
+
+void BasePlugin::_destroy(const clap_plugin *plugin) {
+    BasePlugin* self = &BasePlugin::GetFromPluginObject(plugin);
+    delete self;
+}
+
+bool BasePlugin::_activate(const clap_plugin *plugin, double sampleRate, uint32_t minFramesCount, uint32_t maxFramesCount) {
+    BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
+    return self.Activate(sampleRate, minFramesCount, maxFramesCount);
+}
+
+void BasePlugin::_deactivate(const clap_plugin *plugin) {
+    BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
+    self.Deactivate();
+}
+
+bool BasePlugin::_start_processing(const clap_plugin *_plugin) {
+    return true;
+}
+
+void BasePlugin::_stop_processing(const clap_plugin *_plugin) {
+}
+
+void BasePlugin::_reset(const clap_plugin *plugin) {
+    BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
+    self.Reset();
+}
+
+clap_process_status BasePlugin::_process(const clap_plugin *plugin, const clap_process_t *process) {
+    BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
+
+    self.ProcessRaw(process);
+
+    return CLAP_PROCESS_CONTINUE;
+}
+
+const void* BasePlugin::_get_extension(const clap_plugin *plugin, const char *name) {
+    BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
+    const BaseExt* extension = self.TryGetExtension(name);
+    return extension != nullptr ? extension->Extension() : nullptr;
+}
+
+void BasePlugin::_on_main_thread(const clap_plugin *plugin) {
+    BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
+    self.OnMainThread();
+}
+
 const clap_plugin_t* BasePlugin::GetOrCreatePluginObject(const clap_plugin_descriptor_t* meta) {
     if(mPlugin.get() == nullptr)
     {

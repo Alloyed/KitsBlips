@@ -3,10 +3,7 @@
 #include "effectPlugin.h"
 
 void EffectPlugin::ProcessRaw(const clap_process_t* process) {
-    ParametersExt::AudioParameters& params =
-        static_cast<ParametersExt&>(BasePlugin::GetExtensionFromPluginObject(GetPluginObject(), CLAP_EXT_PARAMS))
-            .GetStateForAudioThread();
-
+    ParametersExt::AudioParameters& params = ParametersExt::GetFromPlugin<ParametersExt>(*this).GetStateForAudioThread();
     const uint32_t frameCount = process->frames_count;
     const uint32_t inputEventCount = process->in_events->size(process->in_events);
     uint32_t eventIndex = 0;
@@ -69,10 +66,7 @@ void EffectPlugin::ProcessEvent(const clap_event_header_t& event) {
             case CLAP_EVENT_PARAM_VALUE:
             {
                 const clap_event_param_value_t& paramChange = reinterpret_cast<const clap_event_param_value_t&>(event);
-                ParametersExt::AudioParameters& params =
-                    static_cast<ParametersExt&>(
-                        BasePlugin::GetExtensionFromPluginObject(GetPluginObject(), CLAP_EXT_PARAMS))
-                        .GetStateForAudioThread();
+                ParametersExt::AudioParameters& params = ParametersExt::GetFromPlugin<ParametersExt>(*this).GetStateForAudioThread();
                 params.Set(paramChange.param_id, static_cast<float>(paramChange.value));
             }
             break;
