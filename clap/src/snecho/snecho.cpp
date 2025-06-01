@@ -20,13 +20,14 @@ enum Params: ParamId {
 };
 
 const PluginEntry Snecho::Entry{
-    AudioEffectDescriptor("kb01-snecho", "Snecho", "A SNES-inspired mono delay effect"),
+    AudioEffectDescriptor("me.alloyed.KitsBlips", "Snecho", "A SNES-inspired mono delay effect"),
     [](PluginHost& host) -> BasePlugin* {
         static Snecho plugin(host);
         return &plugin;
     }};
 
 void Snecho::Config() {
+    EffectPlugin::Config();
     ConfigExtension<ParametersExt>(Params_Count).
     configParam(Params_Size, 0.0f, 1.0f, 0.5f, "Size").
     configParam(Params_Feedback, 0.0f, 1.0f, 0.5f, "Feedback").

@@ -5,6 +5,7 @@
 #include <string_view>
 #include <vector>
 #include <array>
+#include <cassert>
 
 #include "clapApi/basePlugin.h"
 
@@ -38,11 +39,12 @@ namespace PluginFactory {
         static PluginHost cppHost(host);
 
         for(const auto& entry : plugins) {
-            if(entry.meta.id == pluginId) {
+            if(std::string_view(entry.meta.id) == pluginId) {
                 return entry.factory(cppHost)->GetOrCreatePluginObject(&entry.meta);
             }
         }
 
+        assert(false);
         return nullptr;
     }
 

@@ -3,10 +3,10 @@
 #include <clap/clap.h>
 #include <memory>
 #include <unordered_map>
+#include <cassert>
+#include <cstdio>
 
 #include "clapApi/pluginHost.h"
-
-using ExtensionMap = std::unordered_map<std::string_view, const void*>;
 
 class BaseExt {
     /* abstract interface */
@@ -46,7 +46,9 @@ class BasePlugin
         }
         static BaseExt& GetExtensionFromPluginObject(const clap_plugin_t* plugin, const char* name) {
             BasePlugin* self = (BasePlugin*)(plugin->plugin_data);
-            return *(self->mExtensions.at(name));
+            BaseExt* ext = self->TryGetExtension(name);
+            assert(ext);
+            return *ext;
         }
         BaseExt* TryGetExtension(const char* name) {
             if (auto search = mExtensions.find(name); search != mExtensions.end()) {
@@ -68,11 +70,12 @@ class BasePlugin
 
     private:
         std::unique_ptr<clap_plugin_t> mPlugin;
-        std::unordered_map<const char*, std::unique_ptr<BaseExt>> mExtensions;
+        std::unordered_map<std::string, std::unique_ptr<BaseExt>> mExtensions;
         PluginHost& mHost;
         private:
     static bool _init(const clap_plugin *plugin) {
         BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
+        self.Config();
         return self.Init();
     }
 

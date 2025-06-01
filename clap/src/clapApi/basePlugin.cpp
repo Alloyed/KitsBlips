@@ -21,5 +21,6 @@ const clap_plugin_t* BasePlugin::GetOrCreatePluginObject(const clap_plugin_descr
         };
         mPlugin = std::make_unique<clap_plugin_t>(pluginObject);
     }
+    setbuf(stdout, NULL);
     return mPlugin.get();
 }
