@@ -71,7 +71,7 @@ make_clapfirst_plugins(
 
     PLUGIN_FORMATS CLAP VST3 # AUV2 WCLAP
 
-    ASSET_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}_assets
+    ASSET_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
 
     # You can set up the AUv2 for a single plugin here, or you can
     # set it up with the auv2 extension in your clap
@@ -86,5 +86,5 @@ make_clapfirst_plugins(
     # In this case, the standalone has no UI and is an audio to audio effect
     # so it isn't very useful
     STANDALONE_CONFIGURATIONS
-    standalone "${PRODUCT_NAME}" "${PRODUCT_ID}"
+    snecho "KitsBlips-snecho" "me.alloyed.snecho"
 )

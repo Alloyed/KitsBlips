@@ -49,7 +49,7 @@ jobs:
         if: runner.os != 'Linux' # 500 fetch error for some reason :(
         id: sdl
         with:
-          install-linux-dependencies: true
+          install-linux-dependencies: true # not linux related, it's just named that
           version: 3-latest
           version-sdl-image: 3-latest
 
@@ -62,6 +62,12 @@ jobs:
 
       - name: Build
         run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
+
+      - name: Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: KitsBlips-DAW-${{ matrix.name }}
+          path: "${{github.workspace}}/build/dist" 
 
   #modify-plugin-version:
   #  name: Modify plugin version
