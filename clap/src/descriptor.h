@@ -2,7 +2,7 @@
 
 #include <clap/clap.h>
 
-static constexpr char* audio_effect_features[] = {
+static constexpr const char* const audio_effect_features[] = {
     CLAP_PLUGIN_FEATURE_AUDIO_EFFECT
 };
 inline constexpr clap_plugin_descriptor_t AudioEffectDescriptor(const char* id, const char* name, const char* description) {

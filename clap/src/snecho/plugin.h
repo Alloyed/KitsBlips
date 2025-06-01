@@ -19,6 +19,7 @@ class Snecho : public EffectPlugin
     private:
     static constexpr size_t snesBufferSize = 7680UL * 10000;
     int16_t snesBuffer1[snesBufferSize];
+    size_t mLastFilterPreset;
     kitdsp::SNES::Echo snes1{snesBuffer1, snesBufferSize};
     kitdsp::Resampler<float> snesSampler{kitdsp::SNES::kOriginalSampleRate, 41000};
 };

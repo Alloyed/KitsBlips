@@ -30,6 +30,9 @@ class PluginHost {
 		using TimerFn = std::function<void()>;
 
 		PluginHost(const clap_host_t* host);
+		
+		/* requests that the host calls Plugin.OnMainThread() next chance it gets. */
+		void RequestCallback() const;
 
 		/** Add a message to the host's log */
 		void Log(LogSeverity severity, const std::string& message) const;

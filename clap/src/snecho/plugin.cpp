@@ -3,6 +3,22 @@
 #include "clapApi/ext/all.h"
 #include "descriptor.h"
 
+using namespace kitdsp;
+
+enum Params: ParamId {
+    Params_Size,
+    Params_Feedback,
+    Params_FilterPreset,
+    Params_SizeRange,
+    Params_Mix,
+    Params_FreezeEcho,
+    Params_EchoDelayMod,
+    Params_FilterMix,
+    Params_ClearBuffer,
+    Params_ResetHead,
+    Params_Count
+};
+
 const PluginEntry Snecho::Entry{
     AudioEffectDescriptor("kb01-snecho", "Snecho", "A SNES-inspired mono delay effect"),
     [](PluginHost& host) -> BasePlugin* {
@@ -11,30 +27,36 @@ const PluginEntry Snecho::Entry{
     }};
 
 void Snecho::Config() {
-    ConfigExtension<ParametersExt>(1).configParam(0, 0.0f, 1.0f, 0.5f, "Volume");
+    ConfigExtension<ParametersExt>(Params_Count).
+    configParam(Params_Size, 0.0f, 1.0f, 0.5f, "Size").
+    configParam(Params_Feedback, 0.0f, 1.0f, 0.5f, "Feedback").
+    configParam(Params_FilterPreset, 0.0f, 1.0f, 0.0f, "Filter Preset").
+    configParam(Params_SizeRange, 0.0f, 1.0f, 0.5f, "Size Range").
+    configParam(Params_Mix, 0.0f, 1.0f, 0.5f, "Mix").
+    configParam(Params_FreezeEcho, 0.0f, 1.0f, 0.0f, "Freeze Echo").
+    configParam(Params_EchoDelayMod, 0.0f, 1.0f, 1.0f, "Echo Mod").
+    configParam(Params_FilterMix, 0.0f, 1.0f, 0.5f, "Filter Mix").
+    configParam(Params_ClearBuffer, 0.0f, 1.0f, 0.0f, "Clear Buffer").
+    configParam(Params_ResetHead, 0.0f, 1.0f, 0.0f, "Reset Playhead");
+
+    ConfigExtension<StateExt>();
 }
 
 void Snecho::ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, ParametersExt::AudioParameters& params) {
-    /*
     // inputs
     // core
-    snes1.cfg.echoBufferSize = params[SIZE_PARAM].getValue();
-    snes1.mod.echoBufferSize = inputs[SIZE_CV_INPUT].getVoltage() * 0.1f;
+    snes1.cfg.echoBufferSize = params.Get(Params_Size);
 
-    snes1.cfg.echoFeedback = params[FEEDBACK_PARAM].getValue();
-    snes1.mod.echoFeedback = inputs[FEEDBACK_CV_INPUT].getVoltage() * 0.1f;
+    snes1.cfg.echoFeedback = params.Get(Params_Feedback);
 
-    if (nextFilter.process(params[FILTER_PRESET_PARAM].getValue())) {
-        filterPreset = (filterPreset + 1) % SNES::kNumFilterPresets;
+    size_t filterPreset = static_cast<size_t>(params.Get(Params_FilterPreset) * SNES::kNumFilterPresets);
+    if (filterPreset != mLastFilterPreset) {
+        mLastFilterPreset = filterPreset;
         memcpy(snes1.cfg.filterCoefficients, SNES::kFilterPresets[filterPreset].data, SNES::kFIRTaps);
         // snes1.cfg.filterGain = dbToRatio(-SNES::kFilterPresets[filterPreset].maxGainDb);
     }
-    lights[FILTER_1_LIGHT].setBrightness(filterPreset & 1);
-    lights[FILTER_2_LIGHT].setBrightness((filterPreset & 2) >> 1);
-    lights[FILTER_3_LIGHT].setBrightness((filterPreset & 4) >> 2);
-    lights[FILTER_4_LIGHT].setBrightness((filterPreset & 8) >> 3);
 
-    size_t range = round(params[SIZE_RANGE_PARAM].getValue());
+    size_t range = round(params.Get(Params_SizeRange));
     if (range == 0) {
         snes1.cfg.echoBufferRangeMaxSamples = SNES::kOriginalMaxEchoSamples;
     } else if (range == 1) {
@@ -43,41 +65,28 @@ void Snecho::ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, P
         snes1.cfg.echoBufferRangeMaxSamples = SNES::MsToSamples(10000.0f);
     }
 
-    float wetDryMix = clamp(params[MIX_PARAM].getValue() + inputs[MIX_CV_INPUT].getVoltage() * 0.1f, 0.0f, 1.0f);
+    float wetDryMix = params.Get(Params_Mix);
 
-    snes1.cfg.freezeEcho = (params[FREEZE_PARAM].getValue()) > 0.5f;
-    freeze.process(inputs[FREEZE_GATE_INPUT].getVoltage(), .1f, 1.f);
-    snes1.mod.freezeEcho = freeze.isHigh();
+    snes1.cfg.freezeEcho = (params.Get(Params_FreezeEcho)) > 0.5f;
 
     // extension
-    snes1.cfg.echoDelayMod = params[MOD_PARAM].getValue();
-    snes1.mod.echoDelayMod = inputs[MOD_CV_INPUT].getVoltage() * 0.1f;
+    snes1.cfg.echoDelayMod = params.Get(Params_EchoDelayMod);
 
-    snes1.cfg.filterMix = params[FILTER_MIX_PARAM].getValue();
-    snes1.mod.filterMix = inputs[FILTER_MIX_CV_INPUT].getVoltage() * 0.1f;
+    snes1.cfg.filterMix = params.Get(Params_FilterMix);
 
-    snes1.mod.clearBuffer =
-        clear.process(params[CLEAR_PARAM].getValue() + inputs[CLEAR_TRIG_INPUT].getVoltage(), .1f, 1.f);
-    snes1.mod.resetHead =
-        clear.process(params[RESET_PARAM].getValue() + inputs[RESET_TRIG_INPUT].getVoltage(), .1f, 1.f);
-
-    if (inputs[CLOCK_INPUT].isConnected()) {
-        clockTime.process(args.sampleTime);
-        if (clockIn.process(inputs[CLOCK_INPUT].getVoltage())) {
-            snes1.cfg.echoBufferIncrementSamples = SNES::MsToSamples(clockTime.getTime() * 1000.0f);
-            clockTime.reset();
-        }
-    } else {
-        snes1.cfg.echoBufferIncrementSamples = SNES::kOriginalEchoIncrementSamples;
-    }
+    snes1.mod.clearBuffer = params.Get(Params_ClearBuffer) > 0.5f;
+    snes1.mod.resetHead = params.Get(Params_ResetHead) > 0.5f;
+    snes1.cfg.echoBufferIncrementSamples = SNES::kOriginalEchoIncrementSamples;
 
     // processing
-    float drySignal = inputs[AUDIO_INPUT].getVoltage() / 5.0f;
-    float wetSignal = snesSampler.Process<kitdsp::interpolate::InterpolationStrategy::None>(
-        drySignal, [this](float in, float& out) { out = snes1.Process(in * 0.5f) * 2.0f; });
+    for(size_t idx = 0; idx < in.left.size(); ++idx)
+    {
+        float drySignal = in.left[idx];
+        float wetSignal = snesSampler.Process<kitdsp::interpolate::InterpolationStrategy::None>(
+            drySignal, [this](float in, float& out) { out = snes1.Process(in * 0.5f) * 2.0f; });
 
-    // outputs
-    outputs[AUDIO_L_OUTPUT].setVoltage(5.0f * lerpf(drySignal, wetSignal, wetDryMix));
-    outputs[AUDIO_R_OUTPUT].setVoltage(-5.0f * lerpf(drySignal, wetSignal, wetDryMix));
-    */
+        // outputs
+        out.left[idx] = lerpf(drySignal, wetSignal, wetDryMix);
+        out.right[idx] = lerpf(drySignal, wetSignal, wetDryMix);
+    }
 }

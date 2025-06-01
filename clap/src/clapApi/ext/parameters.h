@@ -44,14 +44,14 @@ class ParametersExt : public BaseExt {
 
     ParametersExt(size_t numParams)
         : mNumParams(numParams),
-          mParams(numParams, {}),
+          mParams(numParams),
           mState(numParams, 0.0f),
           mAudioToMain(),
           mMainToAudio(),
           mAudioState(numParams, mAudioToMain, mMainToAudio) {}
 
     /* This intentionally mirrors the configParam method from VCV rack */
-    void configParam(ParamId id,
+    ParametersExt& configParam(ParamId id,
                      float min,
                      float max,
                      float defaultValue,
@@ -61,6 +61,7 @@ class ParametersExt : public BaseExt {
                      float displayMultiplier = 1.0f,
                      float displayOffset = 0.0f) {
         mParams[id] = { id, min, max, defaultValue, name, unit, displayBase, displayMultiplier, displayOffset };
+        return *this;
     }
 
     float Get(ParamId id) const {
@@ -116,6 +117,7 @@ class ParametersExt : public BaseExt {
         ParameterChangeQueue& mMainToAudio;
    };
    AudioParameters& GetStateForAudioThread() { return mAudioState; }
+   size_t GetNumParams() const { return mNumParams; }
 
    // internal state
    private:
