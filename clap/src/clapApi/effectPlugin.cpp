@@ -3,10 +3,17 @@
 #include "effectPlugin.h"
 
 void EffectPlugin::ProcessRaw(const clap_process_t* process) {
+    ParametersExt::AudioParameters& params =
+        static_cast<ParametersExt&>(BasePlugin::GetExtensionFromPluginObject(GetPluginObject(), CLAP_EXT_PARAMS))
+            .GetStateForAudioThread();
+
     const uint32_t frameCount = process->frames_count;
     const uint32_t inputEventCount = process->in_events->size(process->in_events);
     uint32_t eventIndex = 0;
     uint32_t nextEventFrame = inputEventCount ? 0 : frameCount;
+
+
+    params.Flush();
 
     for (uint32_t frameIndex = 0; frameIndex < frameCount;) {
         // process events that occurred this frame
@@ -48,7 +55,7 @@ void EffectPlugin::ProcessRaw(const clap_process_t* process) {
             false,
         };
         // process audio from this frame
-        ProcessAudio(in, out);
+        ProcessAudio(in, out, params);
         frameIndex = nextEventFrame;
     }
 }
@@ -61,8 +68,12 @@ void EffectPlugin::ProcessEvent(const clap_event_header_t& event) {
         {
             case CLAP_EVENT_PARAM_VALUE:
             {
-                const clap_event_param_value_t& param = reinterpret_cast<const clap_event_param_value_t&>(event);
-
+                const clap_event_param_value_t& paramChange = reinterpret_cast<const clap_event_param_value_t&>(event);
+                ParametersExt::AudioParameters& params =
+                    static_cast<ParametersExt&>(
+                        BasePlugin::GetExtensionFromPluginObject(GetPluginObject(), CLAP_EXT_PARAMS))
+                        .GetStateForAudioThread();
+                params.Set(paramChange.param_id, static_cast<float>(paramChange.value));
             }
             break;
         }
@@ -71,5 +82,4 @@ void EffectPlugin::ProcessEvent(const clap_event_header_t& event) {
 
 void EffectPlugin::Config() {
     ConfigExtension<StereoAudioPortsExt<1, 1>>();
-    ConfigExtension<ParametersExt<1>>();
 }

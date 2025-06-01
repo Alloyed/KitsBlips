@@ -1,23 +1,20 @@
 #include "snecho/plugin.h"
+
+#include "clapApi/ext/all.h"
 #include "descriptor.h"
 
-// clang-format off
 const PluginEntry Snecho::Entry{
-    // meta
-    AudioEffectDescriptor(
-        "alloyed.me/snecho",
-        "Snecho",
-        "A SNES-inspired mono delay effect"
-    ),
-    // factory
+    AudioEffectDescriptor("kb01-snecho", "Snecho", "A SNES-inspired mono delay effect"),
     [](PluginHost& host) -> BasePlugin* {
         static Snecho plugin(host);
         return &plugin;
-    }
-};
-// clang-format on
+    }};
 
-void Snecho::ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) {
+void Snecho::Config() {
+    ConfigExtension<ParametersExt>(1).configParam(0, 0.0f, 1.0f, 0.5f, "Volume");
+}
+
+void Snecho::ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, ParametersExt::AudioParameters& params) {
     /*
     // inputs
     // core

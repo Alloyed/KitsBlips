@@ -22,6 +22,7 @@ class BasePlugin
     public:
         virtual void Config() = 0;
         virtual void ProcessRaw(const clap_process_t *process) = 0;
+        virtual void ProcessEvent(const clap_event_header_t& event) = 0;
 
     /* public methods */
     public:
