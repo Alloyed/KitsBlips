@@ -26,13 +26,13 @@ class StateExt: public BaseExt {
     static bool _save(const clap_plugin_t* plugin, const clap_ostream_t* out) {
         ParametersExt& params = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
 
-        params.Flush();
+        params.Flush(); // empty queue to ensure newest changes
 
         size_t numParams = params.GetNumParams();
         for(ParamId id = 0; id < numParams; ++id)
         {
-            float value = params.Get(id);
-            if(out->write(out, &value, sizeof(float)) == -1)
+            double value = params.Get(id);
+            if(out->write(out, &value, sizeof(double)) == -1)
             {
                 return false;
             }
@@ -43,16 +43,26 @@ class StateExt: public BaseExt {
     static bool _load(const clap_plugin_t* plugin, const clap_istream_t* in) {
         ParametersExt& params = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
 
+        params.Flush(); // empty queue so changes apply on top
+
         size_t numParams = params.GetNumParams();
-        for(ParamId id = 0; id < numParams; ++id)
+        ParamId id = 0;
+        while(id < numParams)
         {
-            float value = 0.0f;
-            if(in->read(in, &value, sizeof(float)) == -1)
+            double value = 0.0f;
+            int32_t result = in->read(in, &value, sizeof(double));
+            if(result == -1)
             {
                 return false;
             }
             params.Set(id, value);
+            id++;
+            if(result == 0)
+            {
+                // eof
+                break;
+            }
         }
-        return true;
+        return id == numParams;
     }
 };

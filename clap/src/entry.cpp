@@ -44,7 +44,6 @@ namespace PluginFactory {
             }
         }
 
-        assert(false);
         return nullptr;
     }
 

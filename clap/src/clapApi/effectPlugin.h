@@ -9,6 +9,7 @@ class EffectPlugin: public BasePlugin {
     public:
     // API
     EffectPlugin(PluginHost& host): BasePlugin(host) {}
+    ~EffectPlugin() = default;
     virtual void Config() override;
     virtual void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, ParametersExt::AudioParameters& params) = 0;
 

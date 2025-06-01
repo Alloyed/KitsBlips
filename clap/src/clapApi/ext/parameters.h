@@ -13,19 +13,19 @@ using ParamId = clap_id;
 
 struct ParameterConfig {
     ParamId id;
-    float min;
-    float max;
-    float defaultValue;
+    double min;
+    double max;
+    double defaultValue;
     const char* name;
     const char* unit;
-    float displayBase;
-    float displayMultiplier;
-    float displayOffset;
+    double displayBase;
+    double displayMultiplier;
+    double displayOffset;
 };
 
 struct ParameterChange {
     ParamId id;
-    float value;
+    double value;
 };
 using ParameterChangeQueue = etl::queue_spsc_atomic<ParameterChange, 100, etl::memory_model::MEMORY_MODEL_SMALL>;
 
@@ -53,26 +53,27 @@ class ParametersExt : public BaseExt {
 
     /* This intentionally mirrors the configParam method from VCV rack */
     ParametersExt& configParam(ParamId id,
-                     float min,
-                     float max,
-                     float defaultValue,
+                     double min,
+                     double max,
+                     double defaultValue,
                      const char* name = "",
                      const char* unit = "",
-                     float displayBase = 0.0f,
-                     float displayMultiplier = 1.0f,
-                     float displayOffset = 0.0f) {
+                     double displayBase = 0.0f,
+                     double displayMultiplier = 1.0f,
+                     double displayOffset = 0.0f) {
         mParams[id] = { id, min, max, defaultValue, name, unit, displayBase, displayMultiplier, displayOffset };
+        Set(id, defaultValue);
         return *this;
     }
 
-    float Get(ParamId id) const {
+    double Get(ParamId id) const {
         if (id >= mState.size()) {
             return 0.0f;
         }
         return mState[id];
     }
 
-    void Set(ParamId id, float newValue) {
+    void Set(ParamId id, double newValue) {
         if (id < mState.size()) {
             mState[id] = newValue;
             mMainToAudio.push({id, newValue});
@@ -93,13 +94,13 @@ class ParametersExt : public BaseExt {
         AudioParameters(size_t numParams, ParameterChangeQueue& audioToMain, ParameterChangeQueue& mainToAudio)
             : mState(numParams, 0.0f), mAudioToMain(audioToMain), mMainToAudio(mainToAudio) {}
 
-        float Get(ParamId id) const {
+        double Get(ParamId id) const {
             if (id >= mState.size()) {
                 return 0.0f;
             }
             return mState[id];
         }
-        void Set(ParamId id, float newValue) {
+        void Set(ParamId id, double newValue) {
             if (id < mState.size()) {
                 mState[id] = newValue;
                 mAudioToMain.push({id, newValue});
@@ -113,7 +114,7 @@ class ParametersExt : public BaseExt {
             }
         }
 
-        std::vector<float> mState;
+        std::vector<double> mState;
         ParameterChangeQueue& mAudioToMain;
         ParameterChangeQueue& mMainToAudio;
    };
@@ -124,7 +125,7 @@ class ParametersExt : public BaseExt {
    private:
    const size_t mNumParams;
    std::vector<ParameterConfig> mParams;
-   std::vector<float> mState;
+   std::vector<double> mState;
    ParameterChangeQueue mAudioToMain;
    ParameterChangeQueue mMainToAudio;
    AudioParameters mAudioState;
@@ -142,7 +143,6 @@ class ParametersExt : public BaseExt {
             const auto& cfg = self.mParams[index];
             memset(information, 0, sizeof(clap_param_info_t));
             information->id = index;
-            // These flags enable polyphonic modulation.
             information->flags = CLAP_PARAM_IS_AUTOMATABLE;
             information->min_value = cfg.min;
             information->max_value = cfg.max;
@@ -156,8 +156,12 @@ class ParametersExt : public BaseExt {
     static bool _get_value(const clap_plugin_t* plugin, clap_id id, double* value) {
         ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
         // called from main thread
-        float valueFloat = self.Get(id);
-        *value = static_cast<double>(valueFloat);
+        if(id < self.mParams.size())
+        {
+            self.Flush();
+            *value = self.Get(id);
+            return true;
+        }
         return false;
     }
 

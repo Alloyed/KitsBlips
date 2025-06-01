@@ -22,8 +22,7 @@ enum Params: ParamId {
 const PluginEntry Snecho::Entry{
     AudioEffectDescriptor("me.alloyed.KitsBlips", "Snecho", "A SNES-inspired mono delay effect"),
     [](PluginHost& host) -> BasePlugin* {
-        static Snecho plugin(host);
-        return &plugin;
+        return new Snecho(host);
     }};
 
 void Snecho::Config() {

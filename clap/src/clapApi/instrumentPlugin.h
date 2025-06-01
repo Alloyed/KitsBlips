@@ -11,6 +11,7 @@ class InstrumentPlugin: public BasePlugin {
     public:
     // API
     InstrumentPlugin(PluginHost& host): BasePlugin(host) {}
+    ~InstrumentPlugin() = default;
     virtual void Config() override;
     virtual void ProcessAudio(StereoAudioBuffer& out, ParametersExt::AudioParameters& params) = 0;
     virtual void ProcessNoteOn(const NoteTuple& note, float velocity) = 0;

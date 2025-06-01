@@ -17,7 +17,6 @@ PluginHost& BasePlugin::GetHost() {
 
 bool BasePlugin::_init(const clap_plugin *plugin) {
     BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
-    self.Config();
     return self.Init();
 }
 
@@ -115,6 +114,7 @@ const clap_plugin_t* BasePlugin::GetOrCreatePluginObject(const clap_plugin_descr
             &_on_main_thread
         };
         mPlugin = std::make_unique<clap_plugin_t>(pluginObject);
+        Config();
     }
     setbuf(stdout, NULL);
     return mPlugin.get();

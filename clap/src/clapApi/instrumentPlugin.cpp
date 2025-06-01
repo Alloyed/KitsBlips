@@ -11,7 +11,7 @@ void InstrumentPlugin::ProcessEvent(const clap_event_header_t& event) {
             {
                 const clap_event_param_value_t& paramChange = reinterpret_cast<const clap_event_param_value_t&>(event);
                 ParametersExt::AudioParameters& params = ParametersExt::GetFromPlugin<ParametersExt>(*this).GetStateForAudioThread();
-                params.Set(paramChange.param_id, static_cast<float>(paramChange.value));
+                params.Set(paramChange.param_id, paramChange.value);
             }
             break;
             case CLAP_EVENT_NOTE_ON:

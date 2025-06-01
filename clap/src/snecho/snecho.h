@@ -13,6 +13,7 @@ class Snecho : public EffectPlugin
     public:
     static const PluginEntry Entry;
     Snecho(PluginHost& host): EffectPlugin(host) {}
+    ~Snecho() = default;
     void Config() override;
     void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, ParametersExt::AudioParameters& params) override;
     bool Activate(double sampleRate, uint32_t minFramesCount, uint32_t maxFramesCount) override;
