@@ -31,7 +31,7 @@ add_library(${PROJECT_NAME}-plugin STATIC
     #src/gui/sdlImgui.cpp
 
     src/template/plugin.cpp
-    src/snecho/plugin.cpp
+    src/snecho/snecho.cpp
 )
 
 target_include_directories(${PROJECT_NAME}-plugin

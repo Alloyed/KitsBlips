@@ -15,6 +15,8 @@ class Snecho : public EffectPlugin
     Snecho(PluginHost& host): EffectPlugin(host) {}
     void Config() override;
     void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, ParametersExt::AudioParameters& params) override;
+    bool Activate(double sampleRate, uint32_t minFramesCount, uint32_t maxFramesCount) override;
+    void Reset() override;
 
     private:
     static constexpr size_t snesBufferSize = 7680UL * 10000;

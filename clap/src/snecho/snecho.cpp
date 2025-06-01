@@ -1,4 +1,4 @@
-#include "snecho/plugin.h"
+#include "snecho/snecho.h"
 
 #include "clapApi/ext/all.h"
 #include "descriptor.h"
@@ -89,4 +89,13 @@ void Snecho::ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, P
         out.left[idx] = lerpf(drySignal, wetSignal, wetDryMix);
         out.right[idx] = lerpf(drySignal, wetSignal, wetDryMix);
     }
+}
+
+bool Snecho::Activate(double sampleRate, uint32_t minFramesCount, uint32_t maxFramesCount) {
+   snesSampler = {SNES::kOriginalSampleRate, static_cast<float>(sampleRate)};
+   return true;
+}
+
+void Snecho::Reset() {
+   snes1.Reset();
 }

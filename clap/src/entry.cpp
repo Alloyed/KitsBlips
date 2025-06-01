@@ -9,12 +9,12 @@
 #include "clapApi/basePlugin.h"
 
 #include "template/plugin.h"
-#include "snecho/plugin.h"
+#include "snecho/snecho.h"
 
 namespace PluginFactory {
 
     // Add your plugin here!
-    const std::array<PluginEntry, 1> plugins {
+    const std::vector<PluginEntry> plugins {
         Snecho::Entry,
     };
 
