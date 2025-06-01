@@ -1,17 +1,13 @@
 #pragma once
 
 #include <clap/clap.h>
-#include <cstdint>
-#include <cstdio>
 
 #include "clapApi/basePlugin.h"
 
-class TimerSupportExt: public BaseExt {
+class TimerSupportExt : public BaseExt {
    public:
     static constexpr auto NAME = CLAP_EXT_TIMER_SUPPORT;
-    const char* Name() const override {
-        return NAME;
-    }
+    const char* Name() const override { return NAME; }
 
     const void* Extension() const override {
         static const clap_plugin_timer_support_t value = {

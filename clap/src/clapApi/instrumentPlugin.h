@@ -2,15 +2,15 @@
 
 #include <etl/vector.h>
 
-#include "clapApi/common.h"
 #include "clapApi/basePlugin.h"
+#include "clapApi/common.h"
 #include "clapApi/ext/parameters.h"
 
 /* pre-configured for simple stereo instruments */
-class InstrumentPlugin: public BasePlugin {
-    public:
+class InstrumentPlugin : public BasePlugin {
+   public:
     // API
-    InstrumentPlugin(PluginHost& host): BasePlugin(host) {}
+    InstrumentPlugin(PluginHost& host) : BasePlugin(host) {}
     ~InstrumentPlugin() = default;
     virtual void Config() override;
     virtual void ProcessAudio(StereoAudioBuffer& out, ParametersExt::AudioParameters& params) = 0;

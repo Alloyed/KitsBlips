@@ -1,11 +1,9 @@
 #pragma once
 
 #include <clap/clap.h>
+#include <etl/queue_spsc_atomic.h>
 #include <cstdint>
 #include <cstdio>
-#include <memory>
-#include <array>
-#include <etl/queue_spsc_atomic.h>
 
 #include "clapApi/basePlugin.h"
 
@@ -32,9 +30,7 @@ using ParameterChangeQueue = etl::queue_spsc_atomic<ParameterChange, 100, etl::m
 class ParametersExt : public BaseExt {
    public:
     static constexpr auto NAME = CLAP_EXT_PARAMS;
-    const char* Name() const override {
-        return NAME;
-    }
+    const char* Name() const override { return NAME; }
 
     const void* Extension() const override {
         static const clap_plugin_params_t value = {
@@ -53,15 +49,15 @@ class ParametersExt : public BaseExt {
 
     /* This intentionally mirrors the configParam method from VCV rack */
     ParametersExt& configParam(ParamId id,
-                     double min,
-                     double max,
-                     double defaultValue,
-                     const char* name = "",
-                     const char* unit = "",
-                     double displayBase = 0.0f,
-                     double displayMultiplier = 1.0f,
-                     double displayOffset = 0.0f) {
-        mParams[id] = { id, min, max, defaultValue, name, unit, displayBase, displayMultiplier, displayOffset };
+                               double min,
+                               double max,
+                               double defaultValue,
+                               const char* name = "",
+                               const char* unit = "",
+                               double displayBase = 0.0f,
+                               double displayMultiplier = 1.0f,
+                               double displayOffset = 0.0f) {
+        mParams[id] = {id, min, max, defaultValue, name, unit, displayBase, displayMultiplier, displayOffset};
         Set(id, defaultValue);
         return *this;
     }
@@ -82,8 +78,7 @@ class ParametersExt : public BaseExt {
 
     void Flush() {
         ParameterChange change;
-        while(mAudioToMain.pop(change))
-        {
+        while (mAudioToMain.pop(change)) {
             mState[change.id] = change.value;
         }
     }
@@ -108,8 +103,7 @@ class ParametersExt : public BaseExt {
         }
         void Flush() {
             ParameterChange change;
-            while(mMainToAudio.pop(change))
-            {
+            while (mMainToAudio.pop(change)) {
                 mState[change.id] = change.value;
             }
         }
@@ -117,20 +111,20 @@ class ParametersExt : public BaseExt {
         std::vector<double> mState;
         ParameterChangeQueue& mAudioToMain;
         ParameterChangeQueue& mMainToAudio;
-   };
-   AudioParameters& GetStateForAudioThread() { return mAudioState; }
-   size_t GetNumParams() const { return mNumParams; }
+    };
+    AudioParameters& GetStateForAudioThread() { return mAudioState; }
+    size_t GetNumParams() const { return mNumParams; }
 
-   // internal state
+    // internal state
    private:
-   const size_t mNumParams;
-   std::vector<ParameterConfig> mParams;
-   std::vector<double> mState;
-   ParameterChangeQueue mAudioToMain;
-   ParameterChangeQueue mMainToAudio;
-   AudioParameters mAudioState;
+    const size_t mNumParams;
+    std::vector<ParameterConfig> mParams;
+    std::vector<double> mState;
+    ParameterChangeQueue mAudioToMain;
+    ParameterChangeQueue mMainToAudio;
+    AudioParameters mAudioState;
 
-   // impl
+    // impl
    private:
     static uint32_t _count(const clap_plugin_t* plugin) {
         ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
@@ -138,8 +132,7 @@ class ParametersExt : public BaseExt {
     }
     static bool _get_info(const clap_plugin_t* plugin, uint32_t index, clap_param_info_t* information) {
         ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
-        if(index < self.mParams.size())
-        {
+        if (index < self.mParams.size()) {
             const auto& cfg = self.mParams[index];
             memset(information, 0, sizeof(clap_param_info_t));
             information->id = index;
@@ -156,8 +149,7 @@ class ParametersExt : public BaseExt {
     static bool _get_value(const clap_plugin_t* plugin, clap_id id, double* value) {
         ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
         // called from main thread
-        if(id < self.mParams.size())
-        {
+        if (id < self.mParams.size()) {
             self.Flush();
             *value = self.Get(id);
             return true;

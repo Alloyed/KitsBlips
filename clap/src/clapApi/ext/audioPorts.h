@@ -7,12 +7,10 @@
 #include "clapApi/basePlugin.h"
 
 template <size_t NUM_INPUTS, size_t NUM_OUTPUTS>
-class StereoAudioPortsExt: public BaseExt {
+class StereoAudioPortsExt : public BaseExt {
    public:
     static constexpr auto NAME = CLAP_EXT_AUDIO_PORTS;
-    const char* Name() const override {
-        return NAME;
-    }
+    const char* Name() const override { return NAME; }
 
     const void* Extension() const override {
         static const clap_plugin_audio_ports_t value = {

@@ -2,18 +2,15 @@
 #include "clapApi/ext/all.h"
 
 void EffectPlugin::ProcessEvent(const clap_event_header_t& event) {
-    if(event.space_id == CLAP_CORE_EVENT_SPACE_ID)
-    {
+    if (event.space_id == CLAP_CORE_EVENT_SPACE_ID) {
         // clap events
-        switch(event.type)
-        {
-            case CLAP_EVENT_PARAM_VALUE:
-            {
+        switch (event.type) {
+            case CLAP_EVENT_PARAM_VALUE: {
                 const clap_event_param_value_t& paramChange = reinterpret_cast<const clap_event_param_value_t&>(event);
-                ParametersExt::AudioParameters& params = ParametersExt::GetFromPlugin<ParametersExt>(*this).GetStateForAudioThread();
+                ParametersExt::AudioParameters& params =
+                    ParametersExt::GetFromPlugin<ParametersExt>(*this).GetStateForAudioThread();
                 params.Set(paramChange.param_id, paramChange.value);
-            }
-            break;
+            } break;
         }
     }
 }
@@ -40,7 +37,8 @@ void EffectPlugin::ProcessAudio(const clap_process_t& process, size_t rangeStart
         // isOutRightConstant
         false,
     };
-    ParametersExt::AudioParameters& params = ParametersExt::GetFromPlugin<ParametersExt>(*this).GetStateForAudioThread();
+    ParametersExt::AudioParameters& params =
+        ParametersExt::GetFromPlugin<ParametersExt>(*this).GetStateForAudioThread();
     // process audio from this frame
     ProcessAudio(in, out, params);
 }

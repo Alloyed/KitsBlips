@@ -1,11 +1,12 @@
 #include "snecho/snecho.h"
 
-#include "clapApi/ext/all.h"
+#include "clapApi/ext/parameters.h"
+#include "clapApi/ext/state.h"
 #include "descriptor.h"
 
 using namespace kitdsp;
 
-enum Params: ParamId {
+enum Params : ParamId {
     Params_Size,
     Params_Feedback,
     Params_FilterPreset,
@@ -21,23 +22,21 @@ enum Params: ParamId {
 
 const PluginEntry Snecho::Entry{
     AudioEffectDescriptor("me.alloyed.KitsBlips", "Snecho", "A SNES-inspired mono delay effect"),
-    [](PluginHost& host) -> BasePlugin* {
-        return new Snecho(host);
-    }};
+    [](PluginHost& host) -> BasePlugin* { return new Snecho(host); }};
 
 void Snecho::Config() {
     EffectPlugin::Config();
-    ConfigExtension<ParametersExt>(Params_Count).
-    configParam(Params_Size, 0.0f, 1.0f, 0.5f, "Size").
-    configParam(Params_Feedback, 0.0f, 1.0f, 0.5f, "Feedback").
-    configParam(Params_FilterPreset, 0.0f, 1.0f, 0.0f, "Filter Preset").
-    configParam(Params_SizeRange, 0.0f, 1.0f, 0.5f, "Size Range").
-    configParam(Params_Mix, 0.0f, 1.0f, 0.5f, "Mix").
-    configParam(Params_FreezeEcho, 0.0f, 1.0f, 0.0f, "Freeze Echo").
-    configParam(Params_EchoDelayMod, 0.0f, 1.0f, 1.0f, "Echo Mod").
-    configParam(Params_FilterMix, 0.0f, 1.0f, 0.5f, "Filter Mix").
-    configParam(Params_ClearBuffer, 0.0f, 1.0f, 0.0f, "Clear Buffer").
-    configParam(Params_ResetHead, 0.0f, 1.0f, 0.0f, "Reset Playhead");
+    ConfigExtension<ParametersExt>(Params_Count)
+        .configParam(Params_Size, 0.0f, 1.0f, 0.5f, "Size")
+        .configParam(Params_Feedback, 0.0f, 1.0f, 0.5f, "Feedback")
+        .configParam(Params_FilterPreset, 0.0f, 1.0f, 0.0f, "Filter Preset")
+        .configParam(Params_SizeRange, 0.0f, 1.0f, 0.5f, "Size Range")
+        .configParam(Params_Mix, 0.0f, 1.0f, 0.5f, "Mix")
+        .configParam(Params_FreezeEcho, 0.0f, 1.0f, 0.0f, "Freeze Echo")
+        .configParam(Params_EchoDelayMod, 0.0f, 1.0f, 1.0f, "Echo Mod")
+        .configParam(Params_FilterMix, 0.0f, 1.0f, 0.5f, "Filter Mix")
+        .configParam(Params_ClearBuffer, 0.0f, 1.0f, 0.0f, "Clear Buffer")
+        .configParam(Params_ResetHead, 0.0f, 1.0f, 0.0f, "Reset Playhead");
 
     ConfigExtension<StateExt>();
 }
@@ -79,8 +78,7 @@ void Snecho::ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, P
     snes1.cfg.echoBufferIncrementSamples = SNES::kOriginalEchoIncrementSamples;
 
     // processing
-    for(size_t idx = 0; idx < in.left.size(); ++idx)
-    {
+    for (size_t idx = 0; idx < in.left.size(); ++idx) {
         float drySignal = in.left[idx];
         float wetSignal = snesSampler.Process<kitdsp::interpolate::InterpolationStrategy::None>(
             drySignal, [this](float in, float& out) { out = snes1.Process(in * 0.5f) * 2.0f; });
@@ -92,10 +90,10 @@ void Snecho::ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, P
 }
 
 bool Snecho::Activate(double sampleRate, uint32_t minFramesCount, uint32_t maxFramesCount) {
-   snesSampler = {SNES::kOriginalSampleRate, static_cast<float>(sampleRate)};
-   return true;
+    snesSampler = {SNES::kOriginalSampleRate, static_cast<float>(sampleRate)};
+    return true;
 }
 
 void Snecho::Reset() {
-   snes1.Reset();
+    snes1.Reset();
 }

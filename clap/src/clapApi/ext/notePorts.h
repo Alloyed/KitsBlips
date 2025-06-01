@@ -7,12 +7,10 @@
 #include "clapApi/basePlugin.h"
 
 template <size_t NUM_INPUTS, size_t NUM_OUTPUTS>
-class NotePortsExt: public BaseExt {
+class NotePortsExt : public BaseExt {
    public:
     static constexpr auto NAME = CLAP_EXT_NOTE_PORTS;
-    const char* Name() const override {
-        return NAME;
-    }
+    const char* Name() const override { return NAME; }
 
     const void* Extension() const override {
         static const clap_plugin_note_ports_t value = {
