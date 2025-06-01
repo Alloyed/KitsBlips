@@ -8,12 +8,14 @@
 #include "clapApi/basePlugin.h"
 
 #include "snecho/snecho.h"
+#include "sines/sines.h"
 
 namespace PluginFactory {
 
 // Add your plugin here!
 const std::vector<PluginEntry> plugins{
     Snecho::Entry,
+    Sines::Entry,
 };
 
 uint32_t get_plugin_count(const clap_plugin_factory* factory) {

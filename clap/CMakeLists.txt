@@ -33,6 +33,7 @@ add_library(${PROJECT_NAME}-plugin STATIC
 
     src/template/plugin.cpp
     src/snecho/snecho.cpp
+    src/sines/sines.cpp
 )
 
 target_include_directories(${PROJECT_NAME}-plugin
@@ -86,5 +87,5 @@ make_clapfirst_plugins(
     # In this case, the standalone has no UI and is an audio to audio effect
     # so it isn't very useful
     STANDALONE_CONFIGURATIONS
-    snecho "KitsBlips-snecho" "me.alloyed.snecho"
+    #snecho "KitsBlips-snecho" "me.alloyed.snecho"
 )
