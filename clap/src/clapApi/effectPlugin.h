@@ -1,17 +1,8 @@
 #pragma once
 
-#include <etl/vector.h>
-
+#include "clapApi/common.h"
 #include "clapApi/basePlugin.h"
 #include "clapApi/ext/parameters.h"
-
-struct StereoAudioBuffer
-{
-    etl::vector_ext<float> left;
-    etl::vector_ext<float> right;
-    bool isLeftConstant;
-    bool isRightConstant;
-};
 
 /* pre-configured for simple stereo effects */
 class EffectPlugin: public BasePlugin {
@@ -21,9 +12,7 @@ class EffectPlugin: public BasePlugin {
     virtual void Config() override;
     virtual void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, ParametersExt::AudioParameters& params) = 0;
 
-    // helpers
-
     // impl
-    void ProcessEvent(const clap_event_header_t& event) override;
-    void ProcessRaw(const clap_process_t *process) override;
+    void ProcessEvent(const clap_event_header_t& event) final;
+    void ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) final;
 };

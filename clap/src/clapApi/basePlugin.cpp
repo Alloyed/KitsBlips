@@ -1,6 +1,7 @@
 #include "clapApi/basePlugin.h"
 
 #include <cassert>
+#include "clapApi/ext/parameters.h"
 
 BaseExt* BasePlugin::TryGetExtension(const char* name) {
     if (auto search = mExtensions.find(name); search != mExtensions.end()) {
@@ -8,6 +9,10 @@ BaseExt* BasePlugin::TryGetExtension(const char* name) {
     } else {
         return nullptr;
     }
+}
+
+PluginHost& BasePlugin::GetHost() {
+    return mHost;
 }
 
 bool BasePlugin::_init(const clap_plugin *plugin) {
@@ -46,7 +51,37 @@ void BasePlugin::_reset(const clap_plugin *plugin) {
 clap_process_status BasePlugin::_process(const clap_plugin *plugin, const clap_process_t *process) {
     BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
 
-    self.ProcessRaw(process);
+    const uint32_t frameCount = process->frames_count;
+    const uint32_t inputEventCount = process->in_events->size(process->in_events);
+    uint32_t eventIndex = 0;
+    uint32_t nextEventFrame = inputEventCount ? 0 : frameCount;
+
+    ParametersExt::AudioParameters& params = ParametersExt::GetFromPlugin<ParametersExt>(self).GetStateForAudioThread();
+    params.Flush();
+
+    for (uint32_t frameIndex = 0; frameIndex < frameCount;) {
+        // process events that occurred this frame
+        while (eventIndex < inputEventCount && nextEventFrame == frameIndex) {
+            const clap_event_header_t* event = process->in_events->get(process->in_events, eventIndex);
+            if (event->time != frameIndex) {
+                nextEventFrame = event->time;
+                break;
+            }
+
+            self.ProcessEvent(*event);
+            eventIndex++;
+
+            if (eventIndex == inputEventCount) {
+                nextEventFrame = frameCount;
+                break;
+            }
+        }
+        size_t rangeStart = frameIndex;
+        size_t rangeStop = nextEventFrame;
+        // process audio from this frame
+        self.ProcessAudio(*process, rangeStart, rangeStop);
+        frameIndex = nextEventFrame;
+    }
 
     return CLAP_PROCESS_CONTINUE;
 }
