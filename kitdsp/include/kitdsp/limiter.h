@@ -1,14 +1,14 @@
 #pragma once
 
-#include "kitdsp/math/util.h"
 #include <cmath>
+#include "kitdsp/math/util.h"
 
 namespace kitdsp {
 /**
  * A low-complexity, no-configuration "safety" limiter, derived from:
  * https://github.com/pichenettes/stmlib/blob/master/dsp/limiter.h
  */
-template<typename SAMPLE>
+template <typename SAMPLE>
 class Limiter {
    public:
     Limiter() {}
@@ -19,7 +19,7 @@ class Limiter {
     SAMPLE Process(SAMPLE in) {
         // slew rectified input
         float difference = std::abs(in) - mPeak;
-        float slope = difference > 0 ? kSlopeUp : kSlopeDown
+        float slope = difference > 0 ? kSlopeUp : kSlopeDown;
         mPeak += difference * slope;
 
         // reduce gain if peak is above 1.0
@@ -31,9 +31,9 @@ class Limiter {
    private:
     float mPeak = 0.5f;
     // slope constants. these are sample-rate dependent, but for this case it doesn't matter much.
-    constexpr float kSlopeUp = 0.05f;
-    constexpr float kSlopeDown = 0.00002f;
+    static constexpr float kSlopeUp = 0.05f;
+    static constexpr float kSlopeDown = 0.00002f;
     // provides a bit of extra headroom just in case
-    constexpr float kPostGain = 0.8f;
+    static constexpr float kPostGain = 0.8f;
 };
 }  // namespace kitdsp

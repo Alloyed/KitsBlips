@@ -20,7 +20,6 @@ namespace blep {
 class RampUpOscillator : public Phasor {
    public:
     float Process() {
-        float oldPhase = mPhase;
         if (Advance()) {
             mBlep.InsertDiscontinuity(mPhase / mAdvance, 1.0f);
         }

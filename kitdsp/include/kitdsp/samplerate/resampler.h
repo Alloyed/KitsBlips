@@ -1,18 +1,14 @@
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
-#include "kitdsp/math/util.h"
 #include "kitdsp/math/interpolate.h"
 
 namespace kitdsp {
-template<typename SAMPLE>
+template <typename SAMPLE>
 class Resampler {
     // TODO: we should filter the inputs to avoid aliasing
     // https://dspguru.com/dsp/faqs/multirate/decimation/
    public:
-    Resampler(float sourceRate, float targetRate)
-        : mPeriod(targetRate / sourceRate) {}
+    Resampler(float sourceRate, float targetRate) : mPeriod(targetRate / sourceRate) {}
 
     template <interpolate::InterpolationStrategy strategy, typename F>
     SAMPLE Process(SAMPLE in, F&& callback) {

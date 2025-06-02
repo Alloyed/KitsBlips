@@ -1,6 +1,5 @@
 #pragma once
 
-#include "kitdsp/math/util.h"
 #include "kitdsp/samplerate/oversampler.h"
 /**
  * base implementation of common oscillator utils

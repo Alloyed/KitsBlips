@@ -1,19 +1,14 @@
 #pragma once
 
-#include <array>
 #include <cstddef>
-#include <cstdint>
 #include "kitdsp/filters/onePole.h"
-#include "kitdsp/math/util.h"
 
 namespace kitdsp {
 template <typename SAMPLE, size_t FACTOR>
 class Oversampler {
    public:
-    Oversampler(float sourceRate) {
-        SetSampleRate(sourceRate);
-    }
-    
+    Oversampler(float sourceRate) { SetSampleRate(sourceRate); }
+
     void Reset() {
         mFilterUp.Reset();
         mFilterDown.Reset();
@@ -21,17 +16,14 @@ class Oversampler {
     }
 
     void SetSampleRate(float sourceRate) {
-        if(sourceRate != mSampleRate)
-        {
+        if (sourceRate != mSampleRate) {
             mSampleRate = sourceRate;
             mFilterUp.SetFrequency(sourceRate * 0.25f, sourceRate * FACTOR);
             mFilterDown.SetFrequency(sourceRate * 0.25f, sourceRate * FACTOR);
         }
     }
 
-    float GetTargetSampleRate() const {
-        return mSampleRate * FACTOR;
-    }
+    float GetTargetSampleRate() const { return mSampleRate * FACTOR; }
 
     template <typename F>
     SAMPLE Process(F&& callback) {

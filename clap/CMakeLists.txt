@@ -83,9 +83,7 @@ make_clapfirst_plugins(
 
     # You can add a target-per-standalone you want. Syntax here is
     #   target-postfix output-name clap-id
-    # This allows you to make multiple standalones from a multi-plugin clap
-    # In this case, the standalone has no UI and is an audio to audio effect
-    # so it isn't very useful
     STANDALONE_CONFIGURATIONS
-    #snecho "KitsBlips-snecho" "me.alloyed.snecho"
+    #snecho "KitsBlips-snecho" "kitsblips.snecho"
+    sines "sines" "kitsblips.sines"
 )

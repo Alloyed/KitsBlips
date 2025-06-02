@@ -61,12 +61,15 @@ class BasePlugin {
 
     BaseExt* TryGetExtension(const char* name);
     PluginHost& GetHost();
+    double GetSampleRate() const;
 
     /* internal implementation*/
    private:
     std::unique_ptr<clap_plugin_t> mPlugin;
     std::unordered_map<std::string, std::unique_ptr<BaseExt>> mExtensions;
     PluginHost& mHost;
+    double mSampleRate;
+
     static bool _init(const clap_plugin* plugin);
     static void _destroy(const clap_plugin* plugin);
     static bool _activate(const clap_plugin* plugin,

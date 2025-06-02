@@ -1,5 +1,4 @@
 #include "sines/sines.h"
-#include <map>
 
 #include "clapApi/ext/parameters.h"
 #include "clapApi/ext/state.h"
@@ -8,7 +7,7 @@
 
 enum Params : ParamId { Params_Count };
 
-const PluginEntry Sines::Entry{AudioInstrumentDescriptor("me.alloyed.sines", "Sines", "a simple sine wave synth"),
+const PluginEntry Sines::Entry{AudioInstrumentDescriptor("kitsblips.sines", "Sines", "a simple sine wave synth"),
                                [](PluginHost& host) -> BasePlugin* { return new Sines(host); }};
 
 void Sines::Config() {
@@ -30,7 +29,7 @@ void Sines::ProcessNoteOn(const NoteTuple& note, float velocity) {
     // mono, voice stealing
     mTargetAmplitude = .2f;
     mNote = note;
-    mOsc.SetFrequency(kitdsp::midiToFrequency(mNote.key), mSampleRate);
+    mOsc.SetFrequency(kitdsp::midiToFrequency(mNote.key), GetSampleRate());
 }
 void Sines::ProcessNoteOff(const NoteTuple& note) {
     if (note.Match(mNote)) {
@@ -44,11 +43,6 @@ void Sines::ProcessNoteChoke(const NoteTuple& note) {
         mTargetAmplitude = 0.0f;
         mNote = {};
     }
-}
-
-bool Sines::Activate(double sampleRate, uint32_t minFramesCount, uint32_t maxFramesCount) {
-    mSampleRate = static_cast<float>(sampleRate);
-    return true;
 }
 
 void Sines::Reset() {

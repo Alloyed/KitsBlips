@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cmath>
 #include "kitdsp/osc/oscillatorUtil.h"
 #include "kitdsp/sampler.h"
 #include "kitdsp/math/interpolate.h"

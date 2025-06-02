@@ -29,10 +29,9 @@
 #endif
 
 #if defined(_MSC_VER)
-  #define KITDSP_DLLEXPORT __declspec(dllexport)
+#define KITDSP_DLLEXPORT __declspec(dllexport)
 #elif defined(__GNUC__) || defined(__clang__)
-  #define KITDSP_DLLEXPORT __attribute__((visibility("default")))
+#define KITDSP_DLLEXPORT __attribute__((visibility("default")))
 #else
-  #define KITDSP_DLLEXPORT
+#define KITDSP_DLLEXPORT
 #endif
-

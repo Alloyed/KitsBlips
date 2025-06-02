@@ -4,16 +4,11 @@
 #pragma once
 
 #include <cmath>
-#include <algorithm>
 #include "kitdsp/math/util.h"
 
 namespace kitdsp {
 
-enum class FilterMode {
-  LowPass,
-  BandPass,
-  Highpass
-};
+enum class FilterMode { LowPass, BandPass, Highpass };
 
 /**
  * This is an adaptation of the svf class in stmlib, the most commonly used filter in mutable instruments modules.

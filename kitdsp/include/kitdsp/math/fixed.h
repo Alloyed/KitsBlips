@@ -10,6 +10,8 @@
 #include "kitdsp/math/util.h"
 
 namespace kitdsp {
+class UQ16;
+class Q1_15;
 /** a number with 1 bit for sign, and 15 bits for value. range [-1, 1]*/
 class Q1_15 {
    public:
@@ -17,7 +19,7 @@ class Q1_15 {
     int16_t raw() const { return mData; }
 
     float toFloat() { return static_cast<float>(mData) / INT16_MAX; }
-    UQ16 toUQ16() { return {kitdsp::clamp<int16_t>(mData, 0, INT16_MAX) << 1}; }
+    UQ16 toUQ16() const;
 
     Q1_15 operator+(const Q1_15 other) const { return mData + other.mData; }
 
@@ -58,7 +60,7 @@ class UQ16 {
     UQ16(uint16_t x) : mData(x) {}
     uint16_t raw() const { return mData; }
     float toFloat() { return static_cast<float>(mData) / UINT16_MAX; }
-    Q1_15 toQ1_15() { return {mData >> 1}; }
+    Q1_15 toQ1_15() const;
 
     UQ16 operator+(const UQ16 other) const { return mData + other.mData; }
 
@@ -67,7 +69,7 @@ class UQ16 {
     UQ16 operator*(const UQ16 other) const {
         int32_t temp;
         constexpr int16_t Q = 16;
-        constexpr int16_t K = (1 << (Q - 1));
+        constexpr int16_t K = static_cast<int16_t>(1 << (Q - 1));
 
         temp = static_cast<int32_t>(mData) * static_cast<int32_t>(other.mData);
         // Rounding; mid values are rounded up
@@ -82,11 +84,18 @@ class UQ16 {
         int32_t temp = static_cast<int32_t>(mData) << Q;
         /* Rounding: mid values are rounded up (down for negative values). */
         temp += other.mData >> 1;
-        return {static_cast<int16_t>(temp / other.mData)};
+        return {static_cast<uint16_t>(temp / other.mData)};
     }
 
    private:
     uint16_t mData;
 };
+
+inline Q1_15 UQ16::toQ1_15() const {
+    return {static_cast<int16_t>(mData >> 1)};
+}
+inline UQ16 Q1_15::toUQ16() const {
+    return {static_cast<uint16_t>(kitdsp::clamp<int16_t>(mData, 0, INT16_MAX) << 1)};
+}
 
 }  // namespace kitdsp

@@ -1,9 +1,7 @@
 #include "kitdsp/snesEcho.h"
 #include "kitdsp/math/util.h"
 
-#include <algorithm>
 #include <cassert>
-#include <climits>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>

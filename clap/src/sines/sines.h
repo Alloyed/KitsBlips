@@ -15,7 +15,6 @@ class Sines : public InstrumentPlugin {
     void ProcessNoteOn(const NoteTuple& note, float velocity) override;
     void ProcessNoteOff(const NoteTuple& note) override;
     void ProcessNoteChoke(const NoteTuple& note) override;
-    bool Activate(double sampleRate, uint32_t minFramesCount, uint32_t maxFramesCount) override;
     void Reset() override;
 
    private:
@@ -23,5 +22,4 @@ class Sines : public InstrumentPlugin {
     float mAmplitude;
     float mTargetAmplitude;
     NoteTuple mNote;
-    float mSampleRate;
 };

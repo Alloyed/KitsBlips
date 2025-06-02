@@ -34,33 +34,25 @@ struct Vector<TYPE, 2> {
         return {data[0] + other.data[0], data[1] + other.data[1]};
     }
 
-    Vector<type, size> operator+(const type& other) const {
-        return {data[0] + other, data[1] + other};
-    }
+    Vector<type, size> operator+(const type& other) const { return {data[0] + other, data[1] + other}; }
 
     Vector<type, size> operator-(const Vector<type, size>& other) const {
         return {data[0] - other.data[0], data[1] - other.data[1]};
     }
 
-    Vector<type, size> operator-(const type& other) const {
-        return {data[0] - other, data[1] - other};
-    }
+    Vector<type, size> operator-(const type& other) const { return {data[0] - other, data[1] - other}; }
 
     Vector<type, size> operator*(const Vector<type, size>& other) const {
         return {data[0] * other.data[0], data[1] * other.data[1]};
     }
 
-    Vector<type, size> operator*(const type& other) const {
-        return {data[0] * other, data[1] * other};
-    }
+    Vector<type, size> operator*(const type& other) const { return {data[0] * other, data[1] * other}; }
 
     Vector<type, size> operator/(const Vector<type, size>& other) const {
         return {data[0] / other.data[0], data[1] / other.data[1]};
     }
 
-    Vector<type, size> operator/(const type& other) const {
-        return {data[0] / other, data[1] / other};
-    }
+    Vector<type, size> operator/(const type& other) const { return {data[0] / other, data[1] / other}; }
 };
 
 using float_2 = Vector<float, 2>;

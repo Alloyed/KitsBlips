@@ -1,13 +1,12 @@
 #pragma once
 
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include "kitdsp/math/vector.h"
 #include "kitdsp/math/util.h"
+#include "kitdsp/math/vector.h"
 
 namespace kitdsp {
-    
+
 namespace PSX {
 struct PresetBinaryChunk;
 
@@ -33,7 +32,7 @@ class Reverb {
     void ClearBuffer();
     void Reset();
     float_2 Process(float_2 in);
-    
+
     void LoadPreset(const PresetBinaryChunk& preset, float sampleRate);
 
     static size_t GetBufferDesiredSizeFloats(float sampleRate) {
@@ -94,4 +93,4 @@ class Reverb {
     float vAPF2;
 };
 }  // namespace PSX
-}
+}  // namespace kitdsp

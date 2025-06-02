@@ -11,6 +11,10 @@ BaseExt* BasePlugin::TryGetExtension(const char* name) {
     }
 }
 
+double BasePlugin::GetSampleRate() const {
+    return mSampleRate;
+}
+
 PluginHost& BasePlugin::GetHost() {
     return mHost;
 }
@@ -30,6 +34,7 @@ bool BasePlugin::_activate(const clap_plugin* plugin,
                            uint32_t minFramesCount,
                            uint32_t maxFramesCount) {
     BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
+    self.mSampleRate = sampleRate;
     return self.Activate(sampleRate, minFramesCount, maxFramesCount);
 }
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "kitdsp/math/util.h"
-#include "kitdsp/math/interpolate.h"
 #include <cstring>
+#include "kitdsp/math/interpolate.h"
+#include "kitdsp/math/util.h"
 
 namespace kitdsp {
 /**
@@ -13,7 +13,7 @@ namespace kitdsp {
 template <typename SAMPLE, size_t SIZE>
 class DelayLine {
    public:
-    DelayLine(SAMPLE* buffer):mBuffer(buffer) { Reset(); }
+    DelayLine(SAMPLE* buffer) : mBuffer(buffer) { Reset(); }
     ~DelayLine() {}
 
     void Reset() {
@@ -31,7 +31,7 @@ class DelayLine {
         return mBuffer[(mWriteIndex + delayIndex) % SIZE];
     }
 
-    template <InterpolationStrategy strategy>
+    template <interpolate::InterpolationStrategy strategy>
     inline const SAMPLE Read(float delay) const {
         // read with interpolation
         int32_t idx = static_cast<int32_t>(delay);
@@ -43,7 +43,7 @@ class DelayLine {
                 return Read(idx);
             };
             case InterpolationStrategy::Linear: {
-                return linear(Read(idx), Read(idx+1), frac);
+                return linear(Read(idx), Read(idx + 1), frac);
             };
             case InterpolationStrategy::Hermite: {
                 return hermite4pt3oX(Read(idx - 1), Read(idx), Read(idx + 1), Read(idx + 2), frac);
