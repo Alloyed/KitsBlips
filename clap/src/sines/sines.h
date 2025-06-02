@@ -21,6 +21,7 @@ class Sines : public InstrumentPlugin {
    private:
     kitdsp::naive::TriangleOscillator mOsc;
     float mAmplitude;
+    float mTargetAmplitude;
     NoteTuple mNote;
     float mSampleRate;
 };

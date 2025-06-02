@@ -1,4 +1,5 @@
 #include "sines/sines.h"
+#include <map>
 
 #include "clapApi/ext/parameters.h"
 #include "clapApi/ext/state.h"
@@ -17,15 +18,9 @@ void Sines::Config() {
 }
 
 void Sines::ProcessAudio(StereoAudioBuffer& out, ParametersExt::AudioParameters& params) {
-    if (mAmplitude < 0.01) {
-        // TODO: memset 0 necessary?
-        return;
-    }
-
     for (uint32_t index = 0; index < out.left.size(); index++) {
-        float sum = 0.0f;
-
-        float s = mOsc.Process();
+        mAmplitude = kitdsp::lerpf(mAmplitude, mTargetAmplitude, 0.001);
+        float s = mOsc.Process() * mAmplitude;
         out.left[index] = s;
         out.right[index] = s;
     }
@@ -33,19 +28,22 @@ void Sines::ProcessAudio(StereoAudioBuffer& out, ParametersExt::AudioParameters&
 
 void Sines::ProcessNoteOn(const NoteTuple& note, float velocity) {
     // mono, voice stealing
-    mAmplitude = 1.0f;
+    mTargetAmplitude = .2f;
     mNote = note;
     mOsc.SetFrequency(kitdsp::midiToFrequency(mNote.key), mSampleRate);
 }
 void Sines::ProcessNoteOff(const NoteTuple& note) {
     if (note.Match(mNote)) {
-        mAmplitude = 0.0f;
+        mTargetAmplitude = 0.0f;
         mNote = {};
     }
 }
 void Sines::ProcessNoteChoke(const NoteTuple& note) {
-    mAmplitude = 0.0f;
-    mNote = {};
+    if (note.Match(mNote)) {
+        mAmplitude = 0.0f;
+        mTargetAmplitude = 0.0f;
+        mNote = {};
+    }
 }
 
 bool Sines::Activate(double sampleRate, uint32_t minFramesCount, uint32_t maxFramesCount) {
@@ -55,6 +53,7 @@ bool Sines::Activate(double sampleRate, uint32_t minFramesCount, uint32_t maxFra
 
 void Sines::Reset() {
     mAmplitude = 0.0f;
+    mTargetAmplitude = 0.0f;
     mNote = {};
     mOsc.Reset();
 }

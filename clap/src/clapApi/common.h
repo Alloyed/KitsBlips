@@ -1,15 +1,15 @@
 #pragma once
 
-#include <etl/vector.h>
+#include <etl/span.h>
 
 struct MonoAudioBuffer {
-    etl::vector_ext<float> data;
+    etl::span<float> data;
     bool isConstant;
 };
 
 struct StereoAudioBuffer {
-    etl::vector_ext<float> left;
-    etl::vector_ext<float> right;
+    etl::span<float> left;
+    etl::span<float> right;
     bool isLeftConstant;
     bool isRightConstant;
 };
