@@ -29,7 +29,7 @@ add_library(${PROJECT_NAME}-plugin STATIC
     src/clapApi/effectPlugin.cpp
     src/clapApi/pluginHost.cpp
 
-    #src/gui/sdlImgui.cpp
+    src/gui/sdlImgui.cpp
 
     src/template/plugin.cpp
     src/snecho/snecho.cpp
@@ -46,8 +46,8 @@ target_link_libraries(${PROJECT_NAME}-plugin
     clap
     KitDSP
     etl
-    #imgui
-    #imgui_opengl_sdl3
+    imgui
+    imgui_opengl_sdl3
     PRIVATE
 )
 

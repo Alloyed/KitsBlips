@@ -34,6 +34,7 @@ inline WindowingApi toApiEnum(const char* api) {
 /* Unlike all other extensions, BaseGuiExt is an abstract class. Implement it with your preferred gui library! */
 class GuiExt : public BaseExt {
    public:
+       ~GuiExt() = default;
     virtual bool IsApiSupported(WindowingApi api, bool isFloating) = 0;
     virtual bool GetPreferredApi(WindowingApi& apiOut, bool& isFloatingOut) = 0;
     virtual bool Create(WindowingApi api, bool isFloating) = 0;

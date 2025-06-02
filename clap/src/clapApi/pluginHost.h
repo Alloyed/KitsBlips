@@ -24,11 +24,27 @@ class PluginHost {
 
     PluginHost(const clap_host_t* host);
 
-    /* requests that the host calls Plugin.OnMainThread() next chance it gets. */
-    void RequestCallback() const;
+    template <typename ExtType>
+    bool TryGetExtension(const char* extensionName, const clap_host_t*& hostOut, const ExtType*& extOut) const {
+        extOut = static_cast<const ExtType*>(mHost->get_extension(mHost, extensionName));
+        if (extOut) {
+            hostOut = mHost;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /** Returns true if we are currently on the main thread */
+    bool IsMainThread() const;
+    /** Returns true if we are currently on the audio thread */
+    bool IsAudioThread() const;
 
     /** Add a message to the host's log */
     void Log(LogSeverity severity, const std::string& message) const;
+
+    /** requests that the host calls Plugin.OnMainThread() next chance it gets. */
+    void RequestCallback() const;
 
     /** Add a timer to be run every `periodMs` milliseconds. to run only once, call `CancelTimer()` in the body of your
      * timer function. */
@@ -40,6 +56,7 @@ class PluginHost {
 
    private:
     const clap_host_t* mHost;
+    const clap_host_thread_check_t* mThreadCheck;
     const clap_host_log_t* mLog;
     const clap_host_timer_support_t* mTimer;
     const clap_host_gui_t* mGui;

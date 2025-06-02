@@ -1,19 +1,26 @@
 #include "sines/sines.h"
 
+#include "gui/sdlImgui.h"
 #include "clapApi/ext/parameters.h"
 #include "clapApi/ext/state.h"
 #include "descriptor.h"
 #include "kitdsp/math/util.h"
 
-enum Params : ParamId { Params_Count };
+#include "imgui.h"
+
+enum Params : ParamId { Params_Volume, Params_Count };
 
 const PluginEntry Sines::Entry{AudioInstrumentDescriptor("kitsblips.sines", "Sines", "a simple sine wave synth"),
                                [](PluginHost& host) -> BasePlugin* { return new Sines(host); }};
 
 void Sines::Config() {
     InstrumentPlugin::Config();
-    ConfigExtension<ParametersExt>(Params_Count);
+    ConfigExtension<ParametersExt>(Params_Count)
+        .configParam(Params_Volume, -20.0f, 0.0f, 0.0f, "Volume");
     ConfigExtension<StateExt>();
+    ConfigExtension<SdlImguiExt>(GetHost(), SdlImguiConfig{[](){
+        ImGui::ShowDemoWindow();
+    }});
 }
 
 void Sines::ProcessAudio(StereoAudioBuffer& out, ParametersExt::AudioParameters& params) {

@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstdio>
 
+#include "clap/string-sizes.h"
 #include "clapApi/basePlugin.h"
 
 using ParamId = clap_id;
@@ -140,7 +141,7 @@ class ParametersExt : public BaseExt {
             information->min_value = cfg.min;
             information->max_value = cfg.max;
             information->default_value = cfg.defaultValue;
-            strcpy(information->name, cfg.name);
+            strlcpy(information->name, cfg.name, CLAP_NAME_SIZE);
             return true;
         }
         return false;
