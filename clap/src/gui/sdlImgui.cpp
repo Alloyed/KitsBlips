@@ -1,6 +1,7 @@
 #include "sdlImgui.h"
 
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_hints.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_opengl.h>
@@ -8,101 +9,54 @@
 #include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_video.h>
 
+#include "clap/ext/gui.h"
 #include "clapApi/ext/gui.h"
+#include "clapApi/pluginHost.h"
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl3.h"
 
+#if __linux__
+#include <X11/Xlib.h>
+#include <X11/Xos.h>
+#include <X11/Xutil.h>
+#endif
 
-int32_t SdlImguiExt::sInstances = 0;
-
-bool SdlImguiExt::IsApiSupported(WindowingApi api, bool isFloating) {
-    // All APIs supported, but floating windows NYI
-    return api != WindowingApi::None && isFloating != true;
+bool SdlImguiExt::IsApiSupported(ClapWindowApi api, bool isFloating) {
+    // All APIs supported, but non-floating windows NYI
+    return api != ClapWindowApi::_None && isFloating == true;
 }
 
-bool SdlImguiExt::GetPreferredApi(WindowingApi& outApi, bool& outIsFloating) {
+bool SdlImguiExt::GetPreferredApi(ClapWindowApi& outApi, bool& outIsFloating) {
     std::string_view platformName = SDL_GetPlatform();
     if (platformName == "Windows") {
-        outApi = WindowingApi::Win32;
+        outApi = ClapWindowApi::Win32;
     } else if (platformName == "macOS") {
-        outApi = WindowingApi::Cocoa;
+        outApi = ClapWindowApi::Cocoa;
     } else if (platformName == "Linux") {
-        outApi = WindowingApi::X11;
+        outApi = ClapWindowApi::X11;
     }
 
-    outIsFloating = false;
+    outIsFloating = true;
     return true;
 }
 
-bool SdlImguiExt::OnAppInit() {
-	printf("onAppInit\n");
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
-        printf("Error: SDL_Init(): %s\n", SDL_GetError());
+bool SdlImguiExt::Create(ClapWindowApi api, bool isFloating) {
+    SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11");
+    if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) {
+        printf("Error: SDL_InitSubSystem(): %s\n", SDL_GetError());
         return false;
     }
 
-    // GL 3.0 + GLSL 130
-    //const char* glsl_version = "#version 130";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-    return true;
-}
-
-bool SdlImguiExt::OnAppQuit() {
-	printf("onAppQuit\n");
-    SDL_Quit();
-    return true;
-}
-
-bool SdlImguiExt::Create(WindowingApi api, bool isFloating) {
-	printf("Create\n");
-	sInstances++;
-	if(sInstances == 1)
-	{
-		OnAppInit();
-	}
     CreatePluginWindow();
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-    // Setup Platform/Renderer backends
-    ImGui_ImplSDL3_InitForOpenGL(mWindowHandle, mCtx);
-    ImGui_ImplOpenGL3_Init();
-
-    // Setup main loop
-    mHost.AddTimer(16, [this]() {
-        // TODO: deltatime
-        this->Update(1.0f / 60.0f);
-    });
-	return true;
+    return true;
 }
 
 void SdlImguiExt::Destroy() {
-	printf("Destroy\n");
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL3_Shutdown();
-    ImGui::DestroyContext();
-    SDL_GL_DestroyContext(mCtx);
-
-	if(mWindowHandle != nullptr)
-	{
-		SDL_DestroyWindow(mWindowHandle);
-	}
-	if(mParentHandle != nullptr)
-	{
-		SDL_DestroyWindow(mParentHandle);
-	}
-	sInstances--;
-	if(sInstances == 0)
-	{
-		OnAppQuit();
-	}
+    DestroyPluginWindow();
+    DestroyParentWindow();
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
 bool SdlImguiExt::SetScale(double scale) {
@@ -137,28 +91,71 @@ bool SdlImguiExt::SetSize(uint32_t width, uint32_t height) {
 }
 bool SdlImguiExt::SetParent(WindowHandle handle) {
     CreateParentWindow(handle);
-    return SDL_SetWindowParent(mWindowHandle, mParentHandle);
+#if __linux__
+    SDL_PropertiesID parentProps = SDL_GetWindowProperties(mParentHandle);
+    if (!parentProps) {
+        printf("Error: parentProps(): %s\n", SDL_GetError());
+        return false;
+    }
+    SDL_PropertiesID childProps = SDL_GetWindowProperties(mWindowHandle);
+    if (!childProps) {
+        printf("Error: childProps(): %s\n", SDL_GetError());
+        return false;
+    }
+    Display* xDisplay = (Display*)SDL_GetPointerProperty(parentProps, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
+    Window xParentWindow = (Window)SDL_GetNumberProperty(parentProps, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
+    Window xChildWindow = (Window)SDL_GetNumberProperty(childProps, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
+
+    XReparentWindow(xDisplay, xChildWindow, xParentWindow, 0, 0);
+    return true;
+#endif
+    return false;
 }
 bool SdlImguiExt::SetTransient(WindowHandle handle) {
-    // Do nothing
-    return true;
+    CreateParentWindow(handle);
+    // weirdly, SDL_SetWindowParent actually calls XSetTransientForHint on X11
+    return SDL_SetWindowParent(mWindowHandle, mParentHandle);
 }
 void SdlImguiExt::SuggestTitle(std::string_view title) {
     std::string titleTemp(title);
     SDL_SetWindowTitle(mWindowHandle, titleTemp.c_str());
 }
 bool SdlImguiExt::Show() {
-    return SDL_ShowWindow(mWindowHandle);
+    if (!SDL_ShowWindow(mWindowHandle)) {
+        return false;
+    }
+    // Setup main loop
+    if (mTimerId) {
+        mHost.CancelTimer(mTimerId);
+    }
+    mTimerId = mHost.AddTimer(16, [this]() {
+        // TODO: deltatime
+        this->Update(1.0f / 60.0f);
+    });
+    return true;
 }
 bool SdlImguiExt::Hide() {
-    return SDL_HideWindow(mWindowHandle);
+    if (!SDL_HideWindow(mWindowHandle)) {
+        return false;
+    }
+    if (mTimerId) {
+        mHost.CancelTimer(mTimerId);
+    }
+    return true;
 }
 
 void SdlImguiExt::Update(float dt) {
     ImGuiIO& io = ImGui::GetIO();
     static SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        ImGui_ImplSDL3_ProcessEvent(&event);  // Forward your event to backend
+        if (event.type == SDL_EVENT_QUIT || event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
+            const clap_host_t* rawHost;
+            const clap_host_gui_t* rawHostGui;
+            mHost.TryGetExtension(CLAP_EXT_GUI, rawHost, rawHostGui);
+            rawHostGui->closed(rawHost, true);
+        } else {
+            ImGui_ImplSDL3_ProcessEvent(&event);  // Forward your event to backend
+        }
     }
     if (mWindowHandle) {
         ImGui_ImplOpenGL3_NewFrame();
@@ -178,64 +175,107 @@ void SdlImguiExt::Update(float dt) {
     }
 }
 
-void SdlImguiExt::CreatePluginWindow() {
+bool SdlImguiExt::CreatePluginWindow() {
+    DestroyPluginWindow();
+    // GL 3.0 + GLSL 130
+    // const char* glsl_version = "#version 130";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    SDL_WindowFlags window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
+    SDL_WindowFlags window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN;
     SDL_Window* window = SDL_CreateWindow("", 400, 400, window_flags);
     if (window == nullptr) {
         printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
-        return;
+        return false;
     }
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     if (gl_context == nullptr) {
         printf("Error: SDL_GL_CreateContext(): %s\n", SDL_GetError());
-        return;
+        return false;
     }
 
     SDL_GL_MakeCurrent(window, gl_context);
 
     mWindowHandle = window;
     mCtx = gl_context;
+
+    // setup imgui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplSDL3_InitForOpenGL(mWindowHandle, mCtx);
+    ImGui_ImplOpenGL3_Init();
+
+    return true;
 }
 
-void SdlImguiExt::CreateParentWindow(WindowHandle clapHandle) {
+void SdlImguiExt::DestroyPluginWindow() {
+    if (mTimerId) {
+        mHost.CancelTimer(mTimerId);
+    }
+    if (mWindowHandle) {
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplSDL3_Shutdown();
+        ImGui::DestroyContext();
+        SDL_GL_DestroyContext(mCtx);
+        SDL_DestroyWindow(mWindowHandle);
+        mWindowHandle = nullptr;
+    }
+}
+
+bool SdlImguiExt::CreateParentWindow(WindowHandle clapHandle) {
+    DestroyParentWindow();
     SDL_PropertiesID props = SDL_CreateProperties();
     if (props == 0) {
-        return;
+        printf("Error: SDL_CreateProperties(): %s\n", SDL_GetError());
+        return false;
     }
 
     switch (clapHandle.api) {
-        case WindowingApi::None: {
-            return;
-        };
-        case WindowingApi::X11: {
+        case ClapWindowApi::_None: {
+            return false;
+        }
+        case ClapWindowApi::X11: {
             SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X11_WINDOW_NUMBER,
                                   reinterpret_cast<std::uintptr_t>(clapHandle.ptr));
             break;
         }
-        case WindowingApi::Wayland: {
+        case ClapWindowApi::Wayland: {
             SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WAYLAND_WL_SURFACE_POINTER, clapHandle.ptr);
             break;
         }
-        case WindowingApi::Win32: {
+        case ClapWindowApi::Win32: {
             SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WIN32_HWND_POINTER, clapHandle.ptr);
             break;
         }
-        case WindowingApi::Cocoa: {
+        case ClapWindowApi::Cocoa: {
             SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_COCOA_WINDOW_POINTER, clapHandle.ptr);
             break;
         }
     }
 
     SDL_Window* window = SDL_CreateWindowWithProperties(props);
-    if (window == nullptr) {
-        SDL_Log("Unable to create parent window: %s", SDL_GetError());
-        return;
-    }
-    mParentHandle = window;
-
     ///... is this safe? or do i need to keep it alive?
     SDL_DestroyProperties(props);
+    if (window == nullptr) {
+        SDL_Log("SDL_CreateWindowWithProperties(): %s", SDL_GetError());
+        return false;
+    }
+
+    mParentHandle = window;
+    return true;
+}
+
+void SdlImguiExt::DestroyParentWindow() {
+    if (mParentHandle != nullptr) {
+        SDL_DestroyWindow(mParentHandle);
+        mParentHandle = nullptr;
+    }
 }

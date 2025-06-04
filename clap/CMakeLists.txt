@@ -20,6 +20,7 @@ include(../content.cmake)
 include(cmake/imgui.cmake)
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
 FetchContent_MakeAvailable(clap clap-wrapper SDL3 KitDSP)
+find_package(X11)
 
 add_library(${PROJECT_NAME}-plugin STATIC
     src/entry.cpp
@@ -46,6 +47,8 @@ target_link_libraries(${PROJECT_NAME}-plugin
     clap
     KitDSP
     etl
+    X11::X11
+    X11::Xutil
     imgui
     imgui_opengl_sdl3
     PRIVATE

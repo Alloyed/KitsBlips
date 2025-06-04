@@ -2,7 +2,6 @@
 
 #include <SDL3/SDL_video.h>
 #include <cstdint>
-#include <memory>
 #include "clapApi/ext/gui.h"
 
 // Forward declares
@@ -16,9 +15,9 @@ class SdlImguiExt : public GuiExt {
    public:
     SdlImguiExt(PluginHost& host, const SdlImguiConfig config) : mHost(host), mConfig(config) {}
     ~SdlImguiExt() = default;
-    bool IsApiSupported(WindowingApi api, bool isFloating) override;
-    bool GetPreferredApi(WindowingApi& apiOut, bool& isFloatingOut) override;
-    bool Create(WindowingApi api, bool isFloating) override;
+    bool IsApiSupported(ClapWindowApi api, bool isFloating) override;
+    bool GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) override;
+    bool Create(ClapWindowApi api, bool isFloating) override;
     void Destroy() override;
     bool SetScale(double scale) override;
     bool GetSize(uint32_t& widthOut, uint32_t& heightOut) override;
@@ -32,13 +31,11 @@ class SdlImguiExt : public GuiExt {
     bool Show() override;
     bool Hide() override;
 
-    static bool OnAppInit();
-    static bool OnAppQuit();
-    static int32_t sInstances;
-
    private:
-    void CreatePluginWindow();
-    void CreateParentWindow(WindowHandle clapHandle);
+    bool CreatePluginWindow();
+    void DestroyPluginWindow();
+    bool CreateParentWindow(WindowHandle clapHandle);
+    void DestroyParentWindow();
     void Update(float dt);
 
     PluginHost& mHost;
@@ -46,4 +43,5 @@ class SdlImguiExt : public GuiExt {
     SDL_Window* mWindowHandle = nullptr;
     SDL_Window* mParentHandle = nullptr;
     SDL_GLContext mCtx;
+    PluginHost::TimerId mTimerId;
 };
