@@ -46,7 +46,7 @@ void InstrumentPlugin::ProcessAudio(const clap_process_t& process, size_t rangeS
         // outLeft
         {process.audio_outputs[0].data32[0] + rangeStart, numSamples},
         // outRight
-        {process.audio_outputs[0].data32[1] + rangeStop, numSamples},
+        {process.audio_outputs[0].data32[1] + rangeStart, numSamples},
         // isOutLeftConstant
         false,
         // isOutRightConstant

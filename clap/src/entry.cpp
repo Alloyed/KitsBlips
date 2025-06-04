@@ -55,6 +55,7 @@ const clap_plugin_factory_t value = {
 
 namespace EntryPoint {
 bool init(const char* path) {
+    setbuf(stdout, NULL);
     return true;
 }
 void deinit() {}

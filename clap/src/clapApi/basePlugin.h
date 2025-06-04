@@ -13,6 +13,7 @@ class BasePlugin;
 class BaseExt {
     /* abstract interface */
    public:
+    virtual ~BaseExt() = default;
     virtual const char* Name() const = 0;
     virtual const void* Extension() const = 0;
 

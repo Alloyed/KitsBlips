@@ -48,14 +48,14 @@ class StateExt : public BaseExt {
             double value = 0.0f;
             int32_t result = in->read(in, &value, sizeof(double));
             if (result == -1) {
+                // error
                 return false;
-            }
-            params.Set(id, value);
-            id++;
-            if (result == 0) {
+            } else if (result == 0) {
                 // eof
                 break;
             }
+            params.Set(id, value);
+            id++;
         }
         return id == numParams;
     }

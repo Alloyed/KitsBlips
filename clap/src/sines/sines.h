@@ -18,8 +18,8 @@ class Sines : public InstrumentPlugin {
     void Reset() override;
 
    private:
-    kitdsp::naive::TriangleOscillator mOsc;
-    float mAmplitude;
-    float mTargetAmplitude;
-    NoteTuple mNote;
+    kitdsp::naive::TriangleOscillator mOsc {};
+    float mAmplitude {};
+    float mTargetAmplitude {};
+    NoteTuple mNote {};
 };

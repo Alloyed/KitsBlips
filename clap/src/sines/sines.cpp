@@ -3,6 +3,7 @@
 #include "gui/sdlImgui.h"
 #include "clapApi/ext/parameters.h"
 #include "clapApi/ext/state.h"
+#include "clapApi/ext/timerSupport.h"
 #include "descriptor.h"
 #include "kitdsp/math/util.h"
 
@@ -18,6 +19,7 @@ void Sines::Config() {
     ConfigExtension<ParametersExt>(Params_Count)
         .configParam(Params_Volume, -20.0f, 0.0f, 0.0f, "Volume");
     ConfigExtension<StateExt>();
+    ConfigExtension<TimerSupportExt>();
     ConfigExtension<SdlImguiExt>(GetHost(), SdlImguiConfig{[](){
         ImGui::ShowDemoWindow();
     }});
