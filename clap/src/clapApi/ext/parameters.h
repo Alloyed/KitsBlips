@@ -143,7 +143,7 @@ class ParametersExt : public BaseExt {
             information->min_value = cfg.min;
             information->max_value = cfg.max;
             information->default_value = cfg.defaultValue;
-            kitdsp::StringCopy(information->name, cfg.name);
+            kitdsp::stringCopy(information->name, cfg.name);
             return true;
         }
         return false;

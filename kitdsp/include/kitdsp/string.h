@@ -11,7 +11,7 @@
 namespace kitdsp {
 /* safe alternative to strcpy when the buffer size is known at compile time*/
 template <size_t BUFFER_SIZE>
-void StringCopy(char (&buffer)[BUFFER_SIZE], std::string_view src) {
+void stringCopy(char (&buffer)[BUFFER_SIZE], std::string_view src) {
     static_assert(BUFFER_SIZE > 0);
     // zero-out memory. This implicitly null-terminates, and avoids accidental garbage lying around
     std::memset(buffer, '\0', BUFFER_SIZE);
