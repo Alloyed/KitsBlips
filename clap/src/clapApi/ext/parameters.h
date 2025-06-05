@@ -4,8 +4,10 @@
 #include <etl/queue_spsc_atomic.h>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
+#include <string_view>
+#include <kitdsp/string.h>
 
-#include "clap/string-sizes.h"
 #include "clapApi/basePlugin.h"
 
 using ParamId = clap_id;
@@ -15,8 +17,8 @@ struct ParameterConfig {
     double min;
     double max;
     double defaultValue;
-    const char* name;
-    const char* unit;
+    std::string_view name;
+    std::string_view unit;
     double displayBase;
     double displayMultiplier;
     double displayOffset;
@@ -141,7 +143,7 @@ class ParametersExt : public BaseExt {
             information->min_value = cfg.min;
             information->max_value = cfg.max;
             information->default_value = cfg.defaultValue;
-            strlcpy(information->name, cfg.name, CLAP_NAME_SIZE);
+            kitdsp::StringCopy(information->name, cfg.name);
             return true;
         }
         return false;
