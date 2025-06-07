@@ -2,10 +2,12 @@
 
 #include <clap/clap.h>
 
+#include "clap/ext/timer-support.h"
 #include "clapApi/basePlugin.h"
 
 class TimerSupportExt : public BaseExt {
    public:
+    TimerSupportExt(PluginHost& host) : BaseExt() { assert(host.SupportsExtension(CLAP_EXT_TIMER_SUPPORT)); }
     static constexpr auto NAME = CLAP_EXT_TIMER_SUPPORT;
     const char* Name() const override { return NAME; }
 

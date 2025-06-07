@@ -9,23 +9,25 @@
 
 #include "imgui.h"
 
-enum Params : ParamId { Params_Volume, Params_Count };
 
 const PluginEntry Sines::Entry{AudioInstrumentDescriptor("kitsblips.sines", "Sines", "a simple sine wave synth"),
                                [](PluginHost& host) -> BasePlugin* { return new Sines(host); }};
 
 void Sines::Config() {
     InstrumentPlugin::Config();
-    ConfigExtension<ParametersExt>(Params_Count)
-        .configParam(Params_Volume, -20.0f, 0.0f, 0.0f, "Volume");
+    ConfigExtension<SinesParamsExt>(GetHost(), SinesParams::Count)
+        .configParam(SinesParams::Volume, -20.0f, 0.0f, 0.0f, "Volume");
     ConfigExtension<StateExt>();
-    ConfigExtension<TimerSupportExt>();
-    ConfigExtension<SdlImguiExt>(GetHost(), SdlImguiConfig{[](){
-        ImGui::ShowDemoWindow();
-    }});
+    if(GetHost().SupportsExtension(CLAP_EXT_TIMER_SUPPORT))
+    {
+        ConfigExtension<TimerSupportExt>(GetHost());
+        ConfigExtension<SdlImguiExt>(GetHost(), SdlImguiConfig{[](){
+            ImGui::ShowDemoWindow();
+        }});
+    }
 }
 
-void Sines::ProcessAudio(StereoAudioBuffer& out, ParametersExt::AudioParameters& params) {
+void Sines::ProcessAudio(StereoAudioBuffer& out, SinesParamsExt::AudioParameters& params) {
     for (uint32_t index = 0; index < out.left.size(); index++) {
         mAmplitude = kitdsp::lerpf(mAmplitude, mTargetAmplitude, 0.001);
         float s = mOsc.Process() * mAmplitude;

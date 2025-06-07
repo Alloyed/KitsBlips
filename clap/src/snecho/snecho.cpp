@@ -1,5 +1,6 @@
 #include "snecho/snecho.h"
 
+#include "clap/ext/timer-support.h"
 #include "clapApi/ext/parameters.h"
 #include "clapApi/ext/state.h"
 #include "clapApi/ext/timerSupport.h"
@@ -9,27 +10,13 @@
 
 using namespace kitdsp;
 
-enum Params : ParamId {
-    Params_Size,
-    Params_Feedback,
-    Params_FilterPreset,
-    Params_SizeRange,
-    Params_Mix,
-    Params_FreezeEcho,
-    Params_EchoDelayMod,
-    Params_FilterMix,
-    Params_ClearBuffer,
-    Params_ResetHead,
-    Params_Count
-};
-
 const PluginEntry Snecho::Entry{
     AudioEffectDescriptor("kitsblips.snecho", "Snecho", "A SNES-inspired mono delay effect"),
     [](PluginHost& host) -> BasePlugin* { return new Snecho(host); }};
 
 void Snecho::Config() {
     EffectPlugin::Config();
-    ConfigExtension<ParametersExt>(Params_Count)
+    ConfigExtension<SnechoParamsExt>(GetHost(), Params_Count)
         .configParam(Params_Size, 0.0f, 1.0f, 0.5f, "Size")
         .configParam(Params_Feedback, 0.0f, 1.0f, 0.5f, "Feedback")
         .configParam(Params_FilterPreset, 0.0f, 1.0f, 0.0f, "Filter Preset")
@@ -42,22 +29,40 @@ void Snecho::Config() {
         .configParam(Params_ResetHead, 0.0f, 1.0f, 0.0f, "Reset Playhead");
 
     ConfigExtension<StateExt>();
-    ConfigExtension<TimerSupportExt>();
-    ConfigExtension<SdlImguiExt>(GetHost(), SdlImguiConfig{[](){
-        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-        ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-        static bool open = true;
-        ImGui::Begin("snecho", &open, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize);
-        {
-            ImGui::Text("it's snecho :0");
-        }
-        ImGui::End();
-        ImGui::PopStyleVar();
-    }});
+    if(GetHost().SupportsExtension(CLAP_EXT_TIMER_SUPPORT))
+    {
+        ConfigExtension<TimerSupportExt>(GetHost());
+        ConfigExtension<SdlImguiExt>(GetHost(), SdlImguiConfig{[this](){
+                this->OnGui();
+        }});
+    }
 }
 
-void Snecho::ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, ParametersExt::AudioParameters& params) {
+void Snecho::OnGui() {
+    SnechoParamsExt& params = SnechoParamsExt::GetFromPlugin<SnechoParamsExt>(*this);
+
+    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+    ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    static bool open = true;
+    ImGui::Begin("main", &open, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize);
+    {
+        std::string buf;
+        for (clap_id id = Params_Size; id < Params_Count; ++id) {
+            const auto cfg = params.GetConfig(id);
+            float value = static_cast<float>(params.Get(id));
+            buf = cfg->name;
+            if(ImGui::SliderFloat(buf.c_str(), &value, cfg->min, cfg->max))
+            {
+                params.Set(id, value);
+            }
+        }
+    }
+    ImGui::End();
+    ImGui::PopStyleVar();
+}
+
+void Snecho::ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, SnechoParamsExt::AudioParameters& params) {
     // inputs
     // core
     snes1.cfg.echoBufferSize = params.Get(Params_Size);

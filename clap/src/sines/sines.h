@@ -5,13 +5,17 @@
 #include "clapApi/instrumentPlugin.h"
 #include "kitdsp/osc/naiveOscillator.h"
 
-class Sines : public InstrumentPlugin {
+enum class SinesParams : clap_id { Volume, Count };
+using SinesParamsExt = ParametersExt<SinesParams>;
+
+class Sines : public InstrumentPlugin<SinesParamsExt> {
    public:
+    
     static const PluginEntry Entry;
     Sines(PluginHost& host): InstrumentPlugin(host) {}
     ~Sines() = default;
     void Config() override;
-    void ProcessAudio(StereoAudioBuffer& out, ParametersExt::AudioParameters& params) override;
+    void ProcessAudio(StereoAudioBuffer& out, SinesParamsExt::AudioParameters& params) override;
     void ProcessNoteOn(const NoteTuple& note, float velocity) override;
     void ProcessNoteOff(const NoteTuple& note) override;
     void ProcessNoteChoke(const NoteTuple& note) override;

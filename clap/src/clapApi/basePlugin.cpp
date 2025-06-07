@@ -62,7 +62,8 @@ clap_process_status BasePlugin::_process(const clap_plugin* plugin, const clap_p
     uint32_t eventIndex = 0;
     uint32_t nextEventFrame = inputEventCount ? 0 : frameCount;
 
-    ParametersExt::AudioParameters& params = ParametersExt::GetFromPlugin<ParametersExt>(self).GetStateForAudioThread();
+    using PARAMS = ParametersExt<clap_id>;
+    PARAMS::AudioParameters& params = PARAMS::GetFromPlugin<PARAMS>(self).GetStateForAudioThread();
     params.Flush();
 
     for (uint32_t frameIndex = 0; frameIndex < frameCount;) {

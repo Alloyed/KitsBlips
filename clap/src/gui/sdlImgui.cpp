@@ -223,7 +223,6 @@ PluginHost::TimerId SdlImguiExt::sUpdateTimerId = 0;
 std::vector<SdlImguiExt*> SdlImguiExt::sActiveInstances = {};
 
 void SdlImguiExt::AddActiveInstance(SdlImguiExt* instance) {
-    printf("AddActiveInstance %p\n", instance);
     bool wasEmpty = sActiveInstances.empty();
     if(std::find(sActiveInstances.begin(), sActiveInstances.end(), instance) == sActiveInstances.end())
     {
@@ -244,7 +243,6 @@ void SdlImguiExt::AddActiveInstance(SdlImguiExt* instance) {
 }
 
 void SdlImguiExt::RemoveActiveInstance(SdlImguiExt* instance) {
-    printf("RemoveActiveInstance %p\n", instance);
     bool wasEmpty = sActiveInstances.empty();
     const auto iter = std::find(sActiveInstances.begin(), sActiveInstances.end(), instance);
     if(iter != sActiveInstances.end())

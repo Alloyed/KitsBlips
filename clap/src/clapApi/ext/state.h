@@ -22,13 +22,14 @@ class StateExt : public BaseExt {
     }
 
    private:
+    using PARAMS = ParametersExt<clap_id>;
     static bool _save(const clap_plugin_t* plugin, const clap_ostream_t* out) {
-        ParametersExt& params = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
+        PARAMS& params = PARAMS::GetFromPluginObject<PARAMS>(plugin);
 
-        params.Flush();  // empty queue to ensure newest changes
+        params.FlushFromAudio();  // empty queue to ensure newest changes
 
         size_t numParams = params.GetNumParams();
-        for (ParamId id = 0; id < numParams; ++id) {
+        for (clap_id id = 0; id < numParams; ++id) {
             double value = params.Get(id);
             if (out->write(out, &value, sizeof(double)) == -1) {
                 return false;
@@ -38,12 +39,12 @@ class StateExt : public BaseExt {
     }
 
     static bool _load(const clap_plugin_t* plugin, const clap_istream_t* in) {
-        ParametersExt& params = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
+        PARAMS& params = PARAMS::GetFromPluginObject<PARAMS>(plugin);
 
-        params.Flush();  // empty queue so changes apply on top
+        params.FlushFromAudio();  // empty queue so changes apply on top
 
         size_t numParams = params.GetNumParams();
-        ParamId id = 0;
+        clap_id id = 0;
         while (id < numParams) {
             double value = 0.0f;
             int32_t result = in->read(in, &value, sizeof(double));

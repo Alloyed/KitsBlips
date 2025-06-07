@@ -8,7 +8,23 @@
 #include <kitdsp/snesEcho.h>
 #include <kitdsp/snesEchoFilterPresets.h>
 
-class Snecho : public EffectPlugin {
+// TODO: enum classes
+enum SnechoParams : clap_id {
+    Params_Size,
+    Params_Feedback,
+    Params_FilterPreset,
+    Params_SizeRange,
+    Params_Mix,
+    Params_FreezeEcho,
+    Params_EchoDelayMod,
+    Params_FilterMix,
+    Params_ClearBuffer,
+    Params_ResetHead,
+    Params_Count
+};
+using SnechoParamsExt = ParametersExt<clap_id>;
+
+class Snecho : public EffectPlugin<SnechoParamsExt> {
    public:
     static const PluginEntry Entry;
     Snecho(PluginHost& host) : EffectPlugin(host) {}
@@ -16,11 +32,12 @@ class Snecho : public EffectPlugin {
     void Config() override;
     void ProcessAudio(const StereoAudioBuffer& in,
                       StereoAudioBuffer& out,
-                      ParametersExt::AudioParameters& params) override;
+                      SnechoParamsExt::AudioParameters& params) override;
     bool Activate(double sampleRate, uint32_t minFramesCount, uint32_t maxFramesCount) override;
     void Reset() override;
 
    private:
+    void OnGui();
     static constexpr size_t snesBufferSize = 7680UL * 10000;
     int16_t snesBuffer1[snesBufferSize];
     size_t mLastFilterPreset;

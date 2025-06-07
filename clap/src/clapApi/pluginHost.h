@@ -35,6 +35,11 @@ class PluginHost {
         }
     }
 
+    bool SupportsExtension(const char* extensionName) const {
+        const void* ext = mHost->get_extension(mHost, extensionName);
+        return ext != nullptr;
+    }
+
     /** Returns true if we are currently on the main thread */
     bool IsMainThread() const;
     /** Returns true if we are currently on the audio thread */
