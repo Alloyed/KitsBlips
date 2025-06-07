@@ -1,4 +1,4 @@
-#ifdef __APPLE__
+#if 0
 #import <Foundation/Foundation.h>
 #import <Cocoa/Cocoa.h>
 

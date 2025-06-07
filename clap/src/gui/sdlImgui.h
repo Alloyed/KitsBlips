@@ -35,7 +35,6 @@ class SdlImguiExt : public GuiExt {
    private:
     void Update(float dt);
 
-    Platform mPlatform;
     PluginHost& mHost;
     SdlImguiConfig mConfig;
     SDL_Window* mWindow = nullptr;

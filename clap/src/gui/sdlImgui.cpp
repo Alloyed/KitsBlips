@@ -12,13 +12,32 @@
 #include "clap/ext/gui.h"
 #include "clapApi/ext/gui.h"
 #include "clapApi/pluginHost.h"
+#include "gui/platform/platform.h"
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl3.h"
 
 bool SdlImguiExt::IsApiSupported(ClapWindowApi api, bool isFloating) {
-    // TODO: there are others, i presume
-    return api == ClapWindowApi::X11 && isFloating == false;
+    // TODO: lots of apis to support out there
+    // these checks look redundant but are written that way to look like a checklist
+    switch (api) {
+        case _None: {
+            return false;
+        }
+        case X11: {
+            return isFloating || !isFloating;
+        }
+        case Wayland: {
+            return false;
+        }
+        case Win32: {
+            return !isFloating;
+        }
+        case Cocoa: {
+            return false;
+        }
+    }
+    return false;
 }
 
 bool SdlImguiExt::GetPreferredApi(ClapWindowApi& outApi, bool& outIsFloating) {
@@ -36,16 +55,31 @@ bool SdlImguiExt::GetPreferredApi(ClapWindowApi& outApi, bool& outIsFloating) {
 }
 
 bool SdlImguiExt::Create(ClapWindowApi api, bool isFloating) {
-    SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11");
+    switch (api) {
+        // only one API possible on these platforms
+        case Win32:
+        case Cocoa:
+        case _None: {
+            break;
+        }
+        case X11: {
+            SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11");
+            break;
+        }
+        case Wayland: {
+            SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "wayland");
+            break;
+        }
+    }
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) {
         SDL_Log("Error: SDL_InitSubSystem(): %s", SDL_GetError());
         return false;
     }
 
-    //SDL_WindowFlags window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN;
-    //SDL_Window* window = SDL_CreateWindow("", 400, 400, window_flags);
-    // GL 3.0 + GLSL 130
-    // const char* glsl_version = "#version 130";
+    // SDL_WindowFlags window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN;
+    // SDL_Window* window = SDL_CreateWindow("", 400, 400, window_flags);
+    //  GL 3.0 + GLSL 130
+    //  const char* glsl_version = "#version 130";
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -54,17 +88,31 @@ bool SdlImguiExt::Create(ClapWindowApi api, bool isFloating) {
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
-    mWindow = mPlatform.Create();
-    if (mWindow == nullptr) {
-        SDL_Log("Error: SDL_CreateWindow(): %s", SDL_GetError());
+    SDL_PropertiesID createProps = SDL_CreateProperties();
+    if (createProps == 0) {
+        SDL_Log("Error: SDL_CreateProperties(): %s", SDL_GetError());
         return false;
     }
+
+    SDL_SetBooleanProperty(createProps, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
+    SDL_SetBooleanProperty(createProps, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, true);
+    SDL_SetNumberProperty(createProps, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 400);
+    SDL_SetNumberProperty(createProps, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, 400);
+    mWindow = SDL_CreateWindowWithProperties(createProps);
+    ///... is this safe? or do i need to keep it alive?
+    SDL_DestroyProperties(createProps);
+
+    if (mWindow == nullptr) {
+        SDL_Log("SDL_CreateWindowWithProperties(): %s", SDL_GetError());
+        return false;
+    }
+    PlatformGui::onCreateWindow(mWindow);
+
     SDL_GLContext gl_context = SDL_GL_CreateContext(mWindow);
     if (gl_context == nullptr) {
         SDL_Log("Error: SDL_GL_CreateContext(): %s", SDL_GetError());
         return false;
     }
-
     SDL_GL_MakeCurrent(mWindow, gl_context);
     mCtx = gl_context;
 
@@ -90,7 +138,7 @@ void SdlImguiExt::Destroy() {
         ImGui_ImplSDL3_Shutdown();
         ImGui::DestroyContext();
         SDL_GL_DestroyContext(mCtx);
-        mPlatform.Destroy();
+        SDL_DestroyWindow(mWindow);
         mWindow = nullptr;
     }
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
@@ -131,10 +179,10 @@ bool SdlImguiExt::SetSize(uint32_t width, uint32_t height) {
     return SDL_SetWindowSize(mWindow, width, height);
 }
 bool SdlImguiExt::SetParent(WindowHandle handle) {
-    return mPlatform.SetParent(handle);
+    return PlatformGui::setParent(mWindow, handle);
 }
 bool SdlImguiExt::SetTransient(WindowHandle handle) {
-    return mPlatform.SetTransient(handle);
+    return PlatformGui::setTransient(mWindow, handle);
 }
 void SdlImguiExt::SuggestTitle(std::string_view title) {
     std::string titleTemp(title);
