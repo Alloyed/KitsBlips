@@ -1,5 +1,13 @@
 #ifdef _WIN32
 
+#include "gui/platform/platform.h"
+
+#include <SDL3/SDL_log.h>
+#include <SDL3/SDL_properties.h>
+#include <SDL3/SDL_video.h>
+#include <windows.h>
+#include "clapApi/ext/gui.h"
+
 namespace {
 void getPlatformHandles(SDL_Window* sdlWindow, HWND& hWindow) {
     SDL_PropertiesID windowProps = SDL_GetWindowProperties(sdlWindow);
@@ -20,8 +28,8 @@ bool setParent(ClapWindowApi _api, SDL_Window* sdlWindow, const WindowHandle& pa
 
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setparent?redirectedfrom=MSDN#remarks
     // per documentation, we need to manually update the style to reflect child status
-    const DWORD style = GetWindowLong(child_data->hwnd, GWL_STYLE);
-    SetWindowLong(child_data->hwnd, GWL_STYLE, (style | WS_CHILD) ^ WS_POPUP);
+    const DWORD style = GetWindowLong(childWindow, GWL_STYLE);
+    SetWindowLong(childWindow, GWL_STYLE, (style | WS_CHILD) ^ WS_POPUP);
     SetParent(childWindow, parentWindow);
 
     return true;

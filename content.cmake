@@ -53,6 +53,13 @@ FetchContent_Declare(
     GIT_TAG main
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(SDL_SHARED OFF)
+    set(SDL_STATIC ON)
+else()
+    set(SDL_SHARED ON)
+    set(SDL_STATIC OFF)
+endif()
 FetchContent_Declare(
     SDL3
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git

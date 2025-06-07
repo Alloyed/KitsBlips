@@ -21,7 +21,7 @@ void getPlatformHandles(SDL_Window* sdlWindow, Window& xWindow, Display*& xDispl
 }
 }  // namespace
 
-namespace PlatformGui {
+namespace platformGui {
 void onCreateWindow(ClapWindowApi api, SDL_Window* sdlWindow) {
     if(api == ClapWindowApi::Wayland)
     {

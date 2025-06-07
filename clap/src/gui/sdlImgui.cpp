@@ -108,7 +108,7 @@ bool SdlImguiExt::Create(ClapWindowApi api, bool isFloating) {
         SDL_Log("SDL_CreateWindowWithProperties(): %s", SDL_GetError());
         return false;
     }
-    PlatformGui::onCreateWindow(mApi, mWindow);
+    platformGui::onCreateWindow(mApi, mWindow);
 
     SDL_GLContext gl_context = SDL_GL_CreateContext(mWindow);
     if (gl_context == nullptr) {
@@ -181,10 +181,10 @@ bool SdlImguiExt::SetSize(uint32_t width, uint32_t height) {
     return SDL_SetWindowSize(mWindow, width, height);
 }
 bool SdlImguiExt::SetParent(WindowHandle handle) {
-    return PlatformGui::setParent(mApi, mWindow, handle);
+    return platformGui::setParent(mApi, mWindow, handle);
 }
 bool SdlImguiExt::SetTransient(WindowHandle handle) {
-    return PlatformGui::setTransient(mApi, mWindow, handle);
+    return platformGui::setTransient(mApi, mWindow, handle);
 }
 void SdlImguiExt::SuggestTitle(std::string_view title) {
     std::string titleTemp(title);
@@ -240,7 +240,7 @@ void SdlImguiExt::Update(float dt) {
 
         ImGui::Render();
         glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-        glClearColor(0, 0, 0, 1.0f);
+        glClearColor(0, 1.0f, 0, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(mWindow);
