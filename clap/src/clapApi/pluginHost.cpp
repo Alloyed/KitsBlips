@@ -1,7 +1,9 @@
 #include "clapApi/pluginHost.h"
 
 #include <cassert>
+#include <cstdio>
 #include <sstream>
+#include <algorithm>
 #include <clap/all.h>
 
 PluginHost::PluginHost(const clap_host_t* host)
@@ -60,22 +62,44 @@ void PluginHost::LogSupportMatrix() const {
         CLAP_EXT_TUNING,
         CLAP_EXT_UNDO,
     };
+    
+    std::string hostString;
+    hostString.append(mHost->name);
+    std::replace(hostString.begin(), hostString.end(), ' ', '_');
+#ifdef _WIN32
+    hostString.append("-win-");
+#endif
+#ifdef __linux__
+    hostString.append("-lin-");
+#endif
+#ifdef __APPLE__
+    hostString.append("-mac-");
+#endif
+    hostString.append(mHost->version);
+
     std::stringstream ss;
-    ss << "## CLAP extensions supported\n";
+    
+
+    // header
+    ss <<"Name,Status,Host\n";
+    // data
     for (const auto& x : cStandardExtensions) {
-        ss << " * " << x << ": " << (SupportsExtension(x) ? "Supported" : "Not Supported") << "\n";
+        ss << x << "," << (SupportsExtension(x) ? "Supported" : "Not Supported") << "," << hostString << "\n";
     }
-
-    ss << "## Draft extensions supported\n";
     for (const auto& x : cDraftExtensions) {
-        ss << " * " << x << ": " << (SupportsExtension(x) ? "Supported" : "Not Supported") << "\n";
+        ss << x << "," << (SupportsExtension(x) ? "Supported" : "Not Supported") << "," << hostString << "\n";
     }
 
-    if (mLog) {
-        Log(LogSeverity::Info, ss.str().c_str());
-    } else {
-        printf("%s\n", ss.str().c_str());
-    }
+    /*
+    // log to file
+    */
+    FILE* fp = fopen("CLAP_SUPPORT.csv", "w");
+    fprintf(fp, "%s\n", ss.str().c_str());
+    fclose(fp);
+    /*
+    // log to stdout
+    */
+    printf("%s\n", ss.str().c_str());
 }
 
 void PluginHost::RequestCallback() const {

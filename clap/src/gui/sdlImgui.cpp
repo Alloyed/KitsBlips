@@ -231,14 +231,11 @@ void SdlImguiExt::AddActiveInstance(SdlImguiExt* instance) {
     if(wasEmpty && !sActiveInstances.empty())
     {
         if (sUpdateTimerId) {
-            instance->mHost.CancelTimer(sUpdateTimerId);
+            platformGui::cancelGuiTimer(instance->mHost, sUpdateTimerId);
             sUpdateTimerId = 0;
         }
 
-        sUpdateTimerId = instance->mHost.AddTimer(16, []() {
-            // TODO: deltatime
-            UpdateInstances(1.0f / 60.0f);
-        });
+        sUpdateTimerId = platformGui::addGuiTimer(instance->mHost, 16, &UpdateInstances);
     }
 }
 
@@ -252,7 +249,7 @@ void SdlImguiExt::RemoveActiveInstance(SdlImguiExt* instance) {
     if(!wasEmpty && sActiveInstances.empty())
     {
         if (sUpdateTimerId) {
-            instance->mHost.CancelTimer(sUpdateTimerId);
+            platformGui::cancelGuiTimer(instance->mHost, sUpdateTimerId);
             sUpdateTimerId = 0;
         }
     }
@@ -269,7 +266,7 @@ SdlImguiExt* SdlImguiExt::FindInstanceForWindow(SDL_WindowID window) {
     return nullptr;
 }
 
-void SdlImguiExt::UpdateInstances(float dt) {
+void SdlImguiExt::UpdateInstances() {
     static SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch(event.type)

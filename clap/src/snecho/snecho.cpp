@@ -15,7 +15,6 @@ const PluginEntry Snecho::Entry{
     [](PluginHost& host) -> BasePlugin* { return new Snecho(host); }};
 
 void Snecho::Config() {
-    GetHost().LogSupportMatrix();
     EffectPlugin::Config();
     ConfigExtension<SnechoParamsExt>(GetHost(), Params_Count)
         .configParam(Params_Size, 0.0f, 1.0f, 0.5f, "Size")

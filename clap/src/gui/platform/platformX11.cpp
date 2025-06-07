@@ -1,3 +1,4 @@
+#include "clapApi/pluginHost.h"
 #ifdef __linux__
 
 #include "gui/platform/platform.h"
@@ -75,6 +76,16 @@ bool setTransient(ClapWindowApi api, SDL_Window* sdlWindow, const WindowHandle& 
     XSetTransientForHint(xDisplay, xWindow, parentWindow);
 
     return true;
+}
+
+clap_id addGuiTimer(PluginHost& host, int32_t periodMs, void (*fn)())
+{
+    return host.AddTimer(periodMs, fn);
+}
+
+void cancelGuiTimer(PluginHost& host, clap_id id)
+{
+    host.CancelTimer(id);
 }
 };  // namespace PlatformGui
 #endif

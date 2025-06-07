@@ -43,7 +43,7 @@ class SdlImguiExt : public GuiExt {
     static void AddActiveInstance(SdlImguiExt* instance);
     static void RemoveActiveInstance(SdlImguiExt* instance);
     static SdlImguiExt* FindInstanceForWindow(SDL_WindowID window);
-    static void UpdateInstances(float dt);
+    static void UpdateInstances();
     static std::vector<SdlImguiExt*> sActiveInstances;
     static PluginHost::TimerId sUpdateTimerId;
 };

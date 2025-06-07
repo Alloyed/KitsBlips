@@ -41,5 +41,16 @@ bool setTransient(ClapWindowApi _api, SDL_Window* sdlWindow, const WindowHandle&
 
     return true;
 }
+
+clap_id addGuiTimer(PluginHost& host, int32_t periodMs, void(*fn)())
+{
+    UINT_PTR id = SetTimer(nullptr, 0, periodMs, fn);
+    return id;
+}
+
+void cancelGuiTimer(PluginHost& host, clap_id id)
+{
+    KillTimer(nullptr, id);
+}
 }  // namespace platformGui
 #endif

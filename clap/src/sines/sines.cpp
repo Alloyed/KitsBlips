@@ -13,6 +13,7 @@ const PluginEntry Sines::Entry{AudioInstrumentDescriptor("kitsblips.sines", "Sin
                                [](PluginHost& host) -> BasePlugin* { return new Sines(host); }};
 
 void Sines::Config() {
+    GetHost().LogSupportMatrix();
     InstrumentPlugin::Config();
     ConfigExtension<SinesParamsExt>(GetHost(), SinesParams::Count)
         .configParam(SinesParams::Volume, -20.0f, 0.0f, 0.0f, "Volume");
