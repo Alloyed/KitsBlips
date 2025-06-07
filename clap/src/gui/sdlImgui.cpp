@@ -1,5 +1,7 @@
 #include "sdlImgui.h"
 
+#include <algorithm>
+#include <SDL3/SDL_error.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_hints.h>
 #include <SDL3/SDL_init.h>
@@ -115,12 +117,13 @@ bool SdlImguiExt::Create(ClapWindowApi api, bool isFloating) {
         SDL_Log("Error: SDL_GL_CreateContext(): %s", SDL_GetError());
         return false;
     }
-    SDL_GL_MakeCurrent(mWindow, gl_context);
     mCtx = gl_context;
+    SDL_GL_MakeCurrent(mWindow, mCtx);
 
     // setup imgui
     IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
+    mImgui = ImGui::CreateContext();
+    ImGui::SetCurrentContext(mImgui);
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
@@ -131,18 +134,28 @@ bool SdlImguiExt::Create(ClapWindowApi api, bool isFloating) {
 }
 
 void SdlImguiExt::Destroy() {
-    if (mTimerId) {
-        mHost.CancelTimer(mTimerId);
-        mTimerId = 0;
+    ImGui::SetCurrentContext(mImgui);
+    SDL_GL_MakeCurrent(mWindow, mCtx);
+    RemoveActiveInstance(this);
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
+    ImGui::DestroyContext(mImgui);
+    SDL_GL_DestroyContext(mCtx);
+    SDL_DestroyWindow(mWindow);
+    mWindow = nullptr;
+    mCtx = nullptr;
+    mImgui = nullptr;
+
+    // pick any valid current engine for later: this works around a bug i don't fully understand in SDL3 itself :x
+    // without this block, closing a window when multiple are active causes a crash in the main update loop when we call
+    // SDL_GL_MakeCurrent(). maybe a required resource is already destroyed by that point?
+    for (auto instance : sActiveInstances) {
+        if (instance->mWindow) {
+            SDL_GL_MakeCurrent(instance->mWindow, instance->mCtx);
+            break;
+        }
     }
-    if (mWindow) {
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplSDL3_Shutdown();
-        ImGui::DestroyContext();
-        SDL_GL_DestroyContext(mCtx);
-        SDL_DestroyWindow(mWindow);
-        mWindow = nullptr;
-    }
+
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
@@ -195,47 +208,135 @@ bool SdlImguiExt::Show() {
         return false;
     }
     // Setup main loop
-    if (mTimerId) {
-        mHost.CancelTimer(mTimerId);
-        mTimerId = 0;
-    }
-    mTimerId = mHost.AddTimer(16, [this]() {
-        // TODO: deltatime
-        this->Update(1.0f / 60.0f);
-    });
+    AddActiveInstance(this);
     return true;
 }
 bool SdlImguiExt::Hide() {
-    if (mTimerId) {
-        mHost.CancelTimer(mTimerId);
-        mTimerId = 0;
-    }
+    RemoveActiveInstance(this);
     if (!SDL_HideWindow(mWindow)) {
         return false;
     }
     return true;
 }
 
-void SdlImguiExt::Update(float dt) {
-    ImGuiIO& io = ImGui::GetIO();
-    static SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_EVENT_QUIT || event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
-            const clap_host_t* rawHost;
-            const clap_host_gui_t* rawHostGui;
-            mHost.TryGetExtension(CLAP_EXT_GUI, rawHost, rawHostGui);
-            rawHostGui->closed(rawHost, true);
-        } else {
-            ImGui_ImplSDL3_ProcessEvent(&event);  // Forward your event to backend
+PluginHost::TimerId SdlImguiExt::sUpdateTimerId = 0;
+std::vector<SdlImguiExt*> SdlImguiExt::sActiveInstances = {};
+
+void SdlImguiExt::AddActiveInstance(SdlImguiExt* instance) {
+    printf("AddActiveInstance %p\n", instance);
+    bool wasEmpty = sActiveInstances.empty();
+    if(std::find(sActiveInstances.begin(), sActiveInstances.end(), instance) == sActiveInstances.end())
+    {
+        sActiveInstances.push_back(instance);
+    }
+    if(wasEmpty && !sActiveInstances.empty())
+    {
+        if (sUpdateTimerId) {
+            instance->mHost.CancelTimer(sUpdateTimerId);
+            sUpdateTimerId = 0;
+        }
+
+        sUpdateTimerId = instance->mHost.AddTimer(16, []() {
+            // TODO: deltatime
+            UpdateInstances(1.0f / 60.0f);
+        });
+    }
+}
+
+void SdlImguiExt::RemoveActiveInstance(SdlImguiExt* instance) {
+    printf("RemoveActiveInstance %p\n", instance);
+    bool wasEmpty = sActiveInstances.empty();
+    const auto iter = std::find(sActiveInstances.begin(), sActiveInstances.end(), instance);
+    if(iter != sActiveInstances.end())
+    {
+        sActiveInstances.erase(iter);
+    }
+    if(!wasEmpty && sActiveInstances.empty())
+    {
+        if (sUpdateTimerId) {
+            instance->mHost.CancelTimer(sUpdateTimerId);
+            sUpdateTimerId = 0;
         }
     }
-    if (mWindow) {
+}
+
+SdlImguiExt* SdlImguiExt::FindInstanceForWindow(SDL_WindowID window) {
+    for(SdlImguiExt* instance : sActiveInstances)
+    {
+        if(SDL_GetWindowID(instance->mWindow) == window)
+        {
+            return instance;
+        }
+    }
+    return nullptr;
+}
+
+void SdlImguiExt::UpdateInstances(float dt) {
+    static SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        switch(event.type)
+        {
+            case SDL_EVENT_WINDOW_DESTROYED:
+            {
+                goto skip_event;
+            }
+            case SDL_EVENT_QUIT:
+            {
+                SdlImguiExt* instance = sActiveInstances.front();
+                if(instance)
+                {
+                    const clap_host_t* rawHost;
+                    const clap_host_gui_t* rawHostGui;
+                    instance->mHost.TryGetExtension(CLAP_EXT_GUI, rawHost, rawHostGui);
+                    rawHostGui->closed(rawHost, true);
+                }
+            }
+            case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+            {
+                SdlImguiExt* instance = FindInstanceForWindow(event.window.windowID);
+                if(instance)
+                {
+                    const clap_host_t* rawHost;
+                    const clap_host_gui_t* rawHostGui;
+                    instance->mHost.TryGetExtension(CLAP_EXT_GUI, rawHost, rawHostGui);
+                    rawHostGui->closed(rawHost, true);
+                }
+            }
+
+        }
+        for(auto instance : sActiveInstances)
+        {
+            if(!instance->mImgui)
+            {
+                continue;
+            }
+            ImGui::SetCurrentContext(instance->mImgui);
+            SDL_GL_MakeCurrent(instance->mWindow, instance->mCtx);
+            ImGui_ImplSDL3_ProcessEvent(&event);  // Forward your event to backend
+        }
+    skip_event:
+        continue;
+    }
+
+    // new frame
+    for(auto instance : sActiveInstances)
+    {
+        if(!instance->mImgui)
+        {
+            continue;
+        }
+        ImGui::SetCurrentContext(instance->mImgui);
+        if(!SDL_GL_MakeCurrent(instance->mWindow, instance->mCtx))
+        {
+            SDL_Log("SDL_GL_MakeCurrent(): %s", SDL_GetError());
+        }
+        ImGuiIO& io = ImGui::GetIO();
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
         // app code
-        mConfig.onGui();
+        instance->mConfig.onGui();
         // end app code
 
         ImGui::Render();
@@ -243,6 +344,6 @@ void SdlImguiExt::Update(float dt) {
         glClearColor(0, 1.0f, 0, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        SDL_GL_SwapWindow(mWindow);
+        SDL_GL_SwapWindow(instance->mWindow);
     }
 }

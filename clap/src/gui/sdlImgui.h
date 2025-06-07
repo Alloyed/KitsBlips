@@ -3,10 +3,10 @@
 #include <SDL3/SDL_video.h>
 #include <cstdint>
 #include "clapApi/ext/gui.h"
-#include "gui/platform/platform.h"
 
 // Forward declares
 class PluginHost;
+struct ImGuiContext;
 
 struct SdlImguiConfig {
     std::function<void()> onGui;
@@ -33,12 +33,17 @@ class SdlImguiExt : public GuiExt {
     bool Hide() override;
 
    private:
-    void Update(float dt);
-
     PluginHost& mHost;
     SdlImguiConfig mConfig;
     ClapWindowApi mApi;
     SDL_Window* mWindow = nullptr;
     SDL_GLContext mCtx;
-    PluginHost::TimerId mTimerId = 0;
+    ImGuiContext* mImgui = nullptr;
+
+    static void AddActiveInstance(SdlImguiExt* instance);
+    static void RemoveActiveInstance(SdlImguiExt* instance);
+    static SdlImguiExt* FindInstanceForWindow(SDL_WindowID window);
+    static void UpdateInstances(float dt);
+    static std::vector<SdlImguiExt*> sActiveInstances;
+    static PluginHost::TimerId sUpdateTimerId;
 };

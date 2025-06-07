@@ -2,7 +2,10 @@
 
 #include "clapApi/ext/parameters.h"
 #include "clapApi/ext/state.h"
+#include "clapApi/ext/timerSupport.h"
 #include "descriptor.h"
+#include "gui/sdlImgui.h"
+#include "imgui.h"
 
 using namespace kitdsp;
 
@@ -39,6 +42,19 @@ void Snecho::Config() {
         .configParam(Params_ResetHead, 0.0f, 1.0f, 0.0f, "Reset Playhead");
 
     ConfigExtension<StateExt>();
+    ConfigExtension<TimerSupportExt>();
+    ConfigExtension<SdlImguiExt>(GetHost(), SdlImguiConfig{[](){
+        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+        ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        static bool open = true;
+        ImGui::Begin("snecho", &open, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize);
+        {
+            ImGui::Text("it's snecho :0");
+        }
+        ImGui::End();
+        ImGui::PopStyleVar();
+    }});
 }
 
 void Snecho::ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, ParametersExt::AudioParameters& params) {
