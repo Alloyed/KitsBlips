@@ -37,6 +37,7 @@ class SdlImguiExt : public GuiExt {
 
     PluginHost& mHost;
     SdlImguiConfig mConfig;
+    ClapWindowApi mApi;
     SDL_Window* mWindow = nullptr;
     SDL_GLContext mCtx;
     PluginHost::TimerId mTimerId = 0;

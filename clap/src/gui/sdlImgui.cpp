@@ -19,22 +19,22 @@
 
 bool SdlImguiExt::IsApiSupported(ClapWindowApi api, bool isFloating) {
     // TODO: lots of apis to support out there
-    // these checks look redundant but are written that way to look like a checklist
+    if(isFloating)
+    {
+        // we can get away with using all native SDL
+        return true;
+    }
+
+    // embedding requires API-specific code, still a work in progress
     switch (api) {
-        case _None: {
-            return false;
-        }
-        case X11: {
-            return isFloating || !isFloating;
-        }
-        case Wayland: {
-            return false;
-        }
-        case Win32: {
-            return !isFloating;
-        }
+        case _None:
+        case Wayland:
         case Cocoa: {
             return false;
+        }
+        case Win32:
+        case X11: {
+            return true;
         }
     }
     return false;
@@ -71,6 +71,8 @@ bool SdlImguiExt::Create(ClapWindowApi api, bool isFloating) {
             break;
         }
     }
+    
+    mApi = api;
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) {
         SDL_Log("Error: SDL_InitSubSystem(): %s", SDL_GetError());
         return false;
@@ -106,7 +108,7 @@ bool SdlImguiExt::Create(ClapWindowApi api, bool isFloating) {
         SDL_Log("SDL_CreateWindowWithProperties(): %s", SDL_GetError());
         return false;
     }
-    PlatformGui::onCreateWindow(mWindow);
+    PlatformGui::onCreateWindow(mApi, mWindow);
 
     SDL_GLContext gl_context = SDL_GL_CreateContext(mWindow);
     if (gl_context == nullptr) {
@@ -179,10 +181,10 @@ bool SdlImguiExt::SetSize(uint32_t width, uint32_t height) {
     return SDL_SetWindowSize(mWindow, width, height);
 }
 bool SdlImguiExt::SetParent(WindowHandle handle) {
-    return PlatformGui::setParent(mWindow, handle);
+    return PlatformGui::setParent(mApi, mWindow, handle);
 }
 bool SdlImguiExt::SetTransient(WindowHandle handle) {
-    return PlatformGui::setTransient(mWindow, handle);
+    return PlatformGui::setTransient(mApi, mWindow, handle);
 }
 void SdlImguiExt::SuggestTitle(std::string_view title) {
     std::string titleTemp(title);

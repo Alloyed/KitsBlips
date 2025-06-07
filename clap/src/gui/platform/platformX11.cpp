@@ -22,7 +22,11 @@ void getPlatformHandles(SDL_Window* sdlWindow, Window& xWindow, Display*& xDispl
 }  // namespace
 
 namespace PlatformGui {
-void onCreateWindow(SDL_Window* sdlWindow) {
+void onCreateWindow(ClapWindowApi api, SDL_Window* sdlWindow) {
+    if(api == ClapWindowApi::Wayland)
+    {
+        return;
+    }
     Window xWindow;
     Display* xDisplay;
     getPlatformHandles(sdlWindow, xWindow, xDisplay);
@@ -37,7 +41,11 @@ void onCreateWindow(SDL_Window* sdlWindow) {
                     (uint8_t*)embedInfoData, numElements);
 }
 
-bool setParent(SDL_Window* sdlWindow, const WindowHandle& parent) {
+bool setParent(ClapWindowApi api, SDL_Window* sdlWindow, const WindowHandle& parent) {
+    if(api == ClapWindowApi::Wayland)
+    {
+        return true;
+    }
     Window xWindow;
     Display* xDisplay;
     getPlatformHandles(sdlWindow, xWindow, xDisplay);
@@ -54,7 +62,11 @@ bool setParent(SDL_Window* sdlWindow, const WindowHandle& parent) {
     return true;
 }
 
-bool setTransient(SDL_Window* sdlWindow, const WindowHandle& parent) {
+bool setTransient(ClapWindowApi api, SDL_Window* sdlWindow, const WindowHandle& parent) {
+    if(api == ClapWindowApi::Wayland)
+    {
+        return true;
+    }
     Window xWindow;
     Display* xDisplay;
     getPlatformHandles(sdlWindow, xWindow, xDisplay);

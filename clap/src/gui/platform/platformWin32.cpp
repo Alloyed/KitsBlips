@@ -8,12 +8,12 @@ void getPlatformHandles(SDL_Window* sdlWindow, HWND& hWindow) {
 }  // namespace
 
 namespace platformGui {
-void onCreateWindow(SDL_Window* sdlWindow) {
+void onCreateWindow(ClapWindowApi _api, SDL_Window* sdlWindow) {
     // do nothing
     (void)sdlWindow;
 }
 
-bool setParent(SDL_Window* sdlWindow, const WindowHandle& parent) {
+bool setParent(ClapWindowApi _api, SDL_Window* sdlWindow, const WindowHandle& parent) {
     HWND childWindow;
     getPlatformHandles(sdlWindow, childWindow);
     HWND parentWindow = static_cast<HWND>(parent.ptr);
@@ -27,9 +27,9 @@ bool setParent(SDL_Window* sdlWindow, const WindowHandle& parent) {
     return true;
 }
 
-bool setTransient(SDL_Window* sdlWindow, const WindowHandle& parent) {
+bool setTransient(ClapWindowApi _api, SDL_Window* sdlWindow, const WindowHandle& parent) {
     // same implementation as setParent()
-    setParent(sdlWindow, parent);
+    setParent(_api, sdlWindow, parent);
 
     return true;
 }
