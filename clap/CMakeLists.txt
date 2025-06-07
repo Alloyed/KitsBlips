@@ -51,9 +51,22 @@ target_link_libraries(${PROJECT_NAME}-plugin
     PRIVATE
 )
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_sources(${PROJECT_NAME}-plugin PUBLIC
+        src/gui/platform/platformWin32.cpp
+    )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_sources(${PROJECT_NAME}-plugin PUBLIC
+        src/gui/platform/platformCocoa.cpp
+        src/gui/platform/platformCocoa.m
+    )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(X11)
-    target_link_libraries(${PROJECT_NAME}-plugin X11::X11 X11:Xutil)
+    target_link_libraries(${PROJECT_NAME}-plugin PUBLIC X11::X11 X11::Xutil)
+    target_sources(${PROJECT_NAME}-plugin PUBLIC
+        src/gui/platform/platformX11.cpp
+        src/gui/platform/platformWayland.cpp
+    )
 endif()
 
 target_compile_definitions(${PROJECT_NAME}-plugin PUBLIC

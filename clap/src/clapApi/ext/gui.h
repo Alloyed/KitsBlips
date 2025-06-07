@@ -7,12 +7,6 @@
 
 enum ClapWindowApi { _None = 0, X11, Wayland, Win32, Cocoa };
 
-struct WindowHandle {
-    WindowHandle(const clap_window_t* window) {}
-    ClapWindowApi api;
-    void* ptr;
-};
-
 inline ClapWindowApi toApiEnum(std::string_view api) {
     // clap promises that equal api types are the same pointer
     if (api == CLAP_WINDOW_API_X11) {
@@ -30,6 +24,25 @@ inline ClapWindowApi toApiEnum(std::string_view api) {
     // should never happen
     return ClapWindowApi::_None;
 }
+
+struct WindowHandle {
+    WindowHandle(const clap_window_t* window) : api(toApiEnum(window->api)) {
+        printf("api: %s ptr: %p x11: %lu\n", window->api, window->ptr, window->x11);
+        if(api == ClapWindowApi::X11)
+        {
+            x11 = window->x11;
+        }
+        else {
+            ptr = window->ptr;
+        }
+        printf("api: %d ptr: %p x11: %lu\n", api, ptr, x11);
+    }
+    ClapWindowApi api;
+    union {
+        unsigned long x11;
+        void* ptr;
+    };
+};
 
 /* Unlike all other extensions, BaseGuiExt is an abstract class. Implement it with your preferred gui library! */
 class GuiExt : public BaseExt {
@@ -152,17 +165,19 @@ class GuiExt : public BaseExt {
     }
 
     static bool _set_parent(const clap_plugin_t* plugin, const clap_window_t* window) {
+        printf("_set_parent(%p)\n", window);
         GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
         return self.SetParent(WindowHandle(window));
     }
 
     static bool _set_transient(const clap_plugin_t* plugin, const clap_window_t* window) {
-        printf("_set_transient(self, %p)\n", window);
+        printf("_set_transient(%p)\n", window);
         GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
         return self.SetTransient(WindowHandle(window));
     }
 
     static void _suggest_title(const clap_plugin_t* plugin, const char* title) {
+        printf("_suggest_title(%s)\n", title);
         GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
         self.SuggestTitle(std::string_view(title));
     }

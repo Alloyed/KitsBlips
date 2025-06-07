@@ -45,7 +45,7 @@ void PluginHost::OnTimer(PluginHost::TimerId id) const {
 }
 
 void PluginHost::CancelTimer(PluginHost::TimerId id) {
-    if (mTimer) {
+    if (mTimer && mActiveTimers.find(id) != mActiveTimers.end()) {
         mActiveTimers.erase(id);
         mTimer->unregister_timer(mHost, id);
     }

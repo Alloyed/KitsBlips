@@ -3,6 +3,7 @@
 #include <SDL3/SDL_video.h>
 #include <cstdint>
 #include "clapApi/ext/gui.h"
+#include "gui/platform/platform.h"
 
 // Forward declares
 class PluginHost;
@@ -32,16 +33,12 @@ class SdlImguiExt : public GuiExt {
     bool Hide() override;
 
    private:
-    bool CreatePluginWindow();
-    void DestroyPluginWindow();
-    bool CreateParentWindow(WindowHandle clapHandle);
-    void DestroyParentWindow();
     void Update(float dt);
 
+    Platform mPlatform;
     PluginHost& mHost;
     SdlImguiConfig mConfig;
-    SDL_Window* mWindowHandle = nullptr;
-    SDL_Window* mParentHandle = nullptr;
+    SDL_Window* mWindow = nullptr;
     SDL_GLContext mCtx;
-    PluginHost::TimerId mTimerId;
+    PluginHost::TimerId mTimerId = 0;
 };
