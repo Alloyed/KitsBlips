@@ -17,10 +17,13 @@ class EffectPlugin : public BasePlugin {
                               typename PARAMS::AudioParameters& params) = 0;
 
     // impl
+    void ProcessFlush(const clap_process_t& process) final {
+        PARAMS& params = PARAMS::template GetFromPlugin<PARAMS>(*this);
+        params.ProcessFlushFromMain(*this, nullptr, process.out_events);
+    }
     void ProcessEvent(const clap_event_header_t& event) final {
         PARAMS& params = PARAMS::template GetFromPlugin<PARAMS>(*this);
-        if(params.ProcessEvent(event))
-        {
+        if (params.ProcessEvent(event)) {
             return;
         }
     }
@@ -46,8 +49,8 @@ class EffectPlugin : public BasePlugin {
             // isOutRightConstant
             false,
         };
-        typename PARAMS::AudioParameters& params = PARAMS::template GetFromPlugin<PARAMS>(*this).GetStateForAudioThread();
+        PARAMS& params = PARAMS::template GetFromPlugin<PARAMS>(*this);
         // process audio from this frame
-        ProcessAudio(in, out, params);
+        ProcessAudio(in, out, params.GetStateForAudioThread());
     }
 };

@@ -48,6 +48,8 @@ void Snecho::OnGui() {
     ImGui::Begin("main", &open, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize);
     {
         std::string buf;
+        bool anyChanged = false;
+        params.FlushFromAudio();
         for (clap_id id = Params_Size; id < Params_Count; ++id) {
             const auto cfg = params.GetConfig(id);
             float value = static_cast<float>(params.Get(id));
@@ -55,7 +57,20 @@ void Snecho::OnGui() {
             if(ImGui::SliderFloat(buf.c_str(), &value, cfg->min, cfg->max))
             {
                 params.Set(id, value);
+                anyChanged = true;
             }
+            if(ImGui::IsItemActivated())
+            {
+                params.StartGesture(id);
+            }
+            if(ImGui::IsItemDeactivated())
+            {
+                params.StopGesture(id);
+            }
+        }
+        if(anyChanged)
+        {
+            params.RequestFlushToHost();
         }
     }
     ImGui::End();

@@ -5,8 +5,8 @@
 #include "clapApi/basePlugin.h"
 #include "clapApi/common.h"
 
-#include "clapApi/ext/notePorts.h"
 #include "clapApi/ext/audioPorts.h"
+#include "clapApi/ext/notePorts.h"
 
 /* pre-configured for simple stereo instruments */
 template <typename PARAMS>
@@ -26,10 +26,13 @@ class InstrumentPlugin : public BasePlugin {
         ConfigExtension<NotePortsExt<1, 0>>();
         ConfigExtension<StereoAudioPortsExt<0, 1>>();
     }
+    void ProcessFlush(const clap_process_t& process) final {
+        PARAMS& params = PARAMS::template GetFromPlugin<PARAMS>(*this);
+        params.ProcessFlushFromMain(*this, nullptr, process.out_events);
+    }
     void ProcessEvent(const clap_event_header_t& event) final {
         PARAMS& params = PARAMS::template GetFromPlugin<PARAMS>(*this);
-        if(params.ProcessEvent(event))
-        {
+        if (params.ProcessEvent(event)) {
             return;
         }
 

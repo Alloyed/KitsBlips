@@ -2,17 +2,18 @@
 
 #include <clap/clap.h>
 #include <etl/queue_spsc_atomic.h>
+#include <kitdsp/string.h>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <string_view>
-#include <kitdsp/string.h>
 
+#include "clap/events.h"
 #include "clap/ext/params.h"
 #include "clapApi/basePlugin.h"
 #include "clapApi/pluginHost.h"
 
-//using ParamId = clap_id;
+// using ParamId = clap_id;
 
 template <typename ParamId>
 class ParametersExt : public BaseExt {
@@ -35,6 +36,7 @@ class ParametersExt : public BaseExt {
         double value;
     };
     using ParameterChangeQueue = etl::queue_spsc_atomic<ParameterChange, 100, etl::memory_model::MEMORY_MODEL_SMALL>;
+    using GestureQueue = etl::queue_spsc_atomic<clap_event_param_gesture_t, 100, etl::memory_model::MEMORY_MODEL_SMALL>;
 
    public:
     static constexpr auto NAME = CLAP_EXT_PARAMS;
@@ -54,7 +56,8 @@ class ParametersExt : public BaseExt {
           mState(mNumParams, 0.0f),
           mAudioToMain(),
           mMainToAudio(),
-          mAudioState(mNumParams, mAudioToMain, mMainToAudio) {}
+          mMainToAudioGestures(),
+          mAudioState(mNumParams, mAudioToMain) {}
 
     /* This intentionally mirrors the configParam method from VCV rack */
     ParametersExt& configParam(ParamId id,
@@ -96,20 +99,28 @@ class ParametersExt : public BaseExt {
         }
     }
 
-    void FlushFromAudio() {
-        ParameterChange change;
-        while (mAudioToMain.pop(change)) {
-            clap_id index = static_cast<clap_id>(change.id);
-            mState[index] = change.value;
-        }
+    void StartGesture(ParamId id) {
+        clap_event_param_gesture_t event;
+        event.header.size = sizeof(event);
+        event.header.time = 0;
+        event.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+        event.header.type = CLAP_EVENT_PARAM_GESTURE_BEGIN;
+        event.header.flags = 0;
+        event.param_id = static_cast<clap_id>(id);
+
+        mMainToAudioGestures.push(std::move(event));
     }
 
-    void RequestFlushToHost() {
-        const clap_host_t* rawHost;
-        const clap_host_params_t* rawHostParams;
-        if (mHost.TryGetExtension(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
-            rawHostParams->request_flush(rawHost);
-        }
+    void StopGesture(ParamId id) {
+        clap_event_param_gesture_t event;
+        event.header.size = sizeof(event);
+        event.header.time = 0;
+        event.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+        event.header.type = CLAP_EVENT_PARAM_GESTURE_END;
+        event.header.flags = 0;
+        event.param_id = static_cast<clap_id>(id);
+
+        mMainToAudioGestures.push(std::move(event));
     }
 
     void RequestClear(ParamId id, clap_param_clear_flags flags = CLAP_PARAM_CLEAR_ALL) {
@@ -144,11 +155,69 @@ class ParametersExt : public BaseExt {
         return false;
     }
 
+    void ProcessFlushFromMain(BasePlugin& basePlugin, const clap_input_events_t* in, const clap_output_events_t* out) {
+        // called from audio thread when active(), main thread when inactive
+
+        // Process events sent from the host to us
+        if (in) {
+            const uint32_t eventCount = in->size(in);
+            for (uint32_t eventIndex = 0; eventIndex < eventCount; eventIndex++) {
+                basePlugin.ProcessEvent(*in->get(in, eventIndex));
+            }
+        }
+
+        // Send events queued from us to the host
+        if (out) {
+            clap_event_param_gesture_t event;
+            while (mMainToAudioGestures.pop(event)) {
+                out->try_push(out, &event.header);
+            }
+
+            ParameterChange change;
+            while (mMainToAudio.pop(change)) {
+                clap_id index = static_cast<clap_id>(change.id);
+                mAudioState.mState[index] = change.value;
+
+                clap_event_param_value_t param = {};
+                param.header.size = sizeof(param);
+                param.header.time = 0;
+                param.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+                param.header.type = CLAP_EVENT_PARAM_VALUE;
+                param.header.flags = 0;
+                param.param_id = index;
+                param.cookie = nullptr;
+                param.note_id = -1;
+                param.port_index = -1;
+                param.channel = -1;
+                param.key = -1;
+                param.value = change.value;
+
+                out->try_push(out, &param.header);
+            }
+        }
+    }
+
+    void FlushFromAudio() {
+        ParameterChange change;
+        while (mAudioToMain.pop(change)) {
+            clap_id index = static_cast<clap_id>(change.id);
+            mState[index] = change.value;
+        }
+    }
+
+    void RequestFlushToHost() {
+        const clap_host_t* rawHost;
+        const clap_host_params_t* rawHostParams;
+        if (mHost.TryGetExtension(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
+            rawHostParams->request_flush(rawHost);
+        }
+    }
+
     /* A Handle for accessing parameters from the audio thread */
     class AudioParameters {
        public:
-        AudioParameters(size_t numParams, ParameterChangeQueue& audioToMain, ParameterChangeQueue& mainToAudio)
-            : mState(numParams, 0.0f), mAudioToMain(audioToMain), mMainToAudio(mainToAudio) {}
+        AudioParameters(size_t numParams, ParameterChangeQueue& audioToMain)
+            : mState(numParams, 0.0f), mAudioToMain(audioToMain) {}
 
         double Get(ParamId id) const {
             clap_id index = static_cast<clap_id>(id);
@@ -164,17 +233,9 @@ class ParametersExt : public BaseExt {
                 mAudioToMain.push({id, newValue});
             }
         }
-        void Flush() {
-            ParameterChange change;
-            while (mMainToAudio.pop(change)) {
-                clap_id index = static_cast<clap_id>(change.id);
-                mState[index] = change.value;
-            }
-        }
 
         std::vector<double> mState;
         ParameterChangeQueue& mAudioToMain;
-        ParameterChangeQueue& mMainToAudio;
     };
     AudioParameters& GetStateForAudioThread() { return mAudioState; }
     size_t GetNumParams() const { return mNumParams; }
@@ -187,6 +248,7 @@ class ParametersExt : public BaseExt {
     std::vector<double> mState;
     ParameterChangeQueue mAudioToMain;
     ParameterChangeQueue mMainToAudio;
+    GestureQueue mMainToAudioGestures; // TODO: combine with ParameterChangeQueue
     AudioParameters mAudioState;
 
     // impl
@@ -240,15 +302,10 @@ class ParametersExt : public BaseExt {
     }
 
     static void _flush(const clap_plugin_t* plugin, const clap_input_events_t* in, const clap_output_events_t* out) {
+        printf("_flush");
         // called from audio thread when active(), main thread when inactive
         BasePlugin& basePlugin = BasePlugin::GetFromPluginObject(plugin);
         ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
-        self.mAudioState.Flush();
-
-        // Process events sent to our plugin from the host.
-        const uint32_t eventCount = in->size(in);
-        for (uint32_t eventIndex = 0; eventIndex < eventCount; eventIndex++) {
-            basePlugin.ProcessEvent(*in->get(in, eventIndex));
-        }
+        self.ProcessFlushFromMain(basePlugin, in, out);
     }
 };

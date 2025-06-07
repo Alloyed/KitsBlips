@@ -38,6 +38,7 @@ class BasePlugin {
     virtual ~BasePlugin() = default;
     // required
     virtual void Config() = 0;
+    virtual void ProcessFlush(const clap_process_t& process) = 0;
     virtual void ProcessEvent(const clap_event_header_t& event) = 0;
     virtual void ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) = 0;
     // optional
