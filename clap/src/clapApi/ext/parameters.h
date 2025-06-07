@@ -13,9 +13,7 @@
 #include "clapApi/basePlugin.h"
 #include "clapApi/pluginHost.h"
 
-// using ParamId = clap_id;
-
-template <typename ParamId>
+template <typename ParamId /* extends clap_id */>
 class ParametersExt : public BaseExt {
    public:
     using Id = ParamId;
@@ -302,7 +300,6 @@ class ParametersExt : public BaseExt {
     }
 
     static void _flush(const clap_plugin_t* plugin, const clap_input_events_t* in, const clap_output_events_t* out) {
-        printf("_flush");
         // called from audio thread when active(), main thread when inactive
         BasePlugin& basePlugin = BasePlugin::GetFromPluginObject(plugin);
         ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);

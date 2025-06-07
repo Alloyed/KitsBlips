@@ -1,7 +1,6 @@
 #include "clapApi/basePlugin.h"
 
 #include <cassert>
-#include "clapApi/ext/parameters.h"
 
 BaseExt* BasePlugin::TryGetExtension(const char* name) {
     if (auto search = mExtensions.find(name); search != mExtensions.end()) {
@@ -62,7 +61,6 @@ clap_process_status BasePlugin::_process(const clap_plugin* plugin, const clap_p
     uint32_t eventIndex = 0;
     uint32_t nextEventFrame = inputEventCount ? 0 : frameCount;
 
-    // TODO: can we move this out of the base?
     self.ProcessFlush(*process);
 
     for (uint32_t frameIndex = 0; frameIndex < frameCount;) {
@@ -120,6 +118,5 @@ const clap_plugin_t* BasePlugin::GetOrCreatePluginObject(const clap_plugin_descr
         mPlugin = std::make_unique<clap_plugin_t>(pluginObject);
         Config();
     }
-    setbuf(stdout, NULL);
     return mPlugin.get();
 }

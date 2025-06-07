@@ -39,6 +39,8 @@ class PluginHost {
         const void* ext = mHost->get_extension(mHost, extensionName);
         return ext != nullptr;
     }
+    
+    void LogSupportMatrix() const;
 
     /** Returns true if we are currently on the main thread */
     bool IsMainThread() const;

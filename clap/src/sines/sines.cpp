@@ -1,13 +1,12 @@
 #include "sines/sines.h"
 
-#include "gui/sdlImgui.h"
 #include "clapApi/ext/parameters.h"
 #include "clapApi/ext/state.h"
 #include "clapApi/ext/timerSupport.h"
 #include "descriptor.h"
+#include "gui/imguiHelpers.h"
+#include "gui/sdlImgui.h"
 #include "kitdsp/math/util.h"
-
-#include "imgui.h"
 
 
 const PluginEntry Sines::Entry{AudioInstrumentDescriptor("kitsblips.sines", "Sines", "a simple sine wave synth"),
@@ -21,8 +20,9 @@ void Sines::Config() {
     if(GetHost().SupportsExtension(CLAP_EXT_TIMER_SUPPORT))
     {
         ConfigExtension<TimerSupportExt>(GetHost());
-        ConfigExtension<SdlImguiExt>(GetHost(), SdlImguiConfig{[](){
-            ImGui::ShowDemoWindow();
+        ConfigExtension<SdlImguiExt>(GetHost(), SdlImguiConfig{[this](){
+            auto& params = ParametersExt<clap_id>::GetFromPlugin<ParametersExt<clap_id>>(*this);
+            ImGuiHelpers::displayParametersBasic(params);
         }});
     }
 }

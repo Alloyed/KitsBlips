@@ -27,7 +27,6 @@ inline ClapWindowApi toApiEnum(std::string_view api) {
 
 struct WindowHandle {
     WindowHandle(const clap_window_t* window) : api(toApiEnum(window->api)) {
-        printf("api: %s ptr: %p x11: %lu\n", window->api, window->ptr, window->x11);
         if(api == ClapWindowApi::X11)
         {
             x11 = window->x11;
@@ -35,7 +34,6 @@ struct WindowHandle {
         else {
             ptr = window->ptr;
         }
-        printf("api: %d ptr: %p x11: %lu\n", api, ptr, x11);
     }
     ClapWindowApi api;
     union {
@@ -80,13 +78,11 @@ class GuiExt : public BaseExt {
 
    private:
     static bool _is_api_supported(const clap_plugin_t* plugin, const char* api, bool isFloating) {
-        printf("_is_api_supported(self, %s, %s)\n", api, isFloating ? "floating" : "not-floating");
         GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
         return self.IsApiSupported(toApiEnum(api), isFloating);
     }
 
     static bool _get_preferred_api(const clap_plugin_t* plugin, const char** apiString, bool* isFloating) {
-        printf("_get_preferred_api(self)\n");
         GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
         ClapWindowApi api;
         bool success = self.GetPreferredApi(api, *isFloating);
@@ -118,7 +114,6 @@ class GuiExt : public BaseExt {
     }
 
     static bool _create(const clap_plugin_t* plugin, const char* apiString, bool isFloating) {
-        printf("_create(self, %s, %s)\n", apiString, isFloating ? "floating" : "not-floating");
         GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
         ClapWindowApi api = toApiEnum(apiString);
         if (!self.IsApiSupported(api, isFloating)) {
@@ -128,13 +123,11 @@ class GuiExt : public BaseExt {
     }
 
     static void _destroy(const clap_plugin_t* plugin) {
-        printf("_destroy(self)\n");
         GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
         self.Destroy();
     }
 
     static bool _set_scale(const clap_plugin_t* plugin, double scale) {
-        printf("_set_scale(self, %f)\n", scale);
         GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
         return self.SetScale(scale);
     }
@@ -165,31 +158,26 @@ class GuiExt : public BaseExt {
     }
 
     static bool _set_parent(const clap_plugin_t* plugin, const clap_window_t* window) {
-        printf("_set_parent(%p)\n", window);
         GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
         return self.SetParent(WindowHandle(window));
     }
 
     static bool _set_transient(const clap_plugin_t* plugin, const clap_window_t* window) {
-        printf("_set_transient(%p)\n", window);
         GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
         return self.SetTransient(WindowHandle(window));
     }
 
     static void _suggest_title(const clap_plugin_t* plugin, const char* title) {
-        printf("_suggest_title(%s)\n", title);
         GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
         self.SuggestTitle(std::string_view(title));
     }
 
     static bool _show(const clap_plugin_t* plugin) {
-        printf("_show()\n");
         GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
         return self.Show();
     }
 
     static bool _hide(const clap_plugin_t* plugin) {
-        printf("_hide()\n");
         GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
         return self.Hide();
     }
