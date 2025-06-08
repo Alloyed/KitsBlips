@@ -5,7 +5,7 @@
 #include <string_view>
 #include <vector>
 
-#include "clapApi/basePlugin.h"
+#include "clapeze/basePlugin.h"
 
 #include "snecho/snecho.h"
 #include "sines/sines.h"

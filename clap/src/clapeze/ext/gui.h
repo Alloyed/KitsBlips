@@ -3,7 +3,7 @@
 #include <clap/clap.h>
 #include <cstdint>
 
-#include "clapApi/basePlugin.h"
+#include "clapeze/basePlugin.h"
 
 enum ClapWindowApi { _None = 0, X11, Wayland, Win32, Cocoa };
 

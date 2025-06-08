@@ -1,8 +1,8 @@
 #pragma once
 
-#include "clapApi/common.h"
-#include "clapApi/ext/parameters.h"
-#include "clapApi/instrumentPlugin.h"
+#include "clapeze/common.h"
+#include "clapeze/ext/parameters.h"
+#include "clapeze/instrumentPlugin.h"
 #include "kitdsp/osc/naiveOscillator.h"
 
 enum class SinesParams : clap_id { Volume, Count };

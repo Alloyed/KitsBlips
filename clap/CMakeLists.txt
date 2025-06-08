@@ -24,11 +24,10 @@ FetchContent_MakeAvailable(clap clap-wrapper SDL3 KitDSP)
 add_library(${PROJECT_NAME}-plugin STATIC
     src/entry.cpp
 
-    src/clapApi/basePlugin.cpp
-    src/clapApi/pluginHost.cpp
-
-    src/gui/sdlOpenGl.cpp
-    src/gui/imgui.cpp
+    src/clapeze/basePlugin.cpp
+    src/clapeze/pluginHost.cpp
+    src/clapeze/gui/sdlOpenGl.cpp
+    src/clapeze/gui/imgui.cpp
 
     src/snecho/snecho.cpp
     src/sines/sines.cpp
@@ -51,19 +50,18 @@ target_link_libraries(${PROJECT_NAME}-plugin
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_sources(${PROJECT_NAME}-plugin PUBLIC
-        src/gui/platform/platformWin32.cpp
+        src/clapeze/gui/platform/platformWin32.cpp
     )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     target_sources(${PROJECT_NAME}-plugin PUBLIC
-        src/gui/platform/platformCocoa.cpp
-        src/gui/platform/platformCocoa.m
+        src/clapeze/gui/platform/platformCocoa.cpp
+        src/clapeze/gui/platform/platformCocoa.m
     )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(X11)
     target_link_libraries(${PROJECT_NAME}-plugin PUBLIC X11::X11 X11::Xutil)
     target_sources(${PROJECT_NAME}-plugin PUBLIC
-        src/gui/platform/platformX11.cpp
-        src/gui/platform/platformWayland.cpp
+        src/clapeze/gui/platform/platformLinux.cpp
     )
 endif()
 

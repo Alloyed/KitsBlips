@@ -1,12 +1,12 @@
 #include "snecho/snecho.h"
 
 #include "clap/ext/timer-support.h"
-#include "clapApi/ext/parameters.h"
-#include "clapApi/ext/state.h"
-#include "clapApi/ext/timerSupport.h"
+#include "clapeze/ext/parameters.h"
+#include "clapeze/ext/state.h"
+#include "clapeze/ext/timerSupport.h"
+#include "clapeze/gui/imgui.h"
+#include "clapeze/gui/imguiHelpers.h"
 #include "descriptor.h"
-#include "gui/imgui.h"
-#include "gui/imguiHelpers.h"
 
 using namespace kitdsp;
 

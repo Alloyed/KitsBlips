@@ -1,7 +1,7 @@
 #pragma once
 
-#include "clapApi/ext/gui.h"
-#include "clapApi/pluginHost.h"
+#include "clapeze/ext/gui.h"
+#include "clapeze/pluginHost.h"
 #include <SDL3/SDL_video.h>
 
 namespace platformGui {

@@ -1,12 +1,12 @@
 #ifdef _WIN32
 
-#include "gui/platform/platform.h"
+#include "clapeze/gui/platform/platform.h"
 
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_video.h>
 #include <windows.h>
-#include "clapApi/ext/gui.h"
+#include "clapeze/ext/gui.h"
 
 namespace {
 void getPlatformHandles(SDL_Window* sdlWindow, HWND& hWindow) {

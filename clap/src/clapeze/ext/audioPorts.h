@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "clapApi/basePlugin.h"
+#include "clapeze/basePlugin.h"
 
 template <size_t NUM_INPUTS, size_t NUM_OUTPUTS>
 class StereoAudioPortsExt : public BaseExt {

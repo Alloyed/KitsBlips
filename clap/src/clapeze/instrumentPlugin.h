@@ -2,11 +2,11 @@
 
 #include <etl/vector.h>
 
-#include "clapApi/basePlugin.h"
-#include "clapApi/common.h"
+#include "clapeze/basePlugin.h"
+#include "clapeze/common.h"
 
-#include "clapApi/ext/audioPorts.h"
-#include "clapApi/ext/notePorts.h"
+#include "clapeze/ext/audioPorts.h"
+#include "clapeze/ext/notePorts.h"
 
 /* pre-configured for simple stereo instruments */
 template <typename PARAMS>

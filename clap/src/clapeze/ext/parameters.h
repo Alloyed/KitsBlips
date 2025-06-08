@@ -12,8 +12,8 @@
 
 #include "clap/events.h"
 #include "clap/ext/params.h"
-#include "clapApi/basePlugin.h"
-#include "clapApi/pluginHost.h"
+#include "clapeze/basePlugin.h"
+#include "clapeze/pluginHost.h"
 
 namespace ParamHelpers {
 inline double toDisplay(double rawValue, double displayBase, double displayMultiplier, double displayOffset) {

@@ -3,7 +3,7 @@
 #include <clap/clap.h>
 
 #include "clap/ext/timer-support.h"
-#include "clapApi/basePlugin.h"
+#include "clapeze/basePlugin.h"
 
 class TimerSupportExt : public BaseExt {
    public:

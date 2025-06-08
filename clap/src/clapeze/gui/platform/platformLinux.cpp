@@ -1,15 +1,15 @@
-#include "clapApi/pluginHost.h"
 #ifdef __linux__
 
-#include "gui/platform/platform.h"
+#include "clapeze/gui/platform/platform.h"
 
+#include "clapeze/ext/gui.h"
+#include "clapeze/pluginHost.h"
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_video.h>
 #include <X11/Xlib.h>
 #include <X11/Xos.h>
 #include <X11/Xutil.h>
-#include "clapApi/ext/gui.h"
 
 // https://github.com/libsdl-org/SDL/blob/main/src/video/x11/SDL_x11window.c
 // NYI: https://github.com/libsdl-org/SDL/blob/main/src/video/wayland/SDL_waylandwindow.c

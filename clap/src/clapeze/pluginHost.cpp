@@ -1,4 +1,4 @@
-#include "clapApi/pluginHost.h"
+#include "clapeze/pluginHost.h"
 
 #include <cassert>
 #include <cstdio>

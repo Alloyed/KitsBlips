@@ -1,7 +1,7 @@
 #pragma once
 
-#include "clapApi/effectPlugin.h"
-#include "clapApi/ext/parameters.h"
+#include "clapeze/effectPlugin.h"
+#include "clapeze/ext/parameters.h"
 
 #include <kitdsp/dbMeter.h>
 #include <kitdsp/samplerate/resampler.h>

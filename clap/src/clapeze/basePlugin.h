@@ -6,7 +6,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include "clapApi/pluginHost.h"
+#include "clapeze/pluginHost.h"
 
 class BasePlugin;
 

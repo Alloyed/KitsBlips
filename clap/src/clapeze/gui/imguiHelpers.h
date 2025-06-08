@@ -2,7 +2,7 @@
 
 #include <imgui.h>
 #include <variant>
-#include "clapApi/ext/parameters.h"
+#include "clapeze/ext/parameters.h"
 
 namespace ImGuiHelpers {
 inline void displayParametersBasic(ParametersExt<clap_id>& params) {

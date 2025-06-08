@@ -12,9 +12,9 @@
 #include <algorithm>
 
 #include "clap/ext/gui.h"
-#include "clapApi/ext/gui.h"
-#include "clapApi/pluginHost.h"
-#include "gui/platform/platform.h"
+#include "clapeze/ext/gui.h"
+#include "clapeze/pluginHost.h"
+#include "clapeze/gui/platform/platform.h"
 
 bool SdlOpenGlExt::IsApiSupported(ClapWindowApi api, bool isFloating) {
     // TODO: lots of apis to support out there

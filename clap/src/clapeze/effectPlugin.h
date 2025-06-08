@@ -1,8 +1,8 @@
 #pragma once
 
-#include "clapApi/basePlugin.h"
-#include "clapApi/common.h"
-#include "clapApi/ext/audioPorts.h"
+#include "clapeze/basePlugin.h"
+#include "clapeze/common.h"
+#include "clapeze/ext/audioPorts.h"
 
 /* pre-configured for simple stereo effects */
 template <typename PARAMS>

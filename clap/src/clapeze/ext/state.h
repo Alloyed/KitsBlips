@@ -4,8 +4,8 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "clapApi/basePlugin.h"
-#include "clapApi/ext/parameters.h"
+#include "clapeze/basePlugin.h"
+#include "clapeze/ext/parameters.h"
 
 /* Saves and loads parameter state. Depends on ParametersExt. */
 class StateExt : public BaseExt {
