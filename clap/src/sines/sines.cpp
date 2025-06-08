@@ -16,7 +16,7 @@ void Sines::Config() {
     GetHost().LogSupportMatrix();
     InstrumentPlugin::Config();
     ConfigExtension<SinesParamsExt>(GetHost(), SinesParams::Count)
-        .configParam(SinesParams::Volume, -20.0f, 0.0f, 0.0f, "Volume");
+        .configNumeric(SinesParams::Volume, -20.0f, 0.0f, 0.0f, "Volume");
     ConfigExtension<StateExt>();
     if(GetHost().SupportsExtension(CLAP_EXT_TIMER_SUPPORT))
     {

@@ -17,16 +17,16 @@ const PluginEntry Snecho::Entry{
 void Snecho::Config() {
     EffectPlugin::Config();
     ConfigExtension<SnechoParamsExt>(GetHost(), Params_Count)
-        .configParam(Params_Size, 0.0f, 1.0f, 0.5f, "Size")
-        .configParam(Params_Feedback, 0.0f, 1.0f, 0.5f, "Feedback")
-        .configParam(Params_FilterPreset, 0.0f, 1.0f, 0.0f, "Filter Preset")
-        .configParam(Params_SizeRange, 0.0f, 1.0f, 0.5f, "Size Range")
-        .configParam(Params_Mix, 0.0f, 1.0f, 0.5f, "Mix")
-        .configParam(Params_FreezeEcho, 0.0f, 1.0f, 0.0f, "Freeze Echo")
-        .configParam(Params_EchoDelayMod, 0.0f, 1.0f, 1.0f, "Echo Mod")
-        .configParam(Params_FilterMix, 0.0f, 1.0f, 0.5f, "Filter Mix")
-        .configParam(Params_ClearBuffer, 0.0f, 1.0f, 0.0f, "Clear Buffer")
-        .configParam(Params_ResetHead, 0.0f, 1.0f, 0.0f, "Reset Playhead");
+        .configNumeric(Params_Size, 0.0f, 1.0f, 0.5f, "Size")
+        .configNumeric(Params_Feedback, 0.0f, 1.0f, 0.5f, "Feedback")
+        .configNumeric(Params_FilterPreset, 0.0f, 1.0f, 0.0f, "Filter Preset")
+        .configNumeric(Params_SizeRange, 0.0f, 1.0f, 0.5f, "Size Range")
+        .configNumeric(Params_Mix, 0.0f, 1.0f, 0.5f, "Mix")
+        .configNumeric(Params_FreezeEcho, 0.0f, 1.0f, 0.0f, "Freeze Echo")
+        .configNumeric(Params_EchoDelayMod, 0.0f, 1.0f, 1.0f, "Echo Mod")
+        .configNumeric(Params_FilterMix, 0.0f, 1.0f, 0.5f, "Filter Mix")
+        .configNumeric(Params_ClearBuffer, 0.0f, 1.0f, 0.0f, "Clear Buffer")
+        .configNumeric(Params_ResetHead, 0.0f, 1.0f, 0.0f, "Reset Playhead");
 
     ConfigExtension<StateExt>();
     if(GetHost().SupportsExtension(CLAP_EXT_TIMER_SUPPORT))

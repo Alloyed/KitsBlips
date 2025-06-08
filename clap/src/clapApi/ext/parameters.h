@@ -4,9 +4,11 @@
 #include <etl/queue_spsc_atomic.h>
 #include <kitdsp/string.h>
 #include <cstdint>
+#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <string_view>
+#include <variant>
 
 #include "clap/events.h"
 #include "clap/ext/params.h"
@@ -17,7 +19,7 @@ template <typename ParamId /* extends clap_id */>
 class ParametersExt : public BaseExt {
    public:
     using Id = ParamId;
-    struct ParameterConfig {
+    struct NumericParam {
         ParamId id;
         double min;
         double max;
@@ -28,6 +30,13 @@ class ParametersExt : public BaseExt {
         double displayMultiplier;
         double displayOffset;
     };
+    struct EnumParam {
+        ParamId id;
+        std::vector<std::string_view> labels;
+        std::string_view name;
+        size_t defaultValue;
+    };
+    using ParameterConfig = std::variant<NumericParam, EnumParam>;
 
     struct ParameterChange {
         ParamId id;
@@ -58,17 +67,28 @@ class ParametersExt : public BaseExt {
           mAudioState(mNumParams, mAudioToMain) {}
 
     /* This intentionally mirrors the configParam method from VCV rack */
-    ParametersExt& configParam(ParamId id,
-                               double min,
-                               double max,
-                               double defaultValue,
-                               const char* name = "",
-                               const char* unit = "",
-                               double displayBase = 0.0f,
-                               double displayMultiplier = 1.0f,
-                               double displayOffset = 0.0f) {
+    ParametersExt& configNumeric(ParamId id,
+                                 double min,
+                                 double max,
+                                 double defaultValue,
+                                 const char* name = "",
+                                 const char* unit = "",
+                                 double displayBase = 0.0f,
+                                 double displayMultiplier = 1.0f,
+                                 double displayOffset = 0.0f) {
         clap_id index = static_cast<clap_id>(id);
-        mParams[index] = {id, min, max, defaultValue, name, unit, displayBase, displayMultiplier, displayOffset};
+        mParams[index] =
+            NumericParam{id, min, max, defaultValue, name, unit, displayBase, displayMultiplier, displayOffset};
+        Set(id, defaultValue);
+        return *this;
+    }
+
+    ParametersExt& configSwitch(ParamId id,
+                                std::vector<std::string_view>&& labels,
+                                size_t defaultValue,
+                                const char* name = "") {
+        clap_id index = static_cast<clap_id>(id);
+        mParams[index] = EnumParam{id, std::move(labels), defaultValue, name};
         Set(id, defaultValue);
         return *this;
     }
@@ -258,14 +278,30 @@ class ParametersExt : public BaseExt {
     static bool _get_info(const clap_plugin_t* plugin, uint32_t index, clap_param_info_t* information) {
         ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
         if (index < self.mParams.size()) {
-            const auto& cfg = self.mParams[index];
-            memset(information, 0, sizeof(clap_param_info_t));
-            information->id = index;
-            information->flags = CLAP_PARAM_IS_AUTOMATABLE;
-            information->min_value = cfg.min;
-            information->max_value = cfg.max;
-            information->default_value = cfg.defaultValue;
-            kitdsp::stringCopy(information->name, cfg.name);
+            std::visit(
+                [information, index](auto&& cfg) {
+                    using T = std::decay_t<decltype(cfg)>;
+                    if constexpr (std::is_same_v<T, NumericParam>) {
+                        memset(information, 0, sizeof(clap_param_info_t));
+                        information->id = index;
+                        information->flags = CLAP_PARAM_IS_AUTOMATABLE;
+                        information->min_value = cfg.min;
+                        information->max_value = cfg.max;
+                        information->default_value = cfg.defaultValue;
+                        kitdsp::stringCopy(information->name, cfg.name);
+                    } else if constexpr (std::is_same_v<T, EnumParam>) {
+                        memset(information, 0, sizeof(clap_param_info_t));
+                        information->id = index;
+                        information->flags = CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_ENUM | CLAP_PARAM_IS_STEPPED;
+                        information->min_value = 0;
+                        information->max_value = cfg.labels.size();
+                        information->default_value = cfg.defaultValue;
+                        kitdsp::stringCopy(information->name, cfg.name);
+                    } else {
+                        static_assert(false, "non-exhaustive visitor!");
+                    }
+                },
+                self.mParams[index]);
             return true;
         }
         return false;
@@ -282,20 +318,57 @@ class ParametersExt : public BaseExt {
         return false;
     }
 
-    static bool _value_to_text(const clap_plugin_t* _plugin,
+    static bool _value_to_text(const clap_plugin_t* plugin,
                                clap_id param_id,
                                double value,
-                               char* display,
-                               uint32_t size) {
-        // uint32_t i = (uint32_t)id;
-        // if (i >= P_COUNT)
-        //     return false;
-        // snprintf(display, size, "%f", value);
+                               char* buf,
+                               uint32_t bufferSize) {
+        ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
+        if (param_id < self.mParams.size()) {
+            std::visit(
+                [&](auto&& cfg) {
+                    using T = std::decay_t<decltype(cfg)>;
+                    if constexpr (std::is_same_v<T, NumericParam>) {
+                        snprintf(buf, bufferSize, "%f%s", (value * cfg.displayMultiplier) + cfg.displayOffset,
+                                 cfg.unit.data());
+                    } else if constexpr (std::is_same_v<T, EnumParam>) {
+                        size_t index = static_cast<size_t>(value);
+                        if (index < cfg.labels.size()) {
+                            snprintf(buf, bufferSize, "%s", cfg.labels[index]);
+                        }
+                    } else {
+                        static_assert(false, "non-exhaustive visitor!");
+                    }
+                },
+                self.mParams[param_id]);
+            return true;
+        }
         return false;
     }
 
-    static bool _text_to_value(const clap_plugin_t* _plugin, clap_id param_id, const char* display, double* value) {
-        // TODO Implement this.
+    static bool _text_to_value(const clap_plugin_t* plugin, clap_id param_id, const char* display, double* out) {
+        ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
+        if (param_id < self.mParams.size()) {
+            std::visit(
+                [&](auto&& cfg) {
+                    using T = std::decay_t<decltype(cfg)>;
+                    if constexpr (std::is_same_v<T, NumericParam>) {
+                        double in = std::strtod(display, nullptr);
+                        *out = (in - cfg.displayOffset) / cfg.displayMultiplier;
+                    } else if constexpr (std::is_same_v<T, EnumParam>) {
+                        for (size_t index = 0; index < cfg.labels.size(); ++index) {
+                            // TODO: trim whitespace, do case-insensitive compare, etc
+                            if (cfg.labels[index] == display) {
+                                *out = static_cast<double>(index);
+                            }
+                        }
+                    } else {
+                        static_assert(false, "non-exhaustive visitor!");
+                    }
+                },
+                self.mParams[param_id]);
+            return true;
+        }
         return false;
     }
 
