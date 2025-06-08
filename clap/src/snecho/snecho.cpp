@@ -5,8 +5,8 @@
 #include "clapApi/ext/state.h"
 #include "clapApi/ext/timerSupport.h"
 #include "descriptor.h"
+#include "gui/imgui.h"
 #include "gui/imguiHelpers.h"
-#include "gui/sdlImgui.h"
 
 using namespace kitdsp;
 
@@ -34,7 +34,7 @@ void Snecho::Config() {
     }
     if(GetHost().SupportsExtension(CLAP_EXT_GUI))
     {
-        ConfigExtension<SdlImguiExt>(GetHost(), SdlImguiConfig{[this](){
+        ConfigExtension<ImGuiExt>(GetHost(), ImGuiConfig{[this](){
                 this->OnGui();
         }});
     }

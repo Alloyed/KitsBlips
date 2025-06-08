@@ -27,7 +27,8 @@ add_library(${PROJECT_NAME}-plugin STATIC
     src/clapApi/basePlugin.cpp
     src/clapApi/pluginHost.cpp
 
-    src/gui/sdlImgui.cpp
+    src/gui/sdlOpenGl.cpp
+    src/gui/imgui.cpp
 
     src/snecho/snecho.cpp
     src/sines/sines.cpp

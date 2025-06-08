@@ -1,21 +1,25 @@
 #pragma once
 
+#include <SDL3/SDL_events.h>
 #include <SDL3/SDL_video.h>
 #include <cstdint>
 #include "clapApi/ext/gui.h"
 
 // Forward declares
 class PluginHost;
-struct ImGuiContext;
 
-struct SdlImguiConfig {
-    std::function<void()> onGui;
-};
-
-class SdlImguiExt : public GuiExt {
+class SdlOpenGlExt : public GuiExt {
    public:
-    SdlImguiExt(PluginHost& host, const SdlImguiConfig config) : mHost(host), mConfig(config) {}
-    ~SdlImguiExt() = default;
+    SdlOpenGlExt(PluginHost& host) : mHost(host) {}
+    ~SdlOpenGlExt() = default;
+    // api
+    virtual bool MakeCurrent() { return SDL_GL_MakeCurrent(mWindow, mCtx); }
+    virtual void OnEvent(const SDL_Event& event) {}
+    virtual void Update() {}
+    virtual void Draw() {}
+
+    // impl
+   public:
     bool IsApiSupported(ClapWindowApi api, bool isFloating) override;
     bool GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) override;
     bool Create(ClapWindowApi api, bool isFloating) override;
@@ -32,18 +36,17 @@ class SdlImguiExt : public GuiExt {
     bool Show() override;
     bool Hide() override;
 
-   private:
+   protected:
     PluginHost& mHost;
-    SdlImguiConfig mConfig;
-    ClapWindowApi mApi;
     SDL_Window* mWindow = nullptr;
     SDL_GLContext mCtx;
-    ImGuiContext* mImgui = nullptr;
 
-    static void AddActiveInstance(SdlImguiExt* instance);
-    static void RemoveActiveInstance(SdlImguiExt* instance);
-    static SdlImguiExt* FindInstanceForWindow(SDL_WindowID window);
+   private:
+    ClapWindowApi mApi;
+    static void AddActiveInstance(SdlOpenGlExt* instance);
+    static void RemoveActiveInstance(SdlOpenGlExt* instance);
+    static SdlOpenGlExt* FindInstanceForWindow(SDL_WindowID window);
     static void UpdateInstances();
-    static std::vector<SdlImguiExt*> sActiveInstances;
+    static std::vector<SdlOpenGlExt*> sActiveInstances;
     static PluginHost::TimerId sUpdateTimerId;
 };

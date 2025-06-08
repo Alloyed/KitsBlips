@@ -1,8 +1,8 @@
 #pragma once
 
-#include "clapApi/ext/parameters.h"
+#include <imgui.h>
 #include <variant>
-#include "imgui.h"
+#include "clapApi/ext/parameters.h"
 
 namespace ImGuiHelpers {
 inline void displayParametersBasic(ParametersExt<clap_id>& params) {

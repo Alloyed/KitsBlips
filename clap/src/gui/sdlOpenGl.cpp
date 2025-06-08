@@ -1,4 +1,4 @@
-#include "sdlImgui.h"
+#include "sdlOpenGl.h"
 
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_events.h>
@@ -15,11 +15,8 @@
 #include "clapApi/ext/gui.h"
 #include "clapApi/pluginHost.h"
 #include "gui/platform/platform.h"
-#include "imgui.h"
-#include "imgui_impl_opengl3.h"
-#include "imgui_impl_sdl3.h"
 
-bool SdlImguiExt::IsApiSupported(ClapWindowApi api, bool isFloating) {
+bool SdlOpenGlExt::IsApiSupported(ClapWindowApi api, bool isFloating) {
     // TODO: lots of apis to support out there
     if (isFloating) {
         // we can get away with using all native SDL
@@ -41,7 +38,7 @@ bool SdlImguiExt::IsApiSupported(ClapWindowApi api, bool isFloating) {
     return false;
 }
 
-bool SdlImguiExt::GetPreferredApi(ClapWindowApi& outApi, bool& outIsFloating) {
+bool SdlOpenGlExt::GetPreferredApi(ClapWindowApi& outApi, bool& outIsFloating) {
     std::string_view platformName = SDL_GetPlatform();
     if (platformName == "Windows") {
         outApi = ClapWindowApi::Win32;
@@ -55,7 +52,7 @@ bool SdlImguiExt::GetPreferredApi(ClapWindowApi& outApi, bool& outIsFloating) {
     return true;
 }
 
-bool SdlImguiExt::Create(ClapWindowApi api, bool isFloating) {
+bool SdlOpenGlExt::Create(ClapWindowApi api, bool isFloating) {
     switch (api) {
         // only one API possible on these platforms
         case Win32:
@@ -79,8 +76,6 @@ bool SdlImguiExt::Create(ClapWindowApi api, bool isFloating) {
         return false;
     }
 
-    // SDL_WindowFlags window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN;
-    // SDL_Window* window = SDL_CreateWindow("", 400, 400, window_flags);
     //  GL 3.0 + GLSL 130
     //  const char* glsl_version = "#version 130";
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
@@ -119,38 +114,23 @@ bool SdlImguiExt::Create(ClapWindowApi api, bool isFloating) {
     mCtx = gl_context;
     SDL_GL_MakeCurrent(mWindow, mCtx);
 
-    // setup imgui
-    IMGUI_CHECKVERSION();
-    mImgui = ImGui::CreateContext();
-    ImGui::SetCurrentContext(mImgui);
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-
-    // Setup Platform/Renderer backends
-    ImGui_ImplSDL3_InitForOpenGL(mWindow, mCtx);
-    ImGui_ImplOpenGL3_Init();
     return true;
 }
 
-void SdlImguiExt::Destroy() {
-    ImGui::SetCurrentContext(mImgui);
-    SDL_GL_MakeCurrent(mWindow, mCtx);
+void SdlOpenGlExt::Destroy() {
+    MakeCurrent();
     RemoveActiveInstance(this);
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL3_Shutdown();
-    ImGui::DestroyContext(mImgui);
     SDL_GL_DestroyContext(mCtx);
     SDL_DestroyWindow(mWindow);
     mWindow = nullptr;
     mCtx = nullptr;
-    mImgui = nullptr;
 
     // pick any valid current engine for later: this works around a bug i don't fully understand in SDL3 itself :x
     // without this block, closing a window when multiple are active causes a crash in the main update loop when we call
     // SDL_GL_MakeCurrent(). maybe a required resource is already destroyed by that point?
     for (auto instance : sActiveInstances) {
         if (instance->mWindow) {
-            SDL_GL_MakeCurrent(instance->mWindow, instance->mCtx);
+            instance->MakeCurrent();
             break;
         }
     }
@@ -158,11 +138,11 @@ void SdlImguiExt::Destroy() {
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
-bool SdlImguiExt::SetScale(double scale) {
+bool SdlOpenGlExt::SetScale(double scale) {
     // unused. should be communicated to ui toolkit
     return true;
 }
-bool SdlImguiExt::GetSize(uint32_t& outWidth, uint32_t& outHeight) {
+bool SdlOpenGlExt::GetSize(uint32_t& outWidth, uint32_t& outHeight) {
     int32_t w;
     int32_t h;
     bool success = SDL_GetWindowSize(mWindow, &w, &h);
@@ -170,11 +150,11 @@ bool SdlImguiExt::GetSize(uint32_t& outWidth, uint32_t& outHeight) {
     outHeight = static_cast<uint32_t>(h);
     return success;
 }
-bool SdlImguiExt::CanResize() {
+bool SdlOpenGlExt::CanResize() {
     SDL_WindowFlags flags = SDL_GetWindowFlags(mWindow);
     return (flags & SDL_WINDOW_RESIZABLE) > 0;
 }
-bool SdlImguiExt::GetResizeHints(clap_gui_resize_hints_t& outResizeHints) {
+bool SdlOpenGlExt::GetResizeHints(clap_gui_resize_hints_t& outResizeHints) {
     // override to force constrained resize
     outResizeHints.can_resize_horizontally = CanResize();
     outResizeHints.can_resize_vertically = CanResize();
@@ -183,26 +163,26 @@ bool SdlImguiExt::GetResizeHints(clap_gui_resize_hints_t& outResizeHints) {
     outResizeHints.aspect_ratio_height = 1;
     return true;
 }
-bool SdlImguiExt::AdjustSize(uint32_t& inOutWidth, uint32_t& inOutHeight) {
+bool SdlOpenGlExt::AdjustSize(uint32_t& inOutWidth, uint32_t& inOutHeight) {
     // apply whatever resize constraint algorithm you'd like to the inOut variables.
     // use ResizeHints to help out the OS.
     // no change means no constraint
     return true;
 }
-bool SdlImguiExt::SetSize(uint32_t width, uint32_t height) {
+bool SdlOpenGlExt::SetSize(uint32_t width, uint32_t height) {
     return SDL_SetWindowSize(mWindow, width, height);
 }
-bool SdlImguiExt::SetParent(WindowHandle handle) {
+bool SdlOpenGlExt::SetParent(WindowHandle handle) {
     return platformGui::setParent(mApi, mWindow, handle);
 }
-bool SdlImguiExt::SetTransient(WindowHandle handle) {
+bool SdlOpenGlExt::SetTransient(WindowHandle handle) {
     return platformGui::setTransient(mApi, mWindow, handle);
 }
-void SdlImguiExt::SuggestTitle(std::string_view title) {
+void SdlOpenGlExt::SuggestTitle(std::string_view title) {
     std::string titleTemp(title);
     SDL_SetWindowTitle(mWindow, titleTemp.c_str());
 }
-bool SdlImguiExt::Show() {
+bool SdlOpenGlExt::Show() {
     if (!SDL_ShowWindow(mWindow)) {
         return false;
     }
@@ -210,7 +190,7 @@ bool SdlImguiExt::Show() {
     AddActiveInstance(this);
     return true;
 }
-bool SdlImguiExt::Hide() {
+bool SdlOpenGlExt::Hide() {
     RemoveActiveInstance(this);
     if (!SDL_HideWindow(mWindow)) {
         return false;
@@ -218,10 +198,10 @@ bool SdlImguiExt::Hide() {
     return true;
 }
 
-PluginHost::TimerId SdlImguiExt::sUpdateTimerId = 0;
-std::vector<SdlImguiExt*> SdlImguiExt::sActiveInstances = {};
+PluginHost::TimerId SdlOpenGlExt::sUpdateTimerId = 0;
+std::vector<SdlOpenGlExt*> SdlOpenGlExt::sActiveInstances = {};
 
-void SdlImguiExt::AddActiveInstance(SdlImguiExt* instance) {
+void SdlOpenGlExt::AddActiveInstance(SdlOpenGlExt* instance) {
     bool wasEmpty = sActiveInstances.empty();
     if (std::find(sActiveInstances.begin(), sActiveInstances.end(), instance) == sActiveInstances.end()) {
         sActiveInstances.push_back(instance);
@@ -236,7 +216,7 @@ void SdlImguiExt::AddActiveInstance(SdlImguiExt* instance) {
     }
 }
 
-void SdlImguiExt::RemoveActiveInstance(SdlImguiExt* instance) {
+void SdlOpenGlExt::RemoveActiveInstance(SdlOpenGlExt* instance) {
     bool wasEmpty = sActiveInstances.empty();
     const auto iter = std::find(sActiveInstances.begin(), sActiveInstances.end(), instance);
     if (iter != sActiveInstances.end()) {
@@ -250,8 +230,8 @@ void SdlImguiExt::RemoveActiveInstance(SdlImguiExt* instance) {
     }
 }
 
-SdlImguiExt* SdlImguiExt::FindInstanceForWindow(SDL_WindowID window) {
-    for (SdlImguiExt* instance : sActiveInstances) {
+SdlOpenGlExt* SdlOpenGlExt::FindInstanceForWindow(SDL_WindowID window) {
+    for (SdlOpenGlExt* instance : sActiveInstances) {
         if (SDL_GetWindowID(instance->mWindow) == window) {
             return instance;
         }
@@ -259,7 +239,7 @@ SdlImguiExt* SdlImguiExt::FindInstanceForWindow(SDL_WindowID window) {
     return nullptr;
 }
 
-void SdlImguiExt::UpdateInstances() {
+void SdlOpenGlExt::UpdateInstances() {
     printf("UpdateInstances\n");
     static SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -268,7 +248,7 @@ void SdlImguiExt::UpdateInstances() {
                 goto skip_event;
             }
             case SDL_EVENT_QUIT: {
-                SdlImguiExt* instance = sActiveInstances.front();
+                SdlOpenGlExt* instance = sActiveInstances.front();
                 if (instance) {
                     const clap_host_t* rawHost;
                     const clap_host_gui_t* rawHostGui;
@@ -277,7 +257,7 @@ void SdlImguiExt::UpdateInstances() {
                 }
             }
             case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
-                SdlImguiExt* instance = FindInstanceForWindow(event.window.windowID);
+                SdlOpenGlExt* instance = FindInstanceForWindow(event.window.windowID);
                 if (instance) {
                     const clap_host_t* rawHost;
                     const clap_host_gui_t* rawHostGui;
@@ -287,12 +267,8 @@ void SdlImguiExt::UpdateInstances() {
             }
         }
         for (auto instance : sActiveInstances) {
-            if (!instance->mImgui) {
-                continue;
-            }
-            ImGui::SetCurrentContext(instance->mImgui);
-            SDL_GL_MakeCurrent(instance->mWindow, instance->mCtx);
-            ImGui_ImplSDL3_ProcessEvent(&event);  // Forward your event to backend
+            instance->MakeCurrent();
+            instance->OnEvent(event);
         }
     skip_event:
         continue;
@@ -300,27 +276,18 @@ void SdlImguiExt::UpdateInstances() {
 
     // new frame
     for (auto instance : sActiveInstances) {
-        if (!instance->mImgui) {
+        if (!instance->MakeCurrent()) {
+            SDL_Log("SDL_GL_MakeCurrent(): %s", SDL_GetError());
             continue;
         }
-        ImGui::SetCurrentContext(instance->mImgui);
-        if (!SDL_GL_MakeCurrent(instance->mWindow, instance->mCtx)) {
-            SDL_Log("SDL_GL_MakeCurrent(): %s", SDL_GetError());
-        }
-        ImGuiIO& io = ImGui::GetIO();
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-        ImGui::NewFrame();
+        instance->Update();
 
-        // app code
-        instance->mConfig.onGui();
-        // end app code
-
-        ImGui::Render();
-        glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+        uint32_t width, height;
+        instance->GetSize(width, height);
+        glViewport(0, 0, width, height);
         glClearColor(0, 1.0f, 0, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        instance->Draw();
         SDL_GL_SwapWindow(instance->mWindow);
     }
 }
