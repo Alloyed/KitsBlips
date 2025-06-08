@@ -3,6 +3,7 @@
 #include <clap/clap.h>
 #include <cstdint>
 
+#include "clap/ext/timer-support.h"
 #include "clapeze/basePlugin.h"
 
 enum ClapWindowApi { _None = 0, X11, Wayland, Win32, Cocoa };
@@ -72,6 +73,16 @@ class GuiExt : public BaseExt {
             &_set_parent,       &_set_transient,     &_suggest_title,    &_show,        &_hide,
         };
         return static_cast<const void*>(&value);
+    }
+
+    const bool Validate(const BasePlugin& plugin) const override {
+#ifdef __linux
+        if (plugin.TryGetExtension(CLAP_EXT_TIMER_SUPPORT) == nullptr) {
+            plugin.GetHost().Log(LogSeverity::Fatal, "Gui on linux requires CLAP_EXT_TIMER_SUPPORT");
+            return false;
+        }
+#endif
+        return true;
     }
 
    private:

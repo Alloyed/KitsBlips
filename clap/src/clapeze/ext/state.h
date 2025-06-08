@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstdio>
 
+#include "clap/ext/params.h"
 #include "clapeze/basePlugin.h"
 #include "clapeze/ext/parameters.h"
 
@@ -21,10 +22,17 @@ class StateExt : public BaseExt {
         return static_cast<const void*>(&value);
     }
 
+    const bool Validate(const BasePlugin& plugin) const override {
+        if (plugin.TryGetExtension(CLAP_EXT_PARAMS) == nullptr) {
+            plugin.GetHost().Log(LogSeverity::Fatal, "Missing implementation of CLAP_EXT_PARAMS, does this plugin need parameters?");
+            return false;
+        }
+        return true;
+    }
+
    private:
-    using PARAMS = ParametersExt<clap_id>;
     static bool _save(const clap_plugin_t* plugin, const clap_ostream_t* out) {
-        PARAMS& params = PARAMS::GetFromPluginObject<PARAMS>(plugin);
+        BaseParamsExt& params = BaseParamsExt::GetFromPluginObject<BaseParamsExt>(plugin);
 
         params.FlushFromAudio();  // empty queue to ensure newest changes
 
@@ -39,7 +47,7 @@ class StateExt : public BaseExt {
     }
 
     static bool _load(const clap_plugin_t* plugin, const clap_istream_t* in) {
-        PARAMS& params = PARAMS::GetFromPluginObject<PARAMS>(plugin);
+        BaseParamsExt& params = BaseParamsExt::GetFromPluginObject<BaseParamsExt>(plugin);
 
         params.FlushFromAudio();  // empty queue so changes apply on top
 

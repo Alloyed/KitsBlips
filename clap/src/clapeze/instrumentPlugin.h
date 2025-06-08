@@ -7,32 +7,20 @@
 
 #include "clapeze/ext/audioPorts.h"
 #include "clapeze/ext/notePorts.h"
+#include "clapeze/ext/parameters.h"
+#include "clapeze/ext/state.h"
+#include "clapeze/ext/timerSupport.h"
+#include "clapeze/gui/imguiExt.h"
+#include "clapeze/gui/imguiHelpers.h"
 
-/* pre-configured for simple stereo instruments */
-template <typename PARAMS>
-class InstrumentPlugin : public BasePlugin {
+template <typename ParamsType>
+class InstrumentProcessor : public BaseProcessor {
    public:
-    // API
-    InstrumentPlugin(PluginHost& host) : BasePlugin(host) {}
-    ~InstrumentPlugin() = default;
-    virtual void ProcessAudio(StereoAudioBuffer& out, typename PARAMS::AudioParameters& params) = 0;
-    virtual void ProcessNoteOn(const NoteTuple& note, float velocity) = 0;
-    virtual void ProcessNoteOff(const NoteTuple& note) = 0;
-    virtual void ProcessNoteChoke(const NoteTuple& note) = 0;
-    virtual void ProcessNoteExpression(const NoteTuple& note, clap_note_expression expression, float value) {};
+    InstrumentProcessor(ParamsType& params) : BaseProcessor(), mParams(params) {}
+    ~InstrumentProcessor() = default;
 
-    // impl
-    virtual void Config() override {
-        ConfigExtension<NotePortsExt<1, 0>>();
-        ConfigExtension<StereoAudioPortsExt<0, 1>>();
-    }
-    void ProcessFlush(const clap_process_t& process) final {
-        PARAMS& params = PARAMS::template GetFromPlugin<PARAMS>(*this);
-        params.ProcessFlushFromMain(*this, nullptr, process.out_events);
-    }
     void ProcessEvent(const clap_event_header_t& event) final {
-        PARAMS& params = PARAMS::template GetFromPlugin<PARAMS>(*this);
-        if (params.ProcessEvent(event)) {
+        if (mParams.ProcessEvent(event)) {
             return;
         }
 
@@ -63,9 +51,22 @@ class InstrumentPlugin : public BasePlugin {
             }
         }
     }
+
+   protected:
+    // API
+    virtual void ProcessAudio(StereoAudioBuffer& out) = 0;
+    virtual void ProcessNoteOn(const NoteTuple& note, float velocity) = 0;
+    virtual void ProcessNoteOff(const NoteTuple& note) = 0;
+    virtual void ProcessNoteChoke(const NoteTuple& note) = 0;
+    virtual void ProcessNoteExpression(const NoteTuple& note, clap_note_expression expression, float value) {};
+
+    // impl
+    void ProcessFlush(const clap_process_t& process) final {
+        mParams.ProcessFlushFromMain(*this, nullptr, process.out_events);
+    }
     void ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) final {
-        typename PARAMS::AudioParameters& params =
-            PARAMS::template GetFromPlugin<PARAMS>(*this).GetStateForAudioThread();
+        // BaseParamsExt::AudioParameters& params =
+        // BaseParamsExt::GetFromPlugin<BaseParamsExt>(*this).GetStateForAudioThread();
         size_t numSamples = rangeStop - rangeStart;
         StereoAudioBuffer out{
             // outLeft
@@ -78,6 +79,29 @@ class InstrumentPlugin : public BasePlugin {
             false,
         };
         // process audio from this frame
-        ProcessAudio(out, params);
+        ProcessAudio(out);
+    }
+    ParamsType& mParams;
+};
+
+/* pre-configured for simple stereo instruments */
+class InstrumentPlugin : public BasePlugin {
+   public:
+    InstrumentPlugin(PluginHost& host) : BasePlugin(host) {}
+    ~InstrumentPlugin() = default;
+
+   protected:
+    // impl
+    virtual void OnGui() {
+        // Basic OnGui implementation. override as desired.
+        BaseParamsExt& params = BaseParamsExt::GetFromPlugin<BaseParamsExt>(*this);
+        ImGuiHelpers::displayParametersBasic(params);
+    };
+    virtual void Config() override {
+        ConfigExtension<NotePortsExt<1, 0>>();
+        ConfigExtension<StereoAudioPortsExt<0, 1>>();
+        ConfigExtension<StateExt>();
+        TryConfigExtension<TimerSupportExt>(GetHost());
+        TryConfigExtension<ImGuiExt>(GetHost(), ImGuiConfig{[this]() { this->OnGui(); }});
     }
 };

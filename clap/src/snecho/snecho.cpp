@@ -1,11 +1,6 @@
 #include "snecho/snecho.h"
 
-#include "clap/ext/timer-support.h"
 #include "clapeze/ext/parameters.h"
-#include "clapeze/ext/state.h"
-#include "clapeze/ext/timerSupport.h"
-#include "clapeze/gui/imguiExt.h"
-#include "clapeze/gui/imguiHelpers.h"
 #include "descriptor.h"
 
 using namespace kitdsp;
@@ -16,7 +11,8 @@ const PluginEntry Snecho::Entry{
 
 void Snecho::Config() {
     EffectPlugin::Config();
-    ConfigExtension<SnechoParamsExt>(GetHost(), SnechoParams::Count)
+
+    SnechoParamsExt& params = ConfigExtension<SnechoParamsExt>(GetHost(), SnechoParams::Count)
         .configNumeric(SnechoParams::Size, 0.0f, 1.0f, 0.5f, "Size")
         .configNumeric(SnechoParams::Feedback, 0.0f, 1.0f, 0.5f, "Feedback")
         .configNumeric(SnechoParams::FilterPreset, 0.0f, 1.0f, 0.0f, "Filter Preset")
@@ -28,37 +24,25 @@ void Snecho::Config() {
         .configNumeric(SnechoParams::ClearBuffer, 0.0f, 1.0f, 0.0f, "Clear Buffer")
         .configNumeric(SnechoParams::ResetHead, 0.0f, 1.0f, 0.0f, "Reset Playhead");
 
-    ConfigExtension<StateExt>();
-    if (GetHost().SupportsExtension(CLAP_EXT_TIMER_SUPPORT)) {
-        ConfigExtension<TimerSupportExt>(GetHost());
-    }
-    if (GetHost().SupportsExtension(CLAP_EXT_GUI)) {
-        ConfigExtension<ImGuiExt>(GetHost(), ImGuiConfig{[this]() { this->OnGui(); }});
-    }
+    ConfigProcessor<SnechoProcessor>(params.GetStateForAudioThread());
 }
 
-void Snecho::OnGui() {
-    BaseParamsExt& params = BaseParamsExt::GetFromPlugin<BaseParamsExt>(*this);
-    ImGuiHelpers::displayParametersBasic(params);
-}
-
-void Snecho::ProcessAudio(const StereoAudioBuffer& in,
-                          StereoAudioBuffer& out,
-                          SnechoParamsExt::AudioParameters& params) {
+void SnechoProcessor::ProcessAudio(const StereoAudioBuffer& in,
+                          StereoAudioBuffer& out) {
     // inputs
     // core
-    snes1.cfg.echoBufferSize = params.Get(SnechoParams::Size);
+    snes1.cfg.echoBufferSize = mParams.Get(SnechoParams::Size);
 
-    snes1.cfg.echoFeedback = params.Get(SnechoParams::Feedback);
+    snes1.cfg.echoFeedback = mParams.Get(SnechoParams::Feedback);
 
-    size_t filterPreset = static_cast<size_t>(params.Get(SnechoParams::FilterPreset) * SNES::kNumFilterPresets);
+    size_t filterPreset = static_cast<size_t>(mParams.Get(SnechoParams::FilterPreset) * SNES::kNumFilterPresets);
     if (filterPreset != mLastFilterPreset) {
         mLastFilterPreset = filterPreset;
         memcpy(snes1.cfg.filterCoefficients, SNES::kFilterPresets[filterPreset].data, SNES::kFIRTaps);
         // snes1.cfg.filterGain = dbToRatio(-SNES::kFilterPresets[filterPreset].maxGainDb);
     }
 
-    size_t range = round(params.Get(SnechoParams::SizeRange));
+    size_t range = round(mParams.Get(SnechoParams::SizeRange));
     if (range == 0) {
         snes1.cfg.echoBufferRangeMaxSamples = SNES::kOriginalMaxEchoSamples;
     } else if (range == 1) {
@@ -67,17 +51,17 @@ void Snecho::ProcessAudio(const StereoAudioBuffer& in,
         snes1.cfg.echoBufferRangeMaxSamples = SNES::MsToSamples(10000.0f);
     }
 
-    float wetDryMix = params.Get(SnechoParams::Mix);
+    float wetDryMix = mParams.Get(SnechoParams::Mix);
 
-    snes1.cfg.freezeEcho = (params.Get(SnechoParams::FreezeEcho)) > 0.5f;
+    snes1.cfg.freezeEcho = (mParams.Get(SnechoParams::FreezeEcho)) > 0.5f;
 
     // extension
-    snes1.cfg.echoDelayMod = params.Get(SnechoParams::EchoDelayMod);
+    snes1.cfg.echoDelayMod = mParams.Get(SnechoParams::EchoDelayMod);
 
-    snes1.cfg.filterMix = params.Get(SnechoParams::FilterMix);
+    snes1.cfg.filterMix = mParams.Get(SnechoParams::FilterMix);
 
-    snes1.mod.clearBuffer = params.Get(SnechoParams::ClearBuffer) > 0.5f;
-    snes1.mod.resetHead = params.Get(SnechoParams::ResetHead) > 0.5f;
+    snes1.mod.clearBuffer = mParams.Get(SnechoParams::ClearBuffer) > 0.5f;
+    snes1.mod.resetHead = mParams.Get(SnechoParams::ResetHead) > 0.5f;
     snes1.cfg.echoBufferIncrementSamples = SNES::kOriginalEchoIncrementSamples;
 
     // processing
@@ -92,11 +76,10 @@ void Snecho::ProcessAudio(const StereoAudioBuffer& in,
     }
 }
 
-bool Snecho::Activate(double sampleRate, uint32_t minFramesCount, uint32_t maxFramesCount) {
-    snesSampler = {SNES::kOriginalSampleRate, static_cast<float>(sampleRate)};
-    return true;
+void SnechoProcessor::ProcessReset() {
+    snes1.Reset();
 }
 
-void Snecho::Reset() {
-    snes1.Reset();
+void SnechoProcessor::Activate(double sampleRate, size_t _minBlockSize, size_t _maxBlockSize) {
+    snesSampler = {SNES::kOriginalSampleRate, static_cast<float>(sampleRate)};
 }

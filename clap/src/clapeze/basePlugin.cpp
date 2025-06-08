@@ -1,6 +1,7 @@
 #include "clapeze/basePlugin.h"
 
 #include <cassert>
+#include "clapeze/pluginHost.h"
 
 BaseExt* BasePlugin::TryGetExtension(const char* name) {
     if (auto search = mExtensions.find(name); search != mExtensions.end()) {
@@ -9,14 +10,58 @@ BaseExt* BasePlugin::TryGetExtension(const char* name) {
         return nullptr;
     }
 }
-
-double BasePlugin::GetSampleRate() const {
-    return mSampleRate;
+const BaseExt* BasePlugin::TryGetExtension(const char* name) const {
+    if (auto search = mExtensions.find(name); search != mExtensions.end()) {
+        return search->second.get();
+    } else {
+        return nullptr;
+    }
 }
 
 PluginHost& BasePlugin::GetHost() {
     return mHost;
 }
+const PluginHost& BasePlugin::GetHost() const {
+    return mHost;
+}
+
+bool BasePlugin::Init() {
+    Config();
+    return ValidateConfig();
+}
+
+bool BasePlugin::ValidateConfig() {
+    if(mProcessor == nullptr)
+    {
+        mHost.Log(LogSeverity::Fatal, "mProcessor is null. did you forget to call ConfigProcessor() in your Config method?");
+        return false;
+    }
+    for(const auto& [_, extension] : mExtensions) {
+        if(!extension->Validate(*this))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool BasePlugin::Activate(double sampleRate, uint32_t minBlockSize, uint32_t maxBlockSize) {
+    mProcessor->mSampleRate = sampleRate;
+    mProcessor->mMinBlockSize = minBlockSize;
+    mProcessor->mMaxBlockSize = maxBlockSize;
+    mProcessor->Activate(sampleRate, minBlockSize, maxBlockSize);
+    return true;
+}
+void BasePlugin::Deactivate() {
+    mProcessor->Deactivate();
+}
+void BasePlugin::Reset() {
+    mProcessor->ProcessReset();
+}
+BaseProcessor& BasePlugin::GetProcessor() const {
+    return *mProcessor.get();
+}
+void BasePlugin::OnMainThread() {}
 
 bool BasePlugin::_init(const clap_plugin* plugin) {
     BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
@@ -33,7 +78,6 @@ bool BasePlugin::_activate(const clap_plugin* plugin,
                            uint32_t minFramesCount,
                            uint32_t maxFramesCount) {
     BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
-    self.mSampleRate = sampleRate;
     return self.Activate(sampleRate, minFramesCount, maxFramesCount);
 }
 
@@ -55,13 +99,14 @@ void BasePlugin::_reset(const clap_plugin* plugin) {
 
 clap_process_status BasePlugin::_process(const clap_plugin* plugin, const clap_process_t* process) {
     BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
+    BaseProcessor& processor = *self.mProcessor.get();
 
     const uint32_t frameCount = process->frames_count;
     const uint32_t inputEventCount = process->in_events->size(process->in_events);
     uint32_t eventIndex = 0;
     uint32_t nextEventFrame = inputEventCount ? 0 : frameCount;
 
-    self.ProcessFlush(*process);
+    processor.ProcessFlush(*process);
 
     for (uint32_t frameIndex = 0; frameIndex < frameCount;) {
         // process events that occurred this frame
@@ -72,7 +117,7 @@ clap_process_status BasePlugin::_process(const clap_plugin* plugin, const clap_p
                 break;
             }
 
-            self.ProcessEvent(*event);
+            processor.ProcessEvent(*event);
             eventIndex++;
 
             if (eventIndex == inputEventCount) {
@@ -83,7 +128,7 @@ clap_process_status BasePlugin::_process(const clap_plugin* plugin, const clap_p
         size_t rangeStart = frameIndex;
         size_t rangeStop = nextEventFrame;
         // process audio from this frame
-        self.ProcessAudio(*process, rangeStart, rangeStop);
+        processor.ProcessAudio(*process, rangeStart, rangeStop);
         frameIndex = nextEventFrame;
     }
 

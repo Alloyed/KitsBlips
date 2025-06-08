@@ -7,7 +7,7 @@
 
 class TimerSupportExt : public BaseExt {
    public:
-    TimerSupportExt(PluginHost& host) : BaseExt() { assert(host.SupportsExtension(CLAP_EXT_TIMER_SUPPORT)); }
+    TimerSupportExt(PluginHost& host) : BaseExt() {}
     static constexpr auto NAME = CLAP_EXT_TIMER_SUPPORT;
     const char* Name() const override { return NAME; }
 
@@ -17,7 +17,7 @@ class TimerSupportExt : public BaseExt {
         };
         return static_cast<const void*>(&value);
     }
-
+    
    private:
     static void _on_timer(const clap_plugin_t* plugin, clap_id timerId) {
         BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);

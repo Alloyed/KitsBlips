@@ -23,23 +23,30 @@ enum class SnechoParams : clap_id {
 };
 using SnechoParamsExt = ParametersExt<SnechoParams>;
 
-class Snecho : public EffectPlugin<SnechoParamsExt> {
+class SnechoProcessor : public EffectProcessor<SnechoParamsExt::ProcessParameters> {
    public:
-    static const PluginEntry Entry;
-    Snecho(PluginHost& host) : EffectPlugin(host) {}
-    ~Snecho() = default;
-    void Config() override;
+    SnechoProcessor(SnechoParamsExt::ProcessParameters& params) : EffectProcessor(params) {}
+    ~SnechoProcessor() = default;
+
     void ProcessAudio(const StereoAudioBuffer& in,
-                      StereoAudioBuffer& out,
-                      SnechoParamsExt::AudioParameters& params) override;
-    bool Activate(double sampleRate, uint32_t minFramesCount, uint32_t maxFramesCount) override;
-    void Reset() override;
+                      StereoAudioBuffer& out) override;
+    void ProcessReset() override;
+    void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) override;
 
    private:
-    void OnGui();
     static constexpr size_t snesBufferSize = 7680UL * 10000;
     int16_t snesBuffer1[snesBufferSize];
     size_t mLastFilterPreset;
     kitdsp::SNES::Echo snes1{snesBuffer1, snesBufferSize};
     kitdsp::Resampler<float> snesSampler{kitdsp::SNES::kOriginalSampleRate, 41000};
+};
+
+class Snecho : public EffectPlugin {
+   public:
+    static const PluginEntry Entry;
+    Snecho(PluginHost& host) : EffectPlugin(host) {}
+    ~Snecho() = default;
+
+   protected:
+    void Config() override;
 };

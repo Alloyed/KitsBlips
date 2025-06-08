@@ -2,6 +2,7 @@
 
 #include <clap/clap.h>
 #include <cassert>
+#include <cstddef>
 #include <cstdio>
 #include <memory>
 #include <unordered_map>
@@ -11,11 +12,13 @@
 class BasePlugin;
 
 class BaseExt {
+    friend class BasePlugin;
     /* abstract interface */
    public:
     virtual ~BaseExt() = default;
     virtual const char* Name() const = 0;
     virtual const void* Extension() const = 0;
+    virtual const bool Validate(const BasePlugin& plugin) const { return true; }
 
     template <typename ExtType = BaseExt>
     static ExtType& GetFromPlugin(BasePlugin& plugin);
@@ -25,6 +28,67 @@ class BaseExt {
     static ExtType& GetFromPluginObject(const clap_plugin_t* plugin);
 };
 
+class BaseProcessor {
+    friend class BasePlugin;
+
+   public:
+    BaseProcessor() {}
+    virtual ~BaseProcessor() = default;
+
+    /**
+     * Called when the plugin is first activated. This is a good place to allocate resources, and do any state setup
+     * before the main thread can no longer communicate with the processor directly.
+     *
+     * [main-thread & !active]
+     */
+    virtual void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) {};
+    /**
+     * Called when the plugin is deactivated.
+     *
+     * [main-thread & active]
+     */
+    virtual void Deactivate() {};
+    /**
+     * Override to handle discrete events coming from the host.
+     *
+     * [audio-thread & active & processing]
+     */
+    virtual void ProcessEvent(const clap_event_header_t& event) = 0;
+    /**
+     * Override to process an audio block. the block size can be anything below GetMaxBlockSize(). This is to support
+     * sample-accurate timing for events.
+     *
+     * [audio-thread & active & processing]
+     */
+    virtual void ProcessAudio(const clap_process_t& process, size_t blockStart, size_t blockStop) = 0;
+    /**
+     * Override to communicate with the main thread. Called once per process.
+     *
+     * [audio-thread & active & processing]
+     */
+    virtual void ProcessFlush(const clap_process_t& process) = 0;
+    /**
+     * Override to reset internal state. you should kill all playing voices, clear all buffers, reset oscillator phases,
+     * etc.
+     *
+     * [audio-thread & active]
+     */
+    virtual void ProcessReset() {};
+
+   protected:
+    /**
+     * Returns the sample rate in hz
+     */
+    double GetSampleRate() const { return mSampleRate; }
+    size_t GetMaxBlockSize() const { return mMinBlockSize; }
+    size_t GetMinBlockSize() const { return mMaxBlockSize; }
+
+   private:
+    double mSampleRate;
+    size_t mMinBlockSize;
+    size_t mMaxBlockSize;
+};
+
 struct PluginEntry {
     clap_plugin_descriptor_t meta;
     BasePlugin* (*factory)(PluginHost& host);
@@ -32,27 +96,30 @@ struct PluginEntry {
 
 /* Override to create a new plugin */
 class BasePlugin {
-    /* abstract interface */
    public:
     BasePlugin(PluginHost& host) : mHost(host) {}
     virtual ~BasePlugin() = default;
+
+   protected:
     // required
     virtual void Config() = 0;
-    virtual void ProcessFlush(const clap_process_t& process) = 0;
-    virtual void ProcessEvent(const clap_event_header_t& event) = 0;
-    virtual void ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) = 0;
     // optional
-    virtual bool Init() { Config(); return true; }
-    virtual bool Activate(double sampleRate, uint32_t minFramesCount, uint32_t maxFramesCount) { return true; }
-    virtual void Deactivate() {}
-    virtual void Reset() {}
-    virtual void OnMainThread() {}
+    virtual bool Init();
+    virtual bool Activate(double sampleRate, uint32_t minBlockSize, uint32_t maxBlockSize);
+    virtual void Deactivate();
+    virtual void Reset();
+    virtual void OnMainThread();
+    virtual bool ValidateConfig();
 
     /* implementation methods */
-   protected:
-    // TODO: concepts
     template <class BaseExtT, class... Args>
     BaseExtT& ConfigExtension(Args&&... args);
+
+    template <class BaseExtT, class... Args>
+    BaseExtT* TryConfigExtension(Args&&... args);
+
+    template <class BaseProcessorT, class... Args>
+    BaseProcessorT& ConfigProcessor(Args&&... args);
 
     /* helpers */
    public:
@@ -62,15 +129,17 @@ class BasePlugin {
     static PluginType& GetFromPluginObject(const clap_plugin_t* plugin);
 
     BaseExt* TryGetExtension(const char* name);
+    const BaseExt* TryGetExtension(const char* name) const;
+    BaseProcessor& GetProcessor() const;
     PluginHost& GetHost();
-    double GetSampleRate() const;
+    const PluginHost& GetHost() const;
 
     /* internal implementation*/
    private:
     std::unique_ptr<clap_plugin_t> mPlugin;
     std::unordered_map<std::string, std::unique_ptr<BaseExt>> mExtensions;
     PluginHost& mHost;
-    double mSampleRate;
+    std::unique_ptr<BaseProcessor> mProcessor;
 
     static bool _init(const clap_plugin* plugin);
     static void _destroy(const clap_plugin* plugin);
@@ -95,6 +164,20 @@ ExtType& BasePlugin::ConfigExtension(Args&&... args) {
     ExtType* out = ptr.get();
     mExtensions.emplace(name, std::move(ptr));
     return *out;
+}
+
+template <typename ExtType, typename... Args>
+ExtType* BasePlugin::TryConfigExtension(Args&&... args) {
+    if(GetHost().SupportsExtension(ExtType::NAME)) {
+        return &ConfigExtension<ExtType>(std::forward<Args> (args)...);
+    }
+    return nullptr;
+}
+
+template <typename ProcessorType, typename... Args>
+ProcessorType& BasePlugin::ConfigProcessor(Args&&... args) {
+    mProcessor = std::make_unique<ProcessorType>(std::forward<Args>(args)...);
+    return static_cast<ProcessorType&>(*mProcessor);
 }
 
 template <typename PluginType>
