@@ -14,8 +14,8 @@ namespace PluginFactory {
 
 // Add your plugin here!
 const std::vector<PluginEntry> plugins{
-    Snecho::Entry,
-    Sines::Entry,
+    snecho::Entry,
+    sines::Entry,
 };
 
 uint32_t get_plugin_count(const clap_plugin_factory* factory) {
