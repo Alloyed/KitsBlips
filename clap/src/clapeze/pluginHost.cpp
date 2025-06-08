@@ -14,6 +14,11 @@ PluginHost::PluginHost(const clap_host_t* host)
       mGui(static_cast<const clap_host_gui_t*>(host->get_extension(host, CLAP_EXT_GUI))) {
 }
 
+bool PluginHost::SupportsExtension(const char* extensionName) const {
+    const void* ext = mHost->get_extension(mHost, extensionName);
+    return ext != nullptr;
+}
+
 bool PluginHost::IsMainThread() const {
     return mThreadCheck && mThreadCheck->is_main_thread(mHost);
 }

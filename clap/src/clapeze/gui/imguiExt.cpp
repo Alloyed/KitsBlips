@@ -1,7 +1,7 @@
-#include "clapeze/gui/imgui.h"
+#include "clapeze/gui/imguiExt.h"
 
 #include "clapeze/ext/gui.h"
-#include "clapeze/gui/sdlOpenGl.h"
+#include "clapeze/gui/sdlOpenGlExt.h"
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl3.h"

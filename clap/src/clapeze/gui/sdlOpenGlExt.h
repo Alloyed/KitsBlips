@@ -1,9 +1,12 @@
 #pragma once
 
+#include "clapeze/ext/gui.h"
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_video.h>
 #include <cstdint>
-#include "clapeze/ext/gui.h"
+#include <sstream>
+
+#define CLAPEZE_LOG_SDL_ERROR(instance) do{ std::stringstream buf; buf << __FILE__ <<": "<<__LINE__<<": "<<SDL_GetError(); instance->mHost.Log(LogSeverity::Error, buf.str()); }while(0)
 
 // Forward declares
 class PluginHost;
@@ -13,7 +16,7 @@ class SdlOpenGlExt : public GuiExt {
     SdlOpenGlExt(PluginHost& host) : mHost(host) {}
     ~SdlOpenGlExt() = default;
     // api
-    virtual bool MakeCurrent() { return SDL_GL_MakeCurrent(mWindow, mCtx); }
+    [[nodiscard]] virtual bool MakeCurrent(); 
     virtual void OnEvent(const SDL_Event& event) {}
     virtual void Update() {}
     virtual void Draw() {}

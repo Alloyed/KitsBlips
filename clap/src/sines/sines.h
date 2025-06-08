@@ -21,6 +21,7 @@ class Sines : public InstrumentPlugin<SinesParamsExt> {
     void Reset() override;
 
    private:
+    void OnGui();
     kitdsp::naive::TriangleOscillator mOsc{};
     float mAmplitude{};
     float mTargetAmplitude{};

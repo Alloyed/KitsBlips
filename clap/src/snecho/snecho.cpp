@@ -4,7 +4,7 @@
 #include "clapeze/ext/parameters.h"
 #include "clapeze/ext/state.h"
 #include "clapeze/ext/timerSupport.h"
-#include "clapeze/gui/imgui.h"
+#include "clapeze/gui/imguiExt.h"
 #include "clapeze/gui/imguiHelpers.h"
 #include "descriptor.h"
 
@@ -32,11 +32,8 @@ void Snecho::Config() {
     if (GetHost().SupportsExtension(CLAP_EXT_TIMER_SUPPORT)) {
         ConfigExtension<TimerSupportExt>(GetHost());
     }
-    if(GetHost().SupportsExtension(CLAP_EXT_GUI))
-    {
-        ConfigExtension<ImGuiExt>(GetHost(), ImGuiConfig{[this](){
-                this->OnGui();
-        }});
+    if (GetHost().SupportsExtension(CLAP_EXT_GUI)) {
+        ConfigExtension<ImGuiExt>(GetHost(), ImGuiConfig{[this]() { this->OnGui(); }});
     }
 }
 

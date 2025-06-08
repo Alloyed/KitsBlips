@@ -26,8 +26,8 @@ add_library(${PROJECT_NAME}-plugin STATIC
 
     src/clapeze/basePlugin.cpp
     src/clapeze/pluginHost.cpp
-    src/clapeze/gui/sdlOpenGl.cpp
-    src/clapeze/gui/imgui.cpp
+    src/clapeze/gui/sdlOpenGlExt.cpp
+    src/clapeze/gui/imguiExt.cpp
 
     src/snecho/snecho.cpp
     src/sines/sines.cpp

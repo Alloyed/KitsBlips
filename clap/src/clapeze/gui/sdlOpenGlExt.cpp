@@ -1,4 +1,4 @@
-#include "sdlOpenGl.h"
+#include "clapeze/gui/sdlOpenGlExt.h"
 
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_events.h>
@@ -15,6 +15,10 @@
 #include "clapeze/ext/gui.h"
 #include "clapeze/pluginHost.h"
 #include "clapeze/gui/platform/platform.h"
+
+bool SdlOpenGlExt::MakeCurrent() {
+    return SDL_GL_MakeCurrent(mWindow, mCtx);
+}
 
 bool SdlOpenGlExt::IsApiSupported(ClapWindowApi api, bool isFloating) {
     // TODO: lots of apis to support out there
@@ -72,7 +76,7 @@ bool SdlOpenGlExt::Create(ClapWindowApi api, bool isFloating) {
 
     mApi = api;
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) {
-        SDL_Log("Error: SDL_InitSubSystem(): %s", SDL_GetError());
+        CLAPEZE_LOG_SDL_ERROR(this);
         return false;
     }
 
@@ -88,7 +92,7 @@ bool SdlOpenGlExt::Create(ClapWindowApi api, bool isFloating) {
 
     SDL_PropertiesID createProps = SDL_CreateProperties();
     if (createProps == 0) {
-        SDL_Log("Error: SDL_CreateProperties(): %s", SDL_GetError());
+        CLAPEZE_LOG_SDL_ERROR(this);
         return false;
     }
 
@@ -101,14 +105,14 @@ bool SdlOpenGlExt::Create(ClapWindowApi api, bool isFloating) {
     SDL_DestroyProperties(createProps);
 
     if (mWindow == nullptr) {
-        SDL_Log("SDL_CreateWindowWithProperties(): %s", SDL_GetError());
+        CLAPEZE_LOG_SDL_ERROR(this);
         return false;
     }
     platformGui::onCreateWindow(mApi, mWindow);
 
     SDL_GLContext gl_context = SDL_GL_CreateContext(mWindow);
     if (gl_context == nullptr) {
-        SDL_Log("Error: SDL_GL_CreateContext(): %s", SDL_GetError());
+        CLAPEZE_LOG_SDL_ERROR(this);
         return false;
     }
     mCtx = gl_context;
@@ -118,7 +122,9 @@ bool SdlOpenGlExt::Create(ClapWindowApi api, bool isFloating) {
 }
 
 void SdlOpenGlExt::Destroy() {
-    MakeCurrent();
+    if (!MakeCurrent()) {
+        CLAPEZE_LOG_SDL_ERROR(this);
+    }
     RemoveActiveInstance(this);
     SDL_GL_DestroyContext(mCtx);
     SDL_DestroyWindow(mWindow);
@@ -130,7 +136,9 @@ void SdlOpenGlExt::Destroy() {
     // SDL_GL_MakeCurrent(). maybe a required resource is already destroyed by that point?
     for (auto instance : sActiveInstances) {
         if (instance->mWindow) {
-            instance->MakeCurrent();
+            if (!instance->MakeCurrent()) {
+                CLAPEZE_LOG_SDL_ERROR(instance);
+            }
             break;
         }
     }
@@ -184,6 +192,7 @@ void SdlOpenGlExt::SuggestTitle(std::string_view title) {
 }
 bool SdlOpenGlExt::Show() {
     if (!SDL_ShowWindow(mWindow)) {
+        CLAPEZE_LOG_SDL_ERROR(this);
         return false;
     }
     // Setup main loop
@@ -193,6 +202,7 @@ bool SdlOpenGlExt::Show() {
 bool SdlOpenGlExt::Hide() {
     RemoveActiveInstance(this);
     if (!SDL_HideWindow(mWindow)) {
+        CLAPEZE_LOG_SDL_ERROR(this);
         return false;
     }
     return true;
@@ -240,7 +250,6 @@ SdlOpenGlExt* SdlOpenGlExt::FindInstanceForWindow(SDL_WindowID window) {
 }
 
 void SdlOpenGlExt::UpdateInstances() {
-    printf("UpdateInstances\n");
     static SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -267,7 +276,10 @@ void SdlOpenGlExt::UpdateInstances() {
             }
         }
         for (auto instance : sActiveInstances) {
-            instance->MakeCurrent();
+            if (!instance->MakeCurrent()) {
+                CLAPEZE_LOG_SDL_ERROR(instance);
+                goto skip_event;
+            }
             instance->OnEvent(event);
         }
     skip_event:
@@ -277,7 +289,7 @@ void SdlOpenGlExt::UpdateInstances() {
     // new frame
     for (auto instance : sActiveInstances) {
         if (!instance->MakeCurrent()) {
-            SDL_Log("SDL_GL_MakeCurrent(): %s", SDL_GetError());
+            CLAPEZE_LOG_SDL_ERROR(instance);
             continue;
         }
         instance->Update();

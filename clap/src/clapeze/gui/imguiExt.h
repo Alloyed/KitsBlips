@@ -1,7 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL_video.h>
-#include "clapeze/gui/sdlOpenGl.h"
+#include "clapeze/gui/sdlOpenGlExt.h"
 
 // Forward declares
 class PluginHost;

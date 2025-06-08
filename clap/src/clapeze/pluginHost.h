@@ -25,20 +25,8 @@ class PluginHost {
     PluginHost(const clap_host_t* host);
 
     template <typename ExtType>
-    bool TryGetExtension(const char* extensionName, const clap_host_t*& hostOut, const ExtType*& extOut) const {
-        extOut = static_cast<const ExtType*>(mHost->get_extension(mHost, extensionName));
-        if (extOut) {
-            hostOut = mHost;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    bool SupportsExtension(const char* extensionName) const {
-        const void* ext = mHost->get_extension(mHost, extensionName);
-        return ext != nullptr;
-    }
+    bool TryGetExtension(const char* extensionName, const clap_host_t*& hostOut, const ExtType*& extOut) const;
+    bool SupportsExtension(const char* extensionName) const;
     
     void LogSupportMatrix() const;
 
@@ -69,3 +57,14 @@ class PluginHost {
     const clap_host_gui_t* mGui;
     std::unordered_map<TimerId, TimerFn> mActiveTimers;
 };
+
+template <typename ExtType>
+bool PluginHost::TryGetExtension(const char* extensionName, const clap_host_t*& hostOut, const ExtType*& extOut) const {
+    extOut = static_cast<const ExtType*>(mHost->get_extension(mHost, extensionName));
+    if (extOut) {
+        hostOut = mHost;
+        return true;
+    } else {
+        return false;
+    }
+}
