@@ -44,7 +44,8 @@ bool setTransient(ClapWindowApi _api, SDL_Window* sdlWindow, const WindowHandle&
 
 clap_id addGuiTimer(PluginHost& host, int32_t periodMs, void(*fn)())
 {
-    UINT_PTR id = SetTimer(nullptr, 0, periodMs, fn);
+    TIMERPROC winFn = (TIMERPROC)(fn);
+    UINT_PTR id = SetTimer(nullptr, 0, periodMs, winFn);
     return id;
 }
 

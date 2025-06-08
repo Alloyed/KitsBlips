@@ -116,7 +116,6 @@ const clap_plugin_t* BasePlugin::GetOrCreatePluginObject(const clap_plugin_descr
                                       &_get_extension,
                                       &_on_main_thread};
         mPlugin = std::make_unique<clap_plugin_t>(pluginObject);
-        Config();
     }
     return mPlugin.get();
 }

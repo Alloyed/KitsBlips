@@ -6,7 +6,7 @@
 #include "clapApi/ext/timerSupport.h"
 #include "descriptor.h"
 #include "gui/sdlImgui.h"
-#include "gui/imguiHelpers.h"
+#include "imgui.h"
 
 using namespace kitdsp;
 
@@ -32,6 +32,9 @@ void Snecho::Config() {
     if(GetHost().SupportsExtension(CLAP_EXT_TIMER_SUPPORT))
     {
         ConfigExtension<TimerSupportExt>(GetHost());
+    }
+    if(GetHost().SupportsExtension(CLAP_EXT_GUI))
+    {
         ConfigExtension<SdlImguiExt>(GetHost(), SdlImguiConfig{[this](){
                 this->OnGui();
         }});
@@ -40,7 +43,41 @@ void Snecho::Config() {
 
 void Snecho::OnGui() {
     SnechoParamsExt& params = SnechoParamsExt::GetFromPlugin<SnechoParamsExt>(*this);
-    ImGuiHelpers::displayParametersBasic(params);
+
+    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+    ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    static bool open = true;
+    ImGui::Begin("main", &open, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize);
+    {
+        std::string buf;
+        bool anyChanged = false;
+        params.FlushFromAudio();
+        for (clap_id id = Params_Size; id < Params_Count; ++id) {
+            const auto cfg = params.GetConfig(id);
+            float value = static_cast<float>(params.Get(id));
+            buf = cfg->name;
+            if(ImGui::SliderFloat(buf.c_str(), &value, cfg->min, cfg->max))
+            {
+                params.Set(id, value);
+                anyChanged = true;
+            }
+            if(ImGui::IsItemActivated())
+            {
+                params.StartGesture(id);
+            }
+            if(ImGui::IsItemDeactivated())
+            {
+                params.StopGesture(id);
+            }
+        }
+        if(anyChanged)
+        {
+            params.RequestFlushToHost();
+        }
+    }
+    ImGui::End();
+    ImGui::PopStyleVar();
 }
 
 void Snecho::ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, SnechoParamsExt::AudioParameters& params) {

@@ -42,7 +42,7 @@ class BasePlugin {
     virtual void ProcessEvent(const clap_event_header_t& event) = 0;
     virtual void ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) = 0;
     // optional
-    virtual bool Init() { return true; }
+    virtual bool Init() { Config(); return true; }
     virtual bool Activate(double sampleRate, uint32_t minFramesCount, uint32_t maxFramesCount) { return true; }
     virtual void Deactivate() {}
     virtual void Reset() {}

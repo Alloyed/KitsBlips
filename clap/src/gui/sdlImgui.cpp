@@ -267,6 +267,7 @@ SdlImguiExt* SdlImguiExt::FindInstanceForWindow(SDL_WindowID window) {
 }
 
 void SdlImguiExt::UpdateInstances() {
+    printf("UpdateInstances\n");
     static SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch(event.type)

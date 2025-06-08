@@ -21,6 +21,9 @@ void Sines::Config() {
     if(GetHost().SupportsExtension(CLAP_EXT_TIMER_SUPPORT))
     {
         ConfigExtension<TimerSupportExt>(GetHost());
+    }
+    if(GetHost().SupportsExtension(CLAP_EXT_GUI))
+    {
         ConfigExtension<SdlImguiExt>(GetHost(), SdlImguiConfig{[this](){
             auto& params = ParametersExt<clap_id>::GetFromPlugin<ParametersExt<clap_id>>(*this);
             ImGuiHelpers::displayParametersBasic(params);
