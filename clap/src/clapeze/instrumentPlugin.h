@@ -62,7 +62,7 @@ class InstrumentProcessor : public BaseProcessor {
 
     // impl
     void ProcessFlush(const clap_process_t& process) final {
-        mParams.ProcessFlushFromMain(*this, nullptr, process.out_events);
+        mParams.FlushEventsFromMain(*this, process.out_events);
     }
     void ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) final {
         // BaseParamsExt::AudioParameters& params =

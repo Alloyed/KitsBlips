@@ -7,6 +7,7 @@
 #include <memory>
 #include <unordered_map>
 
+#include "clap/events.h"
 #include "clapeze/pluginHost.h"
 
 class BasePlugin;
@@ -75,6 +76,13 @@ class BaseProcessor {
      */
     virtual void ProcessReset() {};
 
+    /* only valid while processing. using contextual state. */
+    void SendEvent(clap_event_header_t& event)
+    {
+        event.time += mTime; // this is probably very not smart
+        mOutEvents->try_push(mOutEvents, &event);
+    }
+
    protected:
     /**
      * Returns the sample rate in hz
@@ -82,11 +90,14 @@ class BaseProcessor {
     double GetSampleRate() const { return mSampleRate; }
     size_t GetMaxBlockSize() const { return mMinBlockSize; }
     size_t GetMinBlockSize() const { return mMaxBlockSize; }
-
+    
    private:
     double mSampleRate;
     size_t mMinBlockSize;
     size_t mMaxBlockSize;
+
+    const clap_output_events_t* mOutEvents;
+    uint32_t mTime;
 };
 
 struct PluginEntry {

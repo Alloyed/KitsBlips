@@ -3,6 +3,7 @@
 #include "clapeze/common.h"
 #include "clapeze/ext/parameters.h"
 #include "clapeze/instrumentPlugin.h"
+#include "clapeze/voice.h"
 #include "kitdsp/osc/naiveOscillator.h"
 #include "clapeze/ext/parameters.h"
 #include "clapeze/gui/imguiExt.h"
@@ -14,53 +15,60 @@ enum class Params : clap_id { Volume, Count };
 using ParamsExt = ParametersExt<Params>;
 
 class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
+    class Voice {
+       public:
+        Voice() {}
+        void ProcessNoteOn(Processor& p, const NoteTuple& note, float velocity) {
+            mTargetAmplitude = .3f;
+            mOsc.SetFrequency(kitdsp::midiToFrequency(note.key), p.GetSampleRate());
+        }
+        void ProcessNoteOff(Processor& p) { mTargetAmplitude = 0.0f; }
+        void ProcessChoke(Processor& p) {
+            mAmplitude = 0.0f;
+            mTargetAmplitude = 0.0f;
+        }
+        bool ProcessAudio(Processor& p, StereoAudioBuffer& out) {
+            for (uint32_t index = 0; index < out.left.size(); index++) {
+                mAmplitude = kitdsp::lerpf(mAmplitude, mTargetAmplitude, 0.001);
+                float s = mOsc.Process() * mAmplitude;
+                out.left[index] += s;
+                out.right[index] += s;
+            }
+            return mTargetAmplitude != 0.0f || mAmplitude < 0.0001f;
+        }
+
+       private:
+        kitdsp::naive::TriangleOscillator mOsc{};
+        float mAmplitude{};
+        float mTargetAmplitude{};
+    };
+
    public:
     Processor(ParamsExt::ProcessParameters& params) : InstrumentProcessor(params) {}
     ~Processor() = default;
 
     void ProcessAudio(StereoAudioBuffer& out) override {
-        for (uint32_t index = 0; index < out.left.size(); index++) {
-            mAmplitude = kitdsp::lerpf(mAmplitude, mTargetAmplitude, 0.001);
-            float s = mOsc.Process() * mAmplitude;
-            out.left[index] = s;
-            out.right[index] = s;
-        }
+        mVoices.ProcessAudio(*this, out);
     }
 
     void ProcessNoteOn(const NoteTuple& note, float velocity) override {
-        // mono, voice stealing
-        mTargetAmplitude = .2f;
-        mNote = note;
-        mOsc.SetFrequency(kitdsp::midiToFrequency(mNote.key), GetSampleRate());
+        mVoices.ProcessNoteOn(*this, note, velocity);
     }
 
     void ProcessNoteOff(const NoteTuple& note) override {
-        if (note.Match(mNote)) {
-            mTargetAmplitude = 0.0f;
-            mNote = {};
-        }
+        mVoices.ProcessNoteOff(*this, note);
     }
 
     void ProcessNoteChoke(const NoteTuple& note) override {
-        if (note.Match(mNote)) {
-            mAmplitude = 0.0f;
-            mTargetAmplitude = 0.0f;
-            mNote = {};
-        }
+        mVoices.ProcessNoteChoke(*this, note);
     }
 
     void ProcessReset() override {
-        mAmplitude = 0.0f;
-        mTargetAmplitude = 0.0f;
-        mNote = {};
-        mOsc.Reset();
+        mVoices.StopAllVoices(*this);
     }
 
    private:
-    kitdsp::naive::TriangleOscillator mOsc{};
-    float mAmplitude{};
-    float mTargetAmplitude{};
-    NoteTuple mNote{};
+    PolyphonicVoicePool<Processor, Voice, 1> mVoices {};
 };
 
 class Plugin : public InstrumentPlugin {

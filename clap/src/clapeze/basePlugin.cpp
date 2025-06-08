@@ -99,39 +99,44 @@ void BasePlugin::_reset(const clap_plugin* plugin) {
 
 clap_process_status BasePlugin::_process(const clap_plugin* plugin, const clap_process_t* process) {
     BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
-    BaseProcessor& processor = *self.mProcessor.get();
+    BaseProcessor& p = *self.mProcessor.get();
 
-    const uint32_t frameCount = process->frames_count;
+    // in clap parlance, samples == frames
+    // for us, we'll use time as a clue that the values are related to sample-accurate timing.
+    const uint32_t timeCount = process->frames_count;
     const uint32_t inputEventCount = process->in_events->size(process->in_events);
     uint32_t eventIndex = 0;
-    uint32_t nextEventFrame = inputEventCount ? 0 : frameCount;
+    p.mOutEvents = process->out_events;
+    p.mTime = 0;
+    uint32_t nextTimeIndex = inputEventCount ? 0 : timeCount;
 
-    processor.ProcessFlush(*process);
+    p.ProcessFlush(*process);
 
-    for (uint32_t frameIndex = 0; frameIndex < frameCount;) {
+    while (p.mTime < timeCount) {
         // process events that occurred this frame
-        while (eventIndex < inputEventCount && nextEventFrame == frameIndex) {
+        while (eventIndex < inputEventCount && nextTimeIndex == p.mTime) {
             const clap_event_header_t* event = process->in_events->get(process->in_events, eventIndex);
-            if (event->time != frameIndex) {
-                nextEventFrame = event->time;
+            if (event->time != p.mTime) {
+                nextTimeIndex = event->time;
                 break;
             }
 
-            processor.ProcessEvent(*event);
+            p.ProcessEvent(*event);
             eventIndex++;
 
             if (eventIndex == inputEventCount) {
-                nextEventFrame = frameCount;
+                nextTimeIndex = timeCount;
                 break;
             }
         }
-        size_t rangeStart = frameIndex;
-        size_t rangeStop = nextEventFrame;
+        size_t rangeStart = p.mTime;
+        size_t rangeStop = nextTimeIndex;
         // process audio from this frame
-        processor.ProcessAudio(*process, rangeStart, rangeStop);
-        frameIndex = nextEventFrame;
+        p.ProcessAudio(*process, rangeStart, rangeStop);
+        p.mTime = nextTimeIndex;
     }
 
+    p.mOutEvents = nullptr;
     return CLAP_PROCESS_CONTINUE;
 }
 

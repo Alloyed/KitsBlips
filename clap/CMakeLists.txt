@@ -12,7 +12,9 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 project(KitsBlips VERSION 0.0.0)
 set(PRODUCT_NAME "KitsBlips")
 set(PRODUCT_ID "me.alloyed.KitsBlips")
-# VSTs require <= 17 for codecvt, and CLAP requires >= 17 for std::filesystem :/
+
+# VSTs use codecvt in their headers, which are removed in C++26.
+# ETL expects char8_t to be a keyword post C++20, but clap-wrapper hard-disables it. so we'll target our plugin narrowly for C++23
 set(CMAKE_CXX_STANDARD 17)
 
 # shared libs
@@ -32,6 +34,7 @@ add_library(${PROJECT_NAME}-plugin STATIC
     src/snecho/snecho.cpp
     src/sines/sines.cpp
 )
+set_property(TARGET ${PROJECT_NAME}-plugin PROPERTY CXX_STANDARD 23)
 
 target_include_directories(${PROJECT_NAME}-plugin
     PUBLIC

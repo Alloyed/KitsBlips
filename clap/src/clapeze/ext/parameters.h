@@ -202,58 +202,46 @@ class ParametersExt : public BaseExt {
             return false;
         }
 
-        void ProcessFlushFromMain(BaseProcessor& processor,
-                                  const clap_input_events_t* in,
-                                  const clap_output_events_t* out) {
-            // called from audio thread when active(), main thread when inactive
-
-            // Process events sent from the host to us
-            if (in) {
-                const uint32_t eventCount = in->size(in);
-                for (uint32_t eventIndex = 0; eventIndex < eventCount; eventIndex++) {
-                    processor.ProcessEvent(*in->get(in, eventIndex));
-                }
-            }
-
+        void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) {
             // Send events queued from us to the host
-            if (out) {
-                Change change;
-                while (mMainToAudio.pop(change)) {
-                    switch (change.type) {
-                        case ChangeType::StartGesture:
-                        case ChangeType::StopGesture: {
-                            clap_event_param_gesture_t event = {};
-                            event.header.size = sizeof(event);
-                            event.header.time = 0;
-                            event.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
-                            event.header.type = change.type == ChangeType::StartGesture ? CLAP_EVENT_PARAM_GESTURE_BEGIN
-                                                                                        : CLAP_EVENT_PARAM_GESTURE_END;
-                            event.header.flags = 0;
-                            event.param_id = static_cast<clap_id>(change.id);
-                            out->try_push(out, &event.header);
-                            break;
-                        }
-                        case ChangeType::SetValue: {
-                            clap_id index = static_cast<clap_id>(change.id);
-                            mState[index] = change.value;
+            // Since these all happened on an independent thread, they do not have sample-accurate timing; we'll just
+            // send them at the front of the queue.
+            Change change;
+            while (mMainToAudio.pop(change)) {
+                switch (change.type) {
+                    case ChangeType::StartGesture:
+                    case ChangeType::StopGesture: {
+                        clap_event_param_gesture_t event = {};
+                        event.header.size = sizeof(event);
+                        event.header.time = 0;
+                        event.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+                        event.header.type = change.type == ChangeType::StartGesture ? CLAP_EVENT_PARAM_GESTURE_BEGIN
+                                                                                    : CLAP_EVENT_PARAM_GESTURE_END;
+                        event.header.flags = 0;
+                        event.param_id = static_cast<clap_id>(change.id);
+                        out->try_push(out, &event.header);
+                        break;
+                    }
+                    case ChangeType::SetValue: {
+                        clap_id index = static_cast<clap_id>(change.id);
+                        mState[index] = change.value;
 
-                            clap_event_param_value_t event = {};
-                            event.header.size = sizeof(event);
-                            event.header.time = 0;
-                            event.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
-                            event.header.type = CLAP_EVENT_PARAM_VALUE;
-                            event.header.flags = 0;
-                            event.param_id = index;
-                            event.cookie = nullptr;
-                            event.note_id = -1;
-                            event.port_index = -1;
-                            event.channel = -1;
-                            event.key = -1;
-                            event.value = change.value;
+                        clap_event_param_value_t event = {};
+                        event.header.size = sizeof(event);
+                        event.header.time = 0;
+                        event.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+                        event.header.type = CLAP_EVENT_PARAM_VALUE;
+                        event.header.flags = 0;
+                        event.param_id = index;
+                        event.cookie = nullptr;
+                        event.note_id = -1;
+                        event.port_index = -1;
+                        event.channel = -1;
+                        event.key = -1;
+                        event.value = change.value;
 
-                            out->try_push(out, &event.header);
-                            break;
-                        }
+                        out->try_push(out, &event.header);
+                        break;
                     }
                 }
             }
@@ -387,7 +375,15 @@ class ParametersExt : public BaseExt {
         BaseProcessor& processor = basePlugin.GetProcessor();
         ParametersExt& self = ParametersExt::GetFromPlugin<ParametersExt>(basePlugin);
 
-        self.mAudioState.ProcessFlushFromMain(processor, in, out);
+        // Process events sent from the host to us
+        if (in) {
+            const uint32_t eventCount = in->size(in);
+            for (uint32_t eventIndex = 0; eventIndex < eventCount; eventIndex++) {
+                processor.ProcessEvent(*in->get(in, eventIndex));
+            }
+        }
+
+        self.mAudioState.FlushEventsFromMain(processor, out);
     }
 };
 

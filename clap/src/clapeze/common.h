@@ -1,6 +1,7 @@
 #pragma once
 
 #include <etl/span.h>
+#include <cstdint>
 
 struct MonoAudioBuffer {
     etl::span<float> data;
