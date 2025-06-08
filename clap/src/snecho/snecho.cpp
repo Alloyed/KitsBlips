@@ -5,8 +5,8 @@
 #include "clapApi/ext/state.h"
 #include "clapApi/ext/timerSupport.h"
 #include "descriptor.h"
+#include "gui/imguiHelpers.h"
 #include "gui/sdlImgui.h"
-#include "imgui.h"
 
 using namespace kitdsp;
 
@@ -16,21 +16,20 @@ const PluginEntry Snecho::Entry{
 
 void Snecho::Config() {
     EffectPlugin::Config();
-    ConfigExtension<SnechoParamsExt>(GetHost(), Params_Count)
-        .configNumeric(Params_Size, 0.0f, 1.0f, 0.5f, "Size")
-        .configNumeric(Params_Feedback, 0.0f, 1.0f, 0.5f, "Feedback")
-        .configNumeric(Params_FilterPreset, 0.0f, 1.0f, 0.0f, "Filter Preset")
-        .configNumeric(Params_SizeRange, 0.0f, 1.0f, 0.5f, "Size Range")
-        .configNumeric(Params_Mix, 0.0f, 1.0f, 0.5f, "Mix")
-        .configNumeric(Params_FreezeEcho, 0.0f, 1.0f, 0.0f, "Freeze Echo")
-        .configNumeric(Params_EchoDelayMod, 0.0f, 1.0f, 1.0f, "Echo Mod")
-        .configNumeric(Params_FilterMix, 0.0f, 1.0f, 0.5f, "Filter Mix")
-        .configNumeric(Params_ClearBuffer, 0.0f, 1.0f, 0.0f, "Clear Buffer")
-        .configNumeric(Params_ResetHead, 0.0f, 1.0f, 0.0f, "Reset Playhead");
+    ConfigExtension<SnechoParamsExt>(GetHost(), SnechoParams::Count)
+        .configNumeric(SnechoParams::Size, 0.0f, 1.0f, 0.5f, "Size")
+        .configNumeric(SnechoParams::Feedback, 0.0f, 1.0f, 0.5f, "Feedback")
+        .configNumeric(SnechoParams::FilterPreset, 0.0f, 1.0f, 0.0f, "Filter Preset")
+        .configNumeric(SnechoParams::SizeRange, 0.0f, 1.0f, 0.5f, "Size Range")
+        .configNumeric(SnechoParams::Mix, 0.0f, 1.0f, 0.5f, "Mix")
+        .configNumeric(SnechoParams::FreezeEcho, 0.0f, 1.0f, 0.0f, "Freeze Echo")
+        .configNumeric(SnechoParams::EchoDelayMod, 0.0f, 1.0f, 1.0f, "Echo Mod")
+        .configNumeric(SnechoParams::FilterMix, 0.0f, 1.0f, 0.5f, "Filter Mix")
+        .configNumeric(SnechoParams::ClearBuffer, 0.0f, 1.0f, 0.0f, "Clear Buffer")
+        .configNumeric(SnechoParams::ResetHead, 0.0f, 1.0f, 0.0f, "Reset Playhead");
 
     ConfigExtension<StateExt>();
-    if(GetHost().SupportsExtension(CLAP_EXT_TIMER_SUPPORT))
-    {
+    if (GetHost().SupportsExtension(CLAP_EXT_TIMER_SUPPORT)) {
         ConfigExtension<TimerSupportExt>(GetHost());
     }
     if(GetHost().SupportsExtension(CLAP_EXT_GUI))
@@ -42,59 +41,27 @@ void Snecho::Config() {
 }
 
 void Snecho::OnGui() {
-    SnechoParamsExt& params = SnechoParamsExt::GetFromPlugin<SnechoParamsExt>(*this);
-
-    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-    ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    static bool open = true;
-    ImGui::Begin("main", &open, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize);
-    {
-        std::string buf;
-        bool anyChanged = false;
-        params.FlushFromAudio();
-        for (clap_id id = Params_Size; id < Params_Count; ++id) {
-            const auto cfg = params.GetConfig(id);
-            float value = static_cast<float>(params.Get(id));
-            buf = cfg->name;
-            if(ImGui::SliderFloat(buf.c_str(), &value, cfg->min, cfg->max))
-            {
-                params.Set(id, value);
-                anyChanged = true;
-            }
-            if(ImGui::IsItemActivated())
-            {
-                params.StartGesture(id);
-            }
-            if(ImGui::IsItemDeactivated())
-            {
-                params.StopGesture(id);
-            }
-        }
-        if(anyChanged)
-        {
-            params.RequestFlushToHost();
-        }
-    }
-    ImGui::End();
-    ImGui::PopStyleVar();
+    BaseParamsExt& params = BaseParamsExt::GetFromPlugin<BaseParamsExt>(*this);
+    ImGuiHelpers::displayParametersBasic(params);
 }
 
-void Snecho::ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, SnechoParamsExt::AudioParameters& params) {
+void Snecho::ProcessAudio(const StereoAudioBuffer& in,
+                          StereoAudioBuffer& out,
+                          SnechoParamsExt::AudioParameters& params) {
     // inputs
     // core
-    snes1.cfg.echoBufferSize = params.Get(Params_Size);
+    snes1.cfg.echoBufferSize = params.Get(SnechoParams::Size);
 
-    snes1.cfg.echoFeedback = params.Get(Params_Feedback);
+    snes1.cfg.echoFeedback = params.Get(SnechoParams::Feedback);
 
-    size_t filterPreset = static_cast<size_t>(params.Get(Params_FilterPreset) * SNES::kNumFilterPresets);
+    size_t filterPreset = static_cast<size_t>(params.Get(SnechoParams::FilterPreset) * SNES::kNumFilterPresets);
     if (filterPreset != mLastFilterPreset) {
         mLastFilterPreset = filterPreset;
         memcpy(snes1.cfg.filterCoefficients, SNES::kFilterPresets[filterPreset].data, SNES::kFIRTaps);
         // snes1.cfg.filterGain = dbToRatio(-SNES::kFilterPresets[filterPreset].maxGainDb);
     }
 
-    size_t range = round(params.Get(Params_SizeRange));
+    size_t range = round(params.Get(SnechoParams::SizeRange));
     if (range == 0) {
         snes1.cfg.echoBufferRangeMaxSamples = SNES::kOriginalMaxEchoSamples;
     } else if (range == 1) {
@@ -103,17 +70,17 @@ void Snecho::ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out, S
         snes1.cfg.echoBufferRangeMaxSamples = SNES::MsToSamples(10000.0f);
     }
 
-    float wetDryMix = params.Get(Params_Mix);
+    float wetDryMix = params.Get(SnechoParams::Mix);
 
-    snes1.cfg.freezeEcho = (params.Get(Params_FreezeEcho)) > 0.5f;
+    snes1.cfg.freezeEcho = (params.Get(SnechoParams::FreezeEcho)) > 0.5f;
 
     // extension
-    snes1.cfg.echoDelayMod = params.Get(Params_EchoDelayMod);
+    snes1.cfg.echoDelayMod = params.Get(SnechoParams::EchoDelayMod);
 
-    snes1.cfg.filterMix = params.Get(Params_FilterMix);
+    snes1.cfg.filterMix = params.Get(SnechoParams::FilterMix);
 
-    snes1.mod.clearBuffer = params.Get(Params_ClearBuffer) > 0.5f;
-    snes1.mod.resetHead = params.Get(Params_ResetHead) > 0.5f;
+    snes1.mod.clearBuffer = params.Get(SnechoParams::ClearBuffer) > 0.5f;
+    snes1.mod.resetHead = params.Get(SnechoParams::ResetHead) > 0.5f;
     snes1.cfg.echoBufferIncrementSamples = SNES::kOriginalEchoIncrementSamples;
 
     // processing

@@ -10,9 +10,8 @@ using SinesParamsExt = ParametersExt<SinesParams>;
 
 class Sines : public InstrumentPlugin<SinesParamsExt> {
    public:
-    
     static const PluginEntry Entry;
-    Sines(PluginHost& host): InstrumentPlugin(host) {}
+    Sines(PluginHost& host) : InstrumentPlugin(host) {}
     ~Sines() = default;
     void Config() override;
     void ProcessAudio(StereoAudioBuffer& out, SinesParamsExt::AudioParameters& params) override;
@@ -22,8 +21,8 @@ class Sines : public InstrumentPlugin<SinesParamsExt> {
     void Reset() override;
 
    private:
-    kitdsp::naive::TriangleOscillator mOsc {};
-    float mAmplitude {};
-    float mTargetAmplitude {};
-    NoteTuple mNote {};
+    kitdsp::naive::TriangleOscillator mOsc{};
+    float mAmplitude{};
+    float mTargetAmplitude{};
+    NoteTuple mNote{};
 };

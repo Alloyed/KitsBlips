@@ -29,7 +29,6 @@ add_library(${PROJECT_NAME}-plugin STATIC
 
     src/gui/sdlImgui.cpp
 
-    src/template/plugin.cpp
     src/snecho/snecho.cpp
     src/sines/sines.cpp
 )

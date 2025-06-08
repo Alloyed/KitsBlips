@@ -8,21 +8,20 @@
 #include <kitdsp/snesEcho.h>
 #include <kitdsp/snesEchoFilterPresets.h>
 
-// TODO: enum classes
-enum SnechoParams : clap_id {
-    Params_Size,
-    Params_Feedback,
-    Params_FilterPreset,
-    Params_SizeRange,
-    Params_Mix,
-    Params_FreezeEcho,
-    Params_EchoDelayMod,
-    Params_FilterMix,
-    Params_ClearBuffer,
-    Params_ResetHead,
-    Params_Count
+enum class SnechoParams : clap_id {
+    Size,
+    Feedback,
+    FilterPreset,
+    SizeRange,
+    Mix,
+    FreezeEcho,
+    EchoDelayMod,
+    FilterMix,
+    ClearBuffer,
+    ResetHead,
+    Count
 };
-using SnechoParamsExt = ParametersExt<clap_id>;
+using SnechoParamsExt = ParametersExt<SnechoParams>;
 
 class Snecho : public EffectPlugin<SnechoParamsExt> {
    public:

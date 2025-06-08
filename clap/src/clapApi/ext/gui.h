@@ -27,11 +27,9 @@ inline ClapWindowApi toApiEnum(std::string_view api) {
 
 struct WindowHandle {
     WindowHandle(const clap_window_t* window) : api(toApiEnum(window->api)) {
-        if(api == ClapWindowApi::X11)
-        {
+        if (api == ClapWindowApi::X11) {
             x11 = window->x11;
-        }
-        else {
+        } else {
             ptr = window->ptr;
         }
     }

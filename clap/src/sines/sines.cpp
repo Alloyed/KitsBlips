@@ -8,7 +8,6 @@
 #include "gui/sdlImgui.h"
 #include "kitdsp/math/util.h"
 
-
 const PluginEntry Sines::Entry{AudioInstrumentDescriptor("kitsblips.sines", "Sines", "a simple sine wave synth"),
                                [](PluginHost& host) -> BasePlugin* { return new Sines(host); }};
 
@@ -18,8 +17,7 @@ void Sines::Config() {
     ConfigExtension<SinesParamsExt>(GetHost(), SinesParams::Count)
         .configNumeric(SinesParams::Volume, -20.0f, 0.0f, 0.0f, "Volume");
     ConfigExtension<StateExt>();
-    if(GetHost().SupportsExtension(CLAP_EXT_TIMER_SUPPORT))
-    {
+    if (GetHost().SupportsExtension(CLAP_EXT_TIMER_SUPPORT)) {
         ConfigExtension<TimerSupportExt>(GetHost());
     }
     if(GetHost().SupportsExtension(CLAP_EXT_GUI))

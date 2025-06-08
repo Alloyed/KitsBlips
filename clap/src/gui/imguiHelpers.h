@@ -51,7 +51,7 @@ inline void displayParametersBasic(ParametersExt<clap_id>& params) {
                 *params.GetConfig(id));
         }
         if (anyChanged) {
-            params.RequestFlushToHost();
+            params.RequestFlushIfNotProcessing();
         }
     }
     ImGui::End();
