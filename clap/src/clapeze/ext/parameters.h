@@ -15,6 +15,7 @@
 #include "clapeze/basePlugin.h"
 #include "clapeze/pluginHost.h"
 
+
 namespace ParamHelpers {
 inline double toDisplay(double rawValue, double displayBase, double displayMultiplier, double displayOffset) {
     return (rawValue * displayMultiplier) + displayOffset;
@@ -42,6 +43,7 @@ class ParametersExt : public BaseExt {
         double displayBase;
         double displayMultiplier;
         double displayOffset;
+        clap_param_info_flags flags;
     };
     struct EnumParam {
         Id id;
@@ -88,12 +90,26 @@ class ParametersExt : public BaseExt {
                                  const char* unit = "",
                                  double displayBase = 0.0f,
                                  double displayMultiplier = 1.0f,
-                                 double displayOffset = 0.0f) {
+                                 double displayOffset = 0.0f,
+                                 clap_param_info_flags flags = 0) {
         clap_id index = static_cast<clap_id>(id);
+        if(max < min)
+        {
+            std::swap(max, min);
+        }
         mParams[index] =
-            NumericParam{id, min, max, defaultValue, name, unit, displayBase, displayMultiplier, displayOffset};
+            NumericParam{id, min, max, defaultValue, name, unit, displayBase, displayMultiplier, displayOffset, flags};
         Set(id, defaultValue);
         return *this;
+    }
+
+    ParametersExt& configCount(Id id,
+                               double min,
+                               double max,
+                               double defaultValue,
+                               const char* name,
+                               const char* unit = "") {
+        return configNumeric(id, min, max, defaultValue, name, unit, 0.0f, 1.0f, 0.0f, CLAP_PARAM_IS_STEPPED);
     }
 
     ParametersExt& configSwitch(Id id,

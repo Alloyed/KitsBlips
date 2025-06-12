@@ -1,7 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <cstddef>
 #include "kitdsp/math/interpolate.h"
-#include "kitdsp/osc/oscillatorUtil.h"
 
 namespace kitdsp {
 template <typename SAMPLE, interpolate::InterpolationStrategy STRATEGY, bool SHOULD_LOOP>

@@ -21,7 +21,6 @@
 
 /** Include standard C headers */
 #include <cassert>
-#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>

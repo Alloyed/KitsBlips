@@ -15,6 +15,7 @@ class Phasor {
         mPhase = 0.0f;
         mAdvance = 0.0f;
     }
+    /** take an arbitrary value and wrap into 0-1 (phasor range) */
     static float WrapPhase(float phase) { return phase - floor(phase); }
 
    protected:
@@ -23,7 +24,6 @@ class Phasor {
         mPhase = WrapPhase(nextPhase);
         return mPhase != nextPhase;
     }
-    /** take an arbitrary value and wrap into 0-1 (phasor range) */
     float mPhase = 0.0f;
     float mAdvance = 0.0f;
 };
