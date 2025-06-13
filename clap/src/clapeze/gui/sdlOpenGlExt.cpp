@@ -254,9 +254,11 @@ void SdlOpenGlExt::UpdateInstances() {
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
             case SDL_EVENT_WINDOW_DESTROYED: {
+                printf("SDL_EVENT_WINDOW_DESTROYED\n");
                 goto skip_event;
             }
             case SDL_EVENT_QUIT: {
+                printf("SDL_EVENT_QUIT\n");
                 SdlOpenGlExt* instance = sActiveInstances.front();
                 if (instance) {
                     const clap_host_t* rawHost;
@@ -266,6 +268,7 @@ void SdlOpenGlExt::UpdateInstances() {
                 }
             }
             case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
+                printf("SDL_EVENT_WINDOW_CLOSE_REQUESTED\n");
                 SdlOpenGlExt* instance = FindInstanceForWindow(event.window.windowID);
                 if (instance) {
                     const clap_host_t* rawHost;

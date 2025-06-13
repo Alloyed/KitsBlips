@@ -26,6 +26,7 @@ bool ImGuiExt::Create(ClapWindowApi api, bool isFloating) {
 }
 
 void ImGuiExt::Destroy() {
+    ImGui::SetCurrentContext(mImgui);
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext(mImgui);
@@ -34,7 +35,9 @@ void ImGuiExt::Destroy() {
 }
 
 bool ImGuiExt::MakeCurrent() {
-    ImGui::SetCurrentContext(mImgui);
+    if(mImgui) {
+        ImGui::SetCurrentContext(mImgui);
+    }
     return SdlOpenGlExt::MakeCurrent();
 }
 

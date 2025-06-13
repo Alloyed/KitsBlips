@@ -9,9 +9,17 @@ class Phasor {
     void SetPeriod(float periodMs, float sampleRate) {
         if (periodMs == 0.0f || sampleRate == 0.0f) {
             // hard locked
-            mAdvance = 1000.0f / (sampleRate * periodMs);
+            mAdvance = 0.0f;
         } else {
             mAdvance = 1000.0f / (sampleRate * periodMs);
+        }
+    }
+    void SetFrequency(float frequencyHz, float sampleRate) {
+        if (sampleRate == 0.0f) {
+            // hard locked
+            mAdvance = 0.0f;
+        } else {
+            mAdvance = frequencyHz / sampleRate;
         }
     }
     void HardSync() { mPhase = 0.0f; }
