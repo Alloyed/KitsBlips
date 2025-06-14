@@ -1,15 +1,17 @@
+#pragma once
+
 #include <clap/clap.h>
-#include <etl/queue_spsc_atomic.h>
-#include <kitdsp/string.h>
+#include <clap/ext/params.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <etl/span.h>
+#include <imgui.h>
+#include <kitdsp/math/util.h>
+#include <kitdsp/string.h>
 #include <string_view>
 
-#include "clap/ext/params.h"
 #include "clapeze/ext/parameters.h"
-#include "imgui.h"
-#include "kitdsp/math/util.h"
 
 /**
  * Represents a numeric value. these are always mapped 0-1 on the DAW side so we can adjust the response curve to the
@@ -30,7 +32,7 @@ class NumericParam : public BaseParam {
         kitdsp::stringCopy(information->name, mName);
         return true;
     }
-    bool ToText(double rawValue, std::span<char>& outTextBuf) const override {
+    bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
         float displayValue = 0.0f;
         if (!ToValue(rawValue, displayValue)) {
             return false;
@@ -78,7 +80,7 @@ class PercentParam : public NumericParam
     using _valuetype = float;
     PercentParam(float mDefaultValue, std::string_view mName)
         : NumericParam(0.0f, 1.0f, mDefaultValue, mName) {}
-    bool ToText(double rawValue, std::span<char>& outTextBuf) const override {
+    bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
         float displayValue = rawValue * 100.0f;
         snprintf(outTextBuf.data(), outTextBuf.size(), "%f%%", displayValue);
         return true;
@@ -118,7 +120,7 @@ class IntegerParam : public BaseParam {
         kitdsp::stringCopy(information->name, mName);
         return true;
     }
-    bool ToText(double rawValue, std::span<char>& outTextBuf) const override {
+    bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
         int32_t value = 0;
         if(!ToValue(rawValue, value))
         {
@@ -190,7 +192,7 @@ class EnumParam : public BaseParam {
 
         return true;
     }
-    bool ToText(double rawValue, std::span<char>& outTextBuf) const override {
+    bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
         size_t index = static_cast<size_t>(rawValue);
         if (index < mLabels.size()) {
             snprintf(outTextBuf.data(), outTextBuf.size(), "%s", mLabels[index].data());

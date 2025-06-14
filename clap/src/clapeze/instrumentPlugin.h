@@ -91,17 +91,21 @@ class InstrumentPlugin : public BasePlugin {
     ~InstrumentPlugin() = default;
 
    protected:
-    // impl
+// impl
+#ifdef KITSBLIPS_ENABLE_GUI
     virtual void OnGui() {
         // Basic OnGui implementation. override as desired.
         BaseParamsExt& params = BaseParamsExt::GetFromPlugin<BaseParamsExt>(*this);
         ImGuiHelpers::displayParametersBasic(params);
     };
+#endif
     virtual void Config() override {
         ConfigExtension<NotePortsExt<1, 0>>();
         ConfigExtension<StereoAudioPortsExt<0, 1>>();
         ConfigExtension<StateExt>();
+#ifdef KITSBLIPS_ENABLE_GUI
         TryConfigExtension<TimerSupportExt>(GetHost());
         TryConfigExtension<ImGuiExt>(GetHost(), ImGuiConfig{[this]() { this->OnGui(); }});
+#endif
     }
 };

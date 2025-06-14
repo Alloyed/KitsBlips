@@ -58,20 +58,21 @@ class EffectPlugin : public BasePlugin {
    public:
     EffectPlugin(PluginHost& host) : BasePlugin(host) {}
     ~EffectPlugin() = default;
+
    protected:
+#ifdef KITSBLIPS_ENABLE_GUI
     virtual void OnGui() {
         // Basic OnGui implementation. override as desired.
         BaseParamsExt& params = BaseParamsExt::GetFromPlugin<BaseParamsExt>(*this);
         ImGuiHelpers::displayParametersBasic(params);
     };
+#endif
     virtual void Config() override {
         ConfigExtension<StereoAudioPortsExt<1, 1>>();
         ConfigExtension<StateExt>();
-        if (GetHost().SupportsExtension(CLAP_EXT_TIMER_SUPPORT)) {
-            ConfigExtension<TimerSupportExt>(GetHost());
-        }
-        if (GetHost().SupportsExtension(CLAP_EXT_GUI)) {
-            ConfigExtension<ImGuiExt>(GetHost(), ImGuiConfig{[this]() { this->OnGui(); }});
-        }
+#ifdef KITSBLIPS_ENABLE_GUI
+        TryConfigExtension<TimerSupportExt>(GetHost());
+        TryConfigExtension<ImGuiExt>(GetHost(), ImGuiConfig{[this]() { this->OnGui(); }});
+#endif
     }
 };

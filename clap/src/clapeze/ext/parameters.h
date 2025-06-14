@@ -2,6 +2,7 @@
 
 #include <clap/clap.h>
 #include <etl/queue_spsc_atomic.h>
+#include <etl/span.h>
 #include <kitdsp/string.h>
 #include <cstdint>
 #include <cstdio>
@@ -20,7 +21,7 @@ class BaseParam {
    public:
     virtual ~BaseParam() = default;
     virtual bool FillInformation(clap_id id, clap_param_info_t* information) const = 0;
-    virtual bool ToText(double rawValue, std::span<char>& outTextBuf) const = 0;
+    virtual bool ToText(double rawValue, etl::span<char>& outTextBuf) const = 0;
     virtual bool FromText(std::string_view text, double& outRawValue) const = 0;
     virtual bool OnImgui(double& inOutRawValue) const = 0;
 };
@@ -275,7 +276,7 @@ class ParametersExt : public BaseExt {
 
         const BaseParam* param = self.GetConfig(static_cast<Id>(param_id));
         if (param != nullptr) {
-            auto span = std::span<char>(buf, bufferSize);
+            auto span = etl::span<char>(buf, bufferSize);
             return param->ToText(value, span);
         }
         return false;
