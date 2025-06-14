@@ -59,9 +59,12 @@ bool SdlOpenGlExt::GetPreferredApi(ClapWindowApi& outApi, bool& outIsFloating) {
 bool SdlOpenGlExt::Create(ClapWindowApi api, bool isFloating) {
     switch (api) {
         // only one API possible on these platforms
-        case Win32:
         case Cocoa:
         case _None: {
+            break;
+        }
+        case Win32: {
+            SDL_SetHint(SDL_HINT_WINDOWS_ENABLE_MESSAGELOOP, "0");
             break;
         }
         case X11: {
