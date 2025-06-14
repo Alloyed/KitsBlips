@@ -1,8 +1,7 @@
 #include "sines/sines.h"
-#include <map>
 
 #include "clapeze/common.h"
-#include "clapeze/ext/parameters.h"
+#include "clapeze/ext/parameterConfigs.h"
 #include "clapeze/ext/parameters.h"
 #include "clapeze/gui/imguiExt.h"
 #include "clapeze/instrumentPlugin.h"
@@ -12,7 +11,7 @@
 #include "kitdsp/control/lfo.h"
 #include "kitdsp/filters/svf.h"
 #include "kitdsp/math/util.h"
-#include "kitdsp/osc/blepOscillator.h"
+#include "kitdsp/osc/naiveOscillator.h"
 
 namespace sines {
 enum class Params : clap_id { Rise, Fall, VibratoRate, VibratoDepth, Portamento, Polyphony, Count };
@@ -31,18 +30,18 @@ class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
         }
         void ProcessChoke(Processor& p) {
             mOsc.Reset();
+            mFilter.Reset();
             mAmplitude.Reset();
             mPitch.Reset();
             mVibrato.Reset();
-            mFilter.Reset();
         }
         bool ProcessAudio(Processor& p, StereoAudioBuffer& out) {
             // TODO: it'd be neat to adopt a signals based workflow for these, it'd need to be allocation-free though
-            mPitch.SetHalfLife(p.mParams.Get(Params::Portamento), p.GetSampleRate());
-            mAmplitude.SetHalfLife(p.mParams.Get(mAmplitude.target > mAmplitude.current ? Params::Rise : Params::Fall),
+            mPitch.SetHalfLife(p.mParams.GetRaw(Params::Portamento), p.GetSampleRate());
+            mAmplitude.SetHalfLife(p.mParams.GetRaw(mAmplitude.target > mAmplitude.current ? Params::Rise : Params::Fall),
                                    p.GetSampleRate());
-            mVibrato.SetFrequency(p.mParams.Get(Params::VibratoRate), p.GetSampleRate());
-            float vibratoDepth = p.mParams.Get(Params::VibratoDepth) * 0.01f;
+            mVibrato.SetFrequency(p.mParams.GetRaw(Params::VibratoRate), p.GetSampleRate());
+            float vibratoDepth = p.mParams.GetRaw(Params::VibratoDepth) * 0.01f;
 
             for (uint32_t index = 0; index < out.left.size(); index++) {
                 // doing midiToFrequency last to ensure all effects to get exponential fm
@@ -63,11 +62,11 @@ class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
         }
 
        private:
-        kitdsp::blep::RampUpOscillator mOsc{};
+        kitdsp::naive::RampUpOscillator mOsc{};
+        kitdsp::EmileSvf mFilter {};
         kitdsp::Approach mAmplitude {};
         kitdsp::Approach mPitch {};
         kitdsp::lfo::SineOscillator mVibrato {};
-        kitdsp::EmileSvf mFilter;
     };
 
    public:
@@ -75,7 +74,7 @@ class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
     ~Processor() = default;
 
     void ProcessAudio(StereoAudioBuffer& out) override {
-        mVoices.SetNumVoices(*this, static_cast<size_t>(std::truncf(mParams.Get(Params::Polyphony))));
+        mVoices.SetNumVoices(*this, static_cast<size_t>(std::truncf(mParams.GetRaw(Params::Polyphony))));
         mVoices.ProcessAudio(*this, out);
     }
 
@@ -108,12 +107,12 @@ class Plugin : public InstrumentPlugin {
     void Config() override {
         InstrumentPlugin::Config();
         ParamsExt& params = ConfigExtension<ParamsExt>(GetHost(), Params::Count)
-                                .configNumeric(Params::Rise, 1.0f, 1000.f, 500.0f, "Rise (ms)")
-                                .configNumeric(Params::Fall, 1.0f, 1000.f, 500.0f, "Fall (ms)")
-                                .configNumeric(Params::VibratoRate, .1f, 10.0f, 1.0f, "Vibrato Rate (hz)")
-                                .configNumeric(Params::VibratoDepth, 0.0f, 200.0f, 50.0f, "Vibrato Depth (cents)")
-                                .configNumeric(Params::Portamento, 1.0f, 100.0f, 10.0f, "Portamento (ms)")
-                                .configCount(Params::Polyphony, 1, 16, 8, "Polyphony");
+                                .configParam(Params::Rise, new NumericParam(1.0f, 1000.f, 500.0f, "Rise", "ms"))
+                                .configParam(Params::Fall, new NumericParam(1.0f, 1000.f, 500.0f, "Fall", "ms"))
+                                .configParam(Params::VibratoRate, new NumericParam(.1f, 10.0f, 1.0f, "Vibrato Rate", "hz"))
+                                .configParam(Params::VibratoDepth, new NumericParam(0.0f, 200.0f, 50.0f, "Vibrato Depth", "cents"))
+                                .configParam(Params::Portamento, new NumericParam(1.0f, 100.0f, 10.0f, "Portamento", "ms"))
+                                .configParam(Params::Polyphony, new IntegerParam(1, 16, 8, "Polyphony", "voices", "voice"));
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }
 };

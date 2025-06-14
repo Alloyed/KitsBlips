@@ -38,7 +38,7 @@ class StateExt : public BaseExt {
 
         size_t numParams = params.GetNumParams();
         for (clap_id id = 0; id < numParams; ++id) {
-            double value = params.Get(id);
+            double value = params.GetRaw(id);
             if (out->write(out, &value, sizeof(double)) == -1) {
                 return false;
             }
@@ -63,7 +63,7 @@ class StateExt : public BaseExt {
                 // eof
                 break;
             }
-            params.Set(id, value);
+            params.SetRaw(id, value);
             id++;
         }
         return id == numParams;
