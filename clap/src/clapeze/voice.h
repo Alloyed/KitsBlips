@@ -35,7 +35,7 @@ class PolyphonicVoicePool {
             auto& data = mVoices[idx];
             if (data.activeNote && data.activeNote->Match(note)) {
                 voiceIndex = idx;
-                SendNoteEnd(p, *data.activeNote);
+                SendNoteEnd(p, *(data.activeNote));
                 break;
             }
             if(data.activeNote == std::nullopt && voiceIndex == SIZE_MAX)
@@ -48,7 +48,7 @@ class PolyphonicVoicePool {
             voiceIndex = mVoicesByLastUsed.front();
             mVoicesByLastUsed.pop();
             auto& data = mVoices[voiceIndex];
-            SendNoteEnd(p, *data.activeNote);
+            SendNoteEnd(p, *(data.activeNote));
         }
 
         mVoicesByLastUsed.push(voiceIndex);
@@ -115,8 +115,8 @@ class PolyphonicVoicePool {
     }
 
     struct VoiceData {
-        VoiceType voice;
-        std::optional<NoteTuple> activeNote;
+        VoiceType voice {};
+        std::optional<NoteTuple> activeNote {};
     };
 
     etl::vector<VoiceData, MaxVoices> mVoices;

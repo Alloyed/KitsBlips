@@ -52,6 +52,11 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/free-audio/clap-wrapper.git
     GIT_TAG main
 )
+FetchContent_Declare(
+    cpptrace
+    GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
+    GIT_TAG        v1.0.0
+)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(SDL_SHARED OFF)

@@ -23,6 +23,7 @@ class BaseParam {
     virtual bool FillInformation(clap_id id, clap_param_info_t* information) const = 0;
     virtual bool ToText(double rawValue, etl::span<char>& outTextBuf) const = 0;
     virtual bool FromText(std::string_view text, double& outRawValue) const = 0;
+    virtual double GetRawDefault() const = 0;
 #ifdef KITSBLIPS_ENABLE_GUI
     virtual bool OnImgui(double& inOutRawValue) const = 0;
 #endif
@@ -70,6 +71,7 @@ class ParametersExt : public BaseExt {
     ParametersExt& configParam(Id id, BaseParam* param) {
         clap_id index = static_cast<clap_id>(id);
         mParams[index].reset(param);
+        SetRaw(id, param->GetRawDefault());
         return *this;
     }
 
@@ -151,10 +153,10 @@ class ParametersExt : public BaseExt {
         }
         double GetRaw(Id id) const {
             clap_id index = static_cast<clap_id>(id);
-            if (index >= mState.size()) {
-                return 0.0f;
+            if (index < mState.size()) {
+                return mState[index];
             }
-            return mState[index];
+            return 0.0f;
         }
         void SetRaw(Id id, double newValue) {
             clap_id index = static_cast<clap_id>(id);

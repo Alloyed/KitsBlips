@@ -104,8 +104,8 @@ class InstrumentPlugin : public BasePlugin {
         ConfigExtension<StereoAudioPortsExt<0, 1>>();
         ConfigExtension<StateExt>();
 #ifdef KITSBLIPS_ENABLE_GUI
-        TryConfigExtension<TimerSupportExt>(GetHost());
-        TryConfigExtension<ImGuiExt>(GetHost(), ImGuiConfig{[this]() { this->OnGui(); }});
+        //TryConfigExtension<TimerSupportExt>(GetHost());
+        //TryConfigExtension<ImGuiExt>(GetHost(), ImGuiConfig{[this]() { this->OnGui(); }});
 #endif
     }
 };

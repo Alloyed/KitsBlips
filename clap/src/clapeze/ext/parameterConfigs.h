@@ -31,9 +31,14 @@ class NumericParam : public BaseParam {
         information->flags = CLAP_PARAM_IS_AUTOMATABLE;
         information->min_value = 0.0;
         information->max_value = 1.0;
-        information->default_value = mDefaultValue;
+        information->default_value = GetRawDefault();
         kitdsp::stringCopy(information->name, mName);
         return true;
+    }
+    double GetRawDefault() const override {
+        double rawDefault;
+        assert(FromValue(mDefaultValue, rawDefault));
+        return rawDefault;
     }
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
         float displayValue = 0.0f;
@@ -87,7 +92,7 @@ class PercentParam : public NumericParam
         : NumericParam(0.0f, 1.0f, mDefaultValue, mName) {}
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
         float displayValue = rawValue * 100.0f;
-        snprintf(outTextBuf.data(), outTextBuf.size(), "%f%%", displayValue);
+        snprintf(outTextBuf.data(), outTextBuf.size(), "%.2f%%", displayValue);
         return true;
     }
     bool FromText(std::string_view text, double& outRawValue) const override {
@@ -126,11 +131,16 @@ class IntegerParam : public BaseParam {
         memset(information, 0, sizeof(clap_param_info_t));
         information->id = id;
         information->flags = CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_STEPPED;
-        information->min_value = mMin;
-        information->max_value = mMax;
-        information->default_value = mDefaultValue;
+        information->min_value = static_cast<double>(mMin);
+        information->max_value = static_cast<double>(mMax);
+        information->default_value = GetRawDefault();
         kitdsp::stringCopy(information->name, mName);
         return true;
+    }
+    double GetRawDefault() const override {
+        double rawDefault;
+        assert(FromValue(mDefaultValue, rawDefault));
+        return rawDefault;
     }
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
         int32_t value = 0;
@@ -147,11 +157,13 @@ class IntegerParam : public BaseParam {
             }
 
             snprintf(outTextBuf.data(), outTextBuf.size(), "%d %s", value, unit.data());
+            return true;
         }
         else {
             snprintf(outTextBuf.data(), outTextBuf.size(), "%d", value);
+            return true;
         }
-        return true;
+        return false;
     }
     bool FromText(std::string_view text, double& outRawValue) const override {
         int32_t parsed = static_cast<int32_t>(std::strtod(text.data(), nullptr));
@@ -193,34 +205,38 @@ class EnumParam : public BaseParam {
     EnumParam(std::vector<std::string_view> mLabels, std::string_view mName, EnumType mDefaultValue)
         : mLabels(std::move(mLabels)), mName(mName), mDefaultValue(mDefaultValue) {}
     bool FillInformation(clap_id id, clap_param_info_t* information) const override {
-        double defaultRaw;
-        FromValue(mDefaultValue, defaultRaw);
-
         memset(information, 0, sizeof(clap_param_info_t));
         information->id = id;
         information->flags = CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_ENUM | CLAP_PARAM_IS_STEPPED;
         information->min_value = 0;
-        information->max_value = static_cast<double>(mLabels.size());
-        information->default_value = defaultRaw;
+        information->max_value = static_cast<double>(mLabels.size()-1);
+        information->default_value = GetRawDefault();
         kitdsp::stringCopy(information->name, mName);
 
         return true;
+    }
+    double GetRawDefault() const override {
+        double rawDefault;
+        assert(FromValue(mDefaultValue, rawDefault));
+        return rawDefault;
     }
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
         size_t index = static_cast<size_t>(rawValue);
         if (index < mLabels.size()) {
             snprintf(outTextBuf.data(), outTextBuf.size(), "%s", mLabels[index].data());
+            return true;
         }
-        return true;
+        return false;
     }
     bool FromText(std::string_view text, double& outRawValue) const override {
         for (size_t index = 0; index < mLabels.size(); ++index) {
             // TODO: trim whitespace, do case-insensitive compare, etc
             if (mLabels[index] == text) {
                 outRawValue = static_cast<double>(index);
+                return true;
             }
         }
-        return true;
+        return false;
     }
 #ifdef KITSBLIPS_ENABLE_GUI
     bool OnImgui(double& inOutRawValue) const override {

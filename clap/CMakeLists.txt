@@ -49,6 +49,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     clap
     KitDSP
     etl
+    cpptrace::cpptrace
 )
 
 if(KITSBLIPS_ENABLE_GUI)
@@ -83,6 +84,15 @@ if(KITSBLIPS_ENABLE_GUI)
     endif()
 endif()
 
+# bleh
+# Create a .dSYM file on macOS
+if(APPLE)
+  add_custom_command(
+    TARGET your_target
+    POST_BUILD
+    COMMAND dsymutil $<TARGET_FILE:${PROJECT_NAME}>
+  )
+endif()
 
 make_clapfirst_plugins(
     TARGET_NAME ${PROJECT_NAME}-wrapped
