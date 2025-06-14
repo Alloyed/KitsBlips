@@ -6,10 +6,13 @@
 #include <cstdlib>
 #include <cstring>
 #include <etl/span.h>
-#include <imgui.h>
 #include <kitdsp/math/util.h>
 #include <kitdsp/string.h>
 #include <string_view>
+
+#ifdef KITSBLIPS_ENABLE_GUI
+#include <imgui.h>
+#endif
 
 #include "clapeze/ext/parameters.h"
 
@@ -48,6 +51,7 @@ class NumericParam : public BaseParam {
         double in = std::strtod(text.data(), nullptr);
         return FromValue(in, outRawValue);
     }
+#ifdef KITSBLIPS_ENABLE_GUI
     bool OnImgui(double& inOutRawValue) const override {
         float value = 0.0f;
         ToValue(inOutRawValue, value);
@@ -55,6 +59,7 @@ class NumericParam : public BaseParam {
         FromValue(value, inOutRawValue);
         return changed;
     }
+#endif
     bool ToValue(double rawValue, float& out) const {
         out = kitdsp::lerpf(mMin, mMax, static_cast<float>(rawValue));
         return true;
@@ -145,12 +150,14 @@ class IntegerParam : public BaseParam {
         int32_t parsed = static_cast<int32_t>(std::strtod(text.data(), nullptr));
         return FromValue(parsed, outRawValue);
     }
+#ifdef KITSBLIPS_ENABLE_GUI
     bool OnImgui(double& inOutRawValue) const override {
         int32_t value = inOutRawValue;
         bool changed = ImGui::SliderInt(mName.data(), &value, mMin, mMax);
         inOutRawValue = value;
         return changed;
     }
+#endif
     bool ToValue(double rawValue, int32_t& out) const {
         out = static_cast<int32_t>(rawValue);
         return true;
@@ -208,6 +215,7 @@ class EnumParam : public BaseParam {
         }
         return true;
     }
+#ifdef KITSBLIPS_ENABLE_GUI
     bool OnImgui(double& inOutRawValue) const override {
         EnumType value {};
         ToValue(inOutRawValue, value);
@@ -224,6 +232,7 @@ class EnumParam : public BaseParam {
         }
         return changed;
     }
+#endif
     bool ToValue(double rawValue, EnumType& out) const {
         size_t index = std::clamp<size_t>(static_cast<size_t>(rawValue), 0, mLabels.size());
         out = static_cast<EnumType>(index);

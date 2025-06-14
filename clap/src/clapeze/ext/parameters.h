@@ -23,7 +23,9 @@ class BaseParam {
     virtual bool FillInformation(clap_id id, clap_param_info_t* information) const = 0;
     virtual bool ToText(double rawValue, etl::span<char>& outTextBuf) const = 0;
     virtual bool FromText(std::string_view text, double& outRawValue) const = 0;
+#ifdef KITSBLIPS_ENABLE_GUI
     virtual bool OnImgui(double& inOutRawValue) const = 0;
+#endif
 };
 
 /*
