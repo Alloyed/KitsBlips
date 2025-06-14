@@ -37,14 +37,14 @@ class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
         }
         bool ProcessAudio(Processor& p, StereoAudioBuffer& out) {
             // TODO: it'd be neat to adopt a signals based workflow for these, it'd need to be allocation-free though
-            mPitch.SetHalfLife(p.mParams.GetRaw(Params::Portamento), p.GetSampleRate());
-            mAmplitude.SetHalfLife(p.mParams.GetRaw(mAmplitude.target > mAmplitude.current ? Params::Rise : Params::Fall),
+            mPitch.SetHalfLife(p.mParams.Get<NumericParam>(Params::Portamento), p.GetSampleRate());
+            mAmplitude.SetHalfLife(p.mParams.Get<NumericParam>(mAmplitude.target > mAmplitude.current ? Params::Rise : Params::Fall),
                                    p.GetSampleRate());
-            mVibrato.SetFrequency(p.mParams.GetRaw(Params::VibratoRate), p.GetSampleRate());
-            float vibratoDepth = p.mParams.GetRaw(Params::VibratoDepth) * 0.01f;
+            mVibrato.SetFrequency(p.mParams.Get<NumericParam>(Params::VibratoRate), p.GetSampleRate());
+            float vibratoDepth = p.mParams.Get<NumericParam>(Params::VibratoDepth) * 0.01f;
 
             for (uint32_t index = 0; index < out.left.size(); index++) {
-                // doing midiToFrequency last to ensure all effects to get exponential fm
+                // doing midiToFrequency last to ensure all effects get exponential fm
                 float freq = kitdsp::midiToFrequency(mPitch.Process() + (mVibrato.Process() * vibratoDepth));
                 mOsc.SetFrequency(freq, p.GetSampleRate());
                 mFilter.SetFrequency(freq * 1.5, p.GetSampleRate(), 10.0f);
@@ -74,7 +74,7 @@ class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
     ~Processor() = default;
 
     void ProcessAudio(StereoAudioBuffer& out) override {
-        mVoices.SetNumVoices(*this, static_cast<size_t>(std::truncf(mParams.GetRaw(Params::Polyphony))));
+        mVoices.SetNumVoices(*this, mParams.Get<IntegerParam>(Params::Polyphony));
         mVoices.ProcessAudio(*this, out);
     }
 

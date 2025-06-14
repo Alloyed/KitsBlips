@@ -9,7 +9,6 @@
 #include <cstring>
 #include <memory>
 #include <string_view>
-#include <variant>
 
 #include "clap/events.h"
 #include "clap/ext/params.h"
@@ -64,6 +63,7 @@ class ParametersExt : public BaseExt {
           mMainToAudio(),
           mAudioState(mParams, mNumParams, mMainToAudio, mAudioToMain) {}
 
+    // TODO: should this be a forwarded make_unique instead?
     ParametersExt& configParam(Id id, BaseParam* param) {
         clap_id index = static_cast<clap_id>(id);
         mParams[index].reset(param);

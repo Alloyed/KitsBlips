@@ -36,9 +36,9 @@ class NumericParam : public BaseParam {
             return false;
         }
         if (mUnit.empty()) {
-            snprintf(outTextBuf.data(), outTextBuf.size(), "%f", displayValue);
+            snprintf(outTextBuf.data(), outTextBuf.size(), "%.3f", displayValue);
         } else {
-            snprintf(outTextBuf.data(), outTextBuf.size(), "%f %s", displayValue, mUnit.data());
+            snprintf(outTextBuf.data(), outTextBuf.size(), "%.3f %s", displayValue, mUnit.data());
         }
         return true;
     }
@@ -47,13 +47,15 @@ class NumericParam : public BaseParam {
         return FromValue(in, outRawValue);
     }
     bool OnImgui(double& inOutRawValue) const override {
-        float value = inOutRawValue;
+        float value = 0.0f;
+        ToValue(inOutRawValue, value);
         bool changed = ImGui::SliderFloat(mName.data(), &value, mMin, mMax);
-        inOutRawValue = value;
+        FromValue(value, inOutRawValue);
         return changed;
     }
     bool ToValue(double rawValue, float& out) const {
-        return kitdsp::lerpf(mMin, mMax, static_cast<float>(rawValue));
+        out = kitdsp::lerpf(mMin, mMax, static_cast<float>(rawValue));
+        return true;
     }
     bool FromValue(float in, double& outRaw) const {
         float range = mMax - mMin;
@@ -67,6 +69,24 @@ class NumericParam : public BaseParam {
     const float mDefaultValue;
     const std::string_view mName;
     const std::string_view mUnit;
+};
+
+
+class PercentParam : public NumericParam
+{
+   public:
+    using _valuetype = float;
+    PercentParam(float mDefaultValue, std::string_view mName)
+        : NumericParam(0.0f, 1.0f, mDefaultValue, mName) {}
+    bool ToText(double rawValue, std::span<char>& outTextBuf) const override {
+        float displayValue = rawValue * 100.0f;
+        snprintf(outTextBuf.data(), outTextBuf.size(), "%f%%", displayValue);
+        return true;
+    }
+    bool FromText(std::string_view text, double& outRawValue) const override {
+        double in = std::strtod(text.data(), nullptr);
+        return FromValue(in/100.0f, outRawValue);
+    }
 };
 
 /**
@@ -187,15 +207,15 @@ class EnumParam : public BaseParam {
         return true;
     }
     bool OnImgui(double& inOutRawValue) const override {
-        size_t selectedIndex = static_cast<size_t>(inOutRawValue);
+        EnumType value {};
+        ToValue(inOutRawValue, value);
+        size_t selectedIndex = static_cast<size_t>(value);
         bool changed = false;
         if (ImGui::BeginCombo(mName.data(), mLabels[selectedIndex].data())) {
             for (size_t idx = 0; idx < mLabels.size(); ++idx) {
                 if (ImGui::Selectable(mLabels[idx].data(), idx == selectedIndex)) {
                     FromValue(static_cast<EnumType>(idx), inOutRawValue);
                     changed = true;
-                    //params.SetRaw(id, static_cast<double>(idx));
-                    //anyChanged = true;
                 }
             }
             ImGui::EndCombo();
@@ -204,7 +224,7 @@ class EnumParam : public BaseParam {
     }
     bool ToValue(double rawValue, EnumType& out) const {
         size_t index = std::clamp<size_t>(static_cast<size_t>(rawValue), 0, mLabels.size());
-        out = index;
+        out = static_cast<EnumType>(index);
         return true;
     }
     bool FromValue(EnumType in, double& outRaw) const {
@@ -216,4 +236,16 @@ class EnumParam : public BaseParam {
     const std::vector<std::string_view> mLabels;
     const std::string_view mName;
     const EnumType mDefaultValue;
+};
+
+enum class OnOff {
+    Off, On
+};
+/**
+ * Represents a boolean on/off selection
+ */
+class OnOffParam : public EnumParam<OnOff>
+{
+    public:
+    OnOffParam(std::string_view name, OnOff defaultValue): EnumParam({"Off", "On"}, name, defaultValue) {}
 };

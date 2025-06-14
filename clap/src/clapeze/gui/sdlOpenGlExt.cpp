@@ -222,7 +222,8 @@ void SdlOpenGlExt::AddActiveInstance(SdlOpenGlExt* instance) {
             sUpdateTimerId = 0;
         }
 
-        sUpdateTimerId = platformGui::addGuiTimer(instance->mHost, 16, &UpdateInstances);
+        constexpr int32_t timerMs = 32; // 30fps
+        sUpdateTimerId = platformGui::addGuiTimer(instance->mHost, timerMs, &UpdateInstances);
     }
 }
 
