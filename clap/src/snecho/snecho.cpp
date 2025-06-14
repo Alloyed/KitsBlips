@@ -2,6 +2,7 @@
 
 #include "clapeze/effectPlugin.h"
 #include "clapeze/ext/parameters.h"
+#include "clapeze/ext/parameterConfigs.h"
 #include "descriptor.h"
 
 #include <kitdsp/dbMeter.h>
@@ -35,18 +36,18 @@ class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
     void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
         // inputs
         // core
-        snes1.cfg.echoBufferSize = mParams.Get(Params::Size);
+        snes1.cfg.echoBufferSize = mParams.Get<NumericParam>(Params::Size);
 
-        snes1.cfg.echoFeedback = mParams.Get(Params::Feedback);
+        snes1.cfg.echoFeedback = mParams.Get<PercentParam>(Params::Feedback);
 
-        size_t filterPreset = static_cast<size_t>(mParams.Get(Params::FilterPreset) * SNES::kNumFilterPresets);
+        size_t filterPreset = mParams.Get<IntegerParam>(Params::FilterPreset);
         if (filterPreset != mLastFilterPreset) {
             mLastFilterPreset = filterPreset;
             memcpy(snes1.cfg.filterCoefficients, SNES::kFilterPresets[filterPreset].data, SNES::kFIRTaps);
             // snes1.cfg.filterGain = dbToRatio(-SNES::kFilterPresets[filterPreset].maxGainDb);
         }
 
-        size_t range = round(mParams.Get(Params::SizeRange));
+        int32_t range = mParams.Get<IntegerParam>(Params::SizeRange);
         if (range == 0) {
             snes1.cfg.echoBufferRangeMaxSamples = SNES::kOriginalMaxEchoSamples;
         } else if (range == 1) {
@@ -55,17 +56,17 @@ class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
             snes1.cfg.echoBufferRangeMaxSamples = SNES::MsToSamples(10000.0f);
         }
 
-        float wetDryMix = mParams.Get(Params::Mix);
+        float wetDryMix = mParams.Get<PercentParam>(Params::Mix);
 
-        snes1.cfg.freezeEcho = (mParams.Get(Params::FreezeEcho)) > 0.5f;
+        snes1.cfg.freezeEcho = mParams.Get<OnOffParam>(Params::FreezeEcho) == OnOff::On;
 
         // extension
-        snes1.cfg.echoDelayMod = mParams.Get(Params::EchoDelayMod);
+        snes1.cfg.echoDelayMod = mParams.Get<NumericParam>(Params::EchoDelayMod);
 
-        snes1.cfg.filterMix = mParams.Get(Params::FilterMix);
+        snes1.cfg.filterMix = mParams.Get<PercentParam>(Params::FilterMix);
 
-        snes1.mod.clearBuffer = mParams.Get(Params::ClearBuffer) > 0.5f;
-        snes1.mod.resetHead = mParams.Get(Params::ResetHead) > 0.5f;
+        snes1.mod.clearBuffer = mParams.Get<OnOffParam>(Params::ClearBuffer) == OnOff::On;
+        snes1.mod.resetHead = mParams.Get<OnOffParam>(Params::ResetHead) == OnOff::On;
         snes1.cfg.echoBufferIncrementSamples = SNES::kOriginalEchoIncrementSamples;
 
         // processing
@@ -94,6 +95,7 @@ class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
     kitdsp::Resampler<float> snesSampler{kitdsp::SNES::kOriginalSampleRate, 41000};
 };
 
+
 class Plugin : public EffectPlugin {
    public:
     static const PluginEntry Entry;
@@ -105,16 +107,16 @@ class Plugin : public EffectPlugin {
         EffectPlugin::Config();
 
         ParamsExt& params = ConfigExtension<ParamsExt>(GetHost(), Params::Count)
-                                .configNumeric(Params::Size, 0.0f, 1.0f, 0.5f, "Size")
-                                .configNumeric(Params::Feedback, 0.0f, 1.0f, 0.5f, "Feedback")
-                                .configNumeric(Params::FilterPreset, 0.0f, 1.0f, 0.0f, "Filter Preset")
-                                .configNumeric(Params::SizeRange, 0.0f, 1.0f, 0.5f, "Size Range")
-                                .configNumeric(Params::Mix, 0.0f, 1.0f, 0.5f, "Mix")
-                                .configNumeric(Params::FreezeEcho, 0.0f, 1.0f, 0.0f, "Freeze Echo")
-                                .configNumeric(Params::EchoDelayMod, 0.0f, 1.0f, 1.0f, "Echo Mod")
-                                .configNumeric(Params::FilterMix, 0.0f, 1.0f, 0.5f, "Filter Mix")
-                                .configNumeric(Params::ClearBuffer, 0.0f, 1.0f, 0.0f, "Clear Buffer")
-                                .configNumeric(Params::ResetHead, 0.0f, 1.0f, 0.0f, "Reset Playhead");
+                                .configParam(Params::Size, new PercentParam(0.5f, "Size"))
+                                .configParam(Params::Feedback, new PercentParam(0.5f, "Feedback"))
+                                .configParam(Params::FilterPreset, new IntegerParam(0, SNES::kNumFilterPresets, 0, "Filter Preset"))
+                                .configParam(Params::SizeRange, new IntegerParam(0, 2, 0, "Size Range"))
+                                .configParam(Params::Mix, new PercentParam(0.5f, "Mix"))
+                                .configParam(Params::FreezeEcho, new OnOffParam("Freeze Echo", OnOff::Off))
+                                .configParam(Params::EchoDelayMod, new PercentParam(1.0f, "Echo Mod"))
+                                .configParam(Params::FilterMix, new PercentParam(1.0f, "Filter Mix"))
+                                .configParam(Params::ClearBuffer, new OnOffParam("Clear Buffer", OnOff::Off))
+                                .configParam(Params::ResetHead, new OnOffParam("Reset Playhead", OnOff::Off));
 
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }

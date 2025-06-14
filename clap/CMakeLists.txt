@@ -8,10 +8,12 @@ if(APPLE)
 endif()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+#end globals
 
 project(KitsBlips VERSION 0.0.0)
 set(PRODUCT_NAME "KitsBlips")
 set(PRODUCT_ID "me.alloyed.KitsBlips")
+option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
 
 # VSTs use codecvt in their headers, which are removed in C++26.
 # ETL expects char8_t to be a keyword post C++20, but clap-wrapper hard-disables it. so we'll target our plugin narrowly for C++23
@@ -19,64 +21,72 @@ set(CMAKE_CXX_STANDARD 17)
 
 # shared libs
 include(../content.cmake)
-include(cmake/imgui.cmake)
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
-FetchContent_MakeAvailable(clap clap-wrapper SDL3 KitDSP)
+FetchContent_MakeAvailable(clap clap-wrapper KitDSP)
 
-add_library(${PROJECT_NAME}-plugin STATIC
-    src/entry.cpp
-
-    src/clapeze/basePlugin.cpp
-    src/clapeze/pluginHost.cpp
-    src/clapeze/gui/sdlOpenGlExt.cpp
-    src/clapeze/gui/imguiExt.cpp
-
-    src/snecho/snecho.cpp
-    src/sines/sines.cpp
-)
-set_property(TARGET ${PROJECT_NAME}-plugin PROPERTY CXX_STANDARD 23)
-
-target_include_directories(${PROJECT_NAME}-plugin
-    PUBLIC
-    src
-)
-
-target_link_libraries(${PROJECT_NAME}-plugin
-    PUBLIC
-    clap
-    KitDSP
-    etl
-    imgui
-    imgui_opengl_sdl3
-    PRIVATE
-)
-
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    target_sources(${PROJECT_NAME}-plugin PUBLIC
-        src/clapeze/gui/platform/platformWin32.cpp
-    )
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    target_sources(${PROJECT_NAME}-plugin PUBLIC
-        src/clapeze/gui/platform/platformCocoa.cpp
-        src/clapeze/gui/platform/platformCocoa.m
-    )
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    find_package(X11)
-    target_link_libraries(${PROJECT_NAME}-plugin PUBLIC X11::X11 X11::Xutil)
-    target_sources(${PROJECT_NAME}-plugin PUBLIC
-        src/clapeze/gui/platform/platformLinux.cpp
-    )
-endif()
-
-target_compile_definitions(${PROJECT_NAME}-plugin PUBLIC
+add_library(${PROJECT_NAME} STATIC)
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
+target_compile_definitions(${PROJECT_NAME} PUBLIC
     PRODUCT_NAME="${PRODUCT_NAME}"
     PRODUCT_ID="${PRODUCT_ID}"
     PRODUCT_VERSION="${PROJECT_VERSION}"
 )
 
+target_sources(${PROJECT_NAME} PRIVATE
+    src/entry.cpp
+
+    src/clapeze/basePlugin.cpp
+    src/clapeze/pluginHost.cpp
+
+    src/crunch/crunch.cpp
+    src/sines/sines.cpp
+    src/snecho/snecho.cpp
+)
+
+target_include_directories(${PROJECT_NAME} PUBLIC src)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC
+    clap
+    KitDSP
+    etl
+)
+
+if(KITSBLIPS_ENABLE_GUI)
+    include(cmake/imgui.cmake)
+    set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
+    FetchContent_MakeAvailable(SDL3)
+
+    target_compile_definitions(${PROJECT_NAME} PUBLIC KITSBLIPS_ENABLE_GUI=1)
+    target_sources(${PROJECT_NAME} PRIVATE
+        src/clapeze/gui/sdlOpenGlExt.cpp
+        src/clapeze/gui/imguiExt.cpp
+    )
+    target_link_libraries(${PROJECT_NAME} PUBLIC
+        imgui
+        imgui_opengl_sdl3
+    )
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        target_sources(${PROJECT_NAME} PUBLIC
+            src/clapeze/gui/platform/platformWin32.cpp
+        )
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        target_sources(${PROJECT_NAME} PUBLIC
+            src/clapeze/gui/platform/platformCocoa.cpp
+            src/clapeze/gui/platform/platformCocoa.m
+        )
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        find_package(X11)
+        target_sources(${PROJECT_NAME} PUBLIC
+            src/clapeze/gui/platform/platformLinux.cpp
+        )
+        target_link_libraries(${PROJECT_NAME} PUBLIC X11::X11 X11::Xutil)
+    endif()
+endif()
+
+
 make_clapfirst_plugins(
-    TARGET_NAME ${PROJECT_NAME}
-    IMPL_TARGET ${PROJECT_NAME}-plugin
+    TARGET_NAME ${PROJECT_NAME}-wrapped
+    IMPL_TARGET ${PROJECT_NAME}
 
     OUTPUT_NAME "${PRODUCT_NAME}"
 

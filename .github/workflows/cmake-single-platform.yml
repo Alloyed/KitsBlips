@@ -15,6 +15,7 @@ concurrency:
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
+  KITSBLIPS_ENABLE_GUI: OFF
 
 defaults:
   run:
@@ -32,8 +33,7 @@ jobs:
             os: ubuntu-24.04
           - name: macOS
             os: macos-14
-            #extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" # https://github.com/libsdl-org/setup-sdl/issues/33
-            extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64"
+            extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
           - name: Windows
             # https://github.com/actions/runner-images/issues/10980
             os: windows-2025
@@ -45,20 +45,13 @@ jobs:
         with:
           packages: libsdl2-dev
           version: 1.0
-      - uses: libsdl-org/setup-sdl@main
-        if: runner.os != 'Linux' # 500 fetch error for some reason :(
-        id: sdl
-        with:
-          install-linux-dependencies: true # not linux related, it's just named that
-          version: 3-latest
-          version-sdl-image: 3-latest
 
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Configure CMake
-        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} "${{github.workspace}}/clap" ${{matrix.extra-flags}}
+        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DKITSBLIPS_ENABLE_GUI=${{env.KITSBLIPS_ENABLE_GUI}} "${{github.workspace}}/clap" ${{matrix.extra-flags}}
 
       - name: Build
         run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}

@@ -19,11 +19,14 @@ class PolyphonicVoicePool {
    public:
     PolyphonicVoicePool(size_t numVoices = MaxVoices) : mVoices(numVoices) {}
 
-    void SetNumVoices(size_t numVoices) {
-        assert(numVoices <= MaxVoices);
-        StopAllVoices();
-        mVoices.resize(numVoices);
-        mVoicesByLastUsed.clear();
+    void SetNumVoices(ProcessorType& p, size_t numVoices) {
+        if(numVoices != mVoices.size())
+        {
+            assert(numVoices <= MaxVoices);
+            StopAllVoices(p);
+            mVoices.resize(numVoices);
+            mVoicesByLastUsed.clear();
+        }
     }
     void ProcessNoteOn(ProcessorType& p, const NoteTuple& note, float velocity) {
         // retrigger existing voice, if there is one

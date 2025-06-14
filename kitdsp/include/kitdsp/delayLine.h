@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstring>
+#include <cstdint>
 #include "kitdsp/math/interpolate.h"
-#include "kitdsp/math/util.h"
 
 namespace kitdsp {
 /**

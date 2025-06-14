@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef KITSBLIPS_ENABLE_GUI
+
 #include "clapeze/ext/gui.h"
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_video.h>
@@ -53,3 +55,5 @@ class SdlOpenGlExt : public GuiExt {
     static std::vector<SdlOpenGlExt*> sActiveInstances;
     static PluginHost::TimerId sUpdateTimerId;
 };
+
+#endif

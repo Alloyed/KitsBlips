@@ -1,4 +1,5 @@
 #pragma once
+#ifdef KITSBLIPS_ENABLE_GUI
 
 #include <SDL3/SDL_video.h>
 #include "clapeze/gui/sdlOpenGlExt.h"
@@ -27,3 +28,5 @@ class ImGuiExt : public SdlOpenGlExt {
     ImGuiConfig mConfig;
     ImGuiContext* mImgui = nullptr;
 };
+
+#endif
