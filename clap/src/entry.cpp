@@ -7,6 +7,7 @@
 
 #include "clapeze/basePlugin.h"
 
+#include "crunch/crunch.h"
 #include "snecho/snecho.h"
 #include "sines/sines.h"
 
@@ -14,6 +15,7 @@ namespace PluginFactory {
 
 // Add your plugin here!
 const std::vector<PluginEntry> plugins{
+    crunch::Entry,
     snecho::Entry,
     sines::Entry,
 };

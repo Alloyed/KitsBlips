@@ -24,27 +24,28 @@ include(../content.cmake)
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
 FetchContent_MakeAvailable(clap clap-wrapper KitDSP)
 
-add_library(${PROJECT_NAME}-plugin STATIC)
-set_property(TARGET ${PROJECT_NAME}-plugin PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
-target_compile_definitions(${PROJECT_NAME}-plugin PUBLIC
+add_library(${PROJECT_NAME} STATIC)
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
+target_compile_definitions(${PROJECT_NAME} PUBLIC
     PRODUCT_NAME="${PRODUCT_NAME}"
     PRODUCT_ID="${PRODUCT_ID}"
     PRODUCT_VERSION="${PROJECT_VERSION}"
 )
 
-target_sources(${PROJECT_NAME}-plugin PRIVATE
+target_sources(${PROJECT_NAME} PRIVATE
     src/entry.cpp
 
     src/clapeze/basePlugin.cpp
     src/clapeze/pluginHost.cpp
 
-    src/snecho/snecho.cpp
+    src/crunch/crunch.cpp
     src/sines/sines.cpp
+    src/snecho/snecho.cpp
 )
 
-target_include_directories(${PROJECT_NAME}-plugin PUBLIC src)
+target_include_directories(${PROJECT_NAME} PUBLIC src)
 
-target_link_libraries(${PROJECT_NAME}-plugin PUBLIC
+target_link_libraries(${PROJECT_NAME} PUBLIC
     clap
     KitDSP
     etl
@@ -55,37 +56,37 @@ if(KITSBLIPS_ENABLE_GUI)
     set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
     FetchContent_MakeAvailable(SDL3)
 
-    target_compile_definitions(${PROJECT_NAME}-plugin PUBLIC KITSBLIPS_ENABLE_GUI=1)
-    target_sources(${PROJECT_NAME}-plugin PRIVATE
+    target_compile_definitions(${PROJECT_NAME} PUBLIC KITSBLIPS_ENABLE_GUI=1)
+    target_sources(${PROJECT_NAME} PRIVATE
         src/clapeze/gui/sdlOpenGlExt.cpp
         src/clapeze/gui/imguiExt.cpp
     )
-    target_link_libraries(${PROJECT_NAME}-plugin PUBLIC
+    target_link_libraries(${PROJECT_NAME} PUBLIC
         imgui
         imgui_opengl_sdl3
     )
     if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        target_sources(${PROJECT_NAME}-plugin PUBLIC
+        target_sources(${PROJECT_NAME} PUBLIC
             src/clapeze/gui/platform/platformWin32.cpp
         )
     elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-        target_sources(${PROJECT_NAME}-plugin PUBLIC
+        target_sources(${PROJECT_NAME} PUBLIC
             src/clapeze/gui/platform/platformCocoa.cpp
             src/clapeze/gui/platform/platformCocoa.m
         )
     elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         find_package(X11)
-        target_sources(${PROJECT_NAME}-plugin PUBLIC
+        target_sources(${PROJECT_NAME} PUBLIC
             src/clapeze/gui/platform/platformLinux.cpp
         )
-        target_link_libraries(${PROJECT_NAME}-plugin PUBLIC X11::X11 X11::Xutil)
+        target_link_libraries(${PROJECT_NAME} PUBLIC X11::X11 X11::Xutil)
     endif()
 endif()
 
 
 make_clapfirst_plugins(
-    TARGET_NAME ${PROJECT_NAME}
-    IMPL_TARGET ${PROJECT_NAME}-plugin
+    TARGET_NAME ${PROJECT_NAME}-wrapped
+    IMPL_TARGET ${PROJECT_NAME}
 
     OUTPUT_NAME "${PRODUCT_NAME}"
 

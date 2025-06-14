@@ -96,6 +96,13 @@ class PercentParam : public NumericParam
     }
 };
 
+class DbParam : public NumericParam
+{
+   public:
+    DbParam(float minValue, float maxValue, float mDefaultValue, std::string_view mName)
+        : NumericParam(minValue, maxValue, mDefaultValue, mName, "db") {}
+};
+
 /**
  * Represents an integer value. handy for managing the counts of things (eg. number of voices)
  */
