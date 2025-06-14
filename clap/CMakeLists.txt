@@ -48,8 +48,6 @@ target_link_libraries(${PROJECT_NAME}-plugin PUBLIC
     clap
     KitDSP
     etl
-    imgui
-    imgui_opengl_sdl3
 )
 
 if(KITSBLIPS_ENABLE_GUI)
