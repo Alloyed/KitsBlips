@@ -1,13 +1,13 @@
 #pragma once
 
-#include <clap/clap.h>
 #include <cassert>
+#include <clap/clap.h>
+#include <clap/events.h>
 #include <cstddef>
 #include <cstdio>
 #include <memory>
 #include <unordered_map>
 
-#include "clap/events.h"
 #include "clapeze/pluginHost.h"
 
 class BasePlugin;

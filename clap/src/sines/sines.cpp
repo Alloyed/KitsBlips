@@ -7,11 +7,11 @@
 #include "clapeze/instrumentPlugin.h"
 #include "clapeze/voice.h"
 #include "descriptor.h"
-#include "kitdsp/control/approach.h"
-#include "kitdsp/control/lfo.h"
-#include "kitdsp/filters/svf.h"
-#include "kitdsp/math/util.h"
-#include "kitdsp/osc/naiveOscillator.h"
+#include <kitdsp/control/approach.h>
+#include <kitdsp/control/lfo.h>
+#include <kitdsp/filters/svf.h>
+#include <kitdsp/math/util.h>
+#include <kitdsp/osc/naiveOscillator.h>
 
 namespace sines {
 enum class Params : clap_id { Rise, Fall, VibratoRate, VibratoDepth, Portamento, Polyphony, Count };

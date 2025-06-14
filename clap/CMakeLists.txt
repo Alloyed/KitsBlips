@@ -21,9 +21,8 @@ set(CMAKE_CXX_STANDARD 17)
 
 # shared libs
 include(../content.cmake)
-include(cmake/imgui.cmake)
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
-FetchContent_MakeAvailable(clap clap-wrapper SDL3 KitDSP)
+FetchContent_MakeAvailable(clap clap-wrapper KitDSP)
 
 add_library(${PROJECT_NAME}-plugin STATIC)
 set_property(TARGET ${PROJECT_NAME}-plugin PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
@@ -33,7 +32,7 @@ target_compile_definitions(${PROJECT_NAME}-plugin PUBLIC
     PRODUCT_VERSION="${PROJECT_VERSION}"
 )
 
-target_sources(${PROJECT_NAME}-plugin PUBLIC
+target_sources(${PROJECT_NAME}-plugin PRIVATE
     src/entry.cpp
 
     src/clapeze/basePlugin.cpp
@@ -54,8 +53,12 @@ target_link_libraries(${PROJECT_NAME}-plugin PUBLIC
 )
 
 if(KITSBLIPS_ENABLE_GUI)
+    include(cmake/imgui.cmake)
+    set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
+    FetchContent_MakeAvailable(SDL3)
+
     target_compile_definitions(${PROJECT_NAME}-plugin PUBLIC KITSBLIPS_ENABLE_GUI=1)
-    target_sources(${PROJECT_NAME}-plugin PUBLIC
+    target_sources(${PROJECT_NAME}-plugin PRIVATE
         src/clapeze/gui/sdlOpenGlExt.cpp
         src/clapeze/gui/imguiExt.cpp
     )
