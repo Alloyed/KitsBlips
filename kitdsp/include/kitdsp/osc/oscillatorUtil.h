@@ -22,7 +22,11 @@ class Phasor {
     bool Advance() {
         float nextPhase = mPhase + mAdvance;
         mPhase = WrapPhase(nextPhase);
+        // true if wrapped, false if not
         return mPhase != nextPhase;
+    }
+    bool WillWrapNext() {
+        return mPhase + mAdvance > 1.0f;
     }
     float mPhase = 0.0f;
     float mAdvance = 0.0f;

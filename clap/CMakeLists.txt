@@ -20,9 +20,11 @@ option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
 set(CMAKE_CXX_STANDARD 17)
 
 # shared libs
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(../content.cmake)
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
 FetchContent_MakeAvailable(clap clap-wrapper KitDSP)
+find_package(Sanitizers)
 
 add_library(${PROJECT_NAME} STATIC)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
@@ -49,11 +51,10 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     clap
     KitDSP
     etl
-    cpptrace::cpptrace
 )
 
 if(KITSBLIPS_ENABLE_GUI)
-    include(cmake/imgui.cmake)
+    include(imgui)
     set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
     FetchContent_MakeAvailable(SDL3)
 

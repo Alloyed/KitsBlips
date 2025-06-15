@@ -25,11 +25,11 @@ uint32_t get_plugin_count(const clap_plugin_factory* factory) {
 }
 
 const clap_plugin_descriptor_t* get_plugin_descriptor(const clap_plugin_factory* factory, uint32_t index) {
-    if (index > plugins.size()) {
-        return nullptr;
+    if (index < plugins.size()) {
+        const PluginEntry& entry = plugins[index];
+        return &entry.meta;
     }
-    const PluginEntry& entry = plugins[index];
-    return &entry.meta;
+    return nullptr;
 }
 
 const clap_plugin_t* create_plugin(const clap_plugin_factory* factory, const clap_host_t* host, const char* pluginId) {

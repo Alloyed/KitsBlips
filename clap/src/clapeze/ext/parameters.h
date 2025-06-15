@@ -32,8 +32,12 @@ class BaseParam {
 /*
  * TODO this is very complex and deserves to be subclassed a bit so that you can pick between a batteries included
  * "easy" interface, a complex but configurable "hard" interface, or just "here's the basics make your own thing"
+ * 
+ * More features we should eventually support:
+ * - per-voice modulation (assignable by note)
+ * - observer architecture (onParamChanged())
+ * - dynamic parameter modification
  */
-
 template <typename PARAM_ID>
 class ParametersExt : public BaseExt {
    public:
