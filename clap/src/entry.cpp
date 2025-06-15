@@ -1,5 +1,3 @@
-/* Main clap entry point. enumerate plugins here! */
-
 #include <clap/clap.h>
 #include <cassert>
 #include <string_view>
@@ -13,11 +11,14 @@
 
 namespace PluginFactory {
 
-// Add your plugin here!
 const std::vector<PluginEntry> plugins{
-    crunch::Entry,
     snecho::Entry,
     sines::Entry,
+    crunch::Entry,
+    // Add your plugin here!
+    // Some hosts seem to store the plugin index alongside the id, so make sure
+    // you only ever add to the end of the list.
+    // TODO: filter based on some sort of runtime configuration (so users don't need to manually hide every plugin in their daw)
 };
 
 uint32_t get_plugin_count(const clap_plugin_factory* factory) {
