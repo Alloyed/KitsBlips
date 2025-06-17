@@ -151,12 +151,13 @@ class Plugin : public EffectPlugin {
     void Config() override {
         EffectPlugin::Config();
 
-        ParamsExt& params = ConfigExtension<ParamsExt>(GetHost(), Params::Count)
-                                .configParam(Params::Algorithm, new EnumParam<Algorithm>({"Clip", "Saturate", "Fold", "Rectify"}, "Algorithm", Algorithm::HardClip))
-                                .configParam(Params::Gain, new DbParam(0.0f, 32.0f, 0.0f, "Gain"))
-                                .configParam(Params::Tone, new PercentParam(0.5f, "Tone"))
-                                .configParam(Params::Makeup, new DbParam(-9.0f, 9.0f, 0.0f, "Makeup"))
-                                .configParam(Params::Mix, new PercentParam(1.0f, "Mix"));
+        ParamsExt& params =
+            ConfigExtension<ParamsExt>(GetHost(), Params::Count)
+                .ConfigParam<EnumParam<Algorithm>>(Params::Algorithm, "Algorithm", std::vector<std::string_view>{"Clip", "Saturate", "Fold", "Rectify"}, Algorithm::HardClip)
+                .ConfigParam<DbParam>(Params::Gain, "Gain", 0.0f, 32.0f, 0.0f)
+                .ConfigParam<PercentParam>(Params::Tone, "Tone", 0.5f)
+                .ConfigParam<DbParam>(Params::Makeup, "Makeup", -9.0f, 9.0f, 0.0f)
+                .ConfigParam<PercentParam>(Params::Mix, "Mix", 1.0f);
 
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }

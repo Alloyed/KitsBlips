@@ -106,13 +106,14 @@ class Plugin : public InstrumentPlugin {
    protected:
     void Config() override {
         InstrumentPlugin::Config();
-        ParamsExt& params = ConfigExtension<ParamsExt>(GetHost(), Params::Count)
-                                .configParam(Params::Rise, new NumericParam(1.0f, 1000.f, 500.0f, "Rise", "ms"))
-                                .configParam(Params::Fall, new NumericParam(1.0f, 1000.f, 500.0f, "Fall", "ms"))
-                                .configParam(Params::VibratoRate, new NumericParam(.1f, 10.0f, 1.0f, "Vibrato Rate", "hz"))
-                                .configParam(Params::VibratoDepth, new NumericParam(0.0f, 200.0f, 50.0f, "Vibrato Depth", "cents"))
-                                .configParam(Params::Portamento, new NumericParam(1.0f, 100.0f, 10.0f, "Portamento", "ms"))
-                                .configParam(Params::Polyphony, new IntegerParam(1, 16, 8, "Polyphony", "voices", "voice"));
+        ParamsExt& params =
+            ConfigExtension<ParamsExt>(GetHost(), Params::Count)
+                .ConfigParam<NumericParam>(Params::Rise, "Rise", 1.0f, 1000.f, 500.0f, "ms")
+                .ConfigParam<NumericParam>(Params::Fall, "Fall", 1.0f, 1000.f, 500.0f, "ms")
+                .ConfigParam<NumericParam>(Params::VibratoRate, "Vibrato Rate", .1f, 10.0f, 1.0f, "hz")
+                .ConfigParam<NumericParam>(Params::VibratoDepth, "Vibrato Depth", 0.0f, 200.0f, 50.0f, "cents")
+                .ConfigParam<NumericParam>(Params::Portamento, "Portamento", 1.0f, 100.0f, 10.0f, "ms")
+                .ConfigParam<IntegerParam>(Params::Polyphony, "Polyphony", 1, 16, 8, "voices", "voice");
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }
 };

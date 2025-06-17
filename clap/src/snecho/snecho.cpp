@@ -14,16 +14,16 @@ using namespace kitdsp;
 namespace snecho {
 
 enum class Params : clap_id {
+    Mix,
     Size,
     Feedback,
     FilterPreset,
-    SizeRange,
-    Mix,
     FreezeEcho,
+    ResetHead,
+    SizeRange,
     EchoDelayMod,
     FilterMix,
     ClearBuffer,
-    ResetHead,
     Count
 };
 using ParamsExt = ParametersExt<Params>;
@@ -106,17 +106,20 @@ class Plugin : public EffectPlugin {
     void Config() override {
         EffectPlugin::Config();
 
-        ParamsExt& params = ConfigExtension<ParamsExt>(GetHost(), Params::Count)
-                                .configParam(Params::Size, new PercentParam(0.5f, "Size"))
-                                .configParam(Params::Feedback, new PercentParam(0.5f, "Feedback"))
-                                .configParam(Params::FilterPreset, new IntegerParam(0, SNES::kNumFilterPresets, 0, "Filter Preset"))
-                                .configParam(Params::SizeRange, new IntegerParam(0, 2, 0, "Size Range"))
-                                .configParam(Params::Mix, new PercentParam(0.5f, "Mix"))
-                                .configParam(Params::FreezeEcho, new OnOffParam("Freeze Echo", OnOff::Off))
-                                .configParam(Params::EchoDelayMod, new PercentParam(1.0f, "Echo Mod"))
-                                .configParam(Params::FilterMix, new PercentParam(1.0f, "Filter Mix"))
-                                .configParam(Params::ClearBuffer, new OnOffParam("Clear Buffer", OnOff::Off))
-                                .configParam(Params::ResetHead, new OnOffParam("Reset Playhead", OnOff::Off));
+        ParamsExt& params =
+            ConfigExtension<ParamsExt>(GetHost(), Params::Count)
+                .ConfigModule("Original")
+                .ConfigParam<PercentParam>(Params::Mix, "Mix", 0.5f)
+                .ConfigParam<PercentParam>(Params::Size, "Size", 0.5f)
+                .ConfigParam<PercentParam>(Params::Feedback, "Feedback", 0.5f)
+                .ConfigParam<IntegerParam>(Params::FilterPreset, "Filter Preset", 0, SNES::kNumFilterPresets, 0)
+                .ConfigParam<OnOffParam>(Params::FreezeEcho, "Freeze Echo", OnOff::Off)
+                .ConfigParam<OnOffParam>(Params::ResetHead, "Reset Playhead", OnOff::Off)
+                .ConfigModule("Extensions")
+                .ConfigParam<IntegerParam>(Params::SizeRange, "Size Range", 0, 2, 0)
+                .ConfigParam<PercentParam>(Params::EchoDelayMod, "Echo Mod", 1.0f)
+                .ConfigParam<PercentParam>(Params::FilterMix, "Filter Mix", 1.0f)
+                .ConfigParam<OnOffParam>(Params::ClearBuffer, "Clear Buffer", OnOff::Off);
 
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }

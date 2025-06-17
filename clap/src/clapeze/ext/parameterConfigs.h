@@ -23,8 +23,8 @@
 class NumericParam : public BaseParam {
    public:
     using _valuetype = float;
-    NumericParam(float mMin, float mMax, float mDefaultValue, std::string_view mName, std::string_view mUnit="")
-        : mMin(mMin), mMax(mMax), mDefaultValue(mDefaultValue), mName(mName), mUnit(mUnit) {}
+    NumericParam(std::string_view mModule, std::string_view mName, float mMin, float mMax, float mDefaultValue, std::string_view mUnit="")
+        : mModule(mModule), mName(mName),mMin(mMin), mMax(mMax), mDefaultValue(mDefaultValue),  mUnit(mUnit) {}
     bool FillInformation(clap_id id, clap_param_info_t* information) const override {
         memset(information, 0, sizeof(clap_param_info_t));
         information->id = id;
@@ -33,6 +33,7 @@ class NumericParam : public BaseParam {
         information->max_value = 1.0;
         information->default_value = GetRawDefault();
         kitdsp::stringCopy(information->name, mName);
+        kitdsp::stringCopy(information->module, mModule);
         return true;
     }
     double GetRawDefault() const override {
@@ -76,10 +77,11 @@ class NumericParam : public BaseParam {
     }
 
    private:
+    const std::string_view mModule;
+    const std::string_view mName;
     const float mMin;
     const float mMax;
     const float mDefaultValue;
-    const std::string_view mName;
     const std::string_view mUnit;
 };
 
@@ -88,8 +90,8 @@ class PercentParam : public NumericParam
 {
    public:
     using _valuetype = float;
-    PercentParam(float mDefaultValue, std::string_view mName)
-        : NumericParam(0.0f, 1.0f, mDefaultValue, mName) {}
+    PercentParam(std::string_view mModule, std::string_view mName, float mDefaultValue)
+        : NumericParam(mModule, mName, 0.0f, 1.0f, mDefaultValue) {}
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
         float displayValue = rawValue * 100.0f;
         snprintf(outTextBuf.data(), outTextBuf.size(), "%.2f%%", displayValue);
@@ -104,8 +106,8 @@ class PercentParam : public NumericParam
 class DbParam : public NumericParam
 {
    public:
-    DbParam(float minValue, float maxValue, float mDefaultValue, std::string_view mName)
-        : NumericParam(minValue, maxValue, mDefaultValue, mName, "db") {}
+    DbParam(std::string_view module, std::string_view name, float minValue, float maxValue, float mDefaultValue)
+        : NumericParam(module, name, minValue, maxValue, mDefaultValue, "db") {}
 };
 
 /**
@@ -114,16 +116,18 @@ class DbParam : public NumericParam
 class IntegerParam : public BaseParam {
    public:
     using _valuetype = int32_t;
-    IntegerParam(int32_t mMin,
+    IntegerParam(std::string_view mModule,
+                 std::string_view mName,
+                 int32_t mMin,
                  int32_t mMax,
                  int32_t mDefaultValue,
-                 std::string_view mName,
                  std::string_view mUnit = "",
                  std::string_view mUnitSingular = "")
-        : mMin(mMin),
+        : mModule(mModule),
+          mName(mName),
+          mMin(mMin),
           mMax(mMax),
           mDefaultValue(mDefaultValue),
-          mName(mName),
           mUnit(mUnit),
           mUnitSingular(mUnitSingular) {}
 
@@ -187,10 +191,11 @@ class IntegerParam : public BaseParam {
     }
 
    private:
+    const std::string_view mModule;
+    const std::string_view mName;
     const int32_t mMin;
     const int32_t mMax;
     const int32_t mDefaultValue;
-    const std::string_view mName;
     const std::string_view mUnit;
     const std::string_view mUnitSingular;
 };
@@ -202,7 +207,7 @@ template<typename EnumType>
 class EnumParam : public BaseParam {
    public:
     using _valuetype = EnumType;
-    EnumParam(std::vector<std::string_view> mLabels, std::string_view mName, EnumType mDefaultValue)
+    EnumParam(std::string_view module, std::string_view mName, std::vector<std::string_view> mLabels, EnumType mDefaultValue)
         : mLabels(std::move(mLabels)), mName(mName), mDefaultValue(mDefaultValue) {}
     bool FillInformation(clap_id id, clap_param_info_t* information) const override {
         memset(information, 0, sizeof(clap_param_info_t));
@@ -212,6 +217,7 @@ class EnumParam : public BaseParam {
         information->max_value = static_cast<double>(mLabels.size()-1);
         information->default_value = GetRawDefault();
         kitdsp::stringCopy(information->name, mName);
+        kitdsp::stringCopy(information->module, mModule);
 
         return true;
     }
@@ -267,8 +273,9 @@ class EnumParam : public BaseParam {
     }
 
    private:
-    const std::vector<std::string_view> mLabels;
+    const std::string_view mModule;
     const std::string_view mName;
+    const std::vector<std::string_view> mLabels;
     const EnumType mDefaultValue;
 };
 
@@ -281,5 +288,5 @@ enum class OnOff {
 class OnOffParam : public EnumParam<OnOff>
 {
     public:
-    OnOffParam(std::string_view name, OnOff defaultValue): EnumParam({"Off", "On"}, name, defaultValue) {}
+    OnOffParam(std::string_view module, std::string_view name, OnOff defaultValue): EnumParam(module, name, {"Off", "On"}, defaultValue) {}
 };

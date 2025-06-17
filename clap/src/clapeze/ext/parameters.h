@@ -71,11 +71,16 @@ class ParametersExt : public BaseExt {
           mMainToAudio(),
           mAudioState(mParams, mNumParams, mMainToAudio, mAudioToMain) {}
 
-    // TODO: should this be a forwarded make_unique instead?
-    ParametersExt& configParam(Id id, BaseParam* param) {
+    template <typename ParamType, typename... Args>
+    ParametersExt& ConfigParam(Id id, Args&&... args) {
         clap_id index = static_cast<clap_id>(id);
-        mParams[index].reset(param);
-        SetRaw(id, param->GetRawDefault());
+        mParams[index].reset(new ParamType(mNextModule, std::forward<Args>(args)...));
+        SetRaw(id, mParams[index]->GetRawDefault());
+        return *this;
+    }
+
+    ParametersExt& ConfigModule(std::string_view moduleName) {
+        mNextModule = moduleName;
         return *this;
     }
 
@@ -244,6 +249,7 @@ class ParametersExt : public BaseExt {
     const size_t mNumParams;
     ParamConfigs mParams;
     std::vector<double> mState;
+    std::string_view mNextModule = "";
     Queue mAudioToMain;
     Queue mMainToAudio;
     ProcessParameters mAudioState;
