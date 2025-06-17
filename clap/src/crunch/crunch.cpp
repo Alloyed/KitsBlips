@@ -88,7 +88,6 @@ class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
         float makeup = kitdsp::dbToRatio(mParams.Get<DbParam>(Params::Makeup));
         float mixf = mParams.Get<PercentParam>(Params::Mix);
 
-        float dbfs;
         for (size_t idx = 0; idx < in.left.size(); ++idx) {
             //in
             float left = in.left[idx];

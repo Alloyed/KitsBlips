@@ -26,15 +26,20 @@ set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
 FetchContent_MakeAvailable(clap clap-wrapper KitDSP)
 find_package(Sanitizers)
 
-add_library(${PROJECT_NAME} STATIC)
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
-target_compile_definitions(${PROJECT_NAME} PUBLIC
+add_library(KitsBlips-lib STATIC)
+set_property(TARGET KitsBlips-lib PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
+target_compile_definitions(KitsBlips-lib PUBLIC
     PRODUCT_NAME="${PRODUCT_NAME}"
     PRODUCT_ID="${PRODUCT_ID}"
     PRODUCT_VERSION="${PROJECT_VERSION}"
 )
+if (MSVC)
+    target_compile_options(KitsBlips-lib PRIVATE /W4)
+else()
+    target_compile_options(KitsBlips-lib PRIVATE -Wall -Wextra -pedantic -Wno-unused-parameter)
+endif()
 
-target_sources(${PROJECT_NAME} PRIVATE
+target_sources(KitsBlips-lib PRIVATE
     src/entry.cpp
 
     src/clapeze/basePlugin.cpp
@@ -45,9 +50,9 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/snecho/snecho.cpp
 )
 
-target_include_directories(${PROJECT_NAME} PUBLIC src)
+target_include_directories(KitsBlips-lib PUBLIC src)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC
+target_link_libraries(KitsBlips-lib PUBLIC
     clap
     KitDSP
     etl
@@ -58,30 +63,30 @@ if(KITSBLIPS_ENABLE_GUI)
     set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
     FetchContent_MakeAvailable(SDL3)
 
-    target_compile_definitions(${PROJECT_NAME} PUBLIC KITSBLIPS_ENABLE_GUI=1)
-    target_sources(${PROJECT_NAME} PRIVATE
+    target_compile_definitions(KitsBlips-lib PUBLIC KITSBLIPS_ENABLE_GUI=1)
+    target_sources(KitsBlips-lib PRIVATE
         src/clapeze/gui/sdlOpenGlExt.cpp
         src/clapeze/gui/imguiExt.cpp
     )
-    target_link_libraries(${PROJECT_NAME} PUBLIC
+    target_link_libraries(KitsBlips-lib PUBLIC
         imgui
         imgui_opengl_sdl3
     )
     if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        target_sources(${PROJECT_NAME} PUBLIC
+        target_sources(KitsBlips-lib PUBLIC
             src/clapeze/gui/platform/platformWin32.cpp
         )
     elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-        target_sources(${PROJECT_NAME} PUBLIC
+        target_sources(KitsBlips-lib PUBLIC
             src/clapeze/gui/platform/platformCocoa.cpp
             src/clapeze/gui/platform/platformCocoa.m
         )
     elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         find_package(X11)
-        target_sources(${PROJECT_NAME} PUBLIC
+        target_sources(KitsBlips-lib PUBLIC
             src/clapeze/gui/platform/platformLinux.cpp
         )
-        target_link_libraries(${PROJECT_NAME} PUBLIC X11::X11 X11::Xutil)
+        target_link_libraries(KitsBlips-lib PUBLIC X11::X11 X11::Xutil)
     endif()
 endif()
 
@@ -91,13 +96,13 @@ if(APPLE)
   add_custom_command(
     TARGET your_target
     POST_BUILD
-    COMMAND dsymutil $<TARGET_FILE:${PROJECT_NAME}>
+    COMMAND dsymutil $<TARGET_FILE:KitsBlips-lib>
   )
 endif()
 
 make_clapfirst_plugins(
-    TARGET_NAME ${PROJECT_NAME}-wrapped
-    IMPL_TARGET ${PROJECT_NAME}
+    TARGET_NAME KitsBlips
+    IMPL_TARGET KitsBlips-lib
 
     OUTPUT_NAME "${PRODUCT_NAME}"
 

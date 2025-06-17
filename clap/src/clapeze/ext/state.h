@@ -22,7 +22,7 @@ class StateExt : public BaseExt {
         return static_cast<const void*>(&value);
     }
 
-    const bool Validate(const BasePlugin& plugin) const override {
+    bool Validate(const BasePlugin& plugin) const override {
         if (plugin.TryGetExtension(CLAP_EXT_PARAMS) == nullptr) {
             plugin.GetHost().Log(LogSeverity::Fatal, "Missing implementation of CLAP_EXT_PARAMS, does this plugin need parameters?");
             return false;

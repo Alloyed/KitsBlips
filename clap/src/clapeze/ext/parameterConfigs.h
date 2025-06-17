@@ -208,7 +208,7 @@ class EnumParam : public BaseParam {
    public:
     using _valuetype = EnumType;
     EnumParam(std::string_view module, std::string_view mName, std::vector<std::string_view> mLabels, EnumType mDefaultValue)
-        : mLabels(std::move(mLabels)), mName(mName), mDefaultValue(mDefaultValue) {}
+        : mModule(module), mName(mName), mLabels(std::move(mLabels)), mDefaultValue(mDefaultValue) {}
     bool FillInformation(clap_id id, clap_param_info_t* information) const override {
         memset(information, 0, sizeof(clap_param_info_t));
         information->id = id;

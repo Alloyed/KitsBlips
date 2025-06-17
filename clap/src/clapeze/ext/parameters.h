@@ -190,7 +190,7 @@ class ParametersExt : public BaseExt {
             return false;
         }
 
-        void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) {
+        void FlushEventsFromMain( BaseProcessor& processor, const clap_output_events_t* out) {
             // Send events queued from us to the host
             // Since these all happened on an independent thread, they do not have sample-accurate timing; we'll just
             // send them at the front of the queue.

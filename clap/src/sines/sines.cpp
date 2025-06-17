@@ -20,34 +20,37 @@ using ParamsExt = ParametersExt<Params>;
 class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
     class Voice {
        public:
-        Voice() {}
-        void ProcessNoteOn(Processor& p, const NoteTuple& note, float velocity) {
+        Voice(Processor& p): mProcessor(p) {}
+        void ProcessNoteOn(const NoteTuple& note, float velocity) {
             mAmplitude.target = 1.0f;
             mPitch.target = note.key;
         }
-        void ProcessNoteOff(Processor& p) {
+        void ProcessNoteOff() {
             mAmplitude.target = 0.0f;
         }
-        void ProcessChoke(Processor& p) {
+        void ProcessChoke() {
             mOsc.Reset();
             mFilter.Reset();
             mAmplitude.Reset();
             mPitch.Reset();
             mVibrato.Reset();
         }
-        bool ProcessAudio(Processor& p, StereoAudioBuffer& out) {
+        bool ProcessAudio(StereoAudioBuffer& out) {
             // TODO: it'd be neat to adopt a signals based workflow for these, it'd need to be allocation-free though
-            mPitch.SetHalfLife(p.mParams.Get<NumericParam>(Params::Portamento), p.GetSampleRate());
-            mAmplitude.SetHalfLife(p.mParams.Get<NumericParam>(mAmplitude.target > mAmplitude.current ? Params::Rise : Params::Fall),
-                                   p.GetSampleRate());
-            mVibrato.SetFrequency(p.mParams.Get<NumericParam>(Params::VibratoRate), p.GetSampleRate());
-            float vibratoDepth = p.mParams.Get<NumericParam>(Params::VibratoDepth) * 0.01f;
+            const auto params = mProcessor.mParams;
+            const float sampleRate = mProcessor.GetSampleRate();
+            mPitch.SetHalfLife(params.Get<NumericParam>(Params::Portamento), sampleRate);
+            mAmplitude.SetHalfLife(
+                params.Get<NumericParam>(mAmplitude.target > mAmplitude.current ? Params::Rise : Params::Fall),
+                sampleRate);
+            mVibrato.SetFrequency(params.Get<NumericParam>(Params::VibratoRate), sampleRate);
+            float vibratoDepth = params.Get<NumericParam>(Params::VibratoDepth) * 0.01f;
 
             for (uint32_t index = 0; index < out.left.size(); index++) {
                 // doing midiToFrequency last to ensure all effects get exponential fm
                 float freq = kitdsp::midiToFrequency(mPitch.Process() + (mVibrato.Process() * vibratoDepth));
-                mOsc.SetFrequency(freq, p.GetSampleRate());
-                mFilter.SetFrequency(freq * 1.5, p.GetSampleRate(), 10.0f);
+                mOsc.SetFrequency(freq, sampleRate);
+                mFilter.SetFrequency(freq * 1.5, sampleRate, 10.0f);
 
                 float s = mFilter.Process<kitdsp::FilterMode::LowPass>(mOsc.Process() * mAmplitude.Process() * 0.3f);
                 out.left[index] += s;
@@ -62,6 +65,7 @@ class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
         }
 
        private:
+        Processor& mProcessor;
         kitdsp::naive::RampUpOscillator mOsc{};
         kitdsp::EmileSvf mFilter {};
         kitdsp::Approach mAmplitude {};
@@ -70,32 +74,32 @@ class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
     };
 
    public:
-    Processor(ParamsExt::ProcessParameters& params) : InstrumentProcessor(params) {}
+    Processor(ParamsExt::ProcessParameters& params) : InstrumentProcessor(params), mVoices(*this) {}
     ~Processor() = default;
 
     void ProcessAudio(StereoAudioBuffer& out) override {
-        mVoices.SetNumVoices(*this, mParams.Get<IntegerParam>(Params::Polyphony));
-        mVoices.ProcessAudio(*this, out);
+        mVoices.SetNumVoices(mParams.Get<IntegerParam>(Params::Polyphony));
+        mVoices.ProcessAudio(out);
     }
 
     void ProcessNoteOn(const NoteTuple& note, float velocity) override {
-        mVoices.ProcessNoteOn(*this, note, velocity);
+        mVoices.ProcessNoteOn(note, velocity);
     }
 
     void ProcessNoteOff(const NoteTuple& note) override {
-        mVoices.ProcessNoteOff(*this, note);
+        mVoices.ProcessNoteOff(note);
     }
 
     void ProcessNoteChoke(const NoteTuple& note) override {
-        mVoices.ProcessNoteChoke(*this, note);
+        mVoices.ProcessNoteChoke(note);
     }
 
     void ProcessReset() override {
-        mVoices.StopAllVoices(*this);
+        mVoices.StopAllVoices();
     }
 
    private:
-    PolyphonicVoicePool<Processor, Voice, 16> mVoices {};
+    PolyphonicVoicePool<Processor, Voice, 16> mVoices;
 };
 
 class Plugin : public InstrumentPlugin {

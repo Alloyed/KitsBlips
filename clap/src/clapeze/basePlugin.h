@@ -19,7 +19,7 @@ class BaseExt {
     virtual ~BaseExt() = default;
     virtual const char* Name() const = 0;
     virtual const void* Extension() const = 0;
-    virtual const bool Validate(const BasePlugin& plugin) const { return true; }
+    virtual bool Validate( const BasePlugin& plugin) const { return true; }
 
     template <typename ExtType = BaseExt>
     static ExtType& GetFromPlugin(BasePlugin& plugin);
@@ -42,7 +42,7 @@ class BaseProcessor {
      *
      * [main-thread & !active]
      */
-    virtual void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) {};
+    virtual void Activate( double sampleRate,  size_t minBlockSize,  size_t maxBlockSize) {};
     /**
      * Called when the plugin is deactivated.
      *

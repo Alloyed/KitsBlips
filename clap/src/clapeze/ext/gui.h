@@ -75,7 +75,7 @@ class GuiExt : public BaseExt {
         return static_cast<const void*>(&value);
     }
 
-    const bool Validate(const BasePlugin& plugin) const override {
+    bool Validate(const BasePlugin& plugin) const override {
 #ifdef __linux
         if (plugin.TryGetExtension(CLAP_EXT_TIMER_SUPPORT) == nullptr) {
             plugin.GetHost().Log(LogSeverity::Fatal, "Gui on linux requires CLAP_EXT_TIMER_SUPPORT");

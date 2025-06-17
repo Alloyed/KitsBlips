@@ -268,6 +268,7 @@ void SdlOpenGlExt::UpdateInstances() {
                     instance->mHost.TryGetExtension(CLAP_EXT_GUI, rawHost, rawHostGui);
                     rawHostGui->closed(rawHost, true);
                 }
+                break;
             }
             case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
                 SdlOpenGlExt* instance = FindInstanceForWindow(event.window.windowID);
@@ -277,6 +278,7 @@ void SdlOpenGlExt::UpdateInstances() {
                     instance->mHost.TryGetExtension(CLAP_EXT_GUI, rawHost, rawHostGui);
                     rawHostGui->closed(rawHost, true);
                 }
+                break;
             }
         }
         for (auto instance : sActiveInstances) {

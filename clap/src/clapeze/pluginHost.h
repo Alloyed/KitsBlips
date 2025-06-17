@@ -4,6 +4,7 @@
 #include <functional>
 #include <string>
 
+class TimerSupportExt;
 enum class LogSeverity {
     Debug = 0,
     Info = 1,
@@ -18,6 +19,8 @@ enum class LogSeverity {
  * plugin safely, but only call it from the main thread.
  */
 class PluginHost {
+    friend TimerSupportExt;
+
    public:
     using TimerId = clap_id;
     using TimerFn = std::function<void()>;
@@ -27,7 +30,7 @@ class PluginHost {
     template <typename ExtType>
     bool TryGetExtension(const char* extensionName, const clap_host_t*& hostOut, const ExtType*& extOut) const;
     bool SupportsExtension(const char* extensionName) const;
-    
+
     void LogSupportMatrix() const;
 
     /** Returns true if we are currently on the main thread */
@@ -46,10 +49,9 @@ class PluginHost {
     TimerId AddTimer(uint32_t periodMs, TimerFn timerFn);
     /** Cancels an active timer with the provided id. this is safe to call from inside of timers. */
     void CancelTimer(TimerId id);
-    /** implementation. TODO: friend declaration to hide this? */
-    void OnTimer(TimerId id) const;
 
    private:
+    void OnTimer(TimerId id) const;
     const clap_host_t* mHost;
     const clap_host_thread_check_t* mThreadCheck;
     const clap_host_log_t* mLog;
