@@ -1,8 +1,8 @@
-#include <kitdsp/math/util.h>
 #include <kitdsp/dbMeter.h>
+#include <kitdsp/math/util.h>
+#include <string>
 #include "daisy_patch_sm.h"
 #include "kitDaisy/controls.h"
-#include <string>
 
 using namespace kitdsp;
 using namespace daisy;
@@ -33,9 +33,7 @@ inline constexpr float dampf(float a, float b, float halflife, float dt) {
     return b + (a - b) * exp2f(-dt / halflife);
 }
 
-void AudioCallback(AudioHandle::InputBuffer in,
-                   AudioHandle::OutputBuffer out,
-                   size_t size) {
+void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size) {
     hw.ProcessAllControls();
 
     // units are ms until half life, exponential curve

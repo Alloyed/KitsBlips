@@ -7,7 +7,6 @@ using namespace kitdsp;
 using namespace daisy;
 using namespace patch_sm;
 
-
 const float cEpsilon = 0.005f;
 float lerpPowf(float a, float b, float curve, float t) {
     return lerpf(a, b, clamp(powf(t, curve), 0.0f, 1.0f));
@@ -32,20 +31,16 @@ class ApproachAdsr {
             } break;
             case State::Decay: {
                 mDecayTime = value;
-                mDecayApproach =
-                    calculateApproach(mDecayTime, 1.0f, mSustainLevel);
+                mDecayApproach = calculateApproach(mDecayTime, 1.0f, mSustainLevel);
             } break;
             case State::Sustain: {
                 mSustainLevel = value;
-                mDecayApproach =
-                    calculateApproach(mDecayTime, 1.0f, mSustainLevel);
-                mReleaseApproach =
-                    calculateApproach(mReleaseTime, mSustainLevel, 0.0f);
+                mDecayApproach = calculateApproach(mDecayTime, 1.0f, mSustainLevel);
+                mReleaseApproach = calculateApproach(mReleaseTime, mSustainLevel, 0.0f);
             } break;
             case State::Release: {
                 mReleaseTime = value;
-                mReleaseApproach =
-                    calculateApproach(mReleaseTime, mSustainLevel, 0.0f);
+                mReleaseApproach = calculateApproach(mReleaseTime, mSustainLevel, 0.0f);
             } break;
             case State::Idle:
                 return;
@@ -62,20 +57,17 @@ class ApproachAdsr {
 
             if (mState == State::Idle) {
                 mState = State::Attack;
-            } else if (mState == State::Attack &&
-                       mLastLevel >= 1.0f - cEpsilon) {
+            } else if (mState == State::Attack && mLastLevel >= 1.0f - cEpsilon) {
                 mLastLevel = 1.0f;
                 mState = State::Decay;
-            } else if (mState == State::Decay &&
-                       mLastLevel <= mSustainLevel + cEpsilon) {
+            } else if (mState == State::Decay && mLastLevel <= mSustainLevel + cEpsilon) {
                 mLastLevel = mSustainLevel;
                 mState = State::Sustain;
             }
         } else {
             if (mState != State::Idle && mState != State::Release) {
                 mState = State::Release;
-            } else if (mState == State::Release &&
-                       mLastLevel <= 0.0f + cEpsilon) {
+            } else if (mState == State::Release && mLastLevel <= 0.0f + cEpsilon) {
                 mLastLevel = 0.0f;
                 mState = State::Idle;
             }
@@ -112,9 +104,7 @@ class ApproachAdsr {
     State GetState() const { return mState; }
 
    private:
-    float calculateApproach(float targetTimeMs,
-                            float lastLevel,
-                            float nextLevel) {
+    float calculateApproach(float targetTimeMs, float lastLevel, float nextLevel) {
         // https://www.youtube.com/watch?v=LSNQuFEDOyQ
         // the target precision should be whatever gets us within cEpsilon of
         // the target, in absolute terms
@@ -149,9 +139,7 @@ float jackValue(int32_t cvEnum) {
     return clamp(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
 }
 
-void AudioCallback(AudioHandle::InputBuffer in,
-                   AudioHandle::OutputBuffer out,
-                   size_t size) {
+void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size) {
     hw.ProcessAllControls();
     button.Debounce();
     toggle.Debounce();
@@ -161,8 +149,7 @@ void AudioCallback(AudioHandle::InputBuffer in,
 
     float a = lerpPowf(3.0f, 10000.0f, 2.0f, knobValue(CV_1) + jackValue(CV_5));
     float d = lerpPowf(3.0f, 10000.0f, 2.0f, knobValue(CV_2) + jackValue(CV_6));
-    float s = lerpf(0.0f, 1.0f,
-                    clamp(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f));
+    float s = lerpf(0.0f, 1.0f, clamp(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f));
     float r = lerpPowf(3.0f, 10000.0f, 2.0f, knobValue(CV_4) + jackValue(CV_8));
 
     adsr.Set(ApproachAdsr::State::Attack, a);
@@ -182,10 +169,8 @@ void AudioCallback(AudioHandle::InputBuffer in,
     // stage gates!
     // A+D and S+R combined for lack of open jacks
     const auto state = adsr.GetState();
-    hw.gate_out_1.Write(state == ApproachAdsr::State::Attack ||
-                        state == ApproachAdsr::State::Decay);
-    hw.gate_out_2.Write(state == ApproachAdsr::State::Sustain ||
-                        state == ApproachAdsr::State::Release);
+    hw.gate_out_1.Write(state == ApproachAdsr::State::Attack || state == ApproachAdsr::State::Decay);
+    hw.gate_out_2.Write(state == ApproachAdsr::State::Sustain || state == ApproachAdsr::State::Release);
 }
 
 int main(void) {

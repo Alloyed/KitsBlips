@@ -36,11 +36,11 @@ class BaseParam {
  * - observer architecture (onParamChanged())
  * - dynamic parameter modification
  */
-template <typename PARAM_ID>
+template <typename PARAM_ID, typename ParamType = BaseParam>
 class ParametersExt : public BaseExt {
    public:
     using Id = PARAM_ID;
-    using ParamConfigs = std::vector<std::unique_ptr<BaseParam>>;
+    using ParamConfigs = std::vector<std::unique_ptr<ParamType>>;
     enum class ChangeType { SetValue, StartGesture, StopGesture };
     struct Change {
         ChangeType type;
@@ -69,10 +69,10 @@ class ParametersExt : public BaseExt {
           mMainToAudio(),
           mAudioState(mParams, mNumParams, mMainToAudio, mAudioToMain) {}
 
-    template <typename ParamType, typename... Args>
+    template <typename InnerParamType, typename... Args>
     ParametersExt& ConfigParam(Id id, Args&&... args) {
         clap_id index = static_cast<clap_id>(id);
-        mParams[index].reset(new ParamType(mNextModule, std::forward<Args>(args)...));
+        mParams[index].reset(new InnerParamType(mNextModule, std::forward<Args>(args)...));
         SetRaw(id, mParams[index]->GetRawDefault());
         return *this;
     }
@@ -82,7 +82,7 @@ class ParametersExt : public BaseExt {
         return *this;
     }
 
-    const BaseParam* GetConfig(Id id) const {
+    const ParamType* GetConfig(Id id) const {
         clap_id index = static_cast<clap_id>(id);
         if (index >= mState.size()) {
             return nullptr;
@@ -261,7 +261,7 @@ class ParametersExt : public BaseExt {
     static bool _get_info(const clap_plugin_t* plugin, uint32_t index, clap_param_info_t* information) {
         ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
 
-        const BaseParam* param = self.GetConfig(static_cast<Id>(index));
+        const ParamType* param = self.GetConfig(static_cast<Id>(index));
         if (param != nullptr) {
             return param->FillInformation(index, information);
         }
@@ -286,7 +286,7 @@ class ParametersExt : public BaseExt {
                                uint32_t bufferSize) {
         ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
 
-        const BaseParam* param = self.GetConfig(static_cast<Id>(param_id));
+        const ParamType* param = self.GetConfig(static_cast<Id>(param_id));
         if (param != nullptr) {
             auto span = etl::span<char>(buf, bufferSize);
             return param->ToText(value, span);
@@ -297,7 +297,7 @@ class ParametersExt : public BaseExt {
     static bool _text_to_value(const clap_plugin_t* plugin, clap_id param_id, const char* display, double* out) {
         ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
 
-        const BaseParam* param = self.GetConfig(static_cast<Id>(param_id));
+        const ParamType* param = self.GetConfig(static_cast<Id>(param_id));
         if (param != nullptr) {
             return param->FromText(display, *out);
         }
@@ -322,4 +322,4 @@ class ParametersExt : public BaseExt {
     }
 };
 
-using BaseParamsExt = ParametersExt<clap_id>;
+using BaseParamsExt = ParametersExt<clap_id, BaseParam>;

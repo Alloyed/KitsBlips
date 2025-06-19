@@ -3,13 +3,7 @@
 
 struct Dance : Module {
     enum ParamId { PARAMS_LEN };
-    enum InputId {
-        PNG_1_INPUT,
-        PNG_2_INPUT,
-        PNG_3_INPUT,
-        PNG_4_INPUT,
-        INPUTS_LEN
-    };
+    enum InputId { PNG_1_INPUT, PNG_2_INPUT, PNG_3_INPUT, PNG_4_INPUT, INPUTS_LEN };
     enum OutputId { OUTPUTS_LEN };
     enum LightId { LIGHTS_LEN };
 
@@ -98,8 +92,7 @@ struct PngViewerWidget : LedDisplay {
             float w = imgw * scale;
             float h = imgh * scale;
 
-            auto imgPaint = nvgImagePattern(vg, cx - (w / 2), cy - (h / 2), w,
-                                            h, 0.0f, currentImage, 1.0f);
+            auto imgPaint = nvgImagePattern(vg, cx - (w / 2), cy - (h / 2), w, h, 0.0f, currentImage, 1.0f);
             nvgBeginPath(vg);
             nvgRect(vg, 0.0, 0.0, box.size.x, box.size.y);
             nvgFillPaint(vg, imgPaint);
@@ -116,25 +109,16 @@ struct DanceWidget : ModuleWidget {
         setPanel(createPanel(asset::plugin(pluginInstance, "res/dance.svg")));
 
         addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-        addChild(createWidget<ScrewSilver>(
-            Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-        addChild(createWidget<ScrewSilver>(
-            Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-        addChild(
-            createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH,
-                                          RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+        addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+        addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+        addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.912, 119.094)),
-                                                 module, Dance::PNG_1_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(16.184, 119.094)),
-                                                 module, Dance::PNG_2_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(24.456, 119.094)),
-                                                 module, Dance::PNG_3_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(32.728, 119.094)),
-                                                 module, Dance::PNG_4_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.912, 119.094)), module, Dance::PNG_1_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(16.184, 119.094)), module, Dance::PNG_2_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(24.456, 119.094)), module, Dance::PNG_3_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(32.728, 119.094)), module, Dance::PNG_4_INPUT));
 
-        PngViewerWidget* display =
-            createWidget<PngViewerWidget>(mm2px(Vec(6.162, 39.24)));
+        PngViewerWidget* display = createWidget<PngViewerWidget>(mm2px(Vec(6.162, 39.24)));
         display->box.size = mm2px(Vec(28.317, 50.021));
         display->module = module;
         addChild(display);
@@ -144,9 +128,7 @@ struct DanceWidget : ModuleWidget {
         osdialog_filters* filters = osdialog_filters_parse("Image:png");
         DEFER({ osdialog_filters_free(filters); });
 
-        char* pathC = osdialog_file(OSDIALOG_OPEN,
-                                    !mLastDir.empty() ? mLastDir.c_str() : NULL,
-                                    NULL, filters);
+        char* pathC = osdialog_file(OSDIALOG_OPEN, !mLastDir.empty() ? mLastDir.c_str() : NULL, NULL, filters);
         if (!pathC) {
             // Fail silently
             return;
@@ -163,10 +145,8 @@ struct DanceWidget : ModuleWidget {
         menu->addChild(new MenuSeparator);
 
         for (int i = 0; i < 4; ++i) {
-            menu->addChild(
-                createMenuItem(string::f("Load image %d", i + 1),
-                               system::getFilename(module->mFiles[i]),
-                               [this, i]() { loadImage(i); }));
+            menu->addChild(createMenuItem(string::f("Load image %d", i + 1), system::getFilename(module->mFiles[i]),
+                                          [this, i]() { loadImage(i); }));
         }
     }
 

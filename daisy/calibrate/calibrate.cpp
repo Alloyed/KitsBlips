@@ -59,7 +59,7 @@ int main(void) {
         calibrator.GetPinCalibration(pin, scale, offset);
         Log::PrintLine("CV_%d: {scale: %s, offset: %s }", pin - CV_1 + 1, Float(scale), Float2(offset));
     }
-    
+
     // calibrate knobs
     float rawZeroVolt[ADC_LAST];
     float rawFiveVolt[ADC_LAST];
@@ -80,7 +80,6 @@ int main(void) {
         rawFiveVolt[pin] = hw.controls[pin].Value();
         Log::PrintLine("CV_%d error: %s, got it!", pin - CV_1 + 1, Float(rawFiveVolt[pin]));
     }
-
 
     // calibrate jacks
     float rawOneVolt[ADC_LAST];
@@ -104,7 +103,7 @@ int main(void) {
     }
 
     // TODO: calibrate outputs
-    
+
     // store
     for (int32_t pin = CV_1; pin <= CV_4; ++pin) {
         calibrator.StoreKnobCalibration(pin, rawZeroVolt[pin], rawFiveVolt[pin]);

@@ -1,5 +1,5 @@
-#include <kitdsp/math/util.h>
 #include <kitdsp/ScaleQuantizer.h>
+#include <kitdsp/math/util.h>
 #include "daisy_patch_sm.h"
 
 using namespace daisy;

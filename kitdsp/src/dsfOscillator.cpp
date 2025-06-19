@@ -1,6 +1,5 @@
 #include "kitdsp/osc/dsfOscillator.h"
 
-
 #include "kitdsp/lookupTables/sineLut.h"
 #include "kitdsp/math/util.h"
 #include "kitdsp/osc/oscillatorUtil.h"

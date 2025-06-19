@@ -1,18 +1,17 @@
-#include <gtest/gtest.h>
 #include "kitdsp/psxReverb.h"
+#include <gtest/gtest.h>
+#include "kitdsp/math/util.h"
 #include "kitdsp/psxReverbPresets.h"
 #include "kitdsp/wavFile.h"
-#include "kitdsp/math/util.h"
 
 using namespace kitdsp;
 
 TEST(psxEcho, works) {
-    constexpr size_t psxBufferSize =
-        65536;  // PSX::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
+    constexpr size_t psxBufferSize = 65536;  // PSX::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
     float psxBuffer[psxBufferSize];
     PSX::Reverb psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
 
-    FILE* fp = fopen("psxverb.wav","wb");
+    FILE* fp = fopen("psxverb.wav", "wb");
     ASSERT_NE(fp, nullptr);
     WavFile<2> f{PSX::kOriginalSampleRate, fp};
 
@@ -22,12 +21,10 @@ TEST(psxEcho, works) {
     float out1, out2;
 
     // test 4 filter
-    for (size_t filter = 0; filter < PSX::kNumPresets; ++filter)
-    {
+    for (size_t filter = 0; filter < PSX::kNumPresets; ++filter) {
         psx.Reset();
         psx.cfg.preset = filter;
-        for (size_t i = 0; i < len; ++i)
-        {
+        for (size_t i = 0; i < len; ++i) {
             float t = i / static_cast<float>(len);
 
             // simple saw

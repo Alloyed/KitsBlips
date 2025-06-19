@@ -1,7 +1,7 @@
 #pragma once
 
-#include "kitdsp/math/shy_fft.h"
 #include <cstring>
+#include "kitdsp/math/shy_fft.h"
 
 /*
  * C++ adaptation of the TarsosDSP "FastYin" algorithm. changes:
@@ -93,8 +93,8 @@ template <size_t bufferSize = 2048>
 class FastYin {
    public:
     /**
-     * when being used on a recording longer than the buffer size, how many samples is it suggested that you re-use from the last call to getPitch()?
-     * The default overlap of two consecutive audio buffers (in samples).
+     * when being used on a recording longer than the buffer size, how many samples is it suggested that you re-use from
+     * the last call to getPitch()? The default overlap of two consecutive audio buffers (in samples).
      */
     static constexpr size_t kSuggestedBufferOverlapSize = bufferSize * 3 / 4;
 
@@ -196,7 +196,6 @@ class FastYin {
     }
 
    private:
-
     /**
      * The actual YIN threshold.
      */

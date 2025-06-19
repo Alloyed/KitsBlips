@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include "kitdsp/math/interpolate.h"
 
 namespace kitdsp {

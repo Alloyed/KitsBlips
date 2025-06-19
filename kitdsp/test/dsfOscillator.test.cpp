@@ -1,5 +1,5 @@
-#include <gtest/gtest.h>
 #include "kitdsp/osc/dsfOscillator.h"
+#include <gtest/gtest.h>
 #include "kitdsp/wavFile.h"
 
 using namespace kitdsp;
@@ -10,14 +10,14 @@ TEST(dsfOscillator, CanBeUsed) {
     osc.SetFreqCarrier(1000.0f);
     osc.SetFreqModulator(2000.0f);
     osc.SetFalloff(0.4f);
-    
-    FILE* fp = fopen("dsf.wav","wb");
+
+    FILE* fp = fopen("dsf.wav", "wb");
     ASSERT_NE(fp, nullptr);
     WavFile<1> f{44100.0f, fp};
 
     f.Start();
     size_t len = static_cast<size_t>(4.0f * 44100.f);
-    for(size_t i = 0; i < len; ++i) {
+    for (size_t i = 0; i < len; ++i) {
         float t = i / static_cast<float>(len);
         osc.SetFalloff(0.9f - (t * 0.9f));
 

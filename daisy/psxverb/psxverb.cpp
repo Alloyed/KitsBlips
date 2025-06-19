@@ -1,9 +1,9 @@
 #include "daisy_patch_sm.h"
 
+#include "kitdsp/math/util.h"
 #include "kitdsp/math/vector.h"
 #include "kitdsp/psxReverb.h"
 #include "kitdsp/samplerate/resampler.h"
-#include "kitdsp/math/util.h"
 
 using namespace daisy;
 using namespace kitdsp;
@@ -12,12 +12,10 @@ using namespace patch_sm;
 DaisyPatchSM hw;
 Switch button, toggle;
 
-constexpr size_t psxBufferSize =
-    65536;  // PSX::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
+constexpr size_t psxBufferSize = 65536;  // PSX::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
 float DSY_SDRAM_BSS psxBuffer[psxBufferSize];
 PSX::Reverb psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
-Resampler<float_2> psxSampler(PSX::kOriginalSampleRate,
-                             PSX::kOriginalSampleRate);
+Resampler<float_2> psxSampler(PSX::kOriginalSampleRate, PSX::kOriginalSampleRate);
 
 float knobValue(int32_t cvEnum) {
     return clamp(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
@@ -27,9 +25,7 @@ float jackValue(int32_t cvEnum) {
     return clamp(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
 }
 
-void AudioCallback(AudioHandle::InputBuffer in,
-                   AudioHandle::OutputBuffer out,
-                   size_t size) {
+void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size) {
     hw.ProcessAllControls();
     button.Debounce();
     toggle.Debounce();
@@ -44,11 +40,8 @@ void AudioCallback(AudioHandle::InputBuffer in,
         // signals scaled to compensate for eurorack's (often loud) signal
         // levels
         float_2 dry = float_2{IN_L[i] * 0.5f, IN_R[i] * 0.5f};
-        float_2 wet =
-            psxSampler
-                .Process<kitdsp::interpolate::InterpolationStrategy::Linear>(
-                    dry,
-                    [](float_2 in, float_2& out) { out = psx.Process(in); });
+        float_2 wet = psxSampler.Process<kitdsp::interpolate::InterpolationStrategy::Linear>(
+            dry, [](float_2 in, float_2& out) { out = psx.Process(in); });
 
         float left = psxLeft * 2.0f;
         float right = psxRight * 2.0f;

@@ -1,8 +1,8 @@
 #pragma once
 
+#include "kitdsp/math/interpolate.h"
 #include "kitdsp/osc/oscillatorUtil.h"
 #include "kitdsp/sampler.h"
-#include "kitdsp/math/interpolate.h"
 
 namespace kitdsp {
 template <typename SAMPLE, size_t SIZE, interpolate::InterpolationStrategy STRATEGY>

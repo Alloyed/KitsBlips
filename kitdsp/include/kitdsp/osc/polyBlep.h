@@ -50,8 +50,8 @@ namespace kitdsp {
 namespace polyblep {
 template <typename SAMPLE>
 inline float ThisBlepSample(SAMPLE t) {
-    //return SAMPLE(0.5f) * t * t;
-    return (t*t) + (t+t) + SAMPLE(1.0f);
+    // return SAMPLE(0.5f) * t * t;
+    return (t * t) + (t + t) + SAMPLE(1.0f);
 }
 
 template <typename SAMPLE>
@@ -113,7 +113,6 @@ class PolyBlepProcessor {
     SAMPLE mNextSample = 0.0f;
 };
 
-
 // origin: https://www.kvraudio.com/forum/viewtopic.php?t=375517
 float KvrPolyBlep(float phase, float advance) {
     // did the last advance put us past the disconinuity point?
@@ -122,7 +121,7 @@ float KvrPolyBlep(float phase, float advance) {
         float t = phase / advance;
         // 2 * (t - t^2/2 - 0.5)
         // -t^2 + 2t - 1
-        return -(t*t) + (t+t) - 1.0f;
+        return -(t * t) + (t + t) - 1.0f;
     }
     // will the next advance put us past the discontinuity point?
     else if (phase > 1.0f - advance) {
@@ -130,7 +129,7 @@ float KvrPolyBlep(float phase, float advance) {
         float t = (phase - 1.0f) / advance;
         // 2 * (t^2/2 + t + 0.5)
         // t^2 + 2t + 1
-        return (t*t) + (t+t) + 1.0f;
+        return (t * t) + (t + t) + 1.0f;
     }
     // 0 otherwise
     else {

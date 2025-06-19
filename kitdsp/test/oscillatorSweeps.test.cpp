@@ -1,8 +1,8 @@
-#include "kitdsp/osc/blepOscillator.h"
-#include "kitdsp/osc/naiveOscillator.h"
-#include "kitdsp/osc/dsfOscillator.h"
-#include "kitdsp/osc/oscillatorUtil.h"
 #include <gtest/gtest.h>
+#include "kitdsp/osc/blepOscillator.h"
+#include "kitdsp/osc/dsfOscillator.h"
+#include "kitdsp/osc/naiveOscillator.h"
+#include "kitdsp/osc/oscillatorUtil.h"
 #include "kitdsp/wavFile.h"
 
 using namespace kitdsp;
@@ -36,10 +36,10 @@ void Sweep(WavFile<1>& f, OSC1& osc1) {
 }
 
 class TestPolyOsc : public Phasor {
-    //float t = 0.; // 0 <= t < 1
-    //float dt = freq / sample_rate;
+    // float t = 0.; // 0 <= t < 1
+    // float dt = freq / sample_rate;
 
-    public:
+   public:
     float poly_blep(float t, float dt) {
         // 0 <= t < 1
         if (t < dt) {

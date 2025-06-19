@@ -1,10 +1,10 @@
 #pragma once
 
+#include <etl/span.h>
 #include <cstring>
 #include <string_view>
-#include <etl/span.h>
 #include "kitdsp/math/util.h"
-    
+
 /*
  * Utilities for working with c strings, std::string and std::string_view
  * Don't invent your own string types!
@@ -21,8 +21,7 @@ void stringCopy(char (&buffer)[BUFFER_SIZE], std::string_view src) {
 }
 /* safe alternative to strcpy when the buffer size is known at runtime*/
 inline void stringCopy(etl::span<char> buffer, std::string_view src) {
-    if(buffer.size() > 0)
-    {
+    if (buffer.size() > 0) {
         // zero-out memory. This implicitly null-terminates, and avoids accidental garbage lying around
         std::memset(buffer.data(), '\0', buffer.size());
         // copy at most BUFFER_SIZE-1 bytes. the last byte is reserved for the null terminator

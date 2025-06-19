@@ -10,17 +10,20 @@ namespace kitdsp {
  * https://www.youtube.com/watch?v=LSNQuFEDOyQ
  */
 class Approach {
-    public:
+   public:
     Approach() {}
     ~Approach() = default;
-    inline void Reset() { target = 0.0f; current = 0.0f; }
+    inline void Reset() {
+        target = 0.0f;
+        current = 0.0f;
+    }
     inline void SetHalfLife(float halfLifeMs, float sampleRate) {
         if (halfLifeMs == 0.0f || sampleRate == 0.0f) {
             // instant approach
             mH = 0.0f;
         } else {
             // https://mastodon.social/@acegikmo/111931613710775864
-            
+
             // doing some algebra to:
             // float dt = 1 / sampleRate;
             // float h = halfLifeMs / 1000.0f;
@@ -32,20 +35,18 @@ class Approach {
      * Sets the approach factor by time until IsChanging() == false. For this to be precise, we need to know the initial
      * time, because the approach is always proportional to that.
      */
-    inline void SetSettleTime(float settleTimeMs, float sampleRate, float desiredChange = 1.0f)
-    {
+    inline void SetSettleTime(float settleTimeMs, float sampleRate, float desiredChange = 1.0f) {
         return SetHalfLife(-settleTimeMs / std::log2f(cSettlePrecision / desiredChange), sampleRate);
     }
     inline float Process() {
         current = lerpf(current, target, mH);
         return current;
     }
-    inline bool IsChanging() const {
-        return fabsf(target - current) > cSettlePrecision;
-    }
+    inline bool IsChanging() const { return fabsf(target - current) > cSettlePrecision; }
     float target = 0.0f;
     float current = 0.0f;
-    private:
+
+   private:
     static constexpr float cSettlePrecision = 0.0001f;
     float mH = 1.0f;
 };

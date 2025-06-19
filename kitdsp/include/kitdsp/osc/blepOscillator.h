@@ -19,23 +19,22 @@ namespace blep {
  */
 class RampUpOscillator : public Phasor {
    public:
-
     float Process() {
         if (Advance()) {
-            //mBlep.InsertDiscontinuity(mPhase / mAdvance, 1.0f);
+            // mBlep.InsertDiscontinuity(mPhase / mAdvance, 1.0f);
         }
         return Wave(mPhase) - polyblep::KvrPolyBlep(mPhase, mAdvance);
     }
 
     void HardSync() {
-        float oldPhase = mPhase;
+        // float oldPhase = mPhase;
         Phasor::HardSync();
-        //mBlep.InsertDiscontinuity(0, Wave(oldPhase) - Wave(0));
+        // mBlep.InsertDiscontinuity(0, Wave(oldPhase) - Wave(0));
     }
 
    private:
     static constexpr float Wave(float phase) { return phase * 2.0f - 1.0f; }
-    //polyblep::PolyBlepProcessor<float> mBlep;
+    // polyblep::PolyBlepProcessor<float> mBlep;
 };
 
 /**
@@ -50,32 +49,32 @@ class PulseOscillator : public Phasor {
    public:
     void SetDuty(float duty) { mDuty = duty; }
     float Process() {
-        float oldPhase = mPhase;
+        // float oldPhase = mPhase;
         Advance();
         return Wave(mPhase, mDuty)
-            // apply the jump from -1 to 1 at start
-            + polyblep::KvrPolyBlep(mPhase, mAdvance)
-            // apply the jump from 1 to -1 at midpoint
-            - polyblep::KvrPolyBlep(WrapPhase(mPhase + mDuty), mAdvance);
+               // apply the jump from -1 to 1 at start
+               + polyblep::KvrPolyBlep(mPhase, mAdvance)
+               // apply the jump from 1 to -1 at midpoint
+               - polyblep::KvrPolyBlep(WrapPhase(mPhase + mDuty), mAdvance);
 
-        //if (oldPhase > mPhase) {
-        //    // crossed 0
-        //    mBlep.InsertDiscontinuity(mPhase / mAdvance, 1.0f);
-        //} else if (mPhase > mDuty && oldPhase <= mDuty) {
-        //    // crossed midpoint
-        //    mBlep.InsertDiscontinuity((mPhase - mDuty) / mAdvance, -1.0f);
-        //}
-        //return mBlep.Process(Wave(mPhase, mDuty));
+        // if (oldPhase > mPhase) {
+        //     // crossed 0
+        //     mBlep.InsertDiscontinuity(mPhase / mAdvance, 1.0f);
+        // } else if (mPhase > mDuty && oldPhase <= mDuty) {
+        //     // crossed midpoint
+        //     mBlep.InsertDiscontinuity((mPhase - mDuty) / mAdvance, -1.0f);
+        // }
+        // return mBlep.Process(Wave(mPhase, mDuty));
     }
 
     void HardSync() {
-        float oldPhase = mPhase;
+        // float oldPhase = mPhase;
         Phasor::HardSync();
-        //float oldSample = Wave(oldPhase, mDuty);
-        //const float newSample = Wave(0.0f, 0.5f);  // duty cycle doesn't matter, can precompute
-        //if (oldSample != newSample) {
-        //    mBlep.InsertDiscontinuity(0, newSample - oldSample);
-        //}
+        // float oldSample = Wave(oldPhase, mDuty);
+        // const float newSample = Wave(0.0f, 0.5f);  // duty cycle doesn't matter, can precompute
+        // if (oldSample != newSample) {
+        //     mBlep.InsertDiscontinuity(0, newSample - oldSample);
+        // }
     }
 
    private:

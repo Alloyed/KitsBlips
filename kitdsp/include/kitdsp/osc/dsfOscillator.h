@@ -87,13 +87,11 @@ class DsfOscillator {
 
     inline void CalcAmplitude() {
         mFalloffPowN1 = powf(mFalloff, mNumFrequencyBands + 1);
-        mAmplitudeReciprocal =
-            (1.0f - powf(mFalloff, mNumFrequencyBands)) / (1.0f - mFalloff);
+        mAmplitudeReciprocal = (1.0f - powf(mFalloff, mNumFrequencyBands)) / (1.0f - mFalloff);
     }
 
     inline void CalcFrequencyBands() {
-        float N = static_cast<int32_t>((mNyquistFrequency - mFreqCarrier) /
-                                       mFreqModulator);
+        float N = static_cast<int32_t>((mNyquistFrequency - mFreqCarrier) / mFreqModulator);
         if (N != mNumFrequencyBands) {
             mNumFrequencyBands = N;
             CalcAmplitude();

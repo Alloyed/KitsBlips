@@ -30,8 +30,7 @@ class ScaleQuantizer {
     float mLastValue;
 
    public:
-    ScaleQuantizer(const float* targetScale, size_t numNotes)
-        : mScale(targetScale), mNumNotes(numNotes) {}
+    ScaleQuantizer(const float* targetScale, size_t numNotes) : mScale(targetScale), mNumNotes(numNotes) {}
     float Process(float input) {
         if (input > mLowerBound && input < mUpperBound) {
             return mLastValue;
@@ -49,10 +48,8 @@ class ScaleQuantizer {
             lowerNote = mScale[noteIndex];
         }
         float targetOctave = input - withinOctaveNote;
-        float targetNote = targetOctave + (upperNote - withinOctaveNote >
-                                                   withinOctaveNote - lowerNote
-                                               ? upperNote
-                                               : lowerNote);
+        float targetNote =
+            targetOctave + (upperNote - withinOctaveNote > withinOctaveNote - lowerNote ? upperNote : lowerNote);
 
         mLastValue = targetNote;
 

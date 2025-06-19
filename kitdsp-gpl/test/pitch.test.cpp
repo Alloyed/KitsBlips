@@ -12,21 +12,19 @@ TEST(YinPitchDetector, CanDetectSines) {
     // this is about 74 kb
     float workArea[FastYin<bufferSize>::kWorkAreaDesiredSize] = {};
     FastYin<bufferSize> detector(sampleRate, workArea);
-    
+
     size_t nextSample = 0;
     PitchDetectionResult result;
-    for(size_t iteration = 0; iteration < 1; ++iteration)
-    {
+    for (size_t iteration = 0; iteration < 1; ++iteration) {
         float audioBuffer[bufferSize] = {};
-        for(size_t i = 0; i < bufferSize; ++i)
-        {
+        for (size_t i = 0; i < bufferSize; ++i) {
             audioBuffer[i] = sinf(kTwoPi * nextSample * frequencyHz / sampleRate);
             nextSample++;
         }
-        
+
         detector.getPitch(audioBuffer, result);
     }
-    
+
     ASSERT_TRUE(result.pitched);
     ASSERT_NEAR(result.pitch, frequencyHz, 1.0f);
 }
