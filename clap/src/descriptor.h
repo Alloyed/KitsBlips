@@ -30,8 +30,8 @@ static constexpr const char* const audio_instrument_features[] = {
     nullptr,
 };
 inline constexpr clap_plugin_descriptor_t AudioInstrumentDescriptor(const char* id,
-                                                                const char* name,
-                                                                const char* description) {
+                                                                    const char* name,
+                                                                    const char* description) {
     clap_plugin_descriptor_t descriptor{};
     descriptor.clap_version = CLAP_VERSION;
     descriptor.id = id;

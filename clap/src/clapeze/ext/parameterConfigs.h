@@ -2,12 +2,10 @@
 
 #include <clap/clap.h>
 #include <clap/ext/params.h>
+#include <etl/span.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <etl/span.h>
-#include <kitdsp/math/util.h>
-#include <kitdsp/string.h>
 #include <string_view>
 
 #ifdef KITSBLIPS_ENABLE_GUI
@@ -16,6 +14,17 @@
 
 #include "clapeze/ext/parameters.h"
 
+namespace _clapeze_impl {
+/* safe alternative to strcpy when the buffer size is known at compile time. assumes the buffer is zero'd out in
+ * advance*/
+template <size_t BUFFER_SIZE>
+void stringCopy(char (&buffer)[BUFFER_SIZE], std::string_view src) {
+    static_assert(BUFFER_SIZE > 0);
+    // copy at most BUFFER_SIZE-1 bytes. the last byte is reserved for the null terminator
+    std::memcpy(buffer, src.data(), std::min(src.length(), BUFFER_SIZE - 1));
+}
+}  // namespace _clapeze_impl
+
 /**
  * Represents a numeric value. these are always mapped 0-1 on the DAW side so we can adjust the response curve to the
  * user's taste.
@@ -23,8 +32,13 @@
 class NumericParam : public BaseParam {
    public:
     using _valuetype = float;
-    NumericParam(std::string_view mModule, std::string_view mName, float mMin, float mMax, float mDefaultValue, std::string_view mUnit="")
-        : mModule(mModule), mName(mName),mMin(mMin), mMax(mMax), mDefaultValue(mDefaultValue),  mUnit(mUnit) {}
+    NumericParam(std::string_view mModule,
+                 std::string_view mName,
+                 float mMin,
+                 float mMax,
+                 float mDefaultValue,
+                 std::string_view mUnit = "")
+        : mModule(mModule), mName(mName), mMin(mMin), mMax(mMax), mDefaultValue(mDefaultValue), mUnit(mUnit) {}
     bool FillInformation(clap_id id, clap_param_info_t* information) const override {
         memset(information, 0, sizeof(clap_param_info_t));
         information->id = id;
@@ -32,8 +46,8 @@ class NumericParam : public BaseParam {
         information->min_value = 0.0;
         information->max_value = 1.0;
         information->default_value = GetRawDefault();
-        kitdsp::stringCopy(information->name, mName);
-        kitdsp::stringCopy(information->module, mModule);
+        _clapeze_impl::stringCopy(information->name, mName);
+        _clapeze_impl::stringCopy(information->module, mModule);
         return true;
     }
     double GetRawDefault() const override {
@@ -67,7 +81,7 @@ class NumericParam : public BaseParam {
     }
 #endif
     bool ToValue(double rawValue, float& out) const {
-        out = kitdsp::lerpf(mMin, mMax, static_cast<float>(rawValue));
+        out = std::lerp(mMin, mMax, static_cast<float>(rawValue));
         return true;
     }
     bool FromValue(float in, double& outRaw) const {
@@ -85,9 +99,7 @@ class NumericParam : public BaseParam {
     const std::string_view mUnit;
 };
 
-
-class PercentParam : public NumericParam
-{
+class PercentParam : public NumericParam {
    public:
     using _valuetype = float;
     PercentParam(std::string_view mModule, std::string_view mName, float mDefaultValue)
@@ -99,12 +111,11 @@ class PercentParam : public NumericParam
     }
     bool FromText(std::string_view text, double& outRawValue) const override {
         double in = std::strtod(text.data(), nullptr);
-        return FromValue(in/100.0f, outRawValue);
+        return FromValue(in / 100.0f, outRawValue);
     }
 };
 
-class DbParam : public NumericParam
-{
+class DbParam : public NumericParam {
    public:
     DbParam(std::string_view module, std::string_view name, float minValue, float maxValue, float mDefaultValue)
         : NumericParam(module, name, minValue, maxValue, mDefaultValue, "db") {}
@@ -138,7 +149,7 @@ class IntegerParam : public BaseParam {
         information->min_value = static_cast<double>(mMin);
         information->max_value = static_cast<double>(mMax);
         information->default_value = GetRawDefault();
-        kitdsp::stringCopy(information->name, mName);
+        _clapeze_impl::stringCopy(information->name, mName);
         return true;
     }
     double GetRawDefault() const override {
@@ -148,22 +159,18 @@ class IntegerParam : public BaseParam {
     }
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
         int32_t value = 0;
-        if(!ToValue(rawValue, value))
-        {
+        if (!ToValue(rawValue, value)) {
             return false;
         }
-        if(!mUnit.empty())
-        {
+        if (!mUnit.empty()) {
             std::string_view unit = mUnit;
-            if(rawValue == 1.0 && !mUnitSingular.empty())
-            {
+            if (rawValue == 1.0 && !mUnitSingular.empty()) {
                 unit = mUnitSingular;
             }
 
             snprintf(outTextBuf.data(), outTextBuf.size(), "%d %s", value, unit.data());
             return true;
-        }
-        else {
+        } else {
             snprintf(outTextBuf.data(), outTextBuf.size(), "%d", value);
             return true;
         }
@@ -203,21 +210,24 @@ class IntegerParam : public BaseParam {
 /**
  * Represents a selection from a fixed set of options. A handy way to represent these is with dropdown values.
  */
-template<typename EnumType>
+template <typename EnumType>
 class EnumParam : public BaseParam {
    public:
     using _valuetype = EnumType;
-    EnumParam(std::string_view module, std::string_view mName, std::vector<std::string_view> mLabels, EnumType mDefaultValue)
+    EnumParam(std::string_view module,
+              std::string_view mName,
+              std::vector<std::string_view> mLabels,
+              EnumType mDefaultValue)
         : mModule(module), mName(mName), mLabels(std::move(mLabels)), mDefaultValue(mDefaultValue) {}
     bool FillInformation(clap_id id, clap_param_info_t* information) const override {
         memset(information, 0, sizeof(clap_param_info_t));
         information->id = id;
         information->flags = CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_ENUM | CLAP_PARAM_IS_STEPPED;
         information->min_value = 0;
-        information->max_value = static_cast<double>(mLabels.size()-1);
+        information->max_value = static_cast<double>(mLabels.size() - 1);
         information->default_value = GetRawDefault();
-        kitdsp::stringCopy(information->name, mName);
-        kitdsp::stringCopy(information->module, mModule);
+        _clapeze_impl::stringCopy(information->name, mName);
+        _clapeze_impl::stringCopy(information->module, mModule);
 
         return true;
     }
@@ -246,7 +256,7 @@ class EnumParam : public BaseParam {
     }
 #ifdef KITSBLIPS_ENABLE_GUI
     bool OnImgui(double& inOutRawValue) const override {
-        EnumType value {};
+        EnumType value{};
         ToValue(inOutRawValue, value);
         size_t selectedIndex = static_cast<size_t>(value);
         bool changed = false;
@@ -279,14 +289,12 @@ class EnumParam : public BaseParam {
     const EnumType mDefaultValue;
 };
 
-enum class OnOff {
-    Off, On
-};
+enum class OnOff { Off, On };
 /**
  * Represents a boolean on/off selection
  */
-class OnOffParam : public EnumParam<OnOff>
-{
-    public:
-    OnOffParam(std::string_view module, std::string_view name, OnOff defaultValue): EnumParam(module, name, {"Off", "On"}, defaultValue) {}
+class OnOffParam : public EnumParam<OnOff> {
+   public:
+    OnOffParam(std::string_view module, std::string_view name, OnOff defaultValue)
+        : EnumParam(module, name, {"Off", "On"}, defaultValue) {}
 };

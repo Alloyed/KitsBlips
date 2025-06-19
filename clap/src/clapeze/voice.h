@@ -1,8 +1,8 @@
 #pragma once
 
 #include <etl/circular_buffer.h>
-#include <etl/vector.h>
 #include <etl/stack.h>
+#include <etl/vector.h>
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
@@ -22,13 +22,11 @@ class PolyphonicVoicePool {
     }
 
     void SetNumVoices(size_t numVoices) {
-        if(numVoices != mVoices.size())
-        {
+        if (numVoices != mVoices.size()) {
             assert(numVoices <= MaxVoices);
             StopAllVoices();
             mVoices.clear();
-            for(size_t idx = 0; idx < numVoices; ++idx)
-            {
+            for (size_t idx = 0; idx < numVoices; ++idx) {
                 mVoices.emplace_back(mProcessor);
             }
             mVoicesByLastUsed.clear();
@@ -44,8 +42,7 @@ class PolyphonicVoicePool {
                 SendNoteEnd(*(data.activeNote));
                 break;
             }
-            if(data.activeNote == std::nullopt && voiceIndex == SIZE_MAX)
-            {
+            if (data.activeNote == std::nullopt && voiceIndex == SIZE_MAX) {
                 voiceIndex = idx;
             }
         }
@@ -121,14 +118,14 @@ class PolyphonicVoicePool {
     }
 
     struct VoiceData {
-        VoiceData(ProcessorType&p): voice(p) {}
+        VoiceData(ProcessorType& p) : voice(p) {}
         VoiceType voice;
         std::optional<NoteTuple> activeNote;
     };
 
     ProcessorType& mProcessor;
     etl::vector<VoiceData, MaxVoices> mVoices;
-    etl::circular_buffer<VoiceIndex, MaxVoices> mVoicesByLastUsed {};
+    etl::circular_buffer<VoiceIndex, MaxVoices> mVoicesByLastUsed{};
 };
 
 template <typename ProcessorType, typename VoiceType>
@@ -137,14 +134,12 @@ class MonophonicVoicePool {
     MonophonicVoicePool(ProcessorType& p) : mProcessor(p), mVoice(p) {}
 
     void ProcessNoteOn(const NoteTuple& note, float velocity) {
-        if(!mActiveNotes.empty())
-        {
+        if (!mActiveNotes.empty()) {
             // existing note playing, let's stash it
             mVoice.ProcessNoteOff();
         }
 
-        if(mActiveNotes.full())
-        {
+        if (mActiveNotes.full()) {
             // we're past the internal note tracking limit
             return;
         }
@@ -153,16 +148,13 @@ class MonophonicVoicePool {
         mPlaying = true;
     }
     void ProcessNoteOff(const NoteTuple& note) {
-        for(size_t idx = mActiveNotes.size() - 1; idx >= 0; idx--)
-        {
+        for (size_t idx = mActiveNotes.size() - 1; idx >= 0; idx--) {
             if (mActiveNotes[idx].first.Match(note)) {
-                mActiveNotes.erase(mActiveNotes.begin()+idx);
-                if(idx == mActiveNotes.size() - 1)
-                {
+                mActiveNotes.erase(mActiveNotes.begin() + idx);
+                if (idx == mActiveNotes.size() - 1) {
                     // this is the current note, so let's stop it and retrigger the last note if necessary
                     mVoice.ProcessNoteOff();
-                    if(!mActiveNotes.empty())
-                    {
+                    if (!mActiveNotes.empty()) {
                         const auto& [note, velocity] = mActiveNotes.back();
                         mVoice.ProcessNoteOn(note, velocity);
                     }
@@ -170,15 +162,12 @@ class MonophonicVoicePool {
             }
         }
     }
-    void ProcessNoteChoke(const NoteTuple& note) {
-        StopAllVoices();
-    }
+    void ProcessNoteChoke(const NoteTuple& note) { StopAllVoices(); }
     void ProcessAudio(StereoAudioBuffer& out) {
         std::fill(out.left.begin(), out.left.end(), 0);
         std::fill(out.right.begin(), out.right.end(), 0);
         if (mPlaying && !mVoice.ProcessAudio(out)) {
-            if(!mActiveNotes.empty())
-            {
+            if (!mActiveNotes.empty()) {
                 SendNoteEnd(mActiveNotes.back().first);
                 mActiveNotes.pop_back();
             }
@@ -186,15 +175,12 @@ class MonophonicVoicePool {
         }
     }
 
-    void StopAllVoices() {
-        StopVoice();
-    }
+    void StopAllVoices() { StopVoice(); }
 
    private:
     void StopVoice() {
         if (mPlaying) {
-            while(!mActiveNotes.empty())
-            {
+            while (!mActiveNotes.empty()) {
                 SendNoteEnd(mActiveNotes.back().first);
                 mActiveNotes.pop_back();
             }

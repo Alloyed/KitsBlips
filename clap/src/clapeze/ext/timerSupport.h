@@ -17,7 +17,7 @@ class TimerSupportExt : public BaseExt {
         };
         return static_cast<const void*>(&value);
     }
-    
+
    private:
     static void _on_timer(const clap_plugin_t* plugin, clap_id timerId) {
         BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);

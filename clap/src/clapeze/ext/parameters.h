@@ -3,7 +3,6 @@
 #include <clap/clap.h>
 #include <etl/queue_spsc_atomic.h>
 #include <etl/span.h>
-#include <kitdsp/string.h>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -15,7 +14,6 @@
 #include "clap/ext/params.h"
 #include "clapeze/basePlugin.h"
 #include "clapeze/pluginHost.h"
-
 
 class BaseParam {
    public:
@@ -32,7 +30,7 @@ class BaseParam {
 /*
  * TODO this is very complex and deserves to be subclassed a bit so that you can pick between a batteries included
  * "easy" interface, a complex but configurable "hard" interface, or just "here's the basics make your own thing"
- * 
+ *
  * More features we should eventually support:
  * - per-voice modulation (assignable by note)
  * - observer architecture (onParamChanged())
@@ -190,7 +188,7 @@ class ParametersExt : public BaseExt {
             return false;
         }
 
-        void FlushEventsFromMain( BaseProcessor& processor, const clap_output_events_t* out) {
+        void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) {
             // Send events queued from us to the host
             // Since these all happened on an independent thread, they do not have sample-accurate timing; we'll just
             // send them at the front of the queue.

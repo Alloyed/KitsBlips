@@ -1,8 +1,8 @@
 #include "snecho/snecho.h"
 
 #include "clapeze/effectPlugin.h"
-#include "clapeze/ext/parameters.h"
 #include "clapeze/ext/parameterConfigs.h"
+#include "clapeze/ext/parameters.h"
 #include "descriptor.h"
 
 #include <kitdsp/dbMeter.h>
@@ -94,7 +94,6 @@ class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
     kitdsp::SNES::Echo snes1{snesBuffer1, snesBufferSize};
     kitdsp::Resampler<float> snesSampler{kitdsp::SNES::kOriginalSampleRate, 41000};
 };
-
 
 class Plugin : public EffectPlugin {
    public:

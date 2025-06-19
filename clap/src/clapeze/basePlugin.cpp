@@ -31,14 +31,13 @@ bool BasePlugin::Init() {
 }
 
 bool BasePlugin::ValidateConfig() {
-    if(mProcessor == nullptr)
-    {
-        mHost.Log(LogSeverity::Fatal, "mProcessor is null. did you forget to call ConfigProcessor() in your Config method?");
+    if (mProcessor == nullptr) {
+        mHost.Log(LogSeverity::Fatal,
+                  "mProcessor is null. did you forget to call ConfigProcessor() in your Config method?");
         return false;
     }
-    for(const auto& [_, extension] : mExtensions) {
-        if(!extension->Validate(*this))
-        {
+    for (const auto& [_, extension] : mExtensions) {
+        if (!extension->Validate(*this)) {
             return false;
         }
     }

@@ -2,14 +2,14 @@
 
 #include "clapeze/gui/platform/platform.h"
 
-#include "clapeze/ext/gui.h"
-#include "clapeze/pluginHost.h"
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_video.h>
 #include <X11/Xlib.h>
 #include <X11/Xos.h>
 #include <X11/Xutil.h>
+#include "clapeze/ext/gui.h"
+#include "clapeze/pluginHost.h"
 
 // https://github.com/libsdl-org/SDL/blob/main/src/video/x11/SDL_x11window.c
 // NYI: https://github.com/libsdl-org/SDL/blob/main/src/video/wayland/SDL_waylandwindow.c
@@ -24,8 +24,7 @@ void getPlatformHandles(SDL_Window* sdlWindow, Window& xWindow, Display*& xDispl
 
 namespace platformGui {
 void onCreateWindow(ClapWindowApi api, SDL_Window* sdlWindow) {
-    if(api == ClapWindowApi::Wayland)
-    {
+    if (api == ClapWindowApi::Wayland) {
         return;
     }
     Window xWindow;
@@ -43,8 +42,7 @@ void onCreateWindow(ClapWindowApi api, SDL_Window* sdlWindow) {
 }
 
 bool setParent(ClapWindowApi api, SDL_Window* sdlWindow, const WindowHandle& parent) {
-    if(api == ClapWindowApi::Wayland)
-    {
+    if (api == ClapWindowApi::Wayland) {
         return true;
     }
     Window xWindow;
@@ -64,8 +62,7 @@ bool setParent(ClapWindowApi api, SDL_Window* sdlWindow, const WindowHandle& par
 }
 
 bool setTransient(ClapWindowApi api, SDL_Window* sdlWindow, const WindowHandle& parent) {
-    if(api == ClapWindowApi::Wayland)
-    {
+    if (api == ClapWindowApi::Wayland) {
         return true;
     }
     Window xWindow;
@@ -78,14 +75,12 @@ bool setTransient(ClapWindowApi api, SDL_Window* sdlWindow, const WindowHandle& 
     return true;
 }
 
-clap_id addGuiTimer(PluginHost& host, int32_t periodMs, void (*fn)())
-{
+clap_id addGuiTimer(PluginHost& host, int32_t periodMs, void (*fn)()) {
     return host.AddTimer(periodMs, fn);
 }
 
-void cancelGuiTimer(PluginHost& host, clap_id id)
-{
+void cancelGuiTimer(PluginHost& host, clap_id id) {
     host.CancelTimer(id);
 }
-};  // namespace PlatformGui
+};  // namespace platformGui
 #endif

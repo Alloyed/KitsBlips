@@ -1,5 +1,10 @@
 #include "sines/sines.h"
 
+#include <kitdsp/control/approach.h>
+#include <kitdsp/control/lfo.h>
+#include <kitdsp/filters/svf.h>
+#include <kitdsp/math/util.h>
+#include <kitdsp/osc/blepOscillator.h>
 #include "clapeze/common.h"
 #include "clapeze/ext/parameterConfigs.h"
 #include "clapeze/ext/parameters.h"
@@ -7,11 +12,6 @@
 #include "clapeze/instrumentPlugin.h"
 #include "clapeze/voice.h"
 #include "descriptor.h"
-#include <kitdsp/control/approach.h>
-#include <kitdsp/control/lfo.h>
-#include <kitdsp/filters/svf.h>
-#include <kitdsp/math/util.h>
-#include <kitdsp/osc/naiveOscillator.h>
 
 namespace sines {
 enum class Params : clap_id { Rise, Fall, VibratoRate, VibratoDepth, Portamento, Polyphony, Count };
@@ -20,14 +20,12 @@ using ParamsExt = ParametersExt<Params>;
 class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
     class Voice {
        public:
-        Voice(Processor& p): mProcessor(p) {}
+        Voice(Processor& p) : mProcessor(p) {}
         void ProcessNoteOn(const NoteTuple& note, float velocity) {
             mAmplitude.target = 1.0f;
             mPitch.target = note.key;
         }
-        void ProcessNoteOff() {
-            mAmplitude.target = 0.0f;
-        }
+        void ProcessNoteOff() { mAmplitude.target = 0.0f; }
         void ProcessChoke() {
             mOsc.Reset();
             mFilter.Reset();
@@ -56,8 +54,7 @@ class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
                 out.left[index] += s;
                 out.right[index] += s;
             }
-            if(mAmplitude.current < 0.0001f && !mAmplitude.IsChanging())
-            {
+            if (mAmplitude.current < 0.0001f && !mAmplitude.IsChanging()) {
                 // audio settled, time to sleep
                 return false;
             }
@@ -66,11 +63,11 @@ class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
 
        private:
         Processor& mProcessor;
-        kitdsp::naive::RampUpOscillator mOsc{};
-        kitdsp::EmileSvf mFilter {};
-        kitdsp::Approach mAmplitude {};
-        kitdsp::Approach mPitch {};
-        kitdsp::lfo::SineOscillator mVibrato {};
+        kitdsp::blep::RampUpOscillator mOsc{};
+        kitdsp::EmileSvf mFilter{};
+        kitdsp::Approach mAmplitude{};
+        kitdsp::Approach mPitch{};
+        kitdsp::lfo::SineOscillator mVibrato{};
     };
 
    public:
@@ -82,21 +79,13 @@ class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
         mVoices.ProcessAudio(out);
     }
 
-    void ProcessNoteOn(const NoteTuple& note, float velocity) override {
-        mVoices.ProcessNoteOn(note, velocity);
-    }
+    void ProcessNoteOn(const NoteTuple& note, float velocity) override { mVoices.ProcessNoteOn(note, velocity); }
 
-    void ProcessNoteOff(const NoteTuple& note) override {
-        mVoices.ProcessNoteOff(note);
-    }
+    void ProcessNoteOff(const NoteTuple& note) override { mVoices.ProcessNoteOff(note); }
 
-    void ProcessNoteChoke(const NoteTuple& note) override {
-        mVoices.ProcessNoteChoke(note);
-    }
+    void ProcessNoteChoke(const NoteTuple& note) override { mVoices.ProcessNoteChoke(note); }
 
-    void ProcessReset() override {
-        mVoices.StopAllVoices();
-    }
+    void ProcessReset() override { mVoices.StopAllVoices(); }
 
    private:
     PolyphonicVoicePool<Processor, Voice, 16> mVoices;
@@ -125,4 +114,4 @@ class Plugin : public InstrumentPlugin {
 const PluginEntry Entry{AudioInstrumentDescriptor("kitsblips.sines", "Sines", "a simple sine wave synth"),
                         [](PluginHost& host) -> BasePlugin* { return new Plugin(host); }};
 
-}  // namespace Sines
+}  // namespace sines

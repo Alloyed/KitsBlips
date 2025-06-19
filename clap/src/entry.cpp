@@ -6,19 +6,18 @@
 #include "clapeze/basePlugin.h"
 
 #include "crunch/crunch.h"
-#include "snecho/snecho.h"
 #include "sines/sines.h"
+#include "snecho/snecho.h"
 
 namespace PluginFactory {
 
 const std::vector<PluginEntry> plugins{
-    snecho::Entry,
-    sines::Entry,
-    crunch::Entry,
+    snecho::Entry, sines::Entry, crunch::Entry,
     // Add your plugin here!
     // Some hosts seem to store the plugin index alongside the id, so make sure
     // you only ever add to the end of the list.
-    // TODO: filter based on some sort of runtime configuration (so users don't need to manually hide every plugin in their daw)
+    // TODO: filter based on some sort of runtime configuration (so users don't need to manually hide every plugin in
+    // their daw)
 };
 
 uint32_t get_plugin_count(const clap_plugin_factory* factory) {

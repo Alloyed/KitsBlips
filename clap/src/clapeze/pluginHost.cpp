@@ -1,18 +1,17 @@
 #include "clapeze/pluginHost.h"
 
+#include <clap/all.h>
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <sstream>
-#include <algorithm>
-#include <clap/all.h>
 
 PluginHost::PluginHost(const clap_host_t* host)
     : mHost(host),
       mThreadCheck(static_cast<const clap_host_thread_check_t*>(host->get_extension(host, CLAP_EXT_THREAD_CHECK))),
       mLog(static_cast<const clap_host_log_t*>(host->get_extension(host, CLAP_EXT_LOG))),
       mTimer(static_cast<const clap_host_timer_support_t*>(host->get_extension(host, CLAP_EXT_TIMER_SUPPORT))),
-      mGui(static_cast<const clap_host_gui_t*>(host->get_extension(host, CLAP_EXT_GUI))) {
-}
+      mGui(static_cast<const clap_host_gui_t*>(host->get_extension(host, CLAP_EXT_GUI))) {}
 
 bool PluginHost::SupportsExtension(const char* extensionName) const {
     const void* ext = mHost->get_extension(mHost, extensionName);
@@ -67,7 +66,7 @@ void PluginHost::LogSupportMatrix() const {
         CLAP_EXT_TUNING,
         CLAP_EXT_UNDO,
     };
-    
+
     std::string hostString;
     hostString.append(mHost->name);
     std::replace(hostString.begin(), hostString.end(), ' ', '_');
@@ -83,10 +82,9 @@ void PluginHost::LogSupportMatrix() const {
     hostString.append(mHost->version);
 
     std::stringstream ss;
-    
 
     // header
-    ss <<"Name,Status,Host\n";
+    ss << "Name,Status,Host\n";
     // data
     for (const auto& x : cStandardExtensions) {
         ss << x << "," << (SupportsExtension(x) ? "Supported" : "Not Supported") << "," << hostString << "\n";

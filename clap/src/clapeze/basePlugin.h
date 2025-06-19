@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cassert>
 #include <clap/clap.h>
 #include <clap/events.h>
+#include <cassert>
 #include <cstddef>
 #include <cstdio>
 #include <memory>
@@ -19,7 +19,7 @@ class BaseExt {
     virtual ~BaseExt() = default;
     virtual const char* Name() const = 0;
     virtual const void* Extension() const = 0;
-    virtual bool Validate( const BasePlugin& plugin) const { return true; }
+    virtual bool Validate(const BasePlugin& plugin) const { return true; }
 
     template <typename ExtType = BaseExt>
     static ExtType& GetFromPlugin(BasePlugin& plugin);
@@ -42,7 +42,7 @@ class BaseProcessor {
      *
      * [main-thread & !active]
      */
-    virtual void Activate( double sampleRate,  size_t minBlockSize,  size_t maxBlockSize) {};
+    virtual void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) {};
     /**
      * Called when the plugin is deactivated.
      *
@@ -77,9 +77,8 @@ class BaseProcessor {
     virtual void ProcessReset() {};
 
     /* only valid while processing. using contextual state. */
-    void SendEvent(clap_event_header_t& event)
-    {
-        event.time += mTime; // this is probably very not smart
+    void SendEvent(clap_event_header_t& event) {
+        event.time += mTime;  // this is probably very not smart
         mOutEvents->try_push(mOutEvents, &event);
     }
 
@@ -90,7 +89,7 @@ class BaseProcessor {
     double GetSampleRate() const { return mSampleRate; }
     size_t GetMaxBlockSize() const { return mMinBlockSize; }
     size_t GetMinBlockSize() const { return mMaxBlockSize; }
-    
+
    private:
     double mSampleRate;
     size_t mMinBlockSize;
@@ -179,8 +178,8 @@ ExtType& BasePlugin::ConfigExtension(Args&&... args) {
 
 template <typename ExtType, typename... Args>
 ExtType* BasePlugin::TryConfigExtension(Args&&... args) {
-    if(GetHost().SupportsExtension(ExtType::NAME)) {
-        return &ConfigExtension<ExtType>(std::forward<Args> (args)...);
+    if (GetHost().SupportsExtension(ExtType::NAME)) {
+        return &ConfigExtension<ExtType>(std::forward<Args>(args)...);
     }
     return nullptr;
 }

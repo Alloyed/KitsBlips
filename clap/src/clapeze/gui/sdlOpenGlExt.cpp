@@ -13,8 +13,8 @@
 
 #include "clap/ext/gui.h"
 #include "clapeze/ext/gui.h"
-#include "clapeze/pluginHost.h"
 #include "clapeze/gui/platform/platform.h"
+#include "clapeze/pluginHost.h"
 
 bool SdlOpenGlExt::MakeCurrent() {
     return SDL_GL_MakeCurrent(mWindow, mCtx);
@@ -225,7 +225,7 @@ void SdlOpenGlExt::AddActiveInstance(SdlOpenGlExt* instance) {
             sUpdateTimerId = 0;
         }
 
-        constexpr int32_t timerMs = 32; // 30fps
+        constexpr int32_t timerMs = 32;  // 30fps
         sUpdateTimerId = platformGui::addGuiTimer(instance->mHost, timerMs, &UpdateInstances);
     }
 }

@@ -35,7 +35,7 @@ void ImGuiExt::Destroy() {
 }
 
 bool ImGuiExt::MakeCurrent() {
-    if(mImgui) {
+    if (mImgui) {
         ImGui::SetCurrentContext(mImgui);
     }
     return SdlOpenGlExt::MakeCurrent();

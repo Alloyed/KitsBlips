@@ -3,5 +3,5 @@
 #include "clapeze/basePlugin.h"
 
 namespace crunch {
-    extern const PluginEntry Entry;
+extern const PluginEntry Entry;
 }

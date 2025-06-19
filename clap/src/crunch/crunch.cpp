@@ -1,8 +1,8 @@
 #include "crunch/crunch.h"
 
 #include "clapeze/effectPlugin.h"
-#include "clapeze/ext/parameters.h"
 #include "clapeze/ext/parameterConfigs.h"
+#include "clapeze/ext/parameters.h"
 #include "descriptor.h"
 
 #include <kitdsp/dbMeter.h>
@@ -13,14 +13,7 @@
 
 namespace crunch {
 
-enum class Params : clap_id {
-    Algorithm,
-    Gain,
-    Tone,
-    Makeup,
-    Mix,
-    Count
-};
+enum class Params : clap_id { Algorithm, Gain, Tone, Makeup, Mix, Count };
 using ParamsExt = ParametersExt<Params>;
 
 namespace {
@@ -69,12 +62,10 @@ class ToneFilter {
 
         return kitdsp::lerpf(lowpass, highpass, tone) * gain;
     }
-    void Reset() {
-        mPole1.Reset();
-    }
+    void Reset() { mPole1.Reset(); }
     kitdsp::OnePole mPole1;
 };
-}
+}  // namespace
 
 class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
    public:
@@ -89,7 +80,7 @@ class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
         float mixf = mParams.Get<PercentParam>(Params::Mix);
 
         for (size_t idx = 0; idx < in.left.size(); ++idx) {
-            //in
+            // in
             float left = in.left[idx];
             float right = in.right[idx];
 
@@ -108,7 +99,7 @@ class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
             float processedRight = dcRight.Process(tonePostRight.Process(crunchedRight, postTone)) * makeup;
 
             // outputs
-            out.left[idx]  = kitdsp::lerpf(left, processedLeft, mixf);
+            out.left[idx] = kitdsp::lerpf(left, processedLeft, mixf);
             out.right[idx] = kitdsp::lerpf(right, processedRight, mixf);
         }
     }
@@ -152,7 +143,9 @@ class Plugin : public EffectPlugin {
 
         ParamsExt& params =
             ConfigExtension<ParamsExt>(GetHost(), Params::Count)
-                .ConfigParam<EnumParam<Algorithm>>(Params::Algorithm, "Algorithm", std::vector<std::string_view>{"Clip", "Saturate", "Fold", "Rectify"}, Algorithm::HardClip)
+                .ConfigParam<EnumParam<Algorithm>>(Params::Algorithm, "Algorithm",
+                                                   std::vector<std::string_view>{"Clip", "Saturate", "Fold", "Rectify"},
+                                                   Algorithm::HardClip)
                 .ConfigParam<DbParam>(Params::Gain, "Gain", 0.0f, 32.0f, 0.0f)
                 .ConfigParam<PercentParam>(Params::Tone, "Tone", 0.5f)
                 .ConfigParam<DbParam>(Params::Makeup, "Makeup", -9.0f, 9.0f, 0.0f)

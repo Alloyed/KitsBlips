@@ -22,9 +22,7 @@ class EffectProcessor : public BaseProcessor {
 
     virtual void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) = 0;
     // impl
-    void ProcessFlush(const clap_process_t& process) final {
-        mParams.FlushEventsFromMain(*this, process.out_events);
-    }
+    void ProcessFlush(const clap_process_t& process) final { mParams.FlushEventsFromMain(*this, process.out_events); }
     void ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) final {
         size_t numSamples = rangeStop - rangeStart;
         const StereoAudioBuffer in{

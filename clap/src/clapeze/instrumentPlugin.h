@@ -61,9 +61,7 @@ class InstrumentProcessor : public BaseProcessor {
     virtual void ProcessNoteExpression(const NoteTuple& note, clap_note_expression expression, float value) {};
 
     // impl
-    void ProcessFlush(const clap_process_t& process) final {
-        mParams.FlushEventsFromMain(*this, process.out_events);
-    }
+    void ProcessFlush(const clap_process_t& process) final { mParams.FlushEventsFromMain(*this, process.out_events); }
     void ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) final {
         // BaseParamsExt::AudioParameters& params =
         // BaseParamsExt::GetFromPlugin<BaseParamsExt>(*this).GetStateForAudioThread();

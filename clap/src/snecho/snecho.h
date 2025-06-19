@@ -3,5 +3,5 @@
 #include "clapeze/basePlugin.h"
 
 namespace snecho {
-    extern const PluginEntry Entry;
+extern const PluginEntry Entry;
 }
