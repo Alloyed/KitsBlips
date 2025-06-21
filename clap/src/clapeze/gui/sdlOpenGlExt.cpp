@@ -303,7 +303,7 @@ void SdlOpenGlExt::UpdateInstances() {
         uint32_t width, height;
         instance->GetSize(width, height);
         glViewport(0, 0, width, height);
-        glClearColor(0, 1.0f, 0, 1.0f);
+        glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         instance->Draw();
         SDL_GL_SwapWindow(instance->mWindow);

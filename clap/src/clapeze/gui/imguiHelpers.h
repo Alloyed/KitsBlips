@@ -5,14 +5,23 @@
 #include "clapeze/ext/parameters.h"
 
 namespace ImGuiHelpers {
-inline void displayParametersBasic(ParametersExt<clap_id>& params) {
-    // using P = ParametersExt<clap_id>;
+template <typename FN>
+inline void beginMain(FN fn) {
     ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
     ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     static bool open = true;
-    ImGui::Begin("main", &open, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize);
+    ImGui::Begin("main", &open,
+                 ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize);
     {
+        fn();
+    }
+    ImGui::End();
+    ImGui::PopStyleVar();
+}
+
+inline void displayParametersBasic(ParametersExt<clap_id>& params) {
+    beginMain([&params]() {
         std::string buf;
         bool anyChanged = false;
         params.FlushFromAudio();
@@ -33,9 +42,8 @@ inline void displayParametersBasic(ParametersExt<clap_id>& params) {
         if (anyChanged) {
             params.RequestFlushIfNotProcessing();
         }
-    }
-    ImGui::End();
-    ImGui::PopStyleVar();
+    });
 }
+
 }  // namespace ImGuiHelpers
 #endif

@@ -61,16 +61,20 @@ target_link_libraries(KitsBlips-lib PUBLIC
 if(KITSBLIPS_ENABLE_GUI)
     include(imgui)
     set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
-    FetchContent_MakeAvailable(SDL3)
+    FetchContent_MakeAvailable(SDL3 glm tinygltf)
 
     target_compile_definitions(KitsBlips-lib PUBLIC KITSBLIPS_ENABLE_GUI=1)
     target_sources(KitsBlips-lib PRIVATE
         src/clapeze/gui/sdlOpenGlExt.cpp
         src/clapeze/gui/imguiExt.cpp
+        src/gui/knob.cpp
+        src/gui/mesh.cpp
     )
     target_link_libraries(KitsBlips-lib PUBLIC
         imgui
         imgui_opengl_sdl3
+        glm
+        tinygltf
     )
     if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
         target_sources(KitsBlips-lib PUBLIC

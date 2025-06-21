@@ -57,6 +57,18 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
     GIT_TAG        v1.0.0
 )
+set(TINYGLTF_HEADER_ONLY OFF)
+FetchContent_Declare(
+    tinygltf
+    GIT_REPOSITORY https://github.com/syoyo/tinygltf.git
+    GIT_TAG        v2.9.6
+)
+FetchContent_Declare(
+	glm
+	GIT_REPOSITORY	https://github.com/g-truc/glm.git
+	GIT_TAG 	2d4c4b4dd31fde06cfffad7915c2b3006402322f
+)
+
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(SDL_SHARED OFF)
