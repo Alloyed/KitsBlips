@@ -4,6 +4,8 @@
 #include <imgui.h>
 #include "clapeze/ext/parameters.h"
 
+namespace clapeze {
+
 namespace ImGuiHelpers {
 template <typename FN>
 inline void beginMain(FN fn) {
@@ -46,4 +48,5 @@ inline void displayParametersBasic(ParametersExt<clap_id>& params) {
 }
 
 }  // namespace ImGuiHelpers
+}  // namespace clapeze
 #endif

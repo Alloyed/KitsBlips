@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstdio>
 #include <sstream>
+namespace clapeze {
 
 PluginHost::PluginHost(const clap_host_t* host)
     : mHost(host),
@@ -131,3 +132,5 @@ void PluginHost::CancelTimer(PluginHost::TimerId id) {
         mTimer->unregister_timer(mHost, id);
     }
 }
+
+}  // namespace clapeze

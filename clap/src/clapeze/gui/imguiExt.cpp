@@ -6,6 +6,8 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl3.h"
 
+namespace clapeze {
+
 bool ImGuiExt::Create(ClapWindowApi api, bool isFloating) {
     if (!SdlOpenGlExt::Create(api, isFloating)) {
         return false;
@@ -58,3 +60,4 @@ void ImGuiExt::Update() {
 void ImGuiExt::Draw() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
+}  // namespace clapeze

@@ -4,6 +4,8 @@
 #include <functional>
 #include <string>
 
+namespace clapeze {
+
 class TimerSupportExt;
 enum class LogSeverity {
     Debug = 0,
@@ -70,3 +72,4 @@ bool PluginHost::TryGetExtension(const char* extensionName, const clap_host_t*& 
         return false;
     }
 }
+}  // namespace clapeze

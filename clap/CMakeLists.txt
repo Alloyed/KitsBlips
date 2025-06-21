@@ -63,6 +63,12 @@ if(KITSBLIPS_ENABLE_GUI)
     set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
     FetchContent_MakeAvailable(SDL3 glm tinygltf)
 
+    # make gl3w (code-generated Opengl 3 loader)
+    include(gl3w_gen)
+    gl3w_gen(${CMAKE_CURRENT_BINARY_DIR}/gl3w)
+    add_library(gl3w STATIC ${CMAKE_CURRENT_BINARY_DIR}/gl3w/src/gl3w.c)
+    target_include_directories(gl3w PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/gl3w/include)
+
     target_compile_definitions(KitsBlips-lib PUBLIC KITSBLIPS_ENABLE_GUI=1)
     target_sources(KitsBlips-lib PRIVATE
         src/clapeze/gui/sdlOpenGlExt.cpp
@@ -75,6 +81,7 @@ if(KITSBLIPS_ENABLE_GUI)
         imgui_opengl_sdl3
         glm
         tinygltf
+        gl3w
     )
     if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
         target_sources(KitsBlips-lib PUBLIC

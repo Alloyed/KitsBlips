@@ -10,6 +10,8 @@
 #include "clap/events.h"
 #include "clapeze/common.h"
 
+namespace clapeze {
+
 /*
  * Helper classes for building polyphonic synths that support clap's per note/per voice modulation options
  */
@@ -208,3 +210,4 @@ class MonophonicVoicePool {
     etl::vector<std::pair<NoteTuple, float>, 16> mActiveNotes{};
     bool mPlaying = false;
 };
+}  // namespace clapeze

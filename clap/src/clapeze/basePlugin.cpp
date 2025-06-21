@@ -3,6 +3,8 @@
 #include <cassert>
 #include "clapeze/pluginHost.h"
 
+namespace clapeze {
+
 BaseExt* BasePlugin::TryGetExtension(const char* name) {
     if (auto search = mExtensions.find(name); search != mExtensions.end()) {
         return search->second.get();
@@ -168,3 +170,5 @@ const clap_plugin_t* BasePlugin::GetOrCreatePluginObject(const clap_plugin_descr
     }
     return mPlugin.get();
 }
+
+}  // namespace clapeze

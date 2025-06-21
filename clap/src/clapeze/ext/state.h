@@ -8,6 +8,8 @@
 #include "clapeze/basePlugin.h"
 #include "clapeze/ext/parameters.h"
 
+namespace clapeze {
+
 /* Saves and loads parameter state. Depends on ParametersExt. */
 class StateExt : public BaseExt {
    public:
@@ -70,3 +72,4 @@ class StateExt : public BaseExt {
         return id == numParams;
     }
 };
+}  // namespace clapeze

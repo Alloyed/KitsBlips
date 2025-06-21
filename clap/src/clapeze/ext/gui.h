@@ -5,6 +5,7 @@
 
 #include "clap/ext/timer-support.h"
 #include "clapeze/basePlugin.h"
+namespace clapeze {
 
 enum ClapWindowApi { _None = 0, X11, Wayland, Win32, Cocoa };
 
@@ -191,3 +192,4 @@ class GuiExt : public BaseExt {
         return self.Hide();
     }
 };
+}  // namespace clapeze

@@ -15,6 +15,8 @@ void getPlatformHandles(SDL_Window* sdlWindow, HWND& hWindow) {
 }
 }  // namespace
 
+namespace clapeze {
+
 namespace platformGui {
 void onCreateWindow(ClapWindowApi _api, SDL_Window* sdlWindow) {
     // do nothing
@@ -52,4 +54,5 @@ void cancelGuiTimer(PluginHost& host, clap_id id) {
     KillTimer(nullptr, id);
 }
 }  // namespace platformGui
+}  // namespace clapeze
 #endif

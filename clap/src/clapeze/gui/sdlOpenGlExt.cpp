@@ -1,5 +1,8 @@
 #include "clapeze/gui/sdlOpenGlExt.h"
 
+// has to be first
+#include <GL/gl3w.h>
+
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_hints.h>
@@ -15,6 +18,8 @@
 #include "clapeze/ext/gui.h"
 #include "clapeze/gui/platform/platform.h"
 #include "clapeze/pluginHost.h"
+
+namespace clapeze {
 
 bool SdlOpenGlExt::MakeCurrent() {
     return SDL_GL_MakeCurrent(mWindow, mCtx);
@@ -82,16 +87,7 @@ bool SdlOpenGlExt::Create(ClapWindowApi api, bool isFloating) {
         CLAPEZE_LOG_SDL_ERROR(this);
         return false;
     }
-
-    //  GL 3.0 + GLSL 130
-    //  const char* glsl_version = "#version 130";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+    InitOnce();
 
     SDL_PropertiesID createProps = SDL_CreateProperties();
     if (createProps == 0) {
@@ -122,6 +118,30 @@ bool SdlOpenGlExt::Create(ClapWindowApi api, bool isFloating) {
     SDL_GL_MakeCurrent(mWindow, mCtx);
 
     return true;
+}
+
+void SdlOpenGlExt::InitOnce() {
+    static bool hasInit = false;
+    if (!hasInit) {
+        hasInit = true;
+        //  GL 3.0 + GLSL 130
+        //  const char* glsl_version = "#version 130";
+        //
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+        if (gl3wInit()) {
+            fprintf(stderr, "failed to initialize OpenGL\n");
+        }
+        if (!gl3wIsSupported(3, 2)) {
+            fprintf(stderr, "OpenGL 3.2 not supported\n");
+        }
+        printf("OpenGL %s, GLSL %s\n", glGetString(GL_VERSION), glGetString(GL_SHADING_LANGUAGE_VERSION));
+    }
 }
 
 void SdlOpenGlExt::Destroy() {
@@ -309,3 +329,4 @@ void SdlOpenGlExt::UpdateInstances() {
         SDL_GL_SwapWindow(instance->mWindow);
     }
 }
+}  // namespace clapeze

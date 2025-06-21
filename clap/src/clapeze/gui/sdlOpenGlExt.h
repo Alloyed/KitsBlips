@@ -12,8 +12,10 @@
     do {                                                               \
         std::stringstream buf;                                         \
         buf << __FILE__ << ": " << __LINE__ << ": " << SDL_GetError(); \
-        instance->mHost.Log(LogSeverity::Error, buf.str());            \
+        instance->mHost.Log(clapeze::LogSeverity::Error, buf.str());   \
     } while (0)
+
+namespace clapeze {
 
 // Forward declares
 class PluginHost;
@@ -53,6 +55,7 @@ class SdlOpenGlExt : public GuiExt {
 
    private:
     ClapWindowApi mApi;
+    static void InitOnce();
     static void AddActiveInstance(SdlOpenGlExt* instance);
     static void RemoveActiveInstance(SdlOpenGlExt* instance);
     static SdlOpenGlExt* FindInstanceForWindow(SDL_WindowID window);
@@ -60,5 +63,6 @@ class SdlOpenGlExt : public GuiExt {
     static std::vector<SdlOpenGlExt*> sActiveInstances;
     static PluginHost::TimerId sUpdateTimerId;
 };
+}  // namespace clapeze
 
 #endif

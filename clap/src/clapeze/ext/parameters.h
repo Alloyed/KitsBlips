@@ -15,6 +15,8 @@
 #include "clapeze/basePlugin.h"
 #include "clapeze/pluginHost.h"
 
+namespace clapeze {
+
 class BaseParam {
    public:
     virtual ~BaseParam() = default;
@@ -323,3 +325,4 @@ class ParametersExt : public BaseExt {
 };
 
 using BaseParamsExt = ParametersExt<clap_id, BaseParam>;
+}  // namespace clapeze

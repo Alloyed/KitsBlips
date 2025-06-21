@@ -3,6 +3,8 @@
 #include <etl/span.h>
 #include <cstdint>
 
+namespace clapeze {
+
 struct MonoAudioBuffer {
     etl::span<float> data;
     bool isConstant;
@@ -39,3 +41,5 @@ struct NoteTuple {
         return true;
     }
 };
+
+}  // namespace clapeze

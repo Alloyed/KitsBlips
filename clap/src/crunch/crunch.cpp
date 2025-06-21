@@ -11,6 +11,8 @@
 #include <kitdsp/math/approx.h>
 #include <kitdsp/math/util.h>
 
+using namespace clapeze;
+
 namespace crunch {
 
 enum class Params : clap_id { Algorithm, Gain, Tone, Makeup, Mix, Count };

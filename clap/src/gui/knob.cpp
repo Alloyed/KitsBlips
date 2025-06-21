@@ -7,9 +7,8 @@
 #include "kitdsp/math/util.h"
 
 namespace kitgui {
-
-// imgui
-bool knob(const char* id, const NumericParam& param, const KnobConfig& knobConfig, double& rawValueInOut) {
+bool knob(const char* id, const clapeze::NumericParam& param, const KnobConfig& knobConfig, double& rawValueInOut) {
+    // roughly adapted from https://github.com/altschuler/imgui-knobs/tree/main
     static char valueText[100];
     etl::span<char> valueSpan{valueText, sizeof(valueText)};
     clap_param_info_t info;
@@ -38,7 +37,12 @@ bool knob(const char* id, const NumericParam& param, const KnobConfig& knobConfi
         ImGui::DragBehavior(gid, ImGuiDataType_Double, &rawValueInOut, 0, &min, &max, "%.2f", drag_behaviour_flags);
 
     // extras
-    ImGui::Text("%s - %s", info.name, valueText);
+    ImGui::Text("%s", valueText);
+    ImGui::Text("%s", info.name);
+
+    if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
+        rawValueInOut = info.default_value;
+    }
 
     {
         // Drawing

@@ -9,6 +9,8 @@
 #include "sines/sines.h"
 #include "snecho/snecho.h"
 
+using namespace clapeze;
+
 namespace PluginFactory {
 
 const std::vector<PluginEntry> plugins{

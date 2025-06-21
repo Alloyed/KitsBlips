@@ -13,6 +13,8 @@
 #include "clapeze/gui/imguiExt.h"
 #include "clapeze/gui/imguiHelpers.h"
 
+namespace clapeze {
+
 template <typename ParamsType>
 class InstrumentProcessor : public BaseProcessor {
    public:
@@ -107,3 +109,4 @@ class InstrumentPlugin : public BasePlugin {
 #endif
     }
 };
+}  // namespace clapeze

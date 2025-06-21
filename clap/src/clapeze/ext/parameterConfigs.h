@@ -25,6 +25,8 @@ void stringCopy(char (&buffer)[BUFFER_SIZE], std::string_view src) {
 }
 }  // namespace _clapeze_impl
 
+namespace clapeze {
+
 /**
  * Represents a numeric value. these are always mapped 0-1 on the DAW side so we can adjust the response curve to the
  * user's taste.
@@ -298,3 +300,4 @@ class OnOffParam : public EnumParam<OnOff> {
     OnOffParam(std::string_view module, std::string_view name, OnOff defaultValue)
         : EnumParam(module, name, {"Off", "On"}, defaultValue) {}
 };
+}  // namespace clapeze

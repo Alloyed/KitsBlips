@@ -5,6 +5,7 @@
 #include <cstdio>
 
 #include "clapeze/basePlugin.h"
+namespace clapeze {
 
 template <size_t NUM_INPUTS, size_t NUM_OUTPUTS>
 class NotePortsExt : public BaseExt {
@@ -49,3 +50,4 @@ class NotePortsExt : public BaseExt {
         return false;
     }
 };
+}  // namespace clapeze

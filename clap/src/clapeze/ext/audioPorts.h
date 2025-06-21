@@ -5,6 +5,7 @@
 #include <cstdio>
 
 #include "clapeze/basePlugin.h"
+namespace clapeze {
 
 template <size_t NUM_INPUTS, size_t NUM_OUTPUTS>
 class StereoAudioPortsExt : public BaseExt {
@@ -53,3 +54,4 @@ class StereoAudioPortsExt : public BaseExt {
         return false;
     }
 };
+}  // namespace clapeze

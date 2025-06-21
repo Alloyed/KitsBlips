@@ -11,6 +11,8 @@
 #include <kitdsp/snesEchoFilterPresets.h>
 
 using namespace kitdsp;
+using namespace clapeze;
+
 namespace snecho {
 
 enum class Params : clap_id {

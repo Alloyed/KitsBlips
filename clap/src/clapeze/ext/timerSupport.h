@@ -5,6 +5,8 @@
 #include "clap/ext/timer-support.h"
 #include "clapeze/basePlugin.h"
 
+namespace clapeze {
+
 class TimerSupportExt : public BaseExt {
    public:
     TimerSupportExt(PluginHost& host) : BaseExt() {}
@@ -24,3 +26,4 @@ class TimerSupportExt : public BaseExt {
         self.GetHost().OnTimer(timerId);
     }
 };
+}  // namespace clapeze

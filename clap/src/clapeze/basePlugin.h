@@ -9,6 +9,7 @@
 #include <unordered_map>
 
 #include "clapeze/pluginHost.h"
+namespace clapeze {
 
 class BasePlugin;
 
@@ -210,3 +211,5 @@ ExtType& BaseExt::GetFromPlugin(BasePlugin& self) {
     assert(ext);
     return static_cast<ExtType&>(*ext);
 }
+
+}  // namespace clapeze

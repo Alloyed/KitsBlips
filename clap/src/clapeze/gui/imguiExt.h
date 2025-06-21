@@ -5,8 +5,11 @@
 #include "clapeze/gui/sdlOpenGlExt.h"
 
 // Forward declares
-class PluginHost;
 struct ImGuiContext;
+
+namespace clapeze {
+
+class PluginHost;
 
 struct ImGuiConfig {
     std::function<void()> onGui;
@@ -28,5 +31,6 @@ class ImGuiExt : public SdlOpenGlExt {
     ImGuiConfig mConfig;
     ImGuiContext* mImgui = nullptr;
 };
+}  // namespace clapeze
 
 #endif

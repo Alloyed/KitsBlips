@@ -22,6 +22,8 @@ void getPlatformHandles(SDL_Window* sdlWindow, Window& xWindow, Display*& xDispl
 }
 }  // namespace
 
+namespace clapeze {
+
 namespace platformGui {
 void onCreateWindow(ClapWindowApi api, SDL_Window* sdlWindow) {
     if (api == ClapWindowApi::Wayland) {
@@ -83,4 +85,5 @@ void cancelGuiTimer(PluginHost& host, clap_id id) {
     host.CancelTimer(id);
 }
 };  // namespace platformGui
+}  // namespace clapeze
 #endif

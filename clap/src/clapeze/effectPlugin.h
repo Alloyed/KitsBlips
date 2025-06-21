@@ -8,6 +8,8 @@
 #include "clapeze/gui/imguiExt.h"
 #include "clapeze/gui/imguiHelpers.h"
 
+namespace clapeze {
+
 template <typename ParamsType>
 class EffectProcessor : public BaseProcessor {
    public:
@@ -74,3 +76,4 @@ class EffectPlugin : public BasePlugin {
 #endif
     }
 };
+}  // namespace clapeze

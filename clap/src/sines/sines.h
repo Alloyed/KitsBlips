@@ -3,5 +3,5 @@
 #include "clapeze/basePlugin.h"
 
 namespace sines {
-extern const PluginEntry Entry;
+extern const clapeze::PluginEntry Entry;
 }

@@ -15,6 +15,8 @@
 #include "descriptor.h"
 #include "gui/knob.h"
 
+using namespace clapeze;
+
 namespace sines {
 enum class Params : clap_id { Rise, Fall, VibratoRate, VibratoDepth, Portamento, Polyphony, Count };
 using ParamsExt = ParametersExt<Params>;
