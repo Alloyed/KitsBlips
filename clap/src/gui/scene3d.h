@@ -5,7 +5,7 @@
 #include <string_view>
 
 namespace kitgui {
-class Model {
+class Scene3d {
    public:
     void Load(std::string_view filename);
     void Bind();

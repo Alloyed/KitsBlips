@@ -57,18 +57,16 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
     GIT_TAG        v1.0.0
 )
-set(TINYGLTF_HEADER_ONLY OFF)
-FetchContent_Declare(
-    tinygltf
-    GIT_REPOSITORY https://github.com/syoyo/tinygltf.git
-    GIT_TAG        v2.9.6
-)
 FetchContent_Declare(
 	glm
 	GIT_REPOSITORY	https://github.com/g-truc/glm.git
 	GIT_TAG 	2d4c4b4dd31fde06cfffad7915c2b3006402322f
 )
-
+FetchContent_Declare(
+  battery-embed
+  GIT_REPOSITORY https://github.com/batterycenter/embed.git
+  GIT_TAG        v1.2.19
+)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(SDL_SHARED OFF)
@@ -82,4 +80,34 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
     GIT_TAG release-3.2.14
     FIND_PACKAGE_ARGS
+)
+
+set(PHYSFS_ARCHIVE_ZIP ON)
+set(PHYSFS_ARCHIVE_7Z OFF)
+set(PHYSFS_ARCHIVE_GRP OFF)
+set(PHYSFS_ARCHIVE_WAD OFF)
+set(PHYSFS_ARCHIVE_CSM OFF)
+set(PHYSFS_ARCHIVE_HOG OFF)
+set(PHYSFS_ARCHIVE_MVL OFF)
+set(PHYSFS_ARCHIVE_QPAK OFF)
+set(PHYSFS_ARCHIVE_SLB OFF)
+set(PHYSFS_ARCHIVE_ISO9660 OFF)
+set(PHYSFS_ARCHIVE_VDF OFF)
+set(PHYSFS_ARCHIVE_LECARCHIVES OFF)
+set(PHYSFS_BUILD_STATIC ON)
+set(PHYSFS_BUILD_SHARED OFF)
+set(PHYSFS_BUILD_TEST OFF)
+set(PHYSFS_DISABLE_INSTALL ON)
+set(PHYSFS_BUILD_DOCS OFF)
+FetchContent_Declare(
+	physfs
+	GIT_REPOSITORY	https://github.com/icculus/physfs.git
+	GIT_TAG 	adfdec6af14e4d12551446e7ad060415ca563950
+)
+
+set(TINYGLTF_HEADER_ONLY OFF)
+FetchContent_Declare(
+    tinygltf
+    GIT_REPOSITORY https://github.com/syoyo/tinygltf.git
+    GIT_TAG        v2.9.6
 )

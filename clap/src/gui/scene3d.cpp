@@ -1,4 +1,4 @@
-#include "gui/mesh.h"
+#include "gui/scene3d.h"
 
 #include <SDL3/SDL_opengl.h>
 #include <iostream>
@@ -12,7 +12,7 @@
  *  - load from plugin binary directly (physfs?)
  */
 
-#define BUFFER_OFFSET(i) ((char*)NULL + (i))
+#define BUFFER_OFFSET(i) (reinterpret_cast<void*>(i))
 
 namespace {
 
@@ -22,14 +22,6 @@ void bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Mes
         if (bufferView.target == 0) {  // TODO impl drawarrays
             std::cout << "WARN: bufferView.target is zero" << std::endl;
             continue;  // Unsupported bufferView.
-                       /*
-                         From spec2.0 readme:
-                         https://github.com/KhronosGroup/glTF/tree/master/specification/2.0
-                                  ... drawArrays function should be used with a count equal to
-                         the count            property of any of the accessors referenced by the
-                         attributes            property            (they are all equal for a given
-                         primitive).
-                       */
         }
 
         const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
@@ -175,6 +167,10 @@ void drawMesh(const std::map<int, GLuint>& vbos, tinygltf::Model& model, tinyglt
 void drawModelNodes(const std::pair<GLuint, std::map<int, GLuint>>& vaoAndEbos,
                     tinygltf::Model& model,
                     tinygltf::Node& node) {
+    if ((node.camera >= 0) && (static_cast<size_t>(node.camera) < model.cameras.size())) {
+        // TODO: apply camera
+    }
+
     if ((node.mesh >= 0) && (static_cast<size_t>(node.mesh) < model.meshes.size())) {
         drawMesh(vaoAndEbos.second, model, model.meshes[node.mesh]);
     }
@@ -185,7 +181,7 @@ void drawModelNodes(const std::pair<GLuint, std::map<int, GLuint>>& vaoAndEbos,
 }  // namespace
 
 namespace kitgui {
-void Model::Load(std::string_view filename) {
+void Scene3d::Load(std::string_view filename) {
     tinygltf::TinyGLTF loader;
     std::string err;
     std::string warn;
@@ -203,10 +199,10 @@ void Model::Load(std::string_view filename) {
         std::cout << "Failed to load glTF: " << filename << std::endl;
     }
 }
-void Model::Bind() {
+void Scene3d::Bind() {
     mVaoAndEbos = bindModel(mModel);
 }
-void Model::Draw() {
+void Scene3d::Draw() {
     glBindVertexArray(mVaoAndEbos.first);
 
     const tinygltf::Scene& scene = mModel.scenes[mModel.defaultScene];

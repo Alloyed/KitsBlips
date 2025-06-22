@@ -23,7 +23,7 @@ set(CMAKE_CXX_STANDARD 17)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(../content.cmake)
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
-FetchContent_MakeAvailable(clap clap-wrapper KitDSP)
+FetchContent_MakeAvailable(clap clap-wrapper KitDSP physfs battery-embed)
 find_package(Sanitizers)
 
 add_library(KitsBlips-lib STATIC)
@@ -56,6 +56,7 @@ target_link_libraries(KitsBlips-lib PUBLIC
     clap
     KitDSP
     etl
+    PhysFS::PhysFS-static
 )
 
 if(KITSBLIPS_ENABLE_GUI)
@@ -74,8 +75,11 @@ if(KITSBLIPS_ENABLE_GUI)
         src/clapeze/gui/sdlOpenGlExt.cpp
         src/clapeze/gui/imguiExt.cpp
         src/gui/knob.cpp
-        src/gui/mesh.cpp
+        src/gui/model.cpp
+        src/gui/shaders.cpp
     )
+    b_embed(KitsBlips-lib assets/base.vert)
+    b_embed(KitsBlips-lib assets/base.frag)
     target_link_libraries(KitsBlips-lib PUBLIC
         imgui
         imgui_opengl_sdl3
