@@ -4,9 +4,6 @@
 #include "clapeze/common.h"
 #include "clapeze/ext/audioPorts.h"
 #include "clapeze/ext/state.h"
-#include "clapeze/ext/timerSupport.h"
-#include "clapeze/gui/imguiExt.h"
-#include "clapeze/gui/imguiHelpers.h"
 
 namespace clapeze {
 
@@ -60,20 +57,9 @@ class EffectPlugin : public BasePlugin {
     ~EffectPlugin() = default;
 
    protected:
-#ifdef KITSBLIPS_ENABLE_GUI
-    virtual void OnGui() {
-        // Basic OnGui implementation. override as desired.
-        BaseParamsExt& params = BaseParamsExt::GetFromPlugin<BaseParamsExt>(*this);
-        ImGuiHelpers::displayParametersBasic(params);
-    };
-#endif
     virtual void Config() override {
         ConfigExtension<StereoAudioPortsExt<1, 1>>();
         ConfigExtension<StateExt>();
-#ifdef KITSBLIPS_ENABLE_GUI
-        TryConfigExtension<TimerSupportExt>(GetHost());
-        TryConfigExtension<ImGuiExt>(GetHost(), ImGuiConfig{[this]() { this->OnGui(); }});
-#endif
     }
 };
 }  // namespace clapeze

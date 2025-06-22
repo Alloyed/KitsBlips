@@ -23,7 +23,7 @@ set(CMAKE_CXX_STANDARD 17)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(../content.cmake)
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
-FetchContent_MakeAvailable(clap clap-wrapper KitDSP physfs battery-embed)
+FetchContent_MakeAvailable(clap clap-wrapper KitDSP physfs)
 find_package(Sanitizers)
 
 add_library(KitsBlips-lib STATIC)
@@ -60,45 +60,11 @@ target_link_libraries(KitsBlips-lib PUBLIC
 )
 
 if(KITSBLIPS_ENABLE_GUI)
-    include(imgui)
-    include(glad)
-    set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
-    FetchContent_MakeAvailable(SDL3 glm tinygltf)
+    FetchContent_MakeAvailable(kitgui)
 
     target_compile_definitions(KitsBlips-lib PUBLIC KITSBLIPS_ENABLE_GUI=1)
-    target_sources(KitsBlips-lib PRIVATE
-        src/clapeze/gui/sdlOpenGlExt.cpp
-        src/clapeze/gui/imguiExt.cpp
-        src/gui/knob.cpp
-        src/gui/scene3d.cpp
-        src/gui/shaders.cpp
-    )
-    b_embed(KitsBlips-lib assets/base.vert)
-    b_embed(KitsBlips-lib assets/base.frag)
-    b_embed(KitsBlips-lib assets/duck.glb)
-    target_link_libraries(KitsBlips-lib PUBLIC
-        imgui
-        imgui_opengl_sdl3
-        glm
-        tinygltf
-        glad
-    )
-    if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        target_sources(KitsBlips-lib PUBLIC
-            src/clapeze/gui/platform/platformWin32.cpp
-        )
-    elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-        target_sources(KitsBlips-lib PUBLIC
-            src/clapeze/gui/platform/platformCocoa.cpp
-            src/clapeze/gui/platform/platformCocoa.m
-        )
-    elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        find_package(X11)
-        target_sources(KitsBlips-lib PUBLIC
-            src/clapeze/gui/platform/platformLinux.cpp
-        )
-        target_link_libraries(KitsBlips-lib PUBLIC X11::X11 X11::Xutil)
-    endif()
+    target_sources(KitsBlips-lib PRIVATE)
+    target_link_libraries(KitsBlips-lib PUBLIC kitgui)
 endif()
 
 # bleh

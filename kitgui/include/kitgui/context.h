@@ -14,20 +14,29 @@
 namespace kitgui {
 class Context {
    public:
-    Context(platform::Api api);
-    ~Context();
-    bool Init();
+    Context() = default;
+    ~Context() = default;
+
+    bool Create(platform::Api api, bool isFloating);
+    bool Destroy();
+
+    bool IsCreated() const;
+
     bool SetScale(double scale);
-    bool GetSize(uint32_t& widthOut, uint32_t& heightOut);
+    bool GetSize(uint32_t& widthOut, uint32_t& heightOut) const;
     bool CanResize();
     // bool GetResizeHints(clap_gui_resize_hints_t& hintsOut);
-    bool AdjustSize(uint32_t& widthInOut, uint32_t& heightInOut);
+    bool AdjustSize(uint32_t& widthInOut, uint32_t& heightInOut) const;
     bool SetSize(uint32_t width, uint32_t height);
     bool SetParent(SDL_Window* handle);
     bool SetTransient(SDL_Window* handle);
     void SuggestTitle(std::string_view title);
     bool Show();
     bool Hide();
+
+    const GladGLContext& MakeCurrent() const;
+
+    static bool GetPreferredApi(platform::Api& apiOut, bool& isFloatingOut);
     static Context* FindContextForWindow(SDL_WindowID window);
 
    private:

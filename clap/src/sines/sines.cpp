@@ -8,13 +8,9 @@
 #include "clapeze/common.h"
 #include "clapeze/ext/parameterConfigs.h"
 #include "clapeze/ext/parameters.h"
-#include "clapeze/gui/imguiExt.h"
-#include "clapeze/gui/imguiHelpers.h"
 #include "clapeze/instrumentPlugin.h"
 #include "clapeze/voice.h"
 #include "descriptor.h"
-#include "gui/knob.h"
-#include "gui/scene3d.h"
 
 using namespace clapeze;
 
@@ -114,22 +110,6 @@ class Plugin : public InstrumentPlugin {
                 .ConfigParam<IntegerParam>(Params::Polyphony, "Polyphony", 1, 16, 8, "voices", "voice");
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }
-
-#ifdef KITSBLIPS_ENABLE_GUI
-    void OnGui() override {
-        static kitgui::Scene3d scene{};
-        scene.Bind();
-        scene.Draw();
-        ParamsExt& params = BaseParamsExt::GetFromPlugin<ParamsExt>(*this);
-        ImGuiHelpers::beginMain([&]() {
-            ImGui::Text("Oh yeah, gamer time!");
-            double inout = params.GetRaw(Params::Rise);
-            if (kitgui::knob("Rise", static_cast<const NumericParam&>(*params.GetConfig(Params::Rise)), {}, inout)) {
-                params.SetRaw(Params::Rise, inout);
-            }
-        });
-    };
-#endif
 };
 
 const PluginEntry Entry{AudioInstrumentDescriptor("kitsblips.sines", "Sines", "a simple sine wave synth"),

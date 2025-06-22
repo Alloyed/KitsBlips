@@ -27,6 +27,10 @@ FetchContent_Declare(
     KitDSP-GPL
     SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/kitdsp-gpl
 )
+FetchContent_Declare(
+    KitGui
+    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/kitgui
+)
 
 # TODO: switch to FetchContent?
 set(IMGUI_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/imgui)

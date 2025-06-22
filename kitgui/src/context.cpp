@@ -8,10 +8,8 @@
 
 namespace kitgui {
 
-Context::Context(platform::Api api) {}
-Context::~Context() {}
-
-bool Context::Init() {
+bool Context::Create(platform::Api api, bool isFloating) {
+    mApi = api;
     switch (mApi) {
         // only one API possible on these platforms
         case platform::Api::Any:
@@ -43,7 +41,6 @@ bool Context::Init() {
     SDL_SetNumberProperty(createProps, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 400);
     SDL_SetNumberProperty(createProps, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, 400);
     mWindow = SDL_CreateWindowWithProperties(createProps);
-    ///... is this safe? or do i need to keep it alive?
     SDL_DestroyProperties(createProps);
 
     if (mWindow == nullptr) {
@@ -65,12 +62,38 @@ bool Context::Init() {
     return true;
 }
 
+bool Context::Destroy() {
+    if (IsCreated()) {
+        MakeCurrent();
+        RemoveActiveInstance(this);
+        SDL_GL_DestroyContext(mSdlGl);
+        SDL_DestroyWindow(mWindow);
+        mWindow = nullptr;
+        mSdlGl = nullptr;
+
+        // pick any valid current engine for later: this works around a bug i don't fully understand in SDL3 itself :x
+        // without this block, closing a window when multiple are active causes a crash in the main update loop when we
+        // call SDL_GL_MakeCurrent(). maybe a required resource is already destroyed by that point?
+        for (auto instance : sActiveInstances) {
+            if (instance->IsCreated()) {
+                instance->MakeCurrent();
+                break;
+            }
+        }
+    }
+    return true;
+}
+
+bool Context::IsCreated() const {
+    return mImgui != nullptr;
+}
+
 bool Context::SetScale(double scale) {
     // TODO: scale font
     ImGui::GetStyle().ScaleAllSizes(static_cast<float>(scale));
     return true;
 }
-bool Context::GetSize(uint32_t& widthOut, uint32_t& heightOut) {
+bool Context::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     int32_t w;
     int32_t h;
     bool success = SDL_GetWindowSize(mWindow, &w, &h);
@@ -83,7 +106,7 @@ bool Context::CanResize() {
     return (flags & SDL_WINDOW_RESIZABLE) > 0;
 }
 // bool GetResizeHints(clap_gui_resize_hints_t& hintsOut);
-bool Context::AdjustSize(uint32_t& widthInOut, uint32_t& heightInOut) {
+bool Context::AdjustSize(uint32_t& widthInOut, uint32_t& heightInOut) const {
     // apply whatever resize constraint algorithm you'd like to the inOut variables.
     // use ResizeHints to help out the OS.
     // no change means no constraint
@@ -117,6 +140,17 @@ bool Context::Hide() {
         LOG_SDL_ERROR();
         return false;
     }
+    return true;
+}
+
+const GladGLContext& Context::MakeCurrent() const {
+    if (mSdlGl) {
+        SDL_GL_MakeCurrent(mWindow, mSdlGl);
+    }
+    if (mImgui) {
+        ImGui::SetCurrentContext(mImgui);
+    }
+    return mGl;
 }
 
 std::vector<Context*> Context::sActiveInstances = {};
