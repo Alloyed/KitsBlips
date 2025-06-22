@@ -30,6 +30,7 @@ FetchContent_Declare(
 
 # TODO: switch to FetchContent?
 set(IMGUI_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/imgui)
+set(GLAD_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/glad)
 
 # remote
 FetchContent_Declare(

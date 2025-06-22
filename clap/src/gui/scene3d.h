@@ -1,18 +1,23 @@
 #pragma once
 
-#include <GL/gl3w.h>
+#include <glad/gl.h>
 #include <tiny_gltf.h>
-#include <string_view>
+#include "gui/shaders.h"
 
 namespace kitgui {
 class Scene3d {
    public:
-    void Load(std::string_view filename);
+    Scene3d(GladGLContext gl);
+    ~Scene3d();
     void Bind();
     void Draw();
 
    private:
+    using VertexArrayId = GLuint;
+    using ElementBufferId = GLuint;
+    GladGLContext mGl;
     tinygltf::Model mModel;
-    std::pair<GLuint, std::map<int, GLuint>> mVaoAndEbos;
+    Shaders mShaders;
+    std::pair<VertexArrayId, std::map<int, ElementBufferId>> mVaoAndEbos{};
 };
 }  // namespace kitgui

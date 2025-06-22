@@ -1,7 +1,7 @@
 #include "clapeze/gui/sdlOpenGlExt.h"
 
 // has to be first
-#include <GL/gl3w.h>
+#include <glad/gl.h>
 
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_events.h>
@@ -116,6 +116,8 @@ bool SdlOpenGlExt::Create(ClapWindowApi api, bool isFloating) {
     }
     mCtx = gl_context;
     SDL_GL_MakeCurrent(mWindow, mCtx);
+    int version = gladLoadGLContext(mGl, (GLADloadfunc)SDL_GL_GetProcAddress);
+    printf("GL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
 
     return true;
 }
@@ -130,17 +132,10 @@ void SdlOpenGlExt::InitOnce() {
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
         SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-        if (gl3wInit()) {
-            fprintf(stderr, "failed to initialize OpenGL\n");
-        }
-        if (!gl3wIsSupported(3, 2)) {
-            fprintf(stderr, "OpenGL 3.2 not supported\n");
-        }
-        printf("OpenGL %s, GLSL %s\n", glGetString(GL_VERSION), glGetString(GL_SHADING_LANGUAGE_VERSION));
     }
 }
 
@@ -324,7 +319,7 @@ void SdlOpenGlExt::UpdateInstances() {
         instance->GetSize(width, height);
         glViewport(0, 0, width, height);
         glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         instance->Draw();
         SDL_GL_SwapWindow(instance->mWindow);
     }

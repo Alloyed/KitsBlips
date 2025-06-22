@@ -1,7 +1,12 @@
 #include "gui/scene3d.h"
 
+#include <glad/gl.h>
+
 #include <SDL3/SDL_opengl.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include "battery/embed.hpp"
 
 /*
  *  this code is adapted from tinygltfs example code at:
@@ -181,12 +186,14 @@ void drawModelNodes(const std::pair<GLuint, std::map<int, GLuint>>& vaoAndEbos,
 }  // namespace
 
 namespace kitgui {
-void Scene3d::Load(std::string_view filename) {
+Scene3d::Scene3d(GladGLContext gl) : mGl(gl) {
     tinygltf::TinyGLTF loader;
     std::string err;
     std::string warn;
 
-    bool res = loader.LoadASCIIFromFile(&mModel, &err, &warn, std::string(filename));
+    const auto sceneFile = b::embed<"assets/duck.glb">();
+    bool res = loader.LoadBinaryFromMemory(&mModel, &err, &warn, reinterpret_cast<const uint8_t*>(sceneFile.data()),
+                                           sceneFile.size());
     if (!warn.empty()) {
         std::cout << "WARN: " << warn << std::endl;
     }
@@ -196,13 +203,49 @@ void Scene3d::Load(std::string_view filename) {
     }
 
     if (!res) {
-        std::cout << "Failed to load glTF: " << filename << std::endl;
+        std::cout << "Failed to load glTF " << std::endl;
     }
 }
+
 void Scene3d::Bind() {
-    mVaoAndEbos = bindModel(mModel);
+    if (!mVaoAndEbos.first) {
+        mVaoAndEbos = bindModel(mModel);
+    }
 }
+
+Scene3d::~Scene3d() {
+    if (mVaoAndEbos.first) {
+        glDeleteVertexArrays(1, &mVaoAndEbos.first);
+    }
+}
+
 void Scene3d::Draw() {
+    // Model matrix : an identity matrix (model will be at the origin)
+    glm::mat4 model_mat = glm::mat4(1.0f);
+    glm::mat4 model_rot = glm::mat4(1.0f);
+    glm::vec3 model_pos = glm::vec3(-3, 0, -3);
+    glm::mat4 trans = glm::translate(glm::mat4(1.0f), model_pos);                // reposition model
+    model_rot = glm::rotate(model_rot, glm::radians(0.8f), glm::vec3(0, 1, 0));  // rotate model on y axis
+    model_mat = trans * model_rot;
+
+    // generate a camera view, based on eye-position and lookAt world-position
+    glm::mat4 view_mat = glm::lookAt(glm::vec3(2, 2, 20),  // Camera position, in World Space
+                                     model_pos,            // looking at the objects position
+                                     glm::vec3(0, 1, 0)    // Head is up (set to 0,-1,0 to look upside-down)
+    );
+
+    // generate a projection matrix
+    float aspectRatio = 1.0f;  // width / height
+    float horizontalFovAt169 = glm::radians(90.0f);
+    float verticalFov = 2 * glm::atan(glm::tan(horizontalFovAt169 / 2.0f) * 9.0f / 16.0f);
+    float zNear = 0.01f;
+    float zFar = 1000.0f;
+    glm::mat4 proj_mat = glm::perspective(verticalFov, aspectRatio, zNear, zFar);
+
+    glm::vec3 sun_position = glm::vec3(3.0, 10.0, -5.0);
+    glm::vec3 sun_color = glm::vec3(1.0);
+
+    mShaders.Use(model_mat, view_mat, proj_mat, sun_position, sun_color);
     glBindVertexArray(mVaoAndEbos.first);
 
     const tinygltf::Scene& scene = mModel.scenes[mModel.defaultScene];

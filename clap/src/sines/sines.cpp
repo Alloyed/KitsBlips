@@ -14,6 +14,7 @@
 #include "clapeze/voice.h"
 #include "descriptor.h"
 #include "gui/knob.h"
+#include "gui/scene3d.h"
 
 using namespace clapeze;
 
@@ -116,6 +117,9 @@ class Plugin : public InstrumentPlugin {
 
 #ifdef KITSBLIPS_ENABLE_GUI
     void OnGui() override {
+        static kitgui::Scene3d scene{};
+        scene.Bind();
+        scene.Draw();
         ParamsExt& params = BaseParamsExt::GetFromPlugin<ParamsExt>(*this);
         ImGuiHelpers::beginMain([&]() {
             ImGui::Text("Oh yeah, gamer time!");

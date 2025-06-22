@@ -2,6 +2,9 @@
 
 #ifdef KITSBLIPS_ENABLE_GUI
 
+// has to be first
+#include <glad/gl.h>
+
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_video.h>
 #include <cstdint>
@@ -52,6 +55,7 @@ class SdlOpenGlExt : public GuiExt {
     PluginHost& mHost;
     SDL_Window* mWindow = nullptr;
     SDL_GLContext mCtx;
+    GladGLContext mGl;
 
    private:
     ClapWindowApi mApi;

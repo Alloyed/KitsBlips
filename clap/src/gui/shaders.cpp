@@ -63,9 +63,28 @@ Shaders::Shaders() {
     glDeleteShader(VertexShaderID);
     glDeleteShader(FragmentShaderID);
 
-    this->pid = ProgramID;
+    // store important data
+    mMVP = glGetUniformLocation(ProgramID, "MVP");
+    mSunPosition = glGetUniformLocation(ProgramID, "sun_position");
+    mSunColor = glGetUniformLocation(ProgramID, "sun_color");
+    mPid = ProgramID;
 }
 
 Shaders::~Shaders() {}
+
+void Shaders::Use(const glm::mat4& modelMatrix,
+                  const glm::mat4& viewMatrix,
+                  const glm::mat4& perspectiveMatrix,
+                  const glm::vec3& sunPosition,
+                  const glm::vec3& sunColor
+
+) const {
+    glUseProgram(mPid);
+    glm::mat4 mvp = perspectiveMatrix * viewMatrix * modelMatrix;
+
+    glUniformMatrix4fv(mMVP, 1, GL_FALSE, &mvp[0][0]);
+    glUniform3fv(mSunPosition, 1, &sunPosition[0]);
+    glUniform3fv(mSunColor, 1, &sunColor[0]);
+}
 
 }  // namespace kitgui
