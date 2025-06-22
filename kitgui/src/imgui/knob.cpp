@@ -1,19 +1,20 @@
-#include "gui/knob.h"
+#include "imgui/knob.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <cmath>
-#include "clap/ext/params.h"
-#include "clapeze/ext/parameterConfigs.h"
-#include "kitdsp/math/util.h"
+#include <string>
 
 namespace kitgui {
-bool knob(const char* id, const clapeze::NumericParam& param, const KnobConfig& knobConfig, double& rawValueInOut) {
+bool knob(const char* id, const KnobConfig& knobConfig, double& rawValueInOut) {
     // roughly adapted from https://github.com/altschuler/imgui-knobs/tree/main
-    static char valueText[100];
-    etl::span<char> valueSpan{valueText, sizeof(valueText)};
-    clap_param_info_t info;
-    param.FillInformation(0, &info);
-    param.ToText(rawValueInOut, valueSpan);
+    // static char valueText[100];
+    // etl::span<char> valueSpan{valueText, sizeof(valueText)};
+    // clap_param_info_t info;
+    // param.FillInformation(0, &info);
+    // param.ToText(rawValueInOut, valueSpan);
+    std::string name = "";
+    std::string valueText = "";
+    double defaultValue = 0.0;
 
     auto itemWidth = knobConfig.diameter < 0 ? ImGui::GetTextLineHeight() * 4.0f
                                              : knobConfig.diameter * ImGui::GetIO().FontGlobalScale;

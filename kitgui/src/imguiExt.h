@@ -1,4 +1,5 @@
 #pragma once
+#if 0
 #ifdef KITSBLIPS_ENABLE_GUI
 
 #include <SDL3/SDL_video.h>
@@ -33,4 +34,5 @@ class ImGuiExt : public SdlOpenGlExt {
 };
 }  // namespace clapeze
 
+#endif
 #endif

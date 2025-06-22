@@ -1,3 +1,4 @@
+#if 0
 #include "clapeze/gui/imguiExt.h"
 
 #include "clapeze/ext/gui.h"
@@ -61,3 +62,4 @@ void ImGuiExt::Draw() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 }  // namespace clapeze
+#endif
