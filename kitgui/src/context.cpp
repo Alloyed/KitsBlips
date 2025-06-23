@@ -1,8 +1,12 @@
 #include "kitgui/context.h"
+#include <SDL3/SDL_events.h>
 #include <SDL3/SDL_hints.h>
+#include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
 #include <algorithm>
 #include <string>
+#include "imgui_impl_opengl3.h"
+#include "imgui_impl_sdl3.h"
 #include "log.h"
 #include "platform/platform.h"
 
@@ -29,6 +33,7 @@ bool Context::Create(platform::Api api, bool isFloating) {
             break;
         }
     }
+    // SDL_SetHint(SDL_HINT_EVENT_LOGGING, "1");
 
     SDL_PropertiesID createProps = SDL_CreateProperties();
     if (createProps == 0) {
@@ -56,8 +61,18 @@ bool Context::Create(platform::Api api, bool isFloating) {
     }
     mSdlGl = gl_context;
     SDL_GL_MakeCurrent(mWindow, mSdlGl);
-    int version = gladLoadGLContext(&mGl, (GLADloadfunc)SDL_GL_GetProcAddress);
-    printf("GL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
+    gladLoadGLContext(&mGl, (GLADloadfunc)SDL_GL_GetProcAddress);
+
+    // setup imgui
+    IMGUI_CHECKVERSION();
+    mImgui = ImGui::CreateContext();
+    ImGui::SetCurrentContext(mImgui);
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplSDL3_InitForOpenGL(mWindow, mSdlGl);
+    ImGui_ImplOpenGL3_Init();
 
     return true;
 }
@@ -130,16 +145,20 @@ bool Context::Show() {
         LOG_SDL_ERROR();
         return false;
     }
-    // Setup main loop
-    // AddActiveInstance(this);
+    AddActiveInstance(this);
     return true;
 }
 bool Context::Hide() {
-    // RemoveActiveInstance(this);
     if (!SDL_HideWindow(mWindow)) {
         LOG_SDL_ERROR();
         return false;
     }
+    mActive = false;  // will be removed
+    return true;
+}
+bool Context::Close() {
+    mActive = false;  // will be removed
+    mDestroy = true;  // will be destroyed
     return true;
 }
 
@@ -156,34 +175,107 @@ const GladGLContext& Context::MakeCurrent() const {
 std::vector<Context*> Context::sActiveInstances = {};
 
 void Context::AddActiveInstance(Context* instance) {
-    bool wasEmpty = sActiveInstances.empty();
     if (std::find(sActiveInstances.begin(), sActiveInstances.end(), instance) == sActiveInstances.end()) {
         sActiveInstances.push_back(instance);
+        instance->mActive = true;
     }
-    if (wasEmpty && !sActiveInstances.empty()) {
-        // if (sUpdateTimerId) {
-        //     platformGui::cancelGuiTimer(instance->mHost, sUpdateTimerId);
-        //     sUpdateTimerId = 0;
-        // }
-
-        // constexpr int32_t timerMs = 32;  // 30fps
-        // sUpdateTimerId = platformGui::addGuiTimer(instance->mHost, timerMs, &UpdateInstances);
+    if (instance->mApp) {
+        instance->mApp->OnActivate();
     }
 }
 
 void Context::RemoveActiveInstance(Context* instance) {
-    bool wasEmpty = sActiveInstances.empty();
+    instance->mActive = false;
     const auto iter = std::find(sActiveInstances.begin(), sActiveInstances.end(), instance);
     if (iter != sActiveInstances.end()) {
+        if (instance->mApp) {
+            instance->mApp->OnDeactivate();
+        }
         sActiveInstances.erase(iter);
     }
-    if (!wasEmpty && sActiveInstances.empty()) {
-        // if (sUpdateTimerId) {
-        //     platformGui::cancelGuiTimer(instance->mHost, sUpdateTimerId);
-        //     sUpdateTimerId = 0;
-        // }
+}
+
+void Context::RunLoop() {
+    while (!sActiveInstances.empty()) {
+        Context::RunSingleFrame();
+        SDL_Delay(16);
     }
 }
+
+void Context::RunSingleFrame() {
+    for (int32_t idx = sActiveInstances.size() - 1; idx >= 0; idx--) {
+        auto& instance = sActiveInstances[idx];
+        if (instance->mDestroy) {
+            instance->Destroy();
+        }
+        if (instance->mActive == false) {
+            RemoveActiveInstance(instance);
+        }
+    }
+
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        SDL_Window* window = SDL_GetWindowFromEvent(&event);
+        Context* instance = window ? FindContextForWindow(SDL_GetWindowID(window)) : nullptr;
+        switch (event.type) {
+            case SDL_EVENT_WINDOW_DESTROYED: {
+                goto skip_event;
+            }
+            case SDL_EVENT_QUIT: {
+                for (auto instanceIter : sActiveInstances) {
+                    instanceIter->Close();
+                }
+                break;
+            }
+            case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
+                if (instance) {
+                    instance->Close();
+                }
+                break;
+            }
+        }
+
+        if (instance) {
+            instance->MakeCurrent();
+            ImGui_ImplSDL3_ProcessEvent(&event);
+        }
+
+    skip_event:
+        continue;
+    }
+
+    for (auto instance : sActiveInstances) {
+        auto& gl = instance->MakeCurrent();
+
+        // update
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL3_NewFrame();
+        ImGui::NewFrame();
+        if (instance->mApp) {
+            instance->mApp->OnUpdate();
+        }
+
+        // draw
+        uint32_t width, height;
+        instance->GetSize(width, height);
+        gl.Viewport(0, 0, width, height);
+        gl.ClearColor(instance->mClearColor[0], instance->mClearColor[1], instance->mClearColor[2],
+                      instance->mClearColor[3]);
+        gl.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        if (instance->mApp) {
+            instance->mApp->OnDraw(gl);
+        }
+
+        ImGui::Render();
+        // TODO: the implementation of this has a big comment on it saying multi-window is untested. it _kinda_ works,
+        // but it'd probably work better if we forked it and used our glad handle internally
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        SDL_GL_SwapWindow(instance->mWindow);
+    }
+}
+
 Context* Context::FindContextForWindow(SDL_WindowID window) {
     for (Context* instance : sActiveInstances) {
         if (SDL_GetWindowID(instance->mWindow) == window) {
