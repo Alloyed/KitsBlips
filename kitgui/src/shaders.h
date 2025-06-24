@@ -4,11 +4,13 @@
 #include <glm/glm.hpp>
 
 namespace kitgui {
-class Shaders {
+class ShaderProgram {
    public:
-    Shaders();
-    ~Shaders();
-    void Use(const glm::mat4& modelMatrix,
+    ShaderProgram();
+    ~ShaderProgram();
+    void Bind(const GladGLContext& gl) const;
+    void Use(const GladGLContext& gl,
+             const glm::mat4& modelMatrix,
              const glm::mat4& viewMatrix,
              const glm::mat4& perspectiveMatrix,
              const glm::vec3& sunPosition,
@@ -16,9 +18,9 @@ class Shaders {
 
    private:
     using UniformId = GLint;
-    UniformId mMVP;
-    UniformId mSunPosition;
-    UniformId mSunColor;
-    GLuint mPid;
+    mutable UniformId mMVP;
+    mutable UniformId mSunPosition;
+    mutable UniformId mSunColor;
+    mutable GLuint mPid = 0;
 };
 }  // namespace kitgui

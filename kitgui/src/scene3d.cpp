@@ -1,4 +1,4 @@
-#include "gui/scene3d.h"
+#include "scene3d.h"
 
 #include <glad/gl.h>
 
@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include "battery/embed.hpp"
+#include "shaders.h"
 
 /*
  *  this code is adapted from tinygltfs example code at:
@@ -21,7 +22,7 @@
 
 namespace {
 
-void bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Mesh& mesh) {
+void bindMesh(const GladGLContext& gl, std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Mesh& mesh) {
     for (size_t i = 0; i < model.bufferViews.size(); ++i) {
         const tinygltf::BufferView& bufferView = model.bufferViews[i];
         if (bufferView.target == 0) {  // TODO impl drawarrays
@@ -33,15 +34,15 @@ void bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Mes
         std::cout << "bufferview.target " << bufferView.target << std::endl;
 
         GLuint vbo;
-        glGenBuffers(1, &vbo);
+        gl.GenBuffers(1, &vbo);
         vbos[i] = vbo;
-        glBindBuffer(bufferView.target, vbo);
+        gl.BindBuffer(bufferView.target, vbo);
 
         std::cout << "buffer.data.size = " << buffer.data.size()
                   << ", bufferview.byteOffset = " << bufferView.byteOffset << std::endl;
 
-        glBufferData(bufferView.target, bufferView.byteLength, &buffer.data.at(0) + bufferView.byteOffset,
-                     GL_STATIC_DRAW);
+        gl.BufferData(bufferView.target, bufferView.byteLength, &buffer.data.at(0) + bufferView.byteOffset,
+                      GL_STATIC_DRAW);
     }
 
     for (size_t i = 0; i < mesh.primitives.size(); ++i) {
@@ -51,7 +52,7 @@ void bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Mes
         for (auto& attrib : primitive.attributes) {
             tinygltf::Accessor accessor = model.accessors[attrib.second];
             int byteStride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
-            glBindBuffer(GL_ARRAY_BUFFER, vbos[accessor.bufferView]);
+            gl.BindBuffer(GL_ARRAY_BUFFER, vbos[accessor.bufferView]);
 
             int size = 1;
             if (accessor.type != TINYGLTF_TYPE_SCALAR) {
@@ -66,9 +67,9 @@ void bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Mes
             if (attrib.first.compare("TEXCOORD_0") == 0)
                 vaa = 2;
             if (vaa > -1) {
-                glEnableVertexAttribArray(vaa);
-                glVertexAttribPointer(vaa, size, accessor.componentType, accessor.normalized ? GL_TRUE : GL_FALSE,
-                                      byteStride, BUFFER_OFFSET(accessor.byteOffset));
+                gl.EnableVertexAttribArray(vaa);
+                gl.VertexAttribPointer(vaa, size, accessor.componentType, accessor.normalized ? GL_TRUE : GL_FALSE,
+                                       byteStride, BUFFER_OFFSET(accessor.byteOffset));
             } else
                 std::cout << "vaa missing: " << attrib.first << std::endl;
         }
@@ -79,16 +80,16 @@ void bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Mes
 
             if (tex.source > -1) {
                 GLuint texid;
-                glGenTextures(1, &texid);
+                gl.GenTextures(1, &texid);
 
                 tinygltf::Image& image = model.images[tex.source];
 
-                glBindTexture(GL_TEXTURE_2D, texid);
-                glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                gl.BindTexture(GL_TEXTURE_2D, texid);
+                gl.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                gl.TexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                gl.TexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
                 GLenum format = GL_RGBA;
 
@@ -111,42 +112,46 @@ void bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Mes
                     // ???
                 }
 
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, format, type, &image.image.at(0));
+                gl.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, format, type,
+                              &image.image.at(0));
             }
         }
     }
 }
 
 // bind models
-void bindModelNodes(std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Node& node) {
+void bindModelNodes(const GladGLContext& gl,
+                    std::map<int, GLuint>& vbos,
+                    tinygltf::Model& model,
+                    tinygltf::Node& node) {
     if ((node.mesh >= 0) && (static_cast<size_t>(node.mesh) < model.meshes.size())) {
-        bindMesh(vbos, model, model.meshes[node.mesh]);
+        bindMesh(gl, vbos, model, model.meshes[node.mesh]);
     }
 
     for (size_t i = 0; i < node.children.size(); i++) {
         assert((node.children[i] >= 0) && (static_cast<size_t>(node.children[i]) < model.nodes.size()));
-        bindModelNodes(vbos, model, model.nodes[node.children[i]]);
+        bindModelNodes(gl, vbos, model, model.nodes[node.children[i]]);
     }
 }
 
-std::pair<GLuint, std::map<int, GLuint>> bindModel(tinygltf::Model& model) {
+std::pair<GLuint, std::map<int, GLuint>> bindModel(const GladGLContext& gl, tinygltf::Model& model) {
     std::map<int, GLuint> vbos;
     GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    gl.GenVertexArrays(1, &vao);
+    gl.BindVertexArray(vao);
 
     const tinygltf::Scene& scene = model.scenes[model.defaultScene];
     for (size_t i = 0; i < scene.nodes.size(); ++i) {
         assert((scene.nodes[i] >= 0) && (static_cast<size_t>(scene.nodes[i]) < model.nodes.size()));
-        bindModelNodes(vbos, model, model.nodes[scene.nodes[i]]);
+        bindModelNodes(gl, vbos, model, model.nodes[scene.nodes[i]]);
     }
 
-    glBindVertexArray(0);
+    gl.BindVertexArray(0);
     // cleanup vbos but do not delete index buffers yet
     for (auto it = vbos.cbegin(); it != vbos.cend();) {
         tinygltf::BufferView bufferView = model.bufferViews[it->first];
         if (bufferView.target != GL_ELEMENT_ARRAY_BUFFER) {
-            glDeleteBuffers(1, &vbos[it->first]);
+            gl.DeleteBuffers(1, &vbos[it->first]);
             vbos.erase(it++);
         } else {
             ++it;
@@ -156,20 +161,24 @@ std::pair<GLuint, std::map<int, GLuint>> bindModel(tinygltf::Model& model) {
     return {vao, vbos};
 }
 
-void drawMesh(const std::map<int, GLuint>& vbos, tinygltf::Model& model, tinygltf::Mesh& mesh) {
+void drawMesh(const GladGLContext& gl,
+              const std::map<int, GLuint>& vbos,
+              tinygltf::Model& model,
+              tinygltf::Mesh& mesh) {
     for (size_t i = 0; i < mesh.primitives.size(); ++i) {
         tinygltf::Primitive primitive = mesh.primitives[i];
         tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
+        gl.BindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
 
-        glDrawElements(primitive.mode, indexAccessor.count, indexAccessor.componentType,
-                       BUFFER_OFFSET(indexAccessor.byteOffset));
+        gl.DrawElements(primitive.mode, indexAccessor.count, indexAccessor.componentType,
+                        BUFFER_OFFSET(indexAccessor.byteOffset));
     }
 }
 
 // recursively draw node and children nodes of model
-void drawModelNodes(const std::pair<GLuint, std::map<int, GLuint>>& vaoAndEbos,
+void drawModelNodes(const GladGLContext& gl,
+                    const std::pair<GLuint, std::map<int, GLuint>>& vaoAndEbos,
                     tinygltf::Model& model,
                     tinygltf::Node& node) {
     if ((node.camera >= 0) && (static_cast<size_t>(node.camera) < model.cameras.size())) {
@@ -177,16 +186,16 @@ void drawModelNodes(const std::pair<GLuint, std::map<int, GLuint>>& vaoAndEbos,
     }
 
     if ((node.mesh >= 0) && (static_cast<size_t>(node.mesh) < model.meshes.size())) {
-        drawMesh(vaoAndEbos.second, model, model.meshes[node.mesh]);
+        drawMesh(gl, vaoAndEbos.second, model, model.meshes[node.mesh]);
     }
     for (size_t i = 0; i < node.children.size(); i++) {
-        drawModelNodes(vaoAndEbos, model, model.nodes[node.children[i]]);
+        drawModelNodes(gl, vaoAndEbos, model, model.nodes[node.children[i]]);
     }
 }
 }  // namespace
 
 namespace kitgui {
-Scene3d::Scene3d(GladGLContext gl) : mGl(gl) {
+Scene3d::Scene3d() {
     tinygltf::TinyGLTF loader;
     std::string err;
     std::string warn;
@@ -203,35 +212,36 @@ Scene3d::Scene3d(GladGLContext gl) : mGl(gl) {
     }
 
     if (!res) {
-        std::cout << "Failed to load glTF " << std::endl;
+        std::cout << "Failed to load GLTF " << std::endl;
     }
 }
 
-void Scene3d::Bind() {
+void Scene3d::Bind(const GladGLContext& gl) {
     if (!mVaoAndEbos.first) {
-        mVaoAndEbos = bindModel(mModel);
+        mVaoAndEbos = bindModel(gl, mModel);
     }
 }
 
 Scene3d::~Scene3d() {
     if (mVaoAndEbos.first) {
-        glDeleteVertexArrays(1, &mVaoAndEbos.first);
+        // mGl.DeleteVertexArrays(1, &mVaoAndEbos.first);
     }
 }
 
-void Scene3d::Draw() {
+void Scene3d::Draw(const GladGLContext& gl) {
     // Model matrix : an identity matrix (model will be at the origin)
-    glm::mat4 model_mat = glm::mat4(1.0f);
-    glm::mat4 model_rot = glm::mat4(1.0f);
-    glm::vec3 model_pos = glm::vec3(-3, 0, -3);
-    glm::mat4 trans = glm::translate(glm::mat4(1.0f), model_pos);                // reposition model
-    model_rot = glm::rotate(model_rot, glm::radians(0.8f), glm::vec3(0, 1, 0));  // rotate model on y axis
-    model_mat = trans * model_rot;
+
+    glm::mat4 rotation_mat =
+        glm::rotate(glm::mat4(1.0f), glm::radians(0.8f), glm::vec3(0, 1, 0));  // rotate model on y axis
+    glm::vec3 model_pos = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::mat4 translation_mat = glm::translate(glm::mat4(1.0f), model_pos);  // reposition model
+
+    glm::mat4 model_mat = translation_mat * rotation_mat;
 
     // generate a camera view, based on eye-position and lookAt world-position
-    glm::mat4 view_mat = glm::lookAt(glm::vec3(2, 2, 20),  // Camera position, in World Space
-                                     model_pos,            // looking at the objects position
-                                     glm::vec3(0, 1, 0)    // Head is up (set to 0,-1,0 to look upside-down)
+    glm::mat4 view_mat = glm::lookAt(glm::vec3(0.0f, 0.0f, 40),    // Camera position, in World Space
+                                     glm::vec3(0.0f, 0.0f, 0.0f),  // looking at origin
+                                     glm::vec3(0, 1, 0)            // Head is up (set to 0,-1,0 to look upside-down)
     );
 
     // generate a projection matrix
@@ -242,17 +252,17 @@ void Scene3d::Draw() {
     float zFar = 1000.0f;
     glm::mat4 proj_mat = glm::perspective(verticalFov, aspectRatio, zNear, zFar);
 
-    glm::vec3 sun_position = glm::vec3(3.0, 10.0, -5.0);
+    glm::vec3 sun_position = glm::vec3(3.0, 10.0, 5.0);
     glm::vec3 sun_color = glm::vec3(1.0);
 
-    mShaders.Use(model_mat, view_mat, proj_mat, sun_position, sun_color);
-    glBindVertexArray(mVaoAndEbos.first);
+    mShaders.Use(gl, model_mat, view_mat, proj_mat, sun_position, sun_color);
+    gl.BindVertexArray(mVaoAndEbos.first);
 
     const tinygltf::Scene& scene = mModel.scenes[mModel.defaultScene];
     for (size_t i = 0; i < scene.nodes.size(); ++i) {
-        drawModelNodes(mVaoAndEbos, mModel, mModel.nodes[scene.nodes[i]]);
+        drawModelNodes(gl, mVaoAndEbos, mModel, mModel.nodes[scene.nodes[i]]);
     }
 
-    glBindVertexArray(0);
+    gl.BindVertexArray(0);
 }
 }  // namespace kitgui

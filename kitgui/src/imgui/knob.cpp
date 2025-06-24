@@ -4,14 +4,13 @@
 #include <cmath>
 #include <string>
 
+namespace {
+constexpr float kPi = 3.14159265359;
+}  // namespace
+
 namespace kitgui {
 bool knob(const char* id, const KnobConfig& knobConfig, double& rawValueInOut) {
     // roughly adapted from https://github.com/altschuler/imgui-knobs/tree/main
-    // static char valueText[100];
-    // etl::span<char> valueSpan{valueText, sizeof(valueText)};
-    // clap_param_info_t info;
-    // param.FillInformation(0, &info);
-    // param.ToText(rawValueInOut, valueSpan);
     std::string name = "";
     std::string valueText = "";
     double defaultValue = 0.0;
@@ -39,16 +38,16 @@ bool knob(const char* id, const KnobConfig& knobConfig, double& rawValueInOut) {
 
     // extras
     ImGui::Text("%s", valueText.c_str());
-    ImGui::Text("%s", info.name.c_str());
+    ImGui::Text("%s", name.c_str());
 
     if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
-        rawValueInOut = info.default_value;
+        rawValueInOut = defaultValue;
     }
 
     {
         // Drawing
-        auto angle_min = knobConfig.minAngleRadians < 0 ? kitdsp::kPi * 0.75f : knobConfig.minAngleRadians;
-        auto angle_max = knobConfig.maxAngleRadians < 0 ? kitdsp::kPi * 2.25f : knobConfig.maxAngleRadians;
+        auto angle_min = knobConfig.minAngleRadians < 0 ? kPi * 0.75f : knobConfig.minAngleRadians;
+        auto angle_max = knobConfig.maxAngleRadians < 0 ? kPi * 2.25f : knobConfig.maxAngleRadians;
 
         ImVec2 center = {screen_pos[0] + radius, screen_pos[1] + radius};
         auto is_active = ImGui::IsItemActive();

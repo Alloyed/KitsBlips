@@ -1,24 +1,33 @@
+#include <imgui.h>
 #include <memory>
-#include "imgui.h"
+#include "imgui/imguiHelpers.h"
+#include "imgui/knob.h"
 #include "kitgui/app.h"
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
+#include "scene3d.h"
 
 class MyApp : public kitgui::BaseApp {
    public:
-    MyApp(kitgui::Context& mContext) : kitgui::BaseApp(mContext) {}
+    MyApp(kitgui::Context& mContext) : kitgui::BaseApp(mContext), mScene() {}
     ~MyApp() = default;
 
    protected:
     void OnUpdate() override {
-        ImGuiHelpers::beginMain([&]() {
+        kitgui::helpers::beginFullscreen([&]() {
             ImGui::Text("Oh yeah, gamer time!");
-            // double inout = params.GetRaw(Params::Rise);
-            // if (kitgui::knob("Rise", static_cast<const NumericParam&>(*params.GetConfig(Params::Rise)), {}, inout)) {
-            //     params.SetRaw(Params::Rise, inout);
-            // }
+            kitgui::knob("Rise", {}, mKnob);
         });
     }
+
+    void OnDraw(const GladGLContext& gl) override {
+        mScene.Bind(gl);
+        mScene.Draw(gl);
+    }
+
+   private:
+    kitgui::Scene3d mScene;
+    double mKnob = 0.0;
 };
 
 int main() {
@@ -27,10 +36,12 @@ int main() {
     kitgui::Context ctx1{};
     ctx1.SetApp(std::make_shared<MyApp>(ctx1));
     ctx1.Create(kitgui::platform::Api::Any, true);
+    ctx1.SetSize(400, 400);
 
     kitgui::Context ctx2{};
     ctx2.SetApp(std::make_shared<MyApp>(ctx2));
     ctx2.Create(kitgui::platform::Api::Any, true);
+    ctx2.SetSize(400, 400);
 
     ctx1.Show();
     ctx2.Show();
