@@ -38,8 +38,8 @@ bool knob(const char* id, const KnobConfig& knobConfig, double& rawValueInOut) {
         ImGui::DragBehavior(gid, ImGuiDataType_Double, &rawValueInOut, 0, &min, &max, "%.2f", drag_behaviour_flags);
 
     // extras
-    ImGui::Text("%s", valueText);
-    ImGui::Text("%s", info.name);
+    ImGui::Text("%s", valueText.c_str());
+    ImGui::Text("%s", info.name.c_str());
 
     if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
         rawValueInOut = info.default_value;

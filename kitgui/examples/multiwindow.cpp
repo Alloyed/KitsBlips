@@ -10,7 +10,15 @@ class MyApp : public kitgui::BaseApp {
     ~MyApp() = default;
 
    protected:
-    void OnUpdate() override { ImGui::ShowDemoWindow(); }
+    void OnUpdate() override {
+        ImGuiHelpers::beginMain([&]() {
+            ImGui::Text("Oh yeah, gamer time!");
+            // double inout = params.GetRaw(Params::Rise);
+            // if (kitgui::knob("Rise", static_cast<const NumericParam&>(*params.GetConfig(Params::Rise)), {}, inout)) {
+            //     params.SetRaw(Params::Rise, inout);
+            // }
+        });
+    }
 };
 
 int main() {

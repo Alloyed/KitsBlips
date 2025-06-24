@@ -2,6 +2,8 @@
 
 #include <cmath>
 #include <cstdint>
+#include "kitdsp/math/util.h"
+#include "util.h"
 
 // approximations of common functions
 namespace kitdsp {
@@ -56,12 +58,10 @@ inline float cos2pif_nasty(float x) {
  * input: _x must be >= 0, and <= 2 * pi.
  */
 inline float sinf_squinky(float _x) {
-    constexpr static float twoPi = 2 * 3.141592653589793238;
-    constexpr static float pi = 3.141592653589793238;
-    _x -= (_x > pi) ? twoPi : 0.0f;
+    _x -= (_x > kPi) ? kTwoPi : 0.0f;
 
     float xneg = _x < 0;
-    float xOffset = xneg ? pi / 2.f : -pi / 2.f;
+    float xOffset = xneg ? kPi / 2.f : -kPi / 2.f;
     xOffset += _x;
     float xSquared = xOffset * xOffset;
     float ret = xSquared * 1.f / 24.f;
@@ -72,6 +72,38 @@ inline float sinf_squinky(float _x) {
 
     ret -= correction;
     return xneg ? -ret : ret;
+}
+
+// https://gist.github.com/bitonic/d0f5a0a44e37d4f0be03d34d47acb6cf#file-vectorized-atan2f-cpp-L131
+// which itself references:
+// sheet 11,  "Approximations for digital computers", C. Hastings, 1955
+inline float atanf(float x) {
+    constexpr float a1 = 0.99997726f;
+    constexpr float a3 = -0.33262347f;
+    constexpr float a5 = 0.19354346f;
+    constexpr float a7 = -0.11643287f;
+    constexpr float a9 = 0.05265332f;
+    constexpr float a11 = -0.01172120f;
+
+    float x_sq = x * x;
+    return x * (a1 + x_sq * (a3 + x_sq * (a5 + x_sq * (a7 + x_sq * (a9 + x_sq * a11)))));
+}
+
+inline float atan2f(float x, float y) {
+    bool swap = fabs(x) < fabs(y);
+    float atan_input = swap ? x / y : y / x;
+
+    // Approximate atan
+    float res = atanf(atan_input);
+
+    // If swapped, adjust atan output
+    res = swap ? (atan_input >= 0.0f ? kTwoPi : -kTwoPi) - res : res;
+    // Adjust the result depending on the input quadrant
+    if (x < 0.0f) {
+        res = (y >= 0.0f ? kPi : -kPi) + res;
+    }
+
+    return res;
 }
 }  // namespace approx
 }  // namespace kitdsp

@@ -27,7 +27,7 @@ target_sources(kitgui PRIVATE
     src/kitgui.cpp
     #src/scene3d.cpp
     #src/shaders.cpp
-    #src/imgui/knob.cpp
+    src/imgui/knob.cpp
 )
 
 target_include_directories(kitgui PUBLIC include)

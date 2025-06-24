@@ -1,9 +1,5 @@
 #pragma once
 
-namespace clapeze {
-class NumericParam;
-}
-
 namespace kitgui {
 
 struct KnobConfig {
@@ -14,6 +10,6 @@ struct KnobConfig {
     // TODO: fun visuals :)
 };
 // imgui
-bool knob(const char* id, const clapeze::NumericParam& param, const KnobConfig& knobConfig, double& rawValueInOut);
+bool knob(const char* id, const KnobConfig& knobConfig, double& rawValueInOut);
 
 }  // namespace kitgui
