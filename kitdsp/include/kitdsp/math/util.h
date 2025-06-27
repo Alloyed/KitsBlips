@@ -66,13 +66,6 @@ inline float blockNanf(float in, float valueIfNan = 0.0f) {
     return std::isfinite(in) ? in : valueIfNan;
 }
 
-/**
- * turns a midi note number (fractional allowed) into a frequence in standard A4=440 western tuning.
- * for ref: midi note 69 is A4, 48 is C3
- */
-inline float midiToFrequency(float midiNote) {
-    return exp2((midiNote - 69.0f) / 12.0f) * 440.0f;
-}
 }  // namespace kitdsp
 
 #include "kitdsp/math/util_arm.inl"

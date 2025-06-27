@@ -1,6 +1,7 @@
 #pragma once
 #include <daisy.h>
 #include <daisy_patch_sm.h>
+#include <kitdsp/math/units.h>
 #include <kitdsp/math/util.h>
 
 namespace kitDaisy {

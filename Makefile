@@ -9,7 +9,7 @@ prep:
 configure:
 	cmake -B daisy/build daisy -DCMAKE_BUILD_TYPE=MinSizeRel
 	cmake -B vcvrack/build vcvrack -DCMAKE_BUILD_TYPE=RelWithDebInfo
-	cmake -B clap/build juce -DCMAKE_BUILD_TYPE=RelWithDebInfo
+	cmake -B clap/build clap -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
 build:
 	cmake --build daisy/build --config MinSizeRel

@@ -8,7 +8,7 @@
 
 namespace kitdsp {
 
-enum class FilterMode { LowPass, BandPass, Highpass };
+enum class SvfFilterMode { LowPass, BandPass, Highpass };
 
 /**
  * This is an adaptation of the svf class in stmlib, the most commonly used filter in mutable instruments modules.
@@ -40,31 +40,31 @@ class EmileSvf {
         mH = 1.0f / (1.0f + mR * mG + mG * mG);
     }
 
-    template <FilterMode mode>
+    template <SvfFilterMode mode>
     inline float Process(float in) {
         float hp, bp, lp;
         ProcessAll(in, hp, bp, lp);
 
         switch (mode) {
-            case FilterMode::LowPass:
+            case SvfFilterMode::LowPass:
                 return lp;
-            case FilterMode::BandPass:
+            case SvfFilterMode::BandPass:
                 return bp;
-            case FilterMode::Highpass:
+            case SvfFilterMode::Highpass:
                 return hp;
         }
     }
 
-    inline float Process(float in, FilterMode mode) {
+    inline float Process(float in, SvfFilterMode mode) {
         float hp, bp, lp;
         ProcessAll(in, hp, bp, lp);
 
         switch (mode) {
-            case FilterMode::LowPass:
+            case SvfFilterMode::LowPass:
                 return lp;
-            case FilterMode::BandPass:
+            case SvfFilterMode::BandPass:
                 return bp;
-            case FilterMode::Highpass:
+            case SvfFilterMode::Highpass:
                 return hp;
         }
     }

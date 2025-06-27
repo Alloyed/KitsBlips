@@ -6,6 +6,7 @@
 #include <kitdsp/filters/dcBlocker.h>
 #include <kitdsp/filters/onePole.h>
 #include <kitdsp/math/approx.h>
+#include <kitdsp/math/units.h>
 #include <kitdsp/math/util.h>
 
 #include "kitDaisy/controls.h"
