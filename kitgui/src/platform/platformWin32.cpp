@@ -1,12 +1,11 @@
 #ifdef _WIN32
 
-#include "clapeze/gui/platform/platform.h"
+#include "platform/platform.h"
 
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_video.h>
 #include <windows.h>
-#include "clapeze/ext/gui.h"
 
 namespace {
 void getPlatformHandles(SDL_Window* sdlWindow, HWND& hWindow) {
@@ -15,18 +14,21 @@ void getPlatformHandles(SDL_Window* sdlWindow, HWND& hWindow) {
 }
 }  // namespace
 
-namespace clapeze {
+namespace kitgui {
 
-namespace platformGui {
-void onCreateWindow(ClapWindowApi _api, SDL_Window* sdlWindow) {
+namespace platform {
+void onCreateWindow(Api api, SDL_Window* sdlWindow) {
     // do nothing
+    (void)api;
     (void)sdlWindow;
 }
 
-bool setParent(ClapWindowApi _api, SDL_Window* sdlWindow, const WindowHandle& parent) {
+bool setParent(Api api, SDL_Window* sdlWindow, SDL_Window* parent) {
+    (void)api;
     HWND childWindow;
+    HWND parentWindow;
     getPlatformHandles(sdlWindow, childWindow);
-    HWND parentWindow = static_cast<HWND>(parent.ptr);
+    getPlatformHandles(parent, parentWindow);
 
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setparent?redirectedfrom=MSDN#remarks
     // per documentation, we need to manually update the style to reflect child status
@@ -37,22 +39,12 @@ bool setParent(ClapWindowApi _api, SDL_Window* sdlWindow, const WindowHandle& pa
     return true;
 }
 
-bool setTransient(ClapWindowApi _api, SDL_Window* sdlWindow, const WindowHandle& parent) {
+bool setTransient(Api _api, SDL_Window* sdlWindow, SDL_Window* parent) {
     // same implementation as setParent()
     setParent(_api, sdlWindow, parent);
 
     return true;
 }
-
-clap_id addGuiTimer(PluginHost& host, int32_t periodMs, void (*fn)()) {
-    TIMERPROC winFn = (TIMERPROC)(fn);
-    UINT_PTR id = SetTimer(nullptr, 0, periodMs, winFn);
-    return id;
-}
-
-void cancelGuiTimer(PluginHost& host, clap_id id) {
-    KillTimer(nullptr, id);
-}
 }  // namespace platformGui
-}  // namespace clapeze
+}  // namespace kitgui
 #endif

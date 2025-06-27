@@ -37,11 +37,13 @@ int main() {
     ctx1.SetApp(std::make_shared<MyApp>(ctx1));
     ctx1.Create(kitgui::platform::Api::Any, true);
     ctx1.SetSize(400, 400);
+    ctx1.SetClearColor({0.3f, 0.7f, 0.3f, 1.0f});
 
     kitgui::Context ctx2{};
     ctx2.SetApp(std::make_shared<MyApp>(ctx2));
     ctx2.Create(kitgui::platform::Api::Any, true);
     ctx2.SetSize(400, 400);
+    ctx2.SetClearColor({0.3f, 0.3f, 0.3f, 1.0f});
 
     ctx1.Show();
     ctx2.Show();

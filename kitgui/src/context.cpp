@@ -21,7 +21,8 @@ bool Context::Create(platform::Api api, bool isFloating) {
             break;
         }
         case platform::Api::Win32: {
-            SDL_SetHint(SDL_HINT_WINDOWS_ENABLE_MESSAGELOOP, "0");
+            //TODO: make our own message loop
+            //SDL_SetHint(SDL_HINT_WINDOWS_ENABLE_MESSAGELOOP, "0");
             break;
         }
         case platform::Api::X11: {

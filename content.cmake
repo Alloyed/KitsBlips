@@ -4,6 +4,9 @@ if(APPLE)
     enable_language(OBJC OBJCXX)
 endif()
 
+# with this flag we can use set() to set options for the following packages
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
 include(FetchContent)
 
 # local
