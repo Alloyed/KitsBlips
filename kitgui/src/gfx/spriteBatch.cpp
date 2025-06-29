@@ -16,7 +16,7 @@ const std::array<GLuint, 6> kQuadIndices = {
 }  // namespace
 
 namespace kitgui {
-void TextureList::GLState::Bind(const GladGLContext& gl) {
+void SpriteBatch::GLState::Bind(const GladGLContext& gl) {
     gl.BindVertexArray(vao);
 
     gl.GenBuffers(1, &vertexBuffer);
@@ -27,12 +27,12 @@ void TextureList::GLState::Bind(const GladGLContext& gl) {
     gl.BindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
     gl.BufferData(GL_ELEMENT_ARRAY_BUFFER, kQuadIndices.size(), kQuadIndices.data(), GL_STATIC_DRAW);
 }
-void TextureList::GLState::BindTexture(const GladGLContext& gl) {
+void SpriteBatch::GLState::BindTexture(const GladGLContext& gl) {
     // fixme: Use material's baseColor
 }
-void TextureList::GLState::Unbind() {}
+void SpriteBatch::GLState::Unbind() {}
 
-void TextureList::GLState::EndDraw() {
+void SpriteBatch::GLState::EndDraw() {
     const GLuint numVertices = kQuadVertices.size();
     gl->DrawElements(GL_TRIANGLES, numVertices, GL_UNSIGNED_INT, 0);
 }

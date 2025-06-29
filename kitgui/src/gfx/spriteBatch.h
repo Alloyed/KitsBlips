@@ -8,16 +8,16 @@
 namespace kitgui {
 
 /*
- * TextureList uploads and draws a series of textured quads
- * While it's perfectly ok to use a texturelist to draw a single texture, perf benefits can be gained by making a
+ * SpriteBatch uploads and draws a series of textured quads
+ * While it's perfectly ok to use a sprite batch to draw a single texture, perf benefits can be gained by making a
  * texture atlas and batching up textures into a single list.
  */
-class TextureList {
+class SpriteBatch {
    public:
-    TextureList();
-    ~TextureList();
-    void Bind(const GladGLContext& gl);
+    SpriteBatch();
+    ~SpriteBatch();
     void Draw(const GladGLContext& gl);
+    void Bind(const GladGLContext& gl);
 
    private:
     using VaoId = GLuint;
