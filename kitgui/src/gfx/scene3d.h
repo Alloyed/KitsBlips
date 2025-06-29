@@ -6,7 +6,6 @@
 
 #include "shaders.h"
 
-
 namespace kitgui {
 class Scene3d {
    public:
@@ -26,28 +25,29 @@ class Scene3d {
     // acceleration structures for the tinygltf::Model instance
     struct Cache {
         struct NodeCache {
-            glm::mat4 transform {};
-            std::vector<size_t> animationChannels {};
+            glm::mat4 transform{};
+            std::vector<size_t> animationChannels{};
         };
         void Build(tinygltf::Model& model);
-        std::vector<NodeCache> mNodes {};
-        std::vector<NodeIdx> mMeshNodes {};
-        NodeIdx mCamera {};
-        private:
+        std::vector<NodeCache> nodes{};
+        std::vector<NodeIdx> meshNodes{};
+        NodeIdx cameraNode{};
+
+       private:
         void BuildTransform(tinygltf::Model& model, NodeIdx parentIdx, NodeIdx nodeIdx);
     };
 
     // opengl state
     struct GLState {
-        const GladGLContext* gl {};
-        VertexArrayId vertexArray {};
-        std::unordered_map<BufferViewIdx, ElementBufferId> elementBuffers {};
-        bool bound {};
+        const GladGLContext* gl{};
+        VertexArrayId vertexArray{};
+        std::unordered_map<BufferViewIdx, ElementBufferId> elementBuffers{};
+        bool bound{};
 
         void Bind(const GladGLContext& gl, tinygltf::Model& model);
         void BindBuffers(tinygltf::Model& model);
         void BindMeshes(tinygltf::Model& model);
-        void BindTextures(tinygltf::Model& model);
+        void BindMaterials(tinygltf::Model& model);
         void Unbind();
 
         void StartDraw();

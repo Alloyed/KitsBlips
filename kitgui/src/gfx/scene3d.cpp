@@ -9,6 +9,8 @@
 #include <iostream>
 #include "battery/embed.hpp"
 
+#include "gfx/image.h"
+
 /*
  *  this code is adapted from tinygltfs example code at:
  *   https://github.com/syoyo/tinygltf/blob/release/examples/basic/main.cpp
@@ -24,14 +26,12 @@ namespace kitgui {
 
 void Scene3d::Cache::BuildTransform(tinygltf::Model& model, size_t parentIdx, size_t nodeIdx) {
     const auto& node = model.nodes[nodeIdx];
-    auto& transform = mNodes[nodeIdx].transform;
-    printf("transform %d -> %d\n", parentIdx, nodeIdx);
-    #define A(idx) (static_cast<float>(a[idx]))
+    auto& transform = nodes[nodeIdx].transform;
+#define A(idx) (static_cast<float>(a[idx]))
     if (!node.matrix.empty()) {
         const auto& a = node.matrix;
         // clang-format off
-            printf("full matrix %d", nodeIdx);
-            transform = mNodes[parentIdx].transform * glm::mat4(
+            transform = nodes[parentIdx].transform * glm::mat4(
                 A(0),  A(1),  A(2),  A(3),
                 A(4),  A(5),  A(6),  A(7),
                 A(8),  A(9),  A(10), A(11),
@@ -39,45 +39,39 @@ void Scene3d::Cache::BuildTransform(tinygltf::Model& model, size_t parentIdx, si
             );
         // clang-format on
     } else {
-        transform = mNodes[parentIdx].transform;
+        transform = nodes[parentIdx].transform;
         if (!node.translation.empty()) {
             const auto& a = node.translation;
-            printf("Translate %d: %f %f %f\n", nodeIdx, A(0), A(1), A(2));
             transform = glm::translate(transform, glm::vec3(A(0), A(1), A(2)));
         }
         if (!node.rotation.empty()) {
             const auto& a = node.rotation;
-            printf("Rotate %d: %f %f %f %f\n", nodeIdx, A(0), A(1), A(2), A(3));
             // quat is WXYZ in glm instead of XYZW
             transform = transform * glm::mat4_cast(glm::quat(A(3), A(0), A(1), A(2)));
         }
         if (!node.scale.empty()) {
             const auto& a = node.scale;
-            printf("Scale %d: %f %f %f %f\n", nodeIdx, A(0), A(1), A(2), A(3));
             transform = glm::scale(transform, glm::vec3(A(0), A(1), A(2)));
         }
     }
-    #undef A
+#undef A
 }
 
 void Scene3d::Cache::Build(tinygltf::Model& model) {
-    mNodes.resize(model.nodes.size());
-    mMeshNodes.clear();
+    nodes.resize(model.nodes.size());
+    meshNodes.clear();
     // TODO: animations
 
     const auto visit = [&](const auto& self, size_t parentIdx, size_t nodeIdx, bool hasAnimatedAncestor) -> void {
-        printf("Visit %d %d\n", parentIdx, nodeIdx);
         BuildTransform(model, parentIdx, nodeIdx);
 
         const auto& node = model.nodes[nodeIdx];
 
-        if(node.mesh != -1) {
-            printf("Mesh %d\n", nodeIdx);
-            mMeshNodes.push_back(nodeIdx);
+        if (node.mesh != -1) {
+            meshNodes.push_back(nodeIdx);
         }
-        if(node.camera != -1) {
-            printf("Camera %d\n", nodeIdx);
-            mCamera = nodeIdx;
+        if (node.camera != -1) {
+            cameraNode = nodeIdx;
         }
         for (const auto childIdx : node.children) {
             self(self, nodeIdx, childIdx, hasAnimatedAncestor);
@@ -86,8 +80,7 @@ void Scene3d::Cache::Build(tinygltf::Model& model) {
     const auto& scene = model.scenes[model.defaultScene];
     for (const auto rootIdx : scene.nodes) {
         // start with identity matrix
-        mNodes[rootIdx].transform = glm::mat4(1.0f);
-        printf("Root %d\n", rootIdx);
+        nodes[rootIdx].transform = glm::mat4(1.0f);
         visit(visit, rootIdx, rootIdx, false);
     }
 }
@@ -100,27 +93,13 @@ void Scene3d::GLState::Bind(const GladGLContext& _gl, tinygltf::Model& model) {
 
     BindBuffers(model);
     BindMeshes(model);
-    BindTextures(model);
+    BindMaterials(model);
 
     gl->BindVertexArray(0);
-
-    // cleanup vbos but do not delete index buffers yet
-    /*
-    std::erase_if(elementBuffers, [&](const auto& item) {
-        const auto& [key, value] = item;
-        const auto& bufferView = model.bufferViews[key];
-        if (bufferView.target != GL_ELEMENT_ARRAY_BUFFER) {
-            gl->DeleteBuffers(1, &value);
-            return true;
-        } else {
-            return false;
-        }
-    });
-    */
 }
 
 void Scene3d::GLState::BindBuffers(tinygltf::Model& model) {
-        for (size_t bufferViewIdx = 0; bufferViewIdx < model.bufferViews.size(); ++bufferViewIdx) {
+    for (size_t bufferViewIdx = 0; bufferViewIdx < model.bufferViews.size(); ++bufferViewIdx) {
         const tinygltf::BufferView& bufferView = model.bufferViews[bufferViewIdx];
         if (bufferView.target == 0) {  // TODO impl drawarrays
             std::cout << "WARN: bufferView.target is zero" << std::endl;
@@ -139,9 +118,8 @@ void Scene3d::GLState::BindBuffers(tinygltf::Model& model) {
                   << ", bufferview.byteOffset = " << bufferView.byteOffset << std::endl;
 
         gl->BufferData(bufferView.target, bufferView.byteLength, &buffer.data.at(0) + bufferView.byteOffset,
-                      GL_STATIC_DRAW);
+                       GL_STATIC_DRAW);
     }
-
 }
 void Scene3d::GLState::BindMeshes(tinygltf::Model& model) {
     for (const auto& mesh : model.meshes) {
@@ -177,62 +155,34 @@ void Scene3d::GLState::BindMeshes(tinygltf::Model& model) {
     }
 }
 
-void Scene3d::GLState::BindTextures(tinygltf::Model& model) {
+void Scene3d::GLState::BindMaterials(tinygltf::Model& model) {
     if (model.textures.size() > 0) {
         // fixme: Use material's baseColor
         tinygltf::Texture& tex = model.textures[0];
 
         if (tex.source > -1) {
-            GLuint texid;
-            gl->GenTextures(1, &texid);
-
-            tinygltf::Image& image = model.images[tex.source];
-
-            gl->BindTexture(GL_TEXTURE_2D, texid);
-            gl->PixelStorei(GL_UNPACK_ALIGNMENT, 1);
-            gl->TexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            gl->TexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-            GLenum format = GL_RGBA;
-
-            if (image.component == 1) {
-                format = GL_RED;
-            } else if (image.component == 2) {
-                format = GL_RG;
-            } else if (image.component == 3) {
-                format = GL_RGB;
-            } else {
-                // ???
-            }
-
-            GLenum type = GL_UNSIGNED_BYTE;
-            if (image.bits == 8) {
-                // ok
-            } else if (image.bits == 16) {
-                type = GL_UNSIGNED_SHORT;
-            } else {
-                // ???
-            }
-
-            gl->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, format, type, &image.image.at(0));
+            // TODO: single image assumed, probably wrong
+            loadImage(*gl, model.images[tex.source]);
         }
     }
 }
 
 void Scene3d::GLState::Unbind() {
     gl->DeleteVertexArrays(1, &vertexArray);
+    for (const auto& [key, bufferView] : elementBuffers) {
+        gl->DeleteBuffers(1, &bufferView);
+    }
+    elementBuffers.clear();
 }
 
 void Scene3d::GLState::DrawMesh(tinygltf::Model& model, MeshIdx meshIdx) {
     const auto& mesh = model.meshes[meshIdx];
-    for(const auto primitive : mesh.primitives) {
+    for (const auto& primitive : mesh.primitives) {
         tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
 
         gl->BindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffers.at(indexAccessor.bufferView));
         gl->DrawElements(primitive.mode, static_cast<GLsizei>(indexAccessor.count), indexAccessor.componentType,
-                        BUFFER_OFFSET(indexAccessor.byteOffset));
+                         BUFFER_OFFSET(indexAccessor.byteOffset));
     }
 }
 
@@ -265,8 +215,7 @@ Scene3d::Scene3d() {
 }
 
 void Scene3d::Bind(const GladGLContext& gl) {
-    if(!mGlState.bound)
-    {
+    if (!mGlState.bound) {
         mCache.Build(mModel);
         mGlState.Bind(gl, mModel);
         mGlState.bound = true;
@@ -274,8 +223,7 @@ void Scene3d::Bind(const GladGLContext& gl) {
 }
 
 Scene3d::~Scene3d() {
-    if(mGlState.bound)
-    {
+    if (mGlState.bound) {
         mGlState.Unbind();
         mGlState.bound = false;
     }
@@ -286,29 +234,27 @@ void Scene3d::Draw(const GladGLContext& gl) {
     glm::vec3 sun_position = glm::vec3(3.0, 10.0, 5.0);
     glm::vec3 sun_color = glm::vec3(1.0);
 
-    const auto& cam = mModel.cameras[mModel.nodes[mCache.mCamera].camera];
-    glm::mat4 proj_mat {};
-    if(cam.type == "perspective") {
-
+    const auto& cam = mModel.cameras[mModel.nodes[mCache.cameraNode].camera];
+    glm::mat4 proj_mat{};
+    if (cam.type == "perspective") {
         const auto& p = cam.perspective;
         proj_mat = glm::perspective(p.yfov, p.aspectRatio, p.znear, p.zfar);
-    }
-    else {
+    } else {
         const auto& p = cam.orthographic;
-        double left {};
-        double right {};
-        double bottom {};
-        double top {};
+        double left{};
+        double right{};
+        double bottom{};
+        double top{};
         proj_mat = glm::ortho(left, right, bottom, top, p.znear, p.zfar);
     }
 
-    glm::mat4 view_mat = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    //glm::mat4 view_mat = mCache.mNodes[mCache.mCamera].transform;
+    glm::mat4 view_mat =
+        glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    // glm::mat4 view_mat = mCache.mNodes[mCache.mCamera].transform;
     mGlState.StartDraw();
-    for(const auto nodeIdx : mCache.mMeshNodes)
-    {
+    for (const auto nodeIdx : mCache.meshNodes) {
         const auto& node = mModel.nodes[nodeIdx];
-        const glm::mat4& model_mat = mCache.mNodes[nodeIdx].transform;
+        const glm::mat4& model_mat = mCache.nodes[nodeIdx].transform;
         mShaders.Use(gl, model_mat, view_mat, proj_mat, sun_position, sun_color);
         mGlState.DrawMesh(mModel, node.mesh);
     }

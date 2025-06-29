@@ -25,8 +25,10 @@ endif()
 target_sources(kitgui PRIVATE
     src/context.cpp
     src/kitgui.cpp
-    src/scene3d.cpp
-    src/shaders.cpp
+    src/gfx/scene3d.cpp
+    src/gfx/shaders.cpp
+    src/gfx/spriteBatch.cpp
+    src/gfx/image.cpp
     src/imgui/knob.cpp
 )
 

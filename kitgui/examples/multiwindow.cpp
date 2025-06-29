@@ -1,11 +1,11 @@
 #include <imgui.h>
 #include <memory>
+#include "gfx/scene3d.h"
 #include "imgui/imguiHelpers.h"
 #include "imgui/knob.h"
 #include "kitgui/app.h"
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
-#include "scene3d.h"
 
 class MyApp : public kitgui::BaseApp {
    public:
