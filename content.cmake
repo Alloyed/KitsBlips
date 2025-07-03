@@ -37,7 +37,6 @@ FetchContent_Declare(
 
 # TODO: switch to FetchContent?
 set(IMGUI_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/imgui)
-set(GLAD_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/glad)
 
 # remote
 FetchContent_Declare(
@@ -64,11 +63,6 @@ FetchContent_Declare(
     cpptrace
     GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
     GIT_TAG        v1.0.0
-)
-FetchContent_Declare(
-	glm
-	GIT_REPOSITORY	https://github.com/g-truc/glm.git
-	GIT_TAG 	2d4c4b4dd31fde06cfffad7915c2b3006402322f
 )
 FetchContent_Declare(
   battery-embed
@@ -113,9 +107,35 @@ FetchContent_Declare(
 	GIT_TAG 	adfdec6af14e4d12551446e7ad060415ca563950
 )
 
-set(TINYGLTF_HEADER_ONLY OFF)
+set(MAGNUM_BUILD_STATIC ON)
+set(MAGNUM_BUILD_PLUGINS_STATIC ON)
+
+# opting into images, scenes, fonts
+set(MAGNUM_WITH_ANYIMAGEIMPORTER ON)
+set(MAGNUM_WITH_ANYSCENEIMPORTER ON)
+set(MAGNUM_WITH_MAGNUMFONT ON)
+
+# specific dependencies for above
+set(MAGNUM_WITH_STBIMAGEIMPORTER ON)
+set(MAGNUM_WITH_STBTRUETYPEFONT ON)
+set(MAGNUM_WITH_GLTFIMPORTER ON)
+
+# opengl
+set(MAGNUM_WITH_GL ON)
+set(MAGNUM_WITH_EGLCONTEXT ON)
+
 FetchContent_Declare(
-    tinygltf
-    GIT_REPOSITORY https://github.com/syoyo/tinygltf.git
-    GIT_TAG        v2.9.6
+    corrade
+    GIT_REPOSITORY https://github.com/mosra/corrade.git
+    GIT_TAG        8b3c02277020d9c609f54200d050ff665c4431e1
+)
+FetchContent_Declare(
+    magnum
+    GIT_REPOSITORY https://github.com/mosra/magnum.git
+    GIT_TAG        be38d5e2bbd03cab4f31707d8a012a4ce119fc40
+)
+FetchContent_Declare(
+    magnum-plugins
+    GIT_REPOSITORY https://github.com/mosra/magnum-plugins.git
+    GIT_TAG        9f31cf5a0a6a44a63e320924141513d473586760
 )

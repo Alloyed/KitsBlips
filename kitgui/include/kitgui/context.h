@@ -1,12 +1,13 @@
 #pragma once
 
 // has to be first
-#include <glad/gl.h>
 
+#include <Magnum/Magnum.h>
+#include <Magnum/Math/Color.h>
+#include <Magnum/Platform/GLContext.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_video.h>
 #include <cstdint>
-#include <glm/glm.hpp>
 #include <memory>
 #include <string_view>
 #include <vector>
@@ -37,7 +38,7 @@ class Context {
     bool Hide();
     bool Close();
 
-    const GladGLContext& MakeCurrent() const;
+    void MakeCurrent();
 
     static bool GetPreferredApi(platform::Api& apiOut, bool& isFloatingOut);
     static Context* FindContextForWindow(SDL_WindowID window);
@@ -48,7 +49,7 @@ class Context {
     static void RunSingleFrame();
 
     bool IsCreated() const;
-    void SetClearColor(glm::vec4 color) { mClearColor = color; }
+    void SetClearColor(Magnum::Color4 color) { mClearColor = color; }
     void SetApp(std::shared_ptr<BaseApp> app) { mApp = app; }
 
    private:
@@ -56,11 +57,11 @@ class Context {
     platform::Api mApi;
     SDL_Window* mWindow = nullptr;
     SDL_GLContext mSdlGl;
-    GladGLContext mGl;
+    std::unique_ptr<Magnum::Platform::GLContext> mGl = nullptr;
     ImGuiContext* mImgui = nullptr;
     bool mActive = false;
     bool mDestroy = false;
-    glm::vec4 mClearColor = {0.5f, 0.5f, 0.5f, 1.0f};
+    Magnum::Color4 mClearColor = {0.5f, 0.5f, 0.5f, 1.0f};
 
     static void AddActiveInstance(Context* instance);
     static void RemoveActiveInstance(Context* instance);

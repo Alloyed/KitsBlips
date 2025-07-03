@@ -9,9 +9,8 @@ set(CMAKE_CXX_STANDARD 20)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(../content.cmake)
 include(imgui)
-include(glad)
 FetchContent_MakeAvailable(battery-embed)
-FetchContent_MakeAvailable(SDL3 glm tinygltf)
+FetchContent_MakeAvailable(SDL3 corrade magnum magnum-plugins)
 
 add_library(kitgui STATIC)
 
@@ -25,10 +24,6 @@ endif()
 target_sources(kitgui PRIVATE
     src/context.cpp
     src/kitgui.cpp
-    src/gfx/scene3d.cpp
-    src/gfx/shaders.cpp
-    src/gfx/spriteBatch.cpp
-    src/gfx/image.cpp
     src/imgui/knob.cpp
 )
 
@@ -41,9 +36,16 @@ b_embed(kitgui assets/duck.glb)
 target_link_libraries(kitgui PUBLIC
     imgui
     imgui_opengl_sdl3
-    glm
-    tinygltf
-    glad
+    Corrade::Main
+    Magnum::GL
+    Magnum::EglContext
+    Magnum::Magnum
+    Magnum::MeshTools
+    Magnum::SceneGraph
+    Magnum::Shaders
+    Magnum::Trade
+    MagnumPlugins::StbImageImporter
+    MagnumPlugins::GltfImporter
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")

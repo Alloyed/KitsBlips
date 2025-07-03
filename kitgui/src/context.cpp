@@ -1,14 +1,17 @@
 #include "kitgui/context.h"
+#include <Magnum/GL/DefaultFramebuffer.h>
+#include <Magnum/Platform/GLContext.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_hints.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
 #include <algorithm>
-#include <string>
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl3.h"
 #include "log.h"
 #include "platform/platform.h"
+
+using namespace Magnum;
 
 namespace kitgui {
 
@@ -21,8 +24,8 @@ bool Context::Create(platform::Api api, bool isFloating) {
             break;
         }
         case platform::Api::Win32: {
-            //TODO: make our own message loop
-            //SDL_SetHint(SDL_HINT_WINDOWS_ENABLE_MESSAGELOOP, "0");
+            // TODO: make our own message loop
+            // SDL_SetHint(SDL_HINT_WINDOWS_ENABLE_MESSAGELOOP, "0");
             break;
         }
         case platform::Api::X11: {
@@ -62,7 +65,9 @@ bool Context::Create(platform::Api api, bool isFloating) {
     }
     mSdlGl = gl_context;
     SDL_GL_MakeCurrent(mWindow, mSdlGl);
-    gladLoadGLContext(&mGl, (GLADloadfunc)SDL_GL_GetProcAddress);
+    Magnum::Platform::GLContext::makeCurrent(nullptr);
+    mGl = std::make_unique<Magnum::Platform::GLContext>();
+    Magnum::Platform::GLContext::makeCurrent(mGl.get());
 
     // setup imgui
     IMGUI_CHECKVERSION();
@@ -82,6 +87,7 @@ bool Context::Destroy() {
     if (IsCreated()) {
         MakeCurrent();
         RemoveActiveInstance(this);
+        mGl.reset();
         SDL_GL_DestroyContext(mSdlGl);
         SDL_DestroyWindow(mWindow);
         mWindow = nullptr;
@@ -163,14 +169,14 @@ bool Context::Close() {
     return true;
 }
 
-const GladGLContext& Context::MakeCurrent() const {
+void Context::MakeCurrent() {
     if (mSdlGl) {
         SDL_GL_MakeCurrent(mWindow, mSdlGl);
     }
     if (mImgui) {
         ImGui::SetCurrentContext(mImgui);
     }
-    return mGl;
+    Magnum::Platform::GLContext::makeCurrent(mGl.get());
 }
 
 std::vector<Context*> Context::sActiveInstances = {};
@@ -246,7 +252,7 @@ void Context::RunSingleFrame() {
     }
 
     for (auto instance : sActiveInstances) {
-        auto& gl = instance->MakeCurrent();
+        instance->MakeCurrent();
 
         // update
         ImGui_ImplOpenGL3_NewFrame();
@@ -259,13 +265,12 @@ void Context::RunSingleFrame() {
         // draw
         uint32_t width, height;
         instance->GetSize(width, height);
-        gl.Viewport(0, 0, width, height);
-        gl.ClearColor(instance->mClearColor[0], instance->mClearColor[1], instance->mClearColor[2],
-                      instance->mClearColor[3]);
-        gl.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        GL::defaultFramebuffer.setViewport({{}, {static_cast<int>(width), static_cast<int>(height)}});
+        GL::defaultFramebuffer.clearColor(instance->mClearColor);
+        GL::defaultFramebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
 
         if (instance->mApp) {
-            instance->mApp->OnDraw(gl);
+            // instance->mApp->OnDraw(gl);
         }
 
         ImGui::Render();
