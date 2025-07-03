@@ -1,3 +1,4 @@
+#include <Corrade/Utility/Resource.h>
 #include <Magnum/GL/Renderer.h>
 #include <imgui.h>
 #include <memory>
@@ -35,6 +36,7 @@ class MyApp : public kitgui::BaseApp {
 };
 
 int main() {
+    CORRADE_RESOURCE_INITIALIZE(embeddedAssets);
     kitgui::init();
 
     kitgui::Context ctx1{};

@@ -9,7 +9,6 @@ set(CMAKE_CXX_STANDARD 20)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(../content.cmake)
 include(imgui)
-FetchContent_MakeAvailable(battery-embed)
 FetchContent_MakeAvailable(SDL3 corrade magnum magnum-plugins)
 
 add_library(kitgui STATIC)
@@ -31,9 +30,8 @@ target_sources(kitgui PRIVATE
 target_include_directories(kitgui PUBLIC include)
 target_include_directories(kitgui PUBLIC src)
 
-b_embed(kitgui assets/base.vert)
-b_embed(kitgui assets/base.frag)
-b_embed(kitgui assets/duck.glb)
+corrade_add_resource(embeddedAssets assets/embedded.conf)
+
 target_link_libraries(kitgui PUBLIC
     imgui
     imgui_opengl_sdl3
@@ -68,6 +66,7 @@ endif()
 
 if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     # add example exes
-    add_executable(multiwindow examples/multiwindow.cpp)
-    target_link_libraries(multiwindow kitgui)
+    add_executable(multiwindow examples/multiwindow.cpp
+    ${embeddedAssets})
+    target_link_libraries(multiwindow kitgui Corrade::Utility)
 endif()

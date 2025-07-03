@@ -64,11 +64,6 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
     GIT_TAG        v1.0.0
 )
-FetchContent_Declare(
-  battery-embed
-  GIT_REPOSITORY https://github.com/batterycenter/embed.git
-  GIT_TAG        v1.2.19
-)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(SDL_SHARED OFF)
