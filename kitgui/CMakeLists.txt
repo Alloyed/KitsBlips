@@ -23,6 +23,7 @@ endif()
 
 target_sources(kitgui PRIVATE
     src/context.cpp
+    src/gfx/gltfScene.cpp
     src/kitgui.cpp
     src/imgui/knob.cpp
 )

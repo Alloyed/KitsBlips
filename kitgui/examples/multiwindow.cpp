@@ -1,3 +1,4 @@
+#include <Magnum/GL/Renderer.h>
 #include <imgui.h>
 #include <memory>
 #include "imgui/imguiHelpers.h"
@@ -6,12 +7,18 @@
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
 
+using namespace Magnum;
+
 class MyApp : public kitgui::BaseApp {
    public:
     MyApp(kitgui::Context& mContext) : kitgui::BaseApp(mContext) {}
     ~MyApp() = default;
 
    protected:
+    void OnActivate() override {
+        GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
+        GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
+    }
     void OnUpdate() override {
         kitgui::helpers::beginFullscreen([&]() {
             ImGui::Text("Oh yeah, gamer time!");
@@ -19,12 +26,11 @@ class MyApp : public kitgui::BaseApp {
         });
     }
 
-    void OnDraw(const GladGLContext& gl) override {
+    void OnDraw() override {
         //
     }
 
    private:
-    // kitgui::Scene3d mScene;
     double mKnob = 0.0;
 };
 
@@ -35,13 +41,13 @@ int main() {
     ctx1.SetApp(std::make_shared<MyApp>(ctx1));
     ctx1.Create(kitgui::platform::Api::Any, true);
     ctx1.SetSize(400, 400);
-    // ctx1.SetClearColor({0.3f, 0.7f, 0.3f, 1.0f});
+    ctx1.SetClearColor({0.3f, 0.7f, 0.3f, 1.0f});
 
     kitgui::Context ctx2{};
     ctx2.SetApp(std::make_shared<MyApp>(ctx2));
     ctx2.Create(kitgui::platform::Api::Any, true);
     ctx2.SetSize(400, 400);
-    // ctx2.SetClearColor({0.3f, 0.3f, 0.3f, 1.0f});
+    ctx2.SetClearColor({0.3f, 0.3f, 0.3f, 1.0f});
 
     ctx1.Show();
     ctx2.Show();

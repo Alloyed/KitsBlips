@@ -1,7 +1,5 @@
 #pragma once
 
-struct GladGLContext;
-
 namespace kitgui {
 class Context;
 /**
@@ -33,7 +31,7 @@ class BaseApp {
     /**
      * Triggers on a regular basis. use gl to manipulate the visual state.
      */
-    virtual void OnDraw([[maybe_unused]] const GladGLContext& gl) {}
+    virtual void OnDraw() {}
 
     Context& GetContext() { return mContext; }
 
