@@ -40,7 +40,7 @@ target_link_libraries(kitgui PUBLIC
     imgui_opengl_sdl3
     Corrade::Main
     Magnum::GL
-    Magnum::EglContext
+    ${MAGNUM_PLATFORMGL}
     Magnum::Magnum
     Magnum::MeshTools
     Magnum::SceneGraph

@@ -15,6 +15,8 @@ using namespace Magnum;
 
 namespace kitgui {
 
+Context::Context(Context::AppFactory fn) : mCreateAppFn(fn) {}
+
 bool Context::Create(platform::Api api, bool isFloating) {
     mApi = api;
     switch (mApi) {
@@ -80,6 +82,9 @@ bool Context::Create(platform::Api api, bool isFloating) {
     ImGui_ImplSDL3_InitForOpenGL(mWindow, mSdlGl);
     ImGui_ImplOpenGL3_Init();
 
+    // Setup app
+    mApp = mCreateAppFn(*this);
+
     return true;
 }
 
@@ -87,6 +92,7 @@ bool Context::Destroy() {
     if (IsCreated()) {
         MakeCurrent();
         RemoveActiveInstance(this);
+        mApp.reset();
         mGl.reset();
         SDL_GL_DestroyContext(mSdlGl);
         SDL_DestroyWindow(mWindow);
@@ -270,7 +276,7 @@ void Context::RunSingleFrame() {
         GL::defaultFramebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
 
         if (instance->mApp) {
-            // instance->mApp->OnDraw(gl);
+            instance->mApp->OnDraw();
         }
 
         ImGui::Render();

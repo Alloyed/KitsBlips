@@ -1,6 +1,7 @@
 #include <Corrade/PluginManager/Manager.h>
 #include <Corrade/Utility/Resource.h>
 #include <Magnum/GL/Renderer.h>
+#include <Magnum/GL/DebugOutput.h>
 #include <Magnum/Trade/AbstractImporter.h>
 #include <imgui.h>
 #include <memory>
@@ -13,6 +14,27 @@
 
 using namespace Magnum;
 
+class MyApp2 : public kitgui::BaseApp {
+   public:
+    MyApp2(kitgui::Context& mContext)
+        : kitgui::BaseApp(mContext) {}
+    ~MyApp2() = default;
+
+   protected:
+    void OnActivate() override {
+    }
+    void OnUpdate() override {
+        kitgui::helpers::beginFullscreen([&]() {
+            ImGui::Text("Window.... 2!!!");
+        });
+    }
+
+    void OnDraw() override {}
+
+   private:
+    double mKnob = 0.0;
+};
+
 class MyApp : public kitgui::BaseApp {
    public:
     MyApp(kitgui::Context& mContext, Magnum::Trade::AbstractImporter& importer)
@@ -21,11 +43,13 @@ class MyApp : public kitgui::BaseApp {
 
    protected:
     void OnActivate() override {
-        GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
-        GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
+        GL::Renderer::enable(GL::Renderer::Feature::DebugOutput);
+        GL::Renderer::enable(GL::Renderer::Feature::DebugOutputSynchronous);
+        GL::DebugOutput::setDefaultCallback();
         mScene.Load(mImporter, "thingy.glb");
     }
     void OnUpdate() override {
+        mScene.Update();
         kitgui::helpers::beginFullscreen([&]() {
             ImGui::Text("Oh yeah, gamer time!");
             kitgui::knob("Rise", {}, mKnob);
@@ -44,29 +68,29 @@ int main() {
     CORRADE_RESOURCE_INITIALIZE(embeddedAssets);
     Corrade::PluginManager::Manager<Magnum::Trade::AbstractImporter> manager;
     Corrade::Containers::Pointer<Magnum::Trade::AbstractImporter> importer = manager.loadAndInstantiate("GltfImporter");
+    Magnum::Trade::AbstractImporter* raw = importer.get();
     Utility::Resource rs{"embeddedAssets"};
     Containers::ArrayView<const char> data = rs.getRaw("duck.glb");
     importer->openData(data);
 
     kitgui::init();
 
-    kitgui::Context ctx1{};
-    ctx1.SetApp(std::make_shared<MyApp>(ctx1, *importer));
-    ctx1.Create(kitgui::platform::Api::Any, true);
-    ctx1.SetSize(400, 400);
-    ctx1.SetClearColor({0.3f, 0.7f, 0.3f, 1.0f});
+    {
+        kitgui::Context ctx1([raw](kitgui::Context& ctx) { return std::make_unique<MyApp2>(ctx); });
+        ctx1.Create(kitgui::platform::Api::Any, true);
+        ctx1.SetSize(400, 400);
+        ctx1.SetClearColor({0.3f, 0.7f, 0.3f, 1.0f});
 
-    kitgui::Context ctx2{};
-    ctx2.SetApp(std::make_shared<MyApp>(ctx2, *importer));
-    ctx2.Create(kitgui::platform::Api::Any, true);
-    ctx2.SetSize(400, 400);
-    ctx2.SetClearColor({0.3f, 0.3f, 0.3f, 1.0f});
+        kitgui::Context ctx2([raw](kitgui::Context& ctx) { return std::make_unique<MyApp2>(ctx); });
+        ctx2.Create(kitgui::platform::Api::Any, true);
+        ctx2.SetSize(400, 400);
+        ctx2.SetClearColor({0.3f, 0.3f, 0.3f, 1.0f});
 
-    ctx1.Show();
-    ctx2.Show();
+        ctx1.Show();
+        ctx2.Show();
 
-    kitgui::Context::RunLoop();
+        kitgui::Context::RunLoop();
+    }
 
-    // update loop here
     kitgui::deinit();
 }

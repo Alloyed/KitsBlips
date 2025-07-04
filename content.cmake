@@ -117,7 +117,16 @@ set(MAGNUM_WITH_GLTFIMPORTER ON)
 
 # opengl
 set(MAGNUM_WITH_GL ON)
-set(MAGNUM_WITH_EGLCONTEXT ON)
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(MAGNUM_WITH_WGLCONTEXT ON)
+    set(MAGNUM_PLATFORMGL Magnum::WglContext)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(MAGNUM_WITH_CGLCONTEXT ON)
+    set(MAGNUM_PLATFORMGL Magnum::CglContext)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(MAGNUM_WITH_EGLCONTEXT ON)
+    set(MAGNUM_PLATFORMGL Magnum::EglContext)
+endif()
 
 FetchContent_Declare(
     corrade

@@ -8,6 +8,7 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_video.h>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string_view>
 #include <vector>
@@ -20,7 +21,8 @@ namespace kitgui {
 class BaseApp;
 class Context {
    public:
-    Context() = default;
+    using AppFactory = std::function<std::unique_ptr<BaseApp>(Context& ctx)>;
+    Context(AppFactory createAppFn);
     ~Context() = default;
 
     bool Create(platform::Api api, bool isFloating);
@@ -50,10 +52,10 @@ class Context {
 
     bool IsCreated() const;
     void SetClearColor(Magnum::Color4 color) { mClearColor = color; }
-    void SetApp(std::shared_ptr<BaseApp> app) { mApp = app; }
 
    private:
-    std::shared_ptr<BaseApp> mApp;
+    AppFactory mCreateAppFn;
+    std::unique_ptr<BaseApp> mApp = nullptr;
     platform::Api mApi;
     SDL_Window* mWindow = nullptr;
     SDL_GLContext mSdlGl;
