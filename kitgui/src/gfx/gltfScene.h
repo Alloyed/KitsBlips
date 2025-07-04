@@ -13,6 +13,7 @@ class GltfScene {
     GltfScene();
     ~GltfScene();
     void Load(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
+    void Update();
     void Draw();
 
    private:

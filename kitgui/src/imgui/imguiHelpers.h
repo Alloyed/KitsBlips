@@ -1,6 +1,4 @@
 #pragma once
-#ifdef KITSBLIPS_ENABLE_GUI
-
 #include <imgui.h>
 
 namespace kitgui {
@@ -22,4 +20,3 @@ inline void beginFullscreen(FN fn) {
 }
 }  // namespace helpers
 }  // namespace kitgui
-#endif

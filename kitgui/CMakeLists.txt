@@ -13,7 +13,6 @@ FetchContent_MakeAvailable(SDL3 corrade magnum magnum-plugins)
 
 add_library(kitgui STATIC)
 
-target_compile_definitions(kitgui PUBLIC KITSBLIPS_ENABLE_GUI=1)
 if (MSVC)
     target_compile_options(kitgui PRIVATE /W4)
 else()
@@ -26,6 +25,7 @@ target_sources(kitgui PRIVATE
     src/gfx/gltfScene.cpp
     src/gfx/lights.cpp
     src/gfx/materials.cpp
+    src/gfx/meshes.cpp
     src/imgui/knob.cpp
     src/kitgui.cpp
 )

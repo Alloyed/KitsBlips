@@ -20,8 +20,6 @@
 #include <Magnum/GL/Renderer.h>
 #include <Magnum/Math/CubicHermite.h>
 #include <Magnum/Math/Quaternion.h>
-#include <Magnum/MeshTools/Compile.h>
-#include <Magnum/MeshTools/GenerateIndices.h>
 #include <Magnum/SceneGraph/Camera.h>
 #include <Magnum/Trade/AbstractImporter.h>
 #include <Magnum/Trade/AnimationData.h>
@@ -40,22 +38,20 @@
 #include "gfx/drawables.h"
 #include "gfx/lights.h"
 #include "gfx/materials.h"
+#include "gfx/meshes.h"
 #include "gfx/sceneGraph.h"
 
 using namespace Magnum;
 using namespace Magnum::Math::Literals;
 using namespace Magnum::Math::Literals::ColorLiterals;
 
-namespace {}  // namespace
-
 namespace kitgui {
 struct GltfSceneImpl {
     void Load(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
+    void Update();
     void Draw();
 
-    void updateLightColorBrightness();
-
-    std::vector<MeshInfo> mMeshes;
+    MeshCache mMeshCache;
     Magnum::SceneGraph::DrawableGroup3D mLightDrawables;
 
     MaterialCache mMaterialCache;
@@ -78,147 +74,10 @@ void GltfScene::Load(Magnum::Trade::AbstractImporter& importer, std::string_view
 }
 
 void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_view debugName) {
-    /* Load all textures. Textures that fail to load will be NullOpt. */
     mMaterialCache.LoadTextures(importer);
-
-    /* Load all lights. Lights that fail to load will be NullOpt, saving the
-       whole imported data so we can populate the selection info later. */
-    Debug{} << "Loading" << importer.lightCount() << "lights";
-    mLightCache.mLights.clear();
-    mLightCache.mLights.reserve(importer.lightCount());
-    for (uint32_t i = 0; i != importer.lightCount(); ++i) {
-        LightInfo lightInfo;
-        lightInfo.debugName = importer.lightName(i);
-        if (lightInfo.debugName.empty()) {
-            lightInfo.debugName = std::format("{}", i);
-        }
-
-        auto light = std::optional<Trade::LightData>{importer.light(i)};
-        if (!light) {
-            Warning{} << "Cannot load light" << i << importer.lightName(i);
-            continue;
-        }
-        mLightCache.mLights.push_back(std::move(lightInfo));
-    }
-
-    /* Load all materials. Materials that fail to load will be NullOpt. The
-       data will be stored directly in objects later, so save them only
-       temporarily. */
     mMaterialCache.LoadMaterials(importer);
-
-    /* Load all meshes. Meshes that fail to load will be NullOpt. Remember
-       which have vertex colors, so in case there's no material we can use that
-       instead. */
-    Debug{} << "Loading" << importer.meshCount() << "meshes";
-    mMeshes.clear();
-    mMeshes.reserve(importer.meshCount());
-    for (uint32_t i = 0; i != importer.meshCount(); ++i) {
-        mMeshes.push_back({});
-        MeshInfo& mesh = mMeshes.back();
-        auto meshData = std::optional<Trade::MeshData>(importer.mesh(i));
-        if (!meshData) {
-            Warning{} << "Cannot load mesh" << i << importer.meshName(i);
-            continue;
-        }
-
-        std::string meshName = importer.meshName(i);
-        if (meshName.empty())
-            meshName = std::format("{}", i);
-
-        /* Disable warnings on custom attributes, as we printed them with
-           actual string names below. Generate normals for triangle meshes
-           (and don't do anything for line/point meshes, there it makes no
-           sense). */
-        MeshTools::CompileFlags flags = MeshTools::CompileFlag::NoWarnOnCustomAttributes;
-        if ((meshData->primitive() == MeshPrimitive::Triangles ||
-             meshData->primitive() == MeshPrimitive::TriangleStrip ||
-             meshData->primitive() == MeshPrimitive::TriangleFan) &&
-            !meshData->attributeCount(Trade::MeshAttribute::Normal) &&
-            meshData->hasAttribute(Trade::MeshAttribute::Position) &&
-            meshData->attributeFormat(Trade::MeshAttribute::Position) == VertexFormat::Vector3) {
-            /* If the mesh is a triangle strip/fan, convert to indexed
-               triangles first. If the strip/fan is indexed, we can attempt to
-               generate smooth normals. If it's not, generate flat ones as
-               otherwise the smoothing would be only along the strip and not at
-               the seams, looking weird. */
-            if (meshData->primitive() == MeshPrimitive::TriangleStrip ||
-                meshData->primitive() == MeshPrimitive::TriangleFan) {
-                if (meshData->isIndexed()) {
-                    Debug{} << "Mesh" << meshName.c_str()
-                            << "doesn't have normals, generating smooth ones using information from the index "
-                               "buffer for a"
-                            << meshData->primitive();
-                    flags |= MeshTools::CompileFlag::GenerateSmoothNormals;
-                } else {
-                    Debug{} << "Mesh" << meshName.c_str() << "doesn't have normals, generating flat ones for a"
-                            << meshData->primitive();
-                    flags |= MeshTools::CompileFlag::GenerateFlatNormals;
-                }
-
-                meshData = MeshTools::generateIndices(*Utility::move(meshData));
-
-                /* Otherwise prefer smooth normals, if we have an index buffer
-                   telling us neighboring faces */
-            } else if (meshData->isIndexed()) {
-                Debug{} << "Mesh" << meshName.c_str()
-                        << "doesn't have normals, generating smooth ones using information from the index buffer";
-                flags |= MeshTools::CompileFlag::GenerateSmoothNormals;
-            } else {
-                Debug{} << "Mesh" << meshName.c_str() << "doesn't have normals, generating flat ones";
-                flags |= MeshTools::CompileFlag::GenerateFlatNormals;
-            }
-        }
-
-        /* Print messages about ignored attributes / levels */
-        for (uint32_t j = 0; j != meshData->attributeCount(); ++j) {
-            const Trade::MeshAttribute name = meshData->attributeName(j);
-            if (Trade::isMeshAttributeCustom(name)) {
-                if (const std::string stringName = importer.meshAttributeName(name); !stringName.empty())
-                    Warning{} << "Mesh" << meshName.c_str() << "has a custom mesh attribute" << stringName.c_str()
-                              << Debug::nospace << ", ignoring";
-                else
-                    Warning{} << "Mesh" << meshName.c_str() << "has a custom mesh attribute" << name << Debug::nospace
-                              << ", ignoring";
-                continue;
-            }
-
-            const VertexFormat format = meshData->attributeFormat(j);
-            if (isVertexFormatImplementationSpecific(format))
-                Warning{} << "Mesh" << meshName.c_str() << "has" << name << "of format" << format << Debug::nospace
-                          << ", ignoring";
-        }
-        const uint32_t meshLevels = importer.meshLevelCount(i);
-        if (meshLevels > 1) {
-            Warning{} << "Mesh" << meshName.c_str() << "has" << meshLevels - 1 << "additional mesh levels, ignoring";
-        }
-
-        /* Save metadata, compile the mesh */
-        mesh.hasVertexColors = meshData->hasAttribute(Trade::MeshAttribute::Color);
-        mesh.attributes = meshData->attributeCount();
-        mesh.vertices = meshData->vertexCount();
-        mesh.size = meshData->vertexData().size();
-        if (meshData->isIndexed()) {
-            mesh.primitives = MeshTools::primitiveCount(meshData->primitive(), meshData->indexCount());
-            mesh.size += meshData->indexData().size();
-        } else {
-            mesh.primitives = MeshTools::primitiveCount(meshData->primitive(), meshData->vertexCount());
-        }
-        /* Needed for a warning when using a mesh with no tangents with a
-           normal map (as, unlike with normals, we have no builtin way to
-           generate tangents right now) */
-        mesh.hasTangents = meshData->hasAttribute(Trade::MeshAttribute::Tangent);
-        /* Needed to decide how to visualize tangent space */
-        mesh.hasSeparateBitangents = meshData->hasAttribute(Trade::MeshAttribute::Bitangent);
-
-        mesh.objectIdCount = 0;
-        if (meshData->hasAttribute(Trade::MeshAttribute::ObjectId)) {
-            for (const auto id : meshData->objectIdsAsArray()) {
-                mesh.objectIdCount = std::max(mesh.objectIdCount, id);
-            }
-        }
-        mesh.mesh = MeshTools::compile(*meshData, flags);
-        mesh.debugName = meshName;
-    }
+    mLightCache.LoadLights(importer);
+    mMeshCache.LoadMeshes(importer);
 
     /* Load the scene. Save the object pointers in an array for easier mapping
        of animations later. */
@@ -255,9 +114,6 @@ void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_
         auto& objectInfo = mSceneObjects[objectId];
 
         objectInfo.object->setParent(parent.second() == -1 ? &mScene : mSceneObjects[parent.second()].object);
-
-        if (parent.second() != -1)
-            ++mSceneObjects[parent.second()].childCount;
     }
 
     /* Set transformations. Objects that are not part of the hierarchy are
@@ -270,18 +126,21 @@ void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_
             scene->hasField(Trade::SceneField::Scaling)) {
             for (const auto& trs : scene->translationsRotationsScalings3DAsArray()) {
                 hasTrs.set(trs.first());
-                if (Object3D* object = mSceneObjects[trs.first()].object)
+                if (Object3D* object = mSceneObjects[trs.first()].object) {
                     (*object)
                         .setTranslation(trs.second().first())
                         .setRotation(trs.second().second())
                         .setScaling(trs.second().third());
+                }
             }
         }
         for (const auto& transformation : scene->transformations3DAsArray()) {
-            if (hasTrs[transformation.first()])
+            if (hasTrs[transformation.first()]) {
                 continue;
-            if (Object3D* object = mSceneObjects[transformation.first()].object)
+            }
+            if (Object3D* object = mSceneObjects[transformation.first()].object) {
                 object->setTransformation(transformation.second());
+            }
         }
     }
 
@@ -295,8 +154,9 @@ void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_
             const uint32_t objectId = cameraReference.first();
             const auto& objectInfo = mSceneObjects[objectId];
             Object3D* const object = objectInfo.object;
-            if (!object)
+            if (!object) {
                 continue;
+            }
 
             if (cameraReference.second() == 0) {
                 mCameraObject = object;
@@ -322,14 +182,14 @@ void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_
             const uint32_t objectId = meshMaterial.first();
             const uint32_t meshId = meshMaterial.second().first();
             const int32_t materialId = meshMaterial.second().second();
-            mDrawableCache.createDrawableFromMesh(mMaterialCache, mMeshes[meshId], mSceneObjects[objectId], materialId,
-                                                  mLightCache.mLightCount, mLightCache.mShadeless);
+            mDrawableCache.CreateDrawableFromMesh(mMaterialCache, mMeshCache.mMeshes[meshId], mSceneObjects[objectId],
+                                                  materialId, mLightCache.mLightCount, mLightCache.mShadeless);
         }
     }
 
     /* Initialize light colors for all instantiated shaders */
-    const auto lightColorsBrightness = mLightCache.calculateLightColors();
-    mDrawableCache.setLightColors(lightColorsBrightness);
+    const auto lightColorsBrightness = mLightCache.CalculateLightColors();
+    mDrawableCache.SetLightColors(lightColorsBrightness);
 
     /* Basic camera setup */
     (*(mCamera = new SceneGraph::Camera3D{*mCameraObject}))
@@ -341,14 +201,16 @@ void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_
        otherwise just used the hardcoded setup from above */
     if (importer.cameraCount()) {
         auto camera = std::optional<Trade::CameraData>(importer.camera(0));
-        if (camera && camera->type() == Trade::CameraType::Perspective3D)
+        if (camera && camera->type() == Trade::CameraType::Perspective3D) {
             mCamera->setProjectionMatrix(
                 Matrix4::perspectiveProjection(camera->fov(), 1.0f, camera->near(), camera->far()));
+        }
     }
 
     /* Import animations */
-    if (importer.animationCount())
+    if (importer.animationCount()) {
         Debug{} << "Importing the first animation out of" << importer.animationCount();
+    }
     for (uint32_t i = 0; i != importer.animationCount(); ++i) {
         auto animation = importer.animation(i);
         if (!animation) {
@@ -402,6 +264,15 @@ void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_
         break;
     }
 }
+
+void GltfScene::Update() {
+    mImpl->Update();
+}
+
+void GltfSceneImpl::Update() {
+    mPlayer.advance(std::chrono::system_clock::now().time_since_epoch());
+}
+
 void GltfScene::Draw() {
     mImpl->Draw();
 }
@@ -415,14 +286,12 @@ void GltfSceneImpl::Draw() {
 
     GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
 
-    mPlayer.advance(std::chrono::system_clock::now().time_since_epoch());
-
     /* Calculate light positions first, upload them to all shaders -- all
        of them are there only if they are actually used, so it's not doing
        any wasteful work */
     mLightCache.mLightPositions.clear();
     mCamera->draw(mLightDrawables);
-    mDrawableCache.setLightPositions(mLightCache.mLightPositions);
+    mDrawableCache.SetLightPositions(mLightCache.mLightPositions);
 
     /* Draw opaque stuff as usual */
     mCamera->draw(mDrawableCache.mOpaqueDrawables);

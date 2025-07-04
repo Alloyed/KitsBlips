@@ -14,7 +14,6 @@ struct ObjectInfo {
     Object3D* object;
     std::string debugName;
     uint32_t lightId{0xffffffffu};
-    uint32_t childCount;
 };
 
 }  // namespace kitgui

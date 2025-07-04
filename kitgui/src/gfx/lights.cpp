@@ -24,7 +24,7 @@ using namespace Magnum::Math::Literals::ColorLiterals;
 
 namespace kitgui {
 
-Containers::Array<Color3> LightCache::calculateLightColors() {
+Containers::Array<Color3> LightCache::CalculateLightColors() {
     Containers::Array<Color3> lightColorsBrightness{NoInit, mLightColors.size()};
     for (size_t i = 0; i != lightColorsBrightness.size(); ++i) {
         lightColorsBrightness[i] = mLightColors[i] * mBrightness;
@@ -84,7 +84,7 @@ void LightCache::CreateSceneLights(const Trade::SceneData& scene,
     }
 }
 
-void LightCache::LoadLightInfo(Trade::AbstractImporter& importer) {
+void LightCache::LoadLights(Trade::AbstractImporter& importer) {
     /* Load all lights. Lights that fail to load will be NullOpt, saving the
        whole imported data so we can populate the selection info later. */
     Debug{} << "Loading" << importer.lightCount() << "lights";

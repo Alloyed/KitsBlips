@@ -1,17 +1,22 @@
 #pragma once
 
-#include <Magnum/GL/Texture.h>
 #include <Magnum/Math/Color.h>
 #include <Magnum/Math/Vector.h>
-#include <Magnum/Trade/ImageData.h>
 #include <Magnum/Trade/LightData.h>
-#include <Magnum/Trade/MaterialData.h>
 
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "gfx/sceneGraph.h"
+
+// Forward declarations
+namespace Magnum {
+namespace Trade {
+class SceneData;
+class AbstractImporter;
+}  // namespace Trade
+}  // namespace Magnum
 
 namespace kitgui {
 
@@ -28,11 +33,11 @@ struct LightCache {
     std::vector<Magnum::Vector4> mLightPositions;
     std::vector<Magnum::Color3> mLightColors;
 
-    Magnum::Containers::Array<Magnum::Color3> calculateLightColors();
+    Magnum::Containers::Array<Magnum::Color3> CalculateLightColors();
     void CreateDefaultLightsIfNecessary(Object3D* mCameraObject, Magnum::SceneGraph::DrawableGroup3D& mLightDrawables);
     void CreateSceneLights(const Magnum::Trade::SceneData& scene,
                            std::vector<ObjectInfo>& mSceneObjects,
                            Magnum::SceneGraph::DrawableGroup3D& mLightDrawables);
-    void LoadLightInfo(Magnum::Trade::AbstractImporter& importer);
+    void LoadLights(Magnum::Trade::AbstractImporter& importer);
 };
 }  // namespace kitgui

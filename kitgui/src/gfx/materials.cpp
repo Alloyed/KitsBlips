@@ -11,6 +11,7 @@
 #include <Magnum/GL/Texture.h>
 #include <Magnum/GL/TextureFormat.h>
 #include <Magnum/ImageView.h>
+#include <Magnum/Math/Functions.h>
 #include <Magnum/PixelFormat.h>
 #include <Magnum/Trade/AbstractImporter.h>
 #include <Magnum/Trade/ImageData.h>
@@ -20,8 +21,6 @@
 #include <optional>
 
 using namespace Magnum;
-using namespace Magnum::Math::Literals;
-using namespace Magnum::Math::Literals::ColorLiterals;
 
 namespace {
 
@@ -171,5 +170,11 @@ void MaterialCache::LoadMaterials(Magnum::Trade::AbstractImporter& importer) {
             continue;
         }
     }
+}
+
+const Magnum::Trade::PhongMaterialData* MaterialInfo::Phong() const {
+    return raw.has_value() && raw->types() & Magnum::Trade::MaterialType::Phong
+               ? &(raw->as<Magnum::Trade::PhongMaterialData>())
+               : nullptr;
 }
 }  // namespace kitgui

@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "Magnum/Magnum.h"
+#include "gfx/meshes.h"
 #include "gfx/sceneGraph.h"
 
 namespace kitgui {
@@ -25,17 +26,6 @@ struct MaterialCache;
 }
 
 namespace kitgui {
-
-struct MeshInfo {
-    std::optional<Magnum::GL::Mesh> mesh;
-    uint32_t attributes;
-    uint32_t vertices;
-    uint32_t primitives;
-    uint32_t objectIdCount;
-    size_t size;
-    std::string debugName;
-    bool hasTangents, hasSeparateBitangents, hasVertexColors;
-};
 
 class FlatDrawable : public Magnum::SceneGraph::Drawable3D {
    public:
@@ -92,7 +82,7 @@ class PhongDrawable : public Magnum::SceneGraph::Drawable3D {
     float mNormalTextureScale;
     float mAlphaMask;
     Magnum::Matrix3 mTextureMatrix;
-    const bool& mShadeless;
+    bool mShadeless;
 };
 
 class LightDrawable : public Magnum::SceneGraph::Drawable3D {
@@ -110,23 +100,23 @@ class LightDrawable : public Magnum::SceneGraph::Drawable3D {
 };
 
 struct DrawableCache {
-    Magnum::Shaders::FlatGL3D& flatShader(Magnum::Shaders::FlatGL3D::Flags flags);
-    Magnum::Shaders::PhongGL& phongShader(Magnum::Shaders::PhongGL::Flags flags, uint32_t lightCount);
-    Magnum::SceneGraph::Drawable3D* createDrawableFromMesh(MaterialCache& mMaterialCache,
+    Magnum::Shaders::FlatGL3D& FlatShader(Magnum::Shaders::FlatGL3D::Flags flags);
+    Magnum::Shaders::PhongGL& PhongShader(Magnum::Shaders::PhongGL::Flags flags, uint32_t lightCount);
+    Magnum::SceneGraph::Drawable3D* CreateDrawableFromMesh(MaterialCache& mMaterialCache,
                                                            MeshInfo& meshInfo,
                                                            const ObjectInfo& objectInfo,
                                                            int32_t materialId,
                                                            uint32_t lightCount,
                                                            bool shadeless);
 
-    void setLightColors(const std::span<const Magnum::Color3>& colors) {
+    void SetLightColors(const std::span<const Magnum::Color3>& colors) {
         const Corrade::Containers::ArrayView<const Magnum::Color3> colorsView(colors.data(), colors.size());
         for (auto& pair : mPhongShaders) {
             pair.second.setLightColors(colorsView);
         }
     }
 
-    void setLightPositions(const std ::span<const Magnum::Vector4>& positions) {
+    void SetLightPositions(const std ::span<const Magnum::Vector4>& positions) {
         const Corrade::Containers::ArrayView<const Magnum::Vector4> positionsView(positions.data(), positions.size());
         for (auto& pair : mPhongShaders) {
             pair.second.setLightPositions(positionsView);

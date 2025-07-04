@@ -139,7 +139,7 @@ void LightDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera
                                       : Vector4{transformationMatrix.translation(), 1.0f});
 }
 
-Shaders::FlatGL3D& DrawableCache::flatShader(Shaders::FlatGL3D::Flags flags) {
+Shaders::FlatGL3D& DrawableCache::FlatShader(Shaders::FlatGL3D::Flags flags) {
     auto found = mFlatShaders.find(enumCastUnderlyingType(flags));
     if (found == mFlatShaders.end()) {
         Shaders::FlatGL3D::Configuration configuration;
@@ -149,7 +149,7 @@ Shaders::FlatGL3D& DrawableCache::flatShader(Shaders::FlatGL3D::Flags flags) {
     return found->second;
 }
 
-Shaders::PhongGL& DrawableCache::phongShader(Shaders::PhongGL::Flags flags, uint32_t lightCount) {
+Shaders::PhongGL& DrawableCache::PhongShader(Shaders::PhongGL::Flags flags, uint32_t lightCount) {
     auto found = mPhongShaders.find(enumCastUnderlyingType(flags));
     if (found == mPhongShaders.end()) {
         Shaders::PhongGL::Configuration configuration;
@@ -161,7 +161,7 @@ Shaders::PhongGL& DrawableCache::phongShader(Shaders::PhongGL::Flags flags, uint
     return found->second;
 }
 
-Magnum::SceneGraph::Drawable3D* DrawableCache::createDrawableFromMesh(MaterialCache& mMaterialCache,
+Magnum::SceneGraph::Drawable3D* DrawableCache::CreateDrawableFromMesh(MaterialCache& mMaterialCache,
                                                                       MeshInfo& meshInfo,
                                                                       const ObjectInfo& objectInfo,
                                                                       int32_t materialId,
@@ -192,10 +192,10 @@ Magnum::SceneGraph::Drawable3D* DrawableCache::createDrawableFromMesh(MaterialCa
             mesh->primitive() == GL::MeshPrimitive::TriangleStrip ||
             mesh->primitive() == GL::MeshPrimitive::TriangleFan) {
             return new PhongDrawable{
-                *object, phongShader(flags, lightCount), *mesh, objectId, 0xffffff_rgbf, shadeless, mOpaqueDrawables};
+                *object, PhongShader(flags, lightCount), *mesh, objectId, 0xffffff_rgbf, shadeless, mOpaqueDrawables};
         } else {
             return new FlatDrawable{*object,
-                                    flatShader((meshInfo.hasVertexColors ? Shaders::FlatGL3D::Flag::VertexColor
+                                    FlatShader((meshInfo.hasVertexColors ? Shaders::FlatGL3D::Flag::VertexColor
                                                                          : Shaders::FlatGL3D::Flags{})),
                                     *mesh,
                                     objectId,
@@ -254,7 +254,7 @@ Magnum::SceneGraph::Drawable3D* DrawableCache::createDrawableFromMesh(MaterialCa
         }
 
         return new PhongDrawable{*object,
-                                 phongShader(flags, lightCount),
+                                 PhongShader(flags, lightCount),
                                  *mesh,
                                  objectId,
                                  material.diffuseColor(),
