@@ -10,9 +10,9 @@ using Object3D = Magnum::SceneGraph::Object<Magnum::SceneGraph::TranslationRotat
 using Scene3D = Magnum::SceneGraph::Scene<Magnum::SceneGraph::TranslationRotationScalingTransformation3D>;
 
 struct ObjectInfo {
+    uint32_t id;
     Object3D* object;
     std::string debugName;
-    uint32_t meshId{0xffffffffu};
     uint32_t lightId{0xffffffffu};
     uint32_t childCount;
 };

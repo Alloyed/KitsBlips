@@ -21,7 +21,7 @@ struct TextureInfo {
 
 struct MaterialInfo {
     std::optional<Magnum::Trade::MaterialData> raw;
-    const Magnum::Trade::PhongMaterialData* Phong() {
+    const Magnum::Trade::PhongMaterialData* Phong() const {
         return raw.has_value() && raw->types() & Magnum::Trade::MaterialType::Phong
                    ? &(raw->as<Magnum::Trade::PhongMaterialData>())
                    : nullptr;

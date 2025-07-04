@@ -4,8 +4,11 @@
 #include <Magnum/SceneGraph/Camera.h>
 #include <Magnum/Shaders/FlatGL.h>
 #include <Magnum/Shaders/PhongGL.h>
+#include <Magnum/Trade/MaterialData.h>
+#include <Magnum/Trade/PhongMaterialData.h>
 #include <vector>
 
+#include "gfx/materials.h"
 #include "gfx/sceneGraph.h"
 
 using namespace Magnum;
@@ -134,6 +137,135 @@ LightDrawable::LightDrawable(Object3D& object,
 void LightDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera3D&) {
     mPositions.push_back(mDirectional ? Vector4{transformationMatrix.backward(), 0.0f}
                                       : Vector4{transformationMatrix.translation(), 1.0f});
+}
+
+Shaders::FlatGL3D& DrawableCache::flatShader(Shaders::FlatGL3D::Flags flags) {
+    auto found = mFlatShaders.find(enumCastUnderlyingType(flags));
+    if (found == mFlatShaders.end()) {
+        Shaders::FlatGL3D::Configuration configuration;
+        configuration.setFlags(Shaders::FlatGL3D::Flag::ObjectId | flags);
+        found = mFlatShaders.emplace(enumCastUnderlyingType(flags), Shaders::FlatGL3D{configuration}).first;
+    }
+    return found->second;
+}
+
+Shaders::PhongGL& DrawableCache::phongShader(Shaders::PhongGL::Flags flags, uint32_t lightCount) {
+    auto found = mPhongShaders.find(enumCastUnderlyingType(flags));
+    if (found == mPhongShaders.end()) {
+        Shaders::PhongGL::Configuration configuration;
+        configuration.setFlags(Shaders::PhongGL::Flag::ObjectId | flags).setLightCount(lightCount);
+        found = mPhongShaders.emplace(enumCastUnderlyingType(flags), Shaders::PhongGL{configuration}).first;
+
+        found->second.setSpecularColor(0x11111100_rgbaf).setShininess(80.0f);
+    }
+    return found->second;
+}
+
+Magnum::SceneGraph::Drawable3D* DrawableCache::createDrawableFromMesh(MaterialCache& mMaterialCache,
+                                                                      MeshInfo& meshInfo,
+                                                                      const ObjectInfo& objectInfo,
+                                                                      int32_t materialId,
+                                                                      uint32_t lightCount,
+                                                                      bool shadeless) {
+    /* Add drawables for objects that have a mesh, again ignoring objects
+       that are not part of the hierarchy. There can be multiple mesh
+       assignments for one object, simply add one drawable for each. */
+    const auto object = objectInfo.object;
+    const auto objectId = objectInfo.id;
+    auto& mesh = meshInfo.mesh;
+
+    if (!object || !mesh) {
+        return nullptr;
+    }
+
+    Shaders::PhongGL::Flags flags;
+    if (meshInfo.hasVertexColors)
+        flags |= Shaders::PhongGL::Flag::VertexColor;
+    if (meshInfo.hasSeparateBitangents)
+        flags |= Shaders::PhongGL::Flag::Bitangent;
+
+    /* Material not available / not loaded. If the mesh has vertex
+       colors, use that, otherwise apply a default material; use a flat
+       shader for lines / points */
+    if (materialId == -1 || !mMaterialCache.mMaterials[materialId].raw.has_value()) {
+        if (mesh->primitive() == GL::MeshPrimitive::Triangles ||
+            mesh->primitive() == GL::MeshPrimitive::TriangleStrip ||
+            mesh->primitive() == GL::MeshPrimitive::TriangleFan) {
+            return new PhongDrawable{
+                *object, phongShader(flags, lightCount), *mesh, objectId, 0xffffff_rgbf, shadeless, mOpaqueDrawables};
+        } else {
+            return new FlatDrawable{*object,
+                                    flatShader((meshInfo.hasVertexColors ? Shaders::FlatGL3D::Flag::VertexColor
+                                                                         : Shaders::FlatGL3D::Flags{})),
+                                    *mesh,
+                                    objectId,
+                                    0xffffff_rgbf,
+                                    Vector3{Constants::nan()},
+                                    mOpaqueDrawables};
+        }
+
+        /* Material available */
+    } else {
+        const Trade::PhongMaterialData& material = *mMaterialCache.mMaterials[materialId].Phong();
+
+        if (material.isDoubleSided())
+            flags |= Shaders::PhongGL::Flag::DoubleSided;
+
+        /* Textured material. If the texture failed to load, again just
+           use a default-colored material. */
+        GL::Texture2D* diffuseTexture = nullptr;
+        GL::Texture2D* normalTexture = nullptr;
+        float normalTextureScale = 1.0f;
+        if (material.hasAttribute(Trade::MaterialAttribute::DiffuseTexture)) {
+            std::optional<GL::Texture2D>& texture = mMaterialCache.mTextures[material.diffuseTexture()].texture;
+            if (texture) {
+                diffuseTexture = &*texture;
+                flags |= Shaders::PhongGL::Flag::AmbientTexture | Shaders::PhongGL::Flag::DiffuseTexture;
+                if (material.hasTextureTransformation())
+                    flags |= Shaders::PhongGL::Flag::TextureTransformation;
+                if (material.alphaMode() == Trade::MaterialAlphaMode::Mask)
+                    flags |= Shaders::PhongGL::Flag::AlphaMask;
+            }
+        }
+
+        /* Normal textured material. If the textures fail to load,
+           again just use a default-colored material. */
+        if (material.hasAttribute(Trade::MaterialAttribute::NormalTexture)) {
+            std::optional<GL::Texture2D>& texture = mMaterialCache.mTextures[material.normalTexture()].texture;
+            /* If there are no tangents, the mesh would render all
+               black. Ignore the normal map in that case. */
+            /** @todo generate tangents instead once we have the algo */
+            if (!meshInfo.hasTangents) {
+                Warning{} << "Mesh" << meshInfo.debugName.c_str()
+                          << "doesn't have tangents and Magnum can't generate them yet, ignoring a "
+                             "normal map";
+            } else if (texture) {
+                normalTexture = &*texture;
+                normalTextureScale = material.normalTextureScale();
+                flags |= Shaders::PhongGL::Flag::NormalTexture;
+                if (material.hasTextureTransformation())
+                    flags |= Shaders::PhongGL::Flag::TextureTransformation;
+            }
+        }
+
+        if (material.alphaMode() == Trade::MaterialAlphaMode::Blend) {
+            // todo, transparent materials
+            return nullptr;
+        }
+
+        return new PhongDrawable{*object,
+                                 phongShader(flags, lightCount),
+                                 *mesh,
+                                 objectId,
+                                 material.diffuseColor(),
+                                 diffuseTexture,
+                                 normalTexture,
+                                 normalTextureScale,
+                                 material.alphaMask(),
+                                 material.commonTextureMatrix(),
+                                 shadeless,
+                                 mOpaqueDrawables};
+    }
 }
 
 }  // namespace kitgui

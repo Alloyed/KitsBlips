@@ -11,10 +11,11 @@ struct GltfSceneImpl;
 class GltfScene {
    public:
     GltfScene();
+    ~GltfScene();
+    void Load(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
+    void Draw();
 
    private:
-    void Load(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
-
     std::unique_ptr<GltfSceneImpl> mImpl;
 };
 }  // namespace kitgui

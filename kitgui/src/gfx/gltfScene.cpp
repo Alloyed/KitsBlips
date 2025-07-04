@@ -17,14 +17,12 @@
 #include <Magnum/Animation/Player.h>
 #include <Magnum/Animation/Track.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
+#include <Magnum/GL/Renderer.h>
 #include <Magnum/Math/CubicHermite.h>
 #include <Magnum/Math/Quaternion.h>
 #include <Magnum/MeshTools/Compile.h>
 #include <Magnum/MeshTools/GenerateIndices.h>
 #include <Magnum/SceneGraph/Camera.h>
-#include <Magnum/Shaders/FlatGL.h>
-#include <Magnum/Shaders/MeshVisualizerGL.h>
-#include <Magnum/Shaders/PhongGL.h>
 #include <Magnum/Trade/AbstractImporter.h>
 #include <Magnum/Trade/AnimationData.h>
 #include <Magnum/Trade/CameraData.h>
@@ -48,34 +46,21 @@ using namespace Magnum;
 using namespace Magnum::Math::Literals;
 using namespace Magnum::Math::Literals::ColorLiterals;
 
-namespace {
-struct MeshInfo {
-    std::optional<Magnum::GL::Mesh> mesh;
-    uint32_t attributes;
-    uint32_t vertices;
-    uint32_t primitives;
-    uint32_t objectIdCount;
-    size_t size;
-    std::string debugName;
-    bool hasTangents, hasSeparateBitangents;
-};
-
-}  // namespace
+namespace {}  // namespace
 
 namespace kitgui {
 struct GltfSceneImpl {
     void Load(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
+    void Draw();
 
-    Shaders::FlatGL3D& flatShader(Shaders::FlatGL3D::Flags flags);
-    Shaders::PhongGL& phongShader(Shaders::PhongGL::Flags flags);
     void updateLightColorBrightness();
 
     std::vector<MeshInfo> mMeshes;
-    Magnum::SceneGraph::DrawableGroup3D mOpaqueDrawables;
     Magnum::SceneGraph::DrawableGroup3D mLightDrawables;
 
     MaterialCache mMaterialCache;
     LightCache mLightCache;
+    DrawableCache mDrawableCache;
 
     Scene3D mScene;
     std::vector<ObjectInfo> mSceneObjects;
@@ -83,39 +68,10 @@ struct GltfSceneImpl {
     SceneGraph::Camera3D* mCamera;
 
     Animation::Player<std::chrono::nanoseconds, float> mPlayer;
-
-    /* Indexed by Shaders::FlatGL3D::Flags, PhongGL::Flags or
-   MeshVisualizerGL3D::Flags but cast to an UnsignedInt because I
-   refuse to deal with the std::hash crap. */
-    std::unordered_map<UnsignedInt, Shaders::FlatGL3D> mFlatShaders;
-    std::unordered_map<UnsignedInt, Shaders::PhongGL> mPhongShaders;
-    std::unordered_map<UnsignedInt, Shaders::MeshVisualizerGL3D> mMeshVisualizerShaders;
 };
 
 GltfScene::GltfScene() : mImpl(std::make_unique<GltfSceneImpl>()) {}
-
-Shaders::FlatGL3D& GltfSceneImpl::flatShader(Shaders::FlatGL3D::Flags flags) {
-    auto found = mFlatShaders.find(enumCastUnderlyingType(flags));
-    if (found == mFlatShaders.end()) {
-        Shaders::FlatGL3D::Configuration configuration;
-        configuration.setFlags(Shaders::FlatGL3D::Flag::ObjectId | flags);
-        found = mFlatShaders.emplace(enumCastUnderlyingType(flags), Shaders::FlatGL3D{configuration}).first;
-    }
-    return found->second;
-}
-
-Shaders::PhongGL& GltfSceneImpl::phongShader(Shaders::PhongGL::Flags flags) {
-    auto found = mPhongShaders.find(enumCastUnderlyingType(flags));
-    if (found == mPhongShaders.end()) {
-        Shaders::PhongGL::Configuration configuration;
-        configuration.setFlags(Shaders::PhongGL::Flag::ObjectId | flags)
-            .setLightCount(mLightCache.mLightCount ? mLightCache.mLightCount : 3);
-        found = mPhongShaders.emplace(enumCastUnderlyingType(flags), Shaders::PhongGL{configuration}).first;
-
-        found->second.setSpecularColor(0x11111100_rgbaf).setShininess(80.0f);
-    }
-    return found->second;
-}
+GltfScene::~GltfScene() = default;
 
 void GltfScene::Load(Magnum::Trade::AbstractImporter& importer, std::string_view debugName) {
     mImpl->Load(importer, debugName);
@@ -156,7 +112,6 @@ void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_
     Debug{} << "Loading" << importer.meshCount() << "meshes";
     mMeshes.clear();
     mMeshes.reserve(importer.meshCount());
-    Containers::BitArray hasVertexColors{ValueInit, importer.meshCount()};
     for (uint32_t i = 0; i != importer.meshCount(); ++i) {
         mMeshes.push_back({});
         MeshInfo& mesh = mMeshes.back();
@@ -233,20 +188,21 @@ void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_
                           << ", ignoring";
         }
         const uint32_t meshLevels = importer.meshLevelCount(i);
-        if (meshLevels > 1)
+        if (meshLevels > 1) {
             Warning{} << "Mesh" << meshName.c_str() << "has" << meshLevels - 1 << "additional mesh levels, ignoring";
-
-        hasVertexColors.set(i, meshData->hasAttribute(Trade::MeshAttribute::Color));
+        }
 
         /* Save metadata, compile the mesh */
+        mesh.hasVertexColors = meshData->hasAttribute(Trade::MeshAttribute::Color);
         mesh.attributes = meshData->attributeCount();
         mesh.vertices = meshData->vertexCount();
         mesh.size = meshData->vertexData().size();
         if (meshData->isIndexed()) {
             mesh.primitives = MeshTools::primitiveCount(meshData->primitive(), meshData->indexCount());
             mesh.size += meshData->indexData().size();
-        } else
+        } else {
             mesh.primitives = MeshTools::primitiveCount(meshData->primitive(), meshData->vertexCount());
+        }
         /* Needed for a warning when using a mesh with no tangents with a
            normal map (as, unlike with normals, we have no builtin way to
            generate tangents right now) */
@@ -284,6 +240,7 @@ void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_
         const uint32_t objectId = parent.first();
         auto& objectInfo = mSceneObjects[objectId];
 
+        objectInfo.id = objectId;
         objectInfo.object = new Object3D{};
         objectInfo.debugName = importer.objectName(objectId);
         if (objectInfo.debugName.empty()) {
@@ -347,115 +304,6 @@ void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_
         }
     }
 
-    /* Add drawables for objects that have a mesh, again ignoring objects
-       that are not part of the hierarchy. There can be multiple mesh
-       assignments for one object, simply add one drawable for each. */
-    if (scene->hasField(Trade::SceneField::Mesh)) {
-        for (const auto& meshMaterial : scene->meshesMaterialsAsArray()) {
-            const uint32_t objectId = meshMaterial.first();
-            auto& objectInfo = mSceneObjects[objectId];
-            Object3D* const object = objectInfo.object;
-            const uint32_t meshId = meshMaterial.second().first();
-            const Int materialId = meshMaterial.second().second();
-            std::optional<GL::Mesh>& mesh = mMeshes[meshId].mesh;
-            if (!object || !mesh)
-                continue;
-
-            /* Save the mesh pointer as well, so we know what to draw for object
-               selection */
-            objectInfo.meshId = meshId;
-
-            Shaders::PhongGL::Flags flags;
-            if (hasVertexColors[meshId])
-                flags |= Shaders::PhongGL::Flag::VertexColor;
-            if (mMeshes[meshId].hasSeparateBitangents)
-                flags |= Shaders::PhongGL::Flag::Bitangent;
-
-            /* Material not available / not loaded. If the mesh has vertex
-               colors, use that, otherwise apply a default material; use a flat
-               shader for lines / points */
-            if (materialId == -1 || !mMaterialCache.mMaterials[materialId].raw.has_value()) {
-                if (mesh->primitive() == GL::MeshPrimitive::Triangles ||
-                    mesh->primitive() == GL::MeshPrimitive::TriangleStrip ||
-                    mesh->primitive() == GL::MeshPrimitive::TriangleFan) {
-                    new PhongDrawable{*object,       phongShader(flags),     *mesh,           objectId,
-                                      0xffffff_rgbf, mLightCache.mShadeless, mOpaqueDrawables};
-                } else {
-                    new FlatDrawable{*object,
-                                     flatShader((hasVertexColors[meshId] ? Shaders::FlatGL3D::Flag::VertexColor
-                                                                         : Shaders::FlatGL3D::Flags{})),
-                                     *mesh,
-                                     objectId,
-                                     0xffffff_rgbf,
-                                     Vector3{Constants::nan()},
-                                     mOpaqueDrawables};
-                }
-
-                /* Material available */
-            } else {
-                const Trade::PhongMaterialData& material = *mMaterialCache.mMaterials[materialId].Phong();
-
-                if (material.isDoubleSided())
-                    flags |= Shaders::PhongGL::Flag::DoubleSided;
-
-                /* Textured material. If the texture failed to load, again just
-                   use a default-colored material. */
-                GL::Texture2D* diffuseTexture = nullptr;
-                GL::Texture2D* normalTexture = nullptr;
-                float normalTextureScale = 1.0f;
-                if (material.hasAttribute(Trade::MaterialAttribute::DiffuseTexture)) {
-                    std::optional<GL::Texture2D>& texture = mMaterialCache.mTextures[material.diffuseTexture()].texture;
-                    if (texture) {
-                        diffuseTexture = &*texture;
-                        flags |= Shaders::PhongGL::Flag::AmbientTexture | Shaders::PhongGL::Flag::DiffuseTexture;
-                        if (material.hasTextureTransformation())
-                            flags |= Shaders::PhongGL::Flag::TextureTransformation;
-                        if (material.alphaMode() == Trade::MaterialAlphaMode::Mask)
-                            flags |= Shaders::PhongGL::Flag::AlphaMask;
-                    }
-                }
-
-                /* Normal textured material. If the textures fail to load,
-                   again just use a default-colored material. */
-                if (material.hasAttribute(Trade::MaterialAttribute::NormalTexture)) {
-                    std::optional<GL::Texture2D>& texture = mMaterialCache.mTextures[material.normalTexture()].texture;
-                    /* If there are no tangents, the mesh would render all
-                       black. Ignore the normal map in that case. */
-                    /** @todo generate tangents instead once we have the algo */
-                    if (!mMeshes[meshId].hasTangents) {
-                        Warning{} << "Mesh" << mMeshes[meshId].debugName.c_str()
-                                  << "doesn't have tangents and Magnum can't generate them yet, ignoring a "
-                                     "normal map";
-                    } else if (texture) {
-                        normalTexture = &*texture;
-                        normalTextureScale = material.normalTextureScale();
-                        flags |= Shaders::PhongGL::Flag::NormalTexture;
-                        if (material.hasTextureTransformation())
-                            flags |= Shaders::PhongGL::Flag::TextureTransformation;
-                    }
-                }
-
-                if (material.alphaMode() == Trade::MaterialAlphaMode::Blend) {
-                    // todo, transparent materials
-                    continue;
-                }
-
-                new PhongDrawable{*object,
-                                  phongShader(flags),
-                                  *mesh,
-                                  objectId,
-                                  material.diffuseColor(),
-                                  diffuseTexture,
-                                  normalTexture,
-                                  normalTextureScale,
-                                  material.alphaMask(),
-                                  material.commonTextureMatrix(),
-                                  mLightCache.mShadeless,
-                                  mOpaqueDrawables};
-            }
-        }
-    }
-
     /* Create a camera object in case it wasn't present in the scene already */
     if (!mCameraObject) {
         mCameraObject = new Object3D{&mScene};
@@ -466,11 +314,22 @@ void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_
        the scene already. Don't add any visualization for those. */
     mLightCache.CreateDefaultLightsIfNecessary(mCameraObject, mLightDrawables);
 
+    /* Add drawables for objects that have a mesh, again ignoring objects
+       that are not part of the hierarchy. There can be multiple mesh
+       assignments for one object, simply add one drawable for each. */
+    if (scene->hasField(Trade::SceneField::Mesh)) {
+        for (const auto& meshMaterial : scene->meshesMaterialsAsArray()) {
+            const uint32_t objectId = meshMaterial.first();
+            const uint32_t meshId = meshMaterial.second().first();
+            const int32_t materialId = meshMaterial.second().second();
+            mDrawableCache.createDrawableFromMesh(mMaterialCache, mMeshes[meshId], mSceneObjects[objectId], materialId,
+                                                  mLightCache.mLightCount, mLightCache.mShadeless);
+        }
+    }
+
     /* Initialize light colors for all instantiated shaders */
     const auto lightColorsBrightness = mLightCache.calculateLightColors();
-    for (auto& shader : mPhongShaders) {
-        shader.second.setLightColors(lightColorsBrightness);
-    }
+    mDrawableCache.setLightColors(lightColorsBrightness);
 
     /* Basic camera setup */
     (*(mCamera = new SceneGraph::Camera3D{*mCameraObject}))
@@ -482,7 +341,7 @@ void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_
        otherwise just used the hardcoded setup from above */
     if (importer.cameraCount()) {
         auto camera = std::optional<Trade::CameraData>(importer.camera(0));
-        if (camera)
+        if (camera && camera->type() == Trade::CameraType::Perspective3D)
             mCamera->setProjectionMatrix(
                 Matrix4::perspectiveProjection(camera->fov(), 1.0f, camera->near(), camera->far()));
     }
@@ -542,5 +401,54 @@ void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_
         /* Load only the first animation at the moment */
         break;
     }
+}
+void GltfScene::Draw() {
+    mImpl->Draw();
+}
+
+void GltfSceneImpl::Draw() {
+    /* Another FB could be bound from a depth / object ID read (moreover with
+       color output disabled), set it back to the default framebuffer */
+    GL::defaultFramebuffer.bind(); /** @todo mapForDraw() should bind implicitly */
+    GL::defaultFramebuffer.mapForDraw({{Shaders::PhongGL::ColorOutput, GL::DefaultFramebuffer::DrawAttachment::Back}})
+        .clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
+
+    GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
+
+    mPlayer.advance(std::chrono::system_clock::now().time_since_epoch());
+
+    /* Calculate light positions first, upload them to all shaders -- all
+       of them are there only if they are actually used, so it's not doing
+       any wasteful work */
+    mLightCache.mLightPositions.clear();
+    mCamera->draw(mLightDrawables);
+    mDrawableCache.setLightPositions(mLightCache.mLightPositions);
+
+    /* Draw opaque stuff as usual */
+    mCamera->draw(mDrawableCache.mOpaqueDrawables);
+
+/* Draw transparent stuff back-to-front with blending enabled */
+#if 0
+        if (!_data->transparentDrawables.isEmpty()) {
+            GL::Renderer::setDepthMask(false);
+            GL::Renderer::enable(GL::Renderer::Feature::Blending);
+            /* Ugh non-premultiplied alpha */
+            GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::SourceAlpha,
+                                           GL::Renderer::BlendFunction::OneMinusSourceAlpha);
+
+            std::vector<std::pair<std::reference_wrapper<SceneGraph::Drawable3D>, Matrix4>> drawableTransformations =
+                _data->camera->drawableTransformations(_data->transparentDrawables);
+            std::sort(drawableTransformations.begin(), drawableTransformations.end(),
+                      [](const std::pair<std::reference_wrapper<SceneGraph::Drawable3D>, Matrix4>& a,
+                         const std::pair<std::reference_wrapper<SceneGraph::Drawable3D>, Matrix4>& b) {
+                          return a.second.translation().z() > b.second.translation().z();
+                      });
+            _data->camera->draw(drawableTransformations);
+
+            GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::One, GL::Renderer::BlendFunction::Zero);
+            GL::Renderer::disable(GL::Renderer::Feature::Blending);
+            GL::Renderer::setDepthMask(true);
+        }
+#endif
 }
 }  // namespace kitgui

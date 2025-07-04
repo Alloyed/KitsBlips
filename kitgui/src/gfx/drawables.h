@@ -1,4 +1,7 @@
 #pragma once
+
+#include <Corrade/Containers/ArrayView.h>
+
 #include <Magnum/GL/Mesh.h>
 #include <Magnum/GL/Texture.h>
 #include <Magnum/Math/Color.h>
@@ -7,13 +10,32 @@
 #include <Magnum/SceneGraph/Drawable.h>
 #include <Magnum/SceneGraph/TranslationRotationScalingTransformation3D.h>
 #include <Magnum/Shaders/FlatGL.h>
+#include <Magnum/Shaders/MeshVisualizerGL.h>
 #include <Magnum/Shaders/PhongGL.h>
+
+#include <optional>
+#include <span>
 #include <vector>
 
-#include "gfx/lights.h"
+#include "Magnum/Magnum.h"
 #include "gfx/sceneGraph.h"
 
 namespace kitgui {
+struct MaterialCache;
+}
+
+namespace kitgui {
+
+struct MeshInfo {
+    std::optional<Magnum::GL::Mesh> mesh;
+    uint32_t attributes;
+    uint32_t vertices;
+    uint32_t primitives;
+    uint32_t objectIdCount;
+    size_t size;
+    std::string debugName;
+    bool hasTangents, hasSeparateBitangents, hasVertexColors;
+};
 
 class FlatDrawable : public Magnum::SceneGraph::Drawable3D {
    public:
@@ -85,6 +107,40 @@ class LightDrawable : public Magnum::SceneGraph::Drawable3D {
 
     bool mDirectional;
     std::vector<Magnum::Vector4>& mPositions;
+};
+
+struct DrawableCache {
+    Magnum::Shaders::FlatGL3D& flatShader(Magnum::Shaders::FlatGL3D::Flags flags);
+    Magnum::Shaders::PhongGL& phongShader(Magnum::Shaders::PhongGL::Flags flags, uint32_t lightCount);
+    Magnum::SceneGraph::Drawable3D* createDrawableFromMesh(MaterialCache& mMaterialCache,
+                                                           MeshInfo& meshInfo,
+                                                           const ObjectInfo& objectInfo,
+                                                           int32_t materialId,
+                                                           uint32_t lightCount,
+                                                           bool shadeless);
+
+    void setLightColors(const std::span<const Magnum::Color3>& colors) {
+        const Corrade::Containers::ArrayView<const Magnum::Color3> colorsView(colors.data(), colors.size());
+        for (auto& pair : mPhongShaders) {
+            pair.second.setLightColors(colorsView);
+        }
+    }
+
+    void setLightPositions(const std ::span<const Magnum::Vector4>& positions) {
+        const Corrade::Containers::ArrayView<const Magnum::Vector4> positionsView(positions.data(), positions.size());
+        for (auto& pair : mPhongShaders) {
+            pair.second.setLightPositions(positionsView);
+        }
+    }
+
+    /* Indexed by Shaders::FlatGL3D::Flags, PhongGL::Flags or
+   MeshVisualizerGL3D::Flags but cast to an UnsignedInt because I
+   refuse to deal with the std::hash crap. */
+    std::unordered_map<uint32_t, Magnum::Shaders::FlatGL3D> mFlatShaders;
+    std::unordered_map<uint32_t, Magnum::Shaders::PhongGL> mPhongShaders;
+    std::unordered_map<uint32_t, Magnum::Shaders::MeshVisualizerGL3D> mMeshVisualizerShaders;
+
+    Magnum::SceneGraph::DrawableGroup3D mOpaqueDrawables;
 };
 
 }  // namespace kitgui
