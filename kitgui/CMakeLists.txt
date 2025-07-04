@@ -22,9 +22,12 @@ endif()
 
 target_sources(kitgui PRIVATE
     src/context.cpp
+    src/gfx/drawables.cpp
     src/gfx/gltfScene.cpp
-    src/kitgui.cpp
+    src/gfx/lights.cpp
+    src/gfx/materials.cpp
     src/imgui/knob.cpp
+    src/kitgui.cpp
 )
 
 target_include_directories(kitgui PUBLIC include)
