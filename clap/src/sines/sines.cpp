@@ -13,8 +13,11 @@
 #include "clapeze/instrumentPlugin.h"
 #include "clapeze/voice.h"
 #include "descriptor.h"
-#include "kitgui/app.h"
-#include "kitgui/context.h"
+
+#if KITSBLIPS_ENABLE_GUI
+#include <kitgui/app.h>
+#include <kitgui/context.h>
+#endif
 
 using namespace clapeze;
 

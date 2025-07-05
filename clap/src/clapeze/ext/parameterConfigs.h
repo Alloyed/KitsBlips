@@ -53,7 +53,7 @@ class NumericParam : public BaseParam {
         return true;
     }
     double GetRawDefault() const override {
-        double rawDefault;
+        double rawDefault{};
         assert(FromValue(mDefaultValue, rawDefault));
         return rawDefault;
     }
@@ -155,7 +155,7 @@ class IntegerParam : public BaseParam {
         return true;
     }
     double GetRawDefault() const override {
-        double rawDefault;
+        double rawDefault{};
         assert(FromValue(mDefaultValue, rawDefault));
         return rawDefault;
     }
@@ -234,7 +234,7 @@ class EnumParam : public BaseParam {
         return true;
     }
     double GetRawDefault() const override {
-        double rawDefault;
+        double rawDefault{};
         assert(FromValue(mDefaultValue, rawDefault));
         return rawDefault;
     }

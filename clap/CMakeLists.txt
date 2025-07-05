@@ -71,7 +71,7 @@ endif()
 # Create a .dSYM file on macOS
 if(APPLE)
   add_custom_command(
-    TARGET your_target
+    TARGET KitsBlips-lib
     POST_BUILD
     COMMAND dsymutil $<TARGET_FILE:KitsBlips-lib>
   )

@@ -1,10 +1,13 @@
 #pragma once
 
+union SDL_Event;
+
 namespace kitgui {
 class Context;
 /**
  * Apps are all the configuration points associated with a single window/context. One process can have multiple apps, as
- * well as multiple of the same app.
+ * well as multiple of the same app. All openGL resources must be unique to a given App, and only can be created/used
+ * from an app override point, or a constructor/destructor
  */
 class BaseApp {
     friend class Context;
@@ -32,6 +35,11 @@ class BaseApp {
      * Triggers on a regular basis. use gl to manipulate the visual state.
      */
     virtual void OnDraw() {}
+    /**
+     * Triggers on otherwise unhandled events
+     * return true if event handled, false otherwise
+     */
+    virtual bool OnRawEvent([[maybe_unused]] SDL_Event& event) { return false; }
 
     Context& GetContext() { return mContext; }
 

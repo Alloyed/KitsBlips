@@ -1,3 +1,5 @@
+#if KITSBLIPS_ENABLE_GUI
+
 #include "clapeze/ext/kitgui.h"
 
 namespace clapeze {
@@ -143,3 +145,5 @@ kitgui::platform::Api KitguiExt::ToPlatformApi(ClapWindowApi api) {
 }
 
 }  // namespace clapeze
+
+#endif
