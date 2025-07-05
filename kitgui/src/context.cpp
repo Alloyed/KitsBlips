@@ -288,6 +288,22 @@ void Context::RunSingleFrame() {
     }
 }
 
+bool Context::GetPreferredApi(platform::Api& apiOut, bool& isFloatingOut) {
+#if _WIN32
+    apiOut = platform::Api::Win32;
+    isFloatingOut = false;
+    return true;
+#elif __APPLE__
+    apiOut = platform::Api::Cocoa;
+    isFloatingOut = false;
+    return true;
+#elif __linux__
+    apiOut = platform::Api::X11;
+    isFloatingOut = false;
+    return true;
+#endif
+}
+
 Context* Context::FindContextForWindow(SDL_WindowID window) {
     for (Context* instance : sActiveInstances) {
         if (SDL_GetWindowID(instance->mWindow) == window) {

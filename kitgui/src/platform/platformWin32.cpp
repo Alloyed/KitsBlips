@@ -17,6 +17,10 @@ void getPlatformHandles(SDL_Window* sdlWindow, HWND& hWindow) {
 namespace kitgui {
 
 namespace platform {
+SDL_Window* wrapWindow(Api api, void* apiWindow) {
+    // TODO
+    return nullptr;
+}
 void onCreateWindow(Api api, SDL_Window* sdlWindow) {
     // do nothing
     (void)api;
@@ -45,6 +49,6 @@ bool setTransient(Api _api, SDL_Window* sdlWindow, SDL_Window* parent) {
 
     return true;
 }
-}  // namespace platformGui
+}  // namespace platform
 }  // namespace kitgui
 #endif

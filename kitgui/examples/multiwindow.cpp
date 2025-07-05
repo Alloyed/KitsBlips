@@ -1,7 +1,7 @@
 #include <Corrade/PluginManager/Manager.h>
 #include <Corrade/Utility/Resource.h>
-#include <Magnum/GL/Renderer.h>
 #include <Magnum/GL/DebugOutput.h>
+#include <Magnum/GL/Renderer.h>
 #include <Magnum/Trade/AbstractImporter.h>
 #include <imgui.h>
 #include <memory>
@@ -16,17 +16,13 @@ using namespace Magnum;
 
 class MyApp2 : public kitgui::BaseApp {
    public:
-    MyApp2(kitgui::Context& mContext)
-        : kitgui::BaseApp(mContext) {}
+    MyApp2(kitgui::Context& mContext) : kitgui::BaseApp(mContext) {}
     ~MyApp2() = default;
 
    protected:
-    void OnActivate() override {
-    }
+    void OnActivate() override {}
     void OnUpdate() override {
-        kitgui::helpers::beginFullscreen([&]() {
-            ImGui::Text("Window.... 2!!!");
-        });
+        kitgui::helpers::beginFullscreen([&]() { ImGui::Text("Window.... 2!!!"); });
     }
 
     void OnDraw() override {}
@@ -38,7 +34,10 @@ class MyApp2 : public kitgui::BaseApp {
 class MyApp : public kitgui::BaseApp {
    public:
     MyApp(kitgui::Context& mContext, Magnum::Trade::AbstractImporter& importer)
-        : kitgui::BaseApp(mContext), mImporter(importer) {}
+        : kitgui::BaseApp(mContext), mImporter(importer) {
+        mContext.SetSize(400, 400);
+        mContext.SetClearColor({0.3f, 0.7f, 0.3f, 1.0f});
+    }
     ~MyApp() = default;
 
    protected:
@@ -78,13 +77,9 @@ int main() {
     {
         kitgui::Context ctx1([raw](kitgui::Context& ctx) { return std::make_unique<MyApp2>(ctx); });
         ctx1.Create(kitgui::platform::Api::Any, true);
-        ctx1.SetSize(400, 400);
-        ctx1.SetClearColor({0.3f, 0.7f, 0.3f, 1.0f});
 
         kitgui::Context ctx2([raw](kitgui::Context& ctx) { return std::make_unique<MyApp2>(ctx); });
         ctx2.Create(kitgui::platform::Api::Any, true);
-        ctx2.SetSize(400, 400);
-        ctx2.SetClearColor({0.3f, 0.3f, 0.3f, 1.0f});
 
         ctx1.Show();
         ctx2.Show();

@@ -44,6 +44,7 @@ target_sources(KitsBlips-lib PRIVATE
 
     src/clapeze/basePlugin.cpp
     src/clapeze/pluginHost.cpp
+    src/clapeze/ext/kitgui.cpp
 
     src/crunch/crunch.cpp
     src/sines/sines.cpp
@@ -63,7 +64,6 @@ if(KITSBLIPS_ENABLE_GUI)
     FetchContent_MakeAvailable(kitgui)
 
     target_compile_definitions(KitsBlips-lib PUBLIC KITSBLIPS_ENABLE_GUI=1)
-    target_sources(KitsBlips-lib PRIVATE)
     target_link_libraries(KitsBlips-lib PUBLIC kitgui)
 endif()
 

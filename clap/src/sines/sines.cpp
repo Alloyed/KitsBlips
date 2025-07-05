@@ -3,14 +3,18 @@
 #include <kitdsp/control/approach.h>
 #include <kitdsp/control/lfo.h>
 #include <kitdsp/filters/svf.h>
+#include <kitdsp/math/units.h>
 #include <kitdsp/math/util.h>
 #include <kitdsp/osc/blepOscillator.h>
 #include "clapeze/common.h"
+#include "clapeze/ext/kitgui.h"
 #include "clapeze/ext/parameterConfigs.h"
 #include "clapeze/ext/parameters.h"
 #include "clapeze/instrumentPlugin.h"
 #include "clapeze/voice.h"
 #include "descriptor.h"
+#include "kitgui/app.h"
+#include "kitgui/context.h"
 
 using namespace clapeze;
 
@@ -51,7 +55,7 @@ class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
                 mOsc.SetFrequency(freq, sampleRate);
                 mFilter.SetFrequency(freq * 1.5, sampleRate, 10.0f);
 
-                float s = mFilter.Process<kitdsp::FilterMode::LowPass>(mOsc.Process() * mAmplitude.Process() * 0.3f);
+                float s = mFilter.Process<kitdsp::SvfFilterMode::LowPass>(mOsc.Process() * mAmplitude.Process() * 0.3f);
                 out.left[index] += s;
                 out.right[index] += s;
             }
@@ -92,6 +96,13 @@ class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
     PolyphonicVoicePool<Processor, Voice, 16> mVoices;
 };
 
+#if KITSBLIPS_ENABLE_GUI
+class GuiApp : public kitgui::BaseApp {
+   public:
+    GuiApp(kitgui::Context& ctx) : kitgui::BaseApp(ctx) {}
+};
+#endif
+
 class Plugin : public InstrumentPlugin {
    public:
     Plugin(PluginHost& host) : InstrumentPlugin(host) {}
@@ -108,6 +119,9 @@ class Plugin : public InstrumentPlugin {
                 .ConfigParam<NumericParam>(Params::VibratoDepth, "Vibrato Depth", 0.0f, 200.0f, 50.0f, "cents")
                 .ConfigParam<NumericParam>(Params::Portamento, "Portamento", 1.0f, 100.0f, 10.0f, "ms")
                 .ConfigParam<IntegerParam>(Params::Polyphony, "Polyphony", 1, 16, 8, "voices", "voice");
+#if KITSBLIPS_ENABLE_GUI
+        ConfigExtension<KitguiExt>([](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx); });
+#endif
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }
 };
