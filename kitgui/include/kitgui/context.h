@@ -19,20 +19,28 @@ struct ImGuiContext;
 
 namespace kitgui {
 class BaseApp;
+
+struct SizeConfig {
+    uint32_t startingWidth{400};
+    uint32_t startingHeight{400};
+    bool resizable{false};
+    bool preserveAspectRatio{true};
+};
+
 class Context {
    public:
     using AppFactory = std::function<std::unique_ptr<BaseApp>(Context& ctx)>;
     Context(AppFactory createAppFn);
     ~Context() = default;
 
+    // host events: (matches clap API)
     bool Create(platform::Api api, bool isFloating);
     bool Destroy();
     bool SetScale(double scale);
+    const SizeConfig& GetSizeConfig() const;
+    void SetSizeConfig(const SizeConfig& cfg);
     bool GetSize(uint32_t& widthOut, uint32_t& heightOut) const;
-    bool CanResize();
-    // bool GetResizeHints(clap_gui_resize_hints_t& hintsOut);
-    bool AdjustSize(uint32_t& widthInOut, uint32_t& heightInOut) const;
-    bool SetSize(uint32_t width, uint32_t height);
+    bool SetSizeDirectly(uint32_t width, uint32_t height);
     bool SetParent(SDL_Window* handle);
     bool SetTransient(SDL_Window* handle);
     void SuggestTitle(std::string_view title);
@@ -55,6 +63,7 @@ class Context {
 
    private:
     AppFactory mCreateAppFn;
+    SizeConfig mSizeConfig{};
     std::unique_ptr<BaseApp> mApp = nullptr;
     platform::Api mApi;
     SDL_Window* mWindow = nullptr;

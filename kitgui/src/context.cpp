@@ -49,8 +49,9 @@ bool Context::Create(platform::Api api, bool isFloating) {
 
     SDL_SetBooleanProperty(createProps, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
     SDL_SetBooleanProperty(createProps, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, true);
-    SDL_SetNumberProperty(createProps, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 400);
-    SDL_SetNumberProperty(createProps, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, 400);
+    SDL_SetBooleanProperty(createProps, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, mSizeConfig.resizable);
+    SDL_SetNumberProperty(createProps, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, mSizeConfig.startingWidth);
+    SDL_SetNumberProperty(createProps, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, mSizeConfig.startingHeight);
     mWindow = SDL_CreateWindowWithProperties(createProps);
     SDL_DestroyProperties(createProps);
 
@@ -124,6 +125,12 @@ bool Context::SetScale(double scale) {
     ImGui::GetStyle().ScaleAllSizes(static_cast<float>(scale));
     return true;
 }
+const SizeConfig& Context::GetSizeConfig() const {
+    return mSizeConfig;
+}
+void Context::SetSizeConfig(const SizeConfig& cfg) {
+    mSizeConfig = cfg;
+}
 bool Context::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     int32_t w;
     int32_t h;
@@ -132,18 +139,7 @@ bool Context::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     heightOut = static_cast<uint32_t>(h);
     return success;
 }
-bool Context::CanResize() {
-    SDL_WindowFlags flags = SDL_GetWindowFlags(mWindow);
-    return (flags & SDL_WINDOW_RESIZABLE) > 0;
-}
-// bool GetResizeHints(clap_gui_resize_hints_t& hintsOut);
-bool Context::AdjustSize(uint32_t& widthInOut, uint32_t& heightInOut) const {
-    // apply whatever resize constraint algorithm you'd like to the inOut variables.
-    // use ResizeHints to help out the OS.
-    // no change means no constraint
-    return true;
-}
-bool Context::SetSize(uint32_t width, uint32_t height) {
+bool Context::SetSizeDirectly(uint32_t width, uint32_t height) {
     return SDL_SetWindowSize(mWindow, width, height);
 }
 bool Context::SetParent(SDL_Window* handle) {

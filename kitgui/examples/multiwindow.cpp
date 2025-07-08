@@ -35,7 +35,7 @@ class MyApp : public kitgui::BaseApp {
    public:
     MyApp(kitgui::Context& mContext, Magnum::Trade::AbstractImporter& importer)
         : kitgui::BaseApp(mContext), mImporter(importer) {
-        mContext.SetSize(400, 400);
+        mContext.SetSizeConfig({400, 400});
         mContext.SetClearColor({0.3f, 0.7f, 0.3f, 1.0f});
     }
     ~MyApp() = default;

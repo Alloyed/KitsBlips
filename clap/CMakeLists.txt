@@ -15,9 +15,7 @@ set(PRODUCT_NAME "KitsBlips")
 set(PRODUCT_ID "me.alloyed.KitsBlips")
 option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
 
-# VSTs use codecvt in their headers, which are removed in C++26.
-# ETL expects char8_t to be a keyword post C++20, but clap-wrapper hard-disables it. so we'll target our plugin narrowly for C++23
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 # shared libs
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -27,7 +25,6 @@ FetchContent_MakeAvailable(clap clap-wrapper KitDSP physfs)
 find_package(Sanitizers)
 
 add_library(KitsBlips-lib STATIC)
-set_property(TARGET KitsBlips-lib PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(KitsBlips-lib PUBLIC
     PRODUCT_NAME="${PRODUCT_NAME}"
     PRODUCT_ID="${PRODUCT_ID}"

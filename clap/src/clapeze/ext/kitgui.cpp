@@ -84,20 +84,30 @@ bool KitguiExt::GetSize(uint32_t& widthOut, uint32_t& heightOut) {
 }
 
 bool KitguiExt::CanResize() {
-    return mCtx.CanResize();
+    return mCtx.GetSizeConfig().resizable;
 }
 
 bool KitguiExt::GetResizeHints(clap_gui_resize_hints_t& hintsOut) {
-    // TODO
+    const auto& cfg = mCtx.GetSizeConfig();
+    hintsOut.preserve_aspect_ratio = cfg.preserveAspectRatio;
+    hintsOut.aspect_ratio_width = cfg.startingWidth;
+    hintsOut.aspect_ratio_height = cfg.startingHeight;
+    hintsOut.can_resize_horizontally = cfg.resizable;
+    hintsOut.can_resize_vertically = cfg.resizable;
     return true;
 }
 
 bool KitguiExt::AdjustSize(uint32_t& widthInOut, uint32_t& heightInOut) {
-    return mCtx.AdjustSize(widthInOut, heightInOut);
+    const auto& cfg = mCtx.GetSizeConfig();
+    if (cfg.resizable && cfg.preserveAspectRatio) {
+        float ratio = static_cast<float>(cfg.startingWidth) / static_cast<float>(cfg.startingHeight);
+        heightInOut = widthInOut * ratio;
+    }
+    return true;
 }
 
 bool KitguiExt::SetSize(uint32_t width, uint32_t height) {
-    return mCtx.SetSize(width, height);
+    return mCtx.SetSizeDirectly(width, height);
 }
 
 bool KitguiExt::SetParent(WindowHandle handle) {

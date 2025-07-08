@@ -12,6 +12,7 @@ include(imgui)
 FetchContent_MakeAvailable(SDL3 corrade magnum magnum-plugins)
 
 add_library(kitgui STATIC)
+set_property(TARGET kitgui PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
 
 if (MSVC)
     target_compile_options(kitgui PRIVATE /W4)
