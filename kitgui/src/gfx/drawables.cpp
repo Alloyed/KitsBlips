@@ -6,10 +6,12 @@
 #include <Magnum/Shaders/PhongGL.h>
 #include <Magnum/Trade/MaterialData.h>
 #include <Magnum/Trade/PhongMaterialData.h>
+#include <format>
 #include <vector>
 
 #include "gfx/materials.h"
 #include "gfx/sceneGraph.h"
+#include "log.h"
 
 using namespace Magnum;
 using namespace Magnum::Math::Literals;
@@ -236,9 +238,9 @@ Magnum::SceneGraph::Drawable3D* DrawableCache::CreateDrawableFromMesh(MaterialCa
                black. Ignore the normal map in that case. */
             /** @todo generate tangents instead once we have the algo */
             if (!meshInfo.hasTangents) {
-                Warning{} << "Mesh" << meshInfo.debugName.c_str()
-                          << "doesn't have tangents and Magnum can't generate them yet, ignoring a "
-                             "normal map";
+                kitgui::log::error(
+                    std::format("Mesh {} doesn't have tangents, auto-generation NYI, so ignoring normal map for now",
+                                meshInfo.debugName));
             } else if (texture) {
                 normalTexture = &*texture;
                 normalTextureScale = material.normalTextureScale();

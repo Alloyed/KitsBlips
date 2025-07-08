@@ -1,7 +1,9 @@
 #include "gfx/meshes.h"
 
-#include <Corrade/Containers/BitArray.h>
 #include <Corrade/Containers/OptionalStl.h>
+#include <Corrade/Containers/StringStl.h>
+
+#include <Corrade/Containers/BitArray.h>
 #include <Corrade/Containers/Pair.h>
 #include <Corrade/Containers/StridedArrayView.h>
 #include <Corrade/Containers/Triple.h>
@@ -21,6 +23,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "log.h"
 
 using namespace Magnum;
 
@@ -29,7 +32,7 @@ void MeshCache::LoadMeshes(Magnum::Trade::AbstractImporter& importer) {
     /* Load all meshes. Meshes that fail to load will be NullOpt. Remember
        which have vertex colors, so in case there's no material we can use that
        instead. */
-    Debug{} << "Loading" << importer.meshCount() << "meshes";
+    kitgui::log::info(std::format("Loading {} meshes...", importer.meshCount()));
     mMeshes.clear();
     mMeshes.reserve(importer.meshCount());
     for (uint32_t i = 0; i != importer.meshCount(); ++i) {
@@ -37,7 +40,7 @@ void MeshCache::LoadMeshes(Magnum::Trade::AbstractImporter& importer) {
         MeshInfo& mesh = mMeshes.back();
         auto meshData = std::optional<Trade::MeshData>(importer.mesh(i));
         if (!meshData) {
-            Warning{} << "Cannot load mesh" << i << importer.meshName(i);
+            log::error(std::format("cannot load mesh {}: {} ", i, importer.meshName(i)));
             continue;
         }
 
@@ -65,14 +68,12 @@ void MeshCache::LoadMeshes(Magnum::Trade::AbstractImporter& importer) {
             if (meshData->primitive() == MeshPrimitive::TriangleStrip ||
                 meshData->primitive() == MeshPrimitive::TriangleFan) {
                 if (meshData->isIndexed()) {
-                    Debug{} << "Mesh" << meshName.c_str()
-                            << "doesn't have normals, generating smooth ones using information from the index "
-                               "buffer for a"
-                            << meshData->primitive();
+                    log::info(std::format(
+                        "Mesh {} doesn't have normals, generating smooth ones using information from the index buffer.",
+                        meshName));
                     flags |= MeshTools::CompileFlag::GenerateSmoothNormals;
                 } else {
-                    Debug{} << "Mesh" << meshName.c_str() << "doesn't have normals, generating flat ones for a"
-                            << meshData->primitive();
+                    log::info(std::format("Mesh {} doesn't have normals, generating flat ones.", meshName));
                     flags |= MeshTools::CompileFlag::GenerateFlatNormals;
                 }
 
@@ -81,38 +82,44 @@ void MeshCache::LoadMeshes(Magnum::Trade::AbstractImporter& importer) {
                 /* Otherwise prefer smooth normals, if we have an index buffer
                    telling us neighboring faces */
             } else if (meshData->isIndexed()) {
-                Debug{} << "Mesh" << meshName.c_str()
-                        << "doesn't have normals, generating smooth ones using information from the index buffer";
+                log::info(std::format(
+                    "Mesh {} doesn't have normals, generating smooth ones using information from the index buffer.",
+                    meshName));
                 flags |= MeshTools::CompileFlag::GenerateSmoothNormals;
             } else {
-                Debug{} << "Mesh" << meshName.c_str() << "doesn't have normals, generating flat ones";
+                log::info(std::format("Mesh {} doesn't have normals, generating flat ones.", meshName));
                 flags |= MeshTools::CompileFlag::GenerateFlatNormals;
             }
         }
 
         /* Print messages about ignored attributes / levels */
         for (uint32_t j = 0; j != meshData->attributeCount(); ++j) {
-            const Trade::MeshAttribute name = meshData->attributeName(j);
-            if (Trade::isMeshAttributeCustom(name)) {
-                if (const std::string stringName = importer.meshAttributeName(name); !stringName.empty()) {
-                    Warning{} << "Mesh" << meshName.c_str() << "has a custom mesh attribute" << stringName.c_str()
-                              << Debug::nospace << ", ignoring";
+            const Trade::MeshAttribute attribute = meshData->attributeName(j);
+            if (Trade::isMeshAttributeCustom(attribute)) {
+                if (const std::string stringName = importer.meshAttributeName(attribute); !stringName.empty()) {
+                    log::info(std::format("Mesh {} has a custom mesh attribute {}, ignoring", meshName, stringName));
                 } else {
-                    Warning{} << "Mesh" << meshName.c_str() << "has a custom mesh attribute" << name << Debug::nospace
-                              << ", ignoring";
+                    log::info(std::format("Mesh {} has a custom mesh attribute {}, ignoring", meshName, j));
                 }
                 continue;
             }
 
             const VertexFormat format = meshData->attributeFormat(j);
             if (isVertexFormatImplementationSpecific(format)) {
-                Warning{} << "Mesh" << meshName.c_str() << "has" << name << "of format" << format << Debug::nospace
-                          << ", ignoring";
+                if (const std::string attributeName = importer.meshAttributeName(attribute); !attributeName.empty()) {
+                    log::info(std::format("Mesh attribute {}.{} has a custom mesh format {}, ignoring", meshName,
+                                          attributeName, static_cast<uint32_t>(format)));
+                } else {
+                    log::info(std::format("Mesh attribute {}.{} has a custom mesh format {}, ignoring", meshName, j,
+                                          static_cast<uint32_t>(format)));
+                }
+                continue;
             }
         }
         const uint32_t meshLevels = importer.meshLevelCount(i);
         if (meshLevels > 1) {
-            Warning{} << "Mesh" << meshName.c_str() << "has" << meshLevels - 1 << "additional mesh levels, ignoring";
+            log::info(
+                std::format("Mesh attribute {} has {} additional mesh levels, ignoring", meshName, meshLevels - 1));
         }
 
         /* Save metadata, compile the mesh */

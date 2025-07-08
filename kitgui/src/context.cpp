@@ -77,6 +77,9 @@ bool Context::Create(platform::Api api, bool isFloating) {
     ImGui::SetCurrentContext(mImgui);
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    // disable file writing
+    io.IniFilename = nullptr;
+    io.LogFilename = nullptr;
 
     // Setup Platform/Renderer backends
     ImGui_ImplSDL3_InitForOpenGL(mWindow, mSdlGl);

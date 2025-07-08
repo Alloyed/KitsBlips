@@ -40,6 +40,7 @@
 #include "gfx/materials.h"
 #include "gfx/meshes.h"
 #include "gfx/sceneGraph.h"
+#include "log.h"
 
 using namespace Magnum;
 using namespace Magnum::Math::Literals;
@@ -209,12 +210,12 @@ void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_
 
     /* Import animations */
     if (importer.animationCount()) {
-        Debug{} << "Importing the first animation out of" << importer.animationCount();
+        kitgui::log::info("importing animations");
     }
     for (uint32_t i = 0; i != importer.animationCount(); ++i) {
         auto animation = importer.animation(i);
         if (!animation) {
-            Warning{} << "Cannot load animation" << i << importer.animationName(i);
+            kitgui::log::error(std::format("cannot load animation {} {}", i, importer.animationName(i)));
             continue;
         }
 

@@ -17,6 +17,7 @@
 
 #include "gfx/drawables.h"
 #include "gfx/sceneGraph.h"
+#include "log.h"
 
 using namespace Magnum;
 using namespace Magnum::Math::Literals;
@@ -99,7 +100,7 @@ void LightCache::LoadLights(Trade::AbstractImporter& importer) {
 
         auto light = std::optional<Trade::LightData>{importer.light(i)};
         if (!light) {
-            Warning{} << "Cannot load light" << i << importer.lightName(i);
+            kitgui::log::error(std::format("Cannot load light {} {}", i, importer.lightName(i)));
             continue;
         }
         mLights.push_back(std::move(lightInfo));
