@@ -5,11 +5,11 @@
 #include <Magnum/Trade/AbstractImporter.h>
 #include <imgui.h>
 #include <memory>
-#include "gfx/gltfScene.h"
 #include "imgui/imguiHelpers.h"
 #include "imgui/knob.h"
 #include "kitgui/app.h"
 #include "kitgui/context.h"
+#include "kitgui/dom.h"
 #include "kitgui/kitgui.h"
 
 using namespace Magnum;
@@ -34,9 +34,12 @@ class MyApp2 : public kitgui::BaseApp {
 class MyApp : public kitgui::BaseApp {
    public:
     MyApp(kitgui::Context& mContext, Magnum::Trade::AbstractImporter& importer)
-        : kitgui::BaseApp(mContext), mImporter(importer) {
+        : kitgui::BaseApp(mContext), mImporter(importer), mScene(kitgui::DomScene::Create()) {
         mContext.SetSizeConfig({400, 400});
         mContext.SetClearColor({0.3f, 0.7f, 0.3f, 1.0f});
+
+        auto knob = kitgui::DomKnob::Create();
+        mScene->Insert(knob.get(), nullptr);
     }
     ~MyApp() = default;
 
@@ -45,21 +48,28 @@ class MyApp : public kitgui::BaseApp {
         GL::Renderer::enable(GL::Renderer::Feature::DebugOutput);
         GL::Renderer::enable(GL::Renderer::Feature::DebugOutputSynchronous);
         GL::DebugOutput::setDefaultCallback();
-        mScene.Load(mImporter, "thingy.glb");
+        mScene->Load();
     }
     void OnUpdate() override {
-        mScene.Update();
         kitgui::helpers::beginFullscreen([&]() {
+            mScene->Visit([](kitgui::DomNode& node) {
+                node.Update();
+                return true;
+            });
             ImGui::Text("Oh yeah, gamer time!");
-            kitgui::knob("Rise", {}, mKnob);
         });
     }
 
-    void OnDraw() override { mScene.Draw(); }
+    void OnDraw() override {
+        mScene->Visit([](kitgui::DomNode& node) {
+            node.Draw();
+            return true;
+        });
+    }
 
    private:
     double mKnob = 0.0;
-    kitgui::GltfScene mScene;
+    std::shared_ptr<kitgui::DomScene> mScene;
     Magnum::Trade::AbstractImporter& mImporter;
 };
 

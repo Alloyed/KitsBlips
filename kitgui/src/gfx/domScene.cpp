@@ -1,4 +1,4 @@
-#include "gfx/gltfScene.h"
+#include "kitgui/dom.h"
 
 // enable conversion to stl
 #include <Corrade/Containers/OptionalStl.h>
@@ -40,6 +40,7 @@
 #include "gfx/materials.h"
 #include "gfx/meshes.h"
 #include "gfx/sceneGraph.h"
+#include "kitgui/dom.h"
 #include "log.h"
 
 using namespace Magnum;
@@ -47,7 +48,7 @@ using namespace Magnum::Math::Literals;
 using namespace Magnum::Math::Literals::ColorLiterals;
 
 namespace kitgui {
-struct GltfSceneImpl {
+struct DomSceneImpl {
     void Load(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
     void Update();
     void Draw();
@@ -67,14 +68,19 @@ struct GltfSceneImpl {
     Animation::Player<std::chrono::nanoseconds, float> mPlayer;
 };
 
-GltfScene::GltfScene() : mImpl(std::make_unique<GltfSceneImpl>()) {}
-GltfScene::~GltfScene() = default;
+DomScene::DomScene() : mImpl(std::make_unique<DomSceneImpl>()) {}
+DomScene::~DomScene() = default;
 
-void GltfScene::Load(Magnum::Trade::AbstractImporter& importer, std::string_view debugName) {
-    mImpl->Load(importer, debugName);
+std::shared_ptr<DomScene> DomScene::Create() {
+    return std::shared_ptr<DomScene>(new DomScene());
 }
 
-void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_view debugName) {
+void DomScene::Load() {
+    // TODO: abstractImporter
+    // mImpl->Load(importer, debugName);
+}
+
+void DomSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_view debugName) {
     mMaterialCache.LoadTextures(importer);
     mMaterialCache.LoadMaterials(importer);
     mLightCache.LoadLights(importer);
@@ -266,19 +272,28 @@ void GltfSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_
     }
 }
 
-void GltfScene::Update() {
+const DomScene::Props& DomScene::GetProps() const {
+    return mProps;
+}
+
+void DomScene::SetProps(const DomScene::Props& props) {
+    // TODO: dirty flagging
+    mProps = props;
+}
+
+void DomScene::Update() {
     mImpl->Update();
 }
 
-void GltfSceneImpl::Update() {
+void DomSceneImpl::Update() {
     mPlayer.advance(std::chrono::system_clock::now().time_since_epoch());
 }
 
-void GltfScene::Draw() {
+void DomScene::Draw() {
     mImpl->Draw();
 }
 
-void GltfSceneImpl::Draw() {
+void DomSceneImpl::Draw() {
     /* Another FB could be bound from a depth / object ID read (moreover with
        color output disabled), set it back to the default framebuffer */
     GL::defaultFramebuffer.bind(); /** @todo mapForDraw() should bind implicitly */

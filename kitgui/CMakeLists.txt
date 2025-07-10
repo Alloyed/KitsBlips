@@ -22,12 +22,14 @@ endif()
 
 target_sources(kitgui PRIVATE
     src/context.cpp
+    src/dom/domNode.cpp
     src/gfx/drawables.cpp
-    src/gfx/gltfScene.cpp
+    src/gfx/domScene.cpp
     src/gfx/lights.cpp
     src/gfx/materials.cpp
     src/gfx/meshes.cpp
     src/imgui/knob.cpp
+    src/imgui/domWrappers.cpp
     src/kitgui.cpp
 )
 
