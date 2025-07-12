@@ -7,7 +7,6 @@
 #include <kitdsp/math/util.h>
 #include <kitdsp/osc/blepOscillator.h>
 #include "clapeze/common.h"
-#include "clapeze/ext/kitgui.h"
 #include "clapeze/ext/parameterConfigs.h"
 #include "clapeze/ext/parameters.h"
 #include "clapeze/instrumentPlugin.h"
@@ -17,6 +16,7 @@
 #if KITSBLIPS_ENABLE_GUI
 #include <kitgui/app.h>
 #include <kitgui/context.h>
+#include "clapeze/ext/kitgui.h"
 #endif
 
 using namespace clapeze;
@@ -102,7 +102,11 @@ class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
 #if KITSBLIPS_ENABLE_GUI
 class GuiApp : public kitgui::BaseApp {
    public:
-    GuiApp(kitgui::Context& ctx) : kitgui::BaseApp(ctx) {}
+    GuiApp(kitgui::Context& ctx, ParamsExt& params) : kitgui::BaseApp(ctx), mParams(params) {}
+    void OnUpdate() override { mParams.DebugImGui(); }
+
+   private:
+    ParamsExt& mParams;
 };
 #endif
 
@@ -123,7 +127,7 @@ class Plugin : public InstrumentPlugin {
                 .ConfigParam<NumericParam>(Params::Portamento, "Portamento", 1.0f, 100.0f, 10.0f, "ms")
                 .ConfigParam<IntegerParam>(Params::Polyphony, "Polyphony", 1, 16, 8, "voices", "voice");
 #if KITSBLIPS_ENABLE_GUI
-        ConfigExtension<KitguiExt>([](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx); });
+        ConfigExtension<KitguiExt>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }

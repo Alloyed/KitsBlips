@@ -74,7 +74,7 @@ class NumericParam : public BaseParam {
         return FromValue(in, outRawValue);
     }
 #ifdef KITSBLIPS_ENABLE_GUI
-    bool OnImgui(double& inOutRawValue) const override {
+    bool DebugImGui(double& inOutRawValue) const override {
         float value = 0.0f;
         ToValue(inOutRawValue, value);
         bool changed = ImGui::SliderFloat(mName.data(), &value, mMin, mMax);
@@ -183,7 +183,7 @@ class IntegerParam : public BaseParam {
         return FromValue(parsed, outRawValue);
     }
 #ifdef KITSBLIPS_ENABLE_GUI
-    bool OnImgui(double& inOutRawValue) const override {
+    bool DebugImGui(double& inOutRawValue) const override {
         int32_t value = inOutRawValue;
         bool changed = ImGui::SliderInt(mName.data(), &value, mMin, mMax);
         inOutRawValue = value;
@@ -257,7 +257,7 @@ class EnumParam : public BaseParam {
         return false;
     }
 #ifdef KITSBLIPS_ENABLE_GUI
-    bool OnImgui(double& inOutRawValue) const override {
+    bool DebugImGui(double& inOutRawValue) const override {
         EnumType value{};
         ToValue(inOutRawValue, value);
         size_t selectedIndex = static_cast<size_t>(value);

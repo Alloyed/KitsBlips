@@ -33,7 +33,7 @@ target_compile_definitions(KitsBlips-lib PUBLIC
 if (MSVC)
     target_compile_options(KitsBlips-lib PRIVATE /W4)
 else()
-    target_compile_options(KitsBlips-lib PRIVATE -Wall -Wextra -pedantic -Wno-unused-parameter)
+    target_compile_options(KitsBlips-lib PRIVATE -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-missing-braces)
 endif()
 
 target_sources(KitsBlips-lib PRIVATE

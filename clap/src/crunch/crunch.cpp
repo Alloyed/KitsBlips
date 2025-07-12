@@ -11,6 +11,12 @@
 #include <kitdsp/math/approx.h>
 #include <kitdsp/math/util.h>
 
+#if KITSBLIPS_ENABLE_GUI
+#include <kitgui/app.h>
+#include <kitgui/context.h>
+#include "clapeze/ext/kitgui.h"
+#endif
+
 using namespace clapeze;
 
 namespace crunch {
@@ -133,6 +139,17 @@ class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
     ToneFilter tonePostRight{cSampleRate};
 };
 
+#if KITSBLIPS_ENABLE_GUI
+class GuiApp : public kitgui::BaseApp {
+   public:
+    GuiApp(kitgui::Context& ctx, ParamsExt& params) : kitgui::BaseApp(ctx), mParams(params) {}
+    void OnUpdate() override { mParams.DebugImGui(); }
+
+   private:
+    ParamsExt& mParams;
+};
+#endif
+
 class Plugin : public EffectPlugin {
    public:
     static const PluginEntry Entry;
@@ -152,6 +169,9 @@ class Plugin : public EffectPlugin {
                 .ConfigParam<PercentParam>(Params::Tone, "Tone", 0.5f)
                 .ConfigParam<DbParam>(Params::Makeup, "Makeup", -9.0f, 9.0f, 0.0f)
                 .ConfigParam<PercentParam>(Params::Mix, "Mix", 1.0f);
+#if KITSBLIPS_ENABLE_GUI
+        ConfigExtension<KitguiExt>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
+#endif
 
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }

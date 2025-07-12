@@ -10,6 +10,12 @@
 #include <kitdsp/snesEcho.h>
 #include <kitdsp/snesEchoFilterPresets.h>
 
+#if KITSBLIPS_ENABLE_GUI
+#include <kitgui/app.h>
+#include <kitgui/context.h>
+#include "clapeze/ext/kitgui.h"
+#endif
+
 using namespace kitdsp;
 using namespace clapeze;
 
@@ -97,6 +103,17 @@ class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
     kitdsp::Resampler<float> snesSampler{kitdsp::SNES::kOriginalSampleRate, 41000};
 };
 
+#if KITSBLIPS_ENABLE_GUI
+class GuiApp : public kitgui::BaseApp {
+   public:
+    GuiApp(kitgui::Context& ctx, ParamsExt& params) : kitgui::BaseApp(ctx), mParams(params) {}
+    void OnUpdate() override { mParams.DebugImGui(); }
+
+   private:
+    ParamsExt& mParams;
+};
+#endif
+
 class Plugin : public EffectPlugin {
    public:
     static const PluginEntry Entry;
@@ -122,6 +139,9 @@ class Plugin : public EffectPlugin {
                 .ConfigParam<PercentParam>(Params::FilterMix, "Filter Mix", 1.0f)
                 .ConfigParam<OnOffParam>(Params::ClearBuffer, "Clear Buffer", OnOff::Off);
 
+#if KITSBLIPS_ENABLE_GUI
+        ConfigExtension<KitguiExt>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
+#endif
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }
 };

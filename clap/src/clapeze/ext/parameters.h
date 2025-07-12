@@ -25,7 +25,7 @@ class BaseParam {
     virtual bool FromText(std::string_view text, double& outRawValue) const = 0;
     virtual double GetRawDefault() const = 0;
 #ifdef KITSBLIPS_ENABLE_GUI
-    virtual bool OnImgui(double& inOutRawValue) const = 0;
+    virtual bool DebugImGui(double& inOutRawValue) const = 0;
 #endif
 };
 
@@ -111,6 +111,18 @@ class ParametersExt : public BaseExt {
     void StartGesture(Id id) { mMainToAudio.push({ChangeType::StartGesture, id, 0.0}); }
 
     void StopGesture(Id id) { mMainToAudio.push({ChangeType::StopGesture, id, 0.0}); }
+
+#ifdef KITSBLIPS_ENABLE_GUI
+    void DebugImGui() {
+        for (clap_id index = 0; index < mParams.size(); ++index) {
+            Id id = static_cast<Id>(index);
+            double raw = GetRaw(id);
+            if (mParams[index]->DebugImGui(raw)) {
+                SetRaw(id, raw);
+            }
+        }
+    }
+#endif
 
     void RequestClear(Id id, clap_param_clear_flags flags = CLAP_PARAM_CLEAR_ALL) {
         const clap_host_t* rawHost;
