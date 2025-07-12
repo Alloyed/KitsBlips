@@ -1,7 +1,7 @@
 #pragma once
 
 namespace kitgui {
-
+namespace ImGuiHelpers {
 struct KnobConfig {
     // -1.0f is a sentinel for "pick for me"
     float diameter = -1.0f;
@@ -9,7 +9,6 @@ struct KnobConfig {
     float maxAngleRadians = -1.0f;
     // TODO: fun visuals :)
 };
-// imgui
 bool knob(const char* id, const KnobConfig& knobConfig, double& rawValueInOut);
-
+}  // namespace ImGuiHelpers
 }  // namespace kitgui

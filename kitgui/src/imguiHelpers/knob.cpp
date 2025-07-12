@@ -1,4 +1,5 @@
-#include "imgui/knob.h"
+#include "imguiHelpers/knob.h"
+
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <cmath>
@@ -8,7 +9,7 @@ namespace {
 constexpr float kPi = 3.14159265359;
 }  // namespace
 
-namespace kitgui {
+namespace kitgui::ImGuiHelpers {
 bool knob(const char* id, const KnobConfig& knobConfig, double& rawValueInOut) {
     // roughly adapted from https://github.com/altschuler/imgui-knobs/tree/main
     std::string name = "";

@@ -1,9 +1,13 @@
 #pragma once
 
+#include <Magnum/Math/Vector2.h>
 #include <memory>
+#include <optional>
+#include <string>
 #include <string_view>
 
 namespace kitgui {
+using Vector2 = Magnum::Vector2;  // TODO: replace?
 
 /**
  * A pared down "dom node" like interface. implements parent-child relationships using an intrusive linked list.
@@ -82,6 +86,7 @@ class DomScene : public DomNode {
 class DomKnob : public DomNode {
    public:
     struct Props {
+        std::optional<Magnum::Vector2> position;
         std::string id{};
         std::string sceneAnchor{};
     };

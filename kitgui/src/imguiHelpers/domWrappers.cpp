@@ -1,6 +1,7 @@
 #include "kitgui/dom.h"
 
-#include "imgui/knob.h"
+#include <imgui.h>
+#include "imguiHelpers/knob.h"
 
 namespace kitgui {
 std::shared_ptr<DomKnob> DomKnob::Create() {
@@ -9,9 +10,16 @@ std::shared_ptr<DomKnob> DomKnob::Create() {
 DomKnob::DomKnob() = default;
 DomKnob::~DomKnob() = default;
 void DomKnob::Update() {
+    ImVec2 oldPos = ImGui::GetCursorScreenPos();
+
+    if (mProps.position) {
+        ImGui::SetCursorScreenPos({mProps.position->x(), mProps.position->y()});
+    }
     double rawInOut;
-    KnobConfig cfg;
-    kitgui::knob("id", cfg, rawInOut);
+    ImGuiHelpers::KnobConfig cfg;
+    ImGuiHelpers::knob(mProps.id.c_str(), cfg, rawInOut);
+
+    ImGui::SetCursorScreenPos(oldPos);
 }
 
 const DomKnob::Props& DomKnob::GetProps() const {

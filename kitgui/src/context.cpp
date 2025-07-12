@@ -1,13 +1,16 @@
 #include "kitgui/context.h"
+
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/Platform/GLContext.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_hints.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
+#include <imgui.h>
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_sdl3.h>
 #include <algorithm>
-#include "imgui_impl_opengl3.h"
-#include "imgui_impl_sdl3.h"
+#include "imguiHelpers/misc.h"
 #include "log.h"
 #include "platform/platform.h"
 
@@ -264,7 +267,7 @@ void Context::RunSingleFrame() {
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
         if (instance->mApp) {
-            instance->mApp->OnUpdate();
+            ImGuiHelpers::beginFullscreen([&]() { instance->mApp->OnUpdate(); });
         }
 
         // draw

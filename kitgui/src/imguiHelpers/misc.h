@@ -3,7 +3,8 @@
 
 namespace kitgui {
 
-namespace helpers {
+// So named to look like vanilla imgui
+namespace ImGuiHelpers {
 template <typename FN>
 inline void beginFullscreen(FN fn) {
     ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
@@ -18,5 +19,5 @@ inline void beginFullscreen(FN fn) {
     ImGui::End();
     ImGui::PopStyleVar();
 }
-}  // namespace helpers
+}  // namespace ImGuiHelpers
 }  // namespace kitgui

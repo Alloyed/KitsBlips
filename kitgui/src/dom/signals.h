@@ -9,9 +9,9 @@
 #include <memory>
 
 namespace signals {
-class Context;
+class Scope;
 
-using Callback = std::function<void(Context&)>;
+using Callback = std::function<void(Scope&)>;
 
 class Trackable : std::enable_shared_from_this<Trackable> {};
 class Tracker {
@@ -26,8 +26,8 @@ class Signal : public Trackable {
     Signal(T initialValue) : mValue(initialValue) {}
     ~Signal() = default;
 
-    void Set(Context& ctx, T value);
-    T Get(Context& ctx);
+    void Set(Scope& ctx, T value);
+    T Get(Scope& ctx);
 
    private:
     T mValue;
@@ -44,11 +44,11 @@ class BaseMemo : public Trackable, public Tracker {
 
 template <typename T>
 class Memo : public BaseMemo {
-    using Fn = std::function<T(Context& ctx, T lastValue)>;
+    using Fn = std::function<T(Scope& ctx, T lastValue)>;
     Memo(T initialValue, Fn mMemoCallback) : mValue(initialValue), mMemoCallback(mMemoCallback) {}
     ~Memo() override = default;
 
-    T Get(Context& ctx) const;
+    T Get(Scope& ctx) const;
 
    private:
     const Fn mMemoCallback;
@@ -59,7 +59,7 @@ class Memo : public BaseMemo {
  * The main problem is cleanup; re-running an effect should destroy effects created last time
  */
 class Effect : public Tracker {
-    friend Context;
+    friend Scope;
 
    public:
     Effect(Callback mCallback) : mCallback(mCallback) {}
@@ -68,8 +68,8 @@ class Effect : public Tracker {
     void CreateCleanup(Callback cleanup);
 
    private:
-    void Run(Context& ctx);
-    void Cleanup(Context& ctx);
+    void Run(Scope& ctx);
+    void Cleanup(Scope& ctx);
 
     Callback mCallback;
     std::vector<Callback> mCleanup;
@@ -77,19 +77,19 @@ class Effect : public Tracker {
 
 class UntrackScope {
    public:
-    UntrackScope(Context& ctx);
+    UntrackScope(Scope& ctx);
     ~UntrackScope();
 
    private:
-    Context& ctx;
+    Scope& ctx;
 };
 
-class Context {
+class Scope {
     friend UntrackScope;
 
    public:
-    Context() = default;
-    ~Context() {
+    Scope() = default;
+    ~Scope() {
         for (auto& effect : mAllEffects) {
             effect->Cleanup(*this);
         }
@@ -129,32 +129,32 @@ class Context {
 // signal
 
 template <typename T>
-inline std::shared_ptr<Signal<T>> Context::CreateSignal(T initialValue) {
+inline std::shared_ptr<Signal<T>> Scope::CreateSignal(T initialValue) {
     return std::make_shared<Signal<T>>(initialValue);
 }
 
 template <typename T>
-inline T Signal<T>::Get(Context& ctx) {
+inline T Signal<T>::Get(Scope& ctx) {
     ctx.Track(shared_from_this());
     return mValue;
 }
 
 template <typename T>
-inline void Signal<T>::Set(Context& ctx, T value) {
+inline void Signal<T>::Set(Scope& ctx, T value) {
     mValue = value;
     ctx.MarkChanged(shared_from_this());
 }
 
 // memo
 template <typename T>
-inline std::shared_ptr<Memo<T>> Context::CreateMemo(Memo<T>::Callback callback) {
+inline std::shared_ptr<Memo<T>> Scope::CreateMemo(Memo<T>::Callback callback) {
     auto memo = std::make_shared<Memo<T>>(callback);
     mAllMemos.emplace_back(memo);
     return memo;
 }
 
 template <typename T>
-inline T Memo<T>::Get(Context& ctx) const {
+inline T Memo<T>::Get(Scope& ctx) const {
     if (mDirty) {
         mDependencies.clear();
         ctx.PushTracker(this);
@@ -169,19 +169,19 @@ inline void BaseMemo::MarkDirty() const {
 }
 
 // effect
-inline void Context::CreateEffect(Callback effectCallback) {
+inline void Scope::CreateEffect(Callback effectCallback) {
     mAllEffects.push_back(std::make_unique<Effect>(effectCallback));
     mAllEffects.back()->Run(*this);
 }
 
-inline void Effect::Run(Context& ctx) {
+inline void Effect::Run(Scope& ctx) {
     Cleanup(ctx);
     ctx.PushTracker(this);
     mCallback(ctx);
     ctx.PopTracker();
 }
 
-inline void Effect::Cleanup(Context& ctx) {
+inline void Effect::Cleanup(Scope& ctx) {
     for (const auto& cleanup : mCleanup) {
         cleanup(ctx);
     }
@@ -195,13 +195,13 @@ inline void Effect::CreateCleanup(Callback cleanup) {
 
 // context
 
-inline void Context::Track(std::shared_ptr<Trackable> trackable) {
+inline void Scope::Track(std::shared_ptr<Trackable> trackable) {
     if (mNumUntrackScopes == 0 && !mRunningTracker.empty()) {
         mRunningTracker.back()->mDependencies.push_back(trackable);
     }
 }
 
-inline void Context::MarkChanged(std::shared_ptr<Trackable> trackable) {
+inline void Scope::MarkChanged(std::shared_ptr<Trackable> trackable) {
     // "real" implementations probably store a weak pointer list of the dependents in the trackable. whatever.
     for (auto& effect : mAllEffects) {
         const auto& deps = effect->mDependencies;
@@ -219,7 +219,7 @@ inline void Context::MarkChanged(std::shared_ptr<Trackable> trackable) {
     }
 }
 
-inline void Context::ApplyChanges() {
+inline void Scope::ApplyChanges() {
     while (!mScheduledEffects.empty()) {
         std::vector<Effect*> scheduledEffectsCopy = mScheduledEffects;
         for (auto effect : scheduledEffectsCopy) {
@@ -228,15 +228,15 @@ inline void Context::ApplyChanges() {
     }
 }
 
-inline void Context::PushTracker(Tracker* effect) {
+inline void Scope::PushTracker(Tracker* effect) {
     mRunningTracker.push_back(effect);
 }
 
-inline void Context::PopTracker() {
+inline void Scope::PopTracker() {
     mRunningTracker.pop_back();
 }
 
-inline void Context::StopTracking(Effect* tracker) {
+inline void Scope::StopTracking(Effect* tracker) {
     tracker->Cleanup(*this);
     mScheduledEffects.erase(
         std::remove(mScheduledEffects.begin(), mScheduledEffects.end(), static_cast<Effect*>(tracker)));
@@ -247,11 +247,11 @@ inline void Context::StopTracking(Effect* tracker) {
         std::remove_if(mAllEffects.begin(), mAllEffects.end(), [&](auto& e) { return e.get() == tracker; }));
 }
 
-inline void Context::StopTracking(BaseMemo* tracker) {
+inline void Scope::StopTracking(BaseMemo* tracker) {
     mRunningTracker.erase(std::remove(mRunningTracker.begin(), mRunningTracker.end(), tracker));
 }
 
-inline UntrackScope::UntrackScope(Context& ctx) : ctx(ctx) {
+inline UntrackScope::UntrackScope(Scope& ctx) : ctx(ctx) {
     ctx.mNumUntrackScopes++;
 }
 
