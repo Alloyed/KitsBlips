@@ -40,4 +40,11 @@ extern "C" void MacInputEvent(struct MyPlugin *plugin, int32_t cursorX, int32_t 
     GUIPaint(plugin, true);
 }
 */
+
+uint64_t createPlatformTimer([[maybe_unused]] std::function<void()> fn) {
+    return 0;
+}
+
+void cancelPlatformTimer([[maybe_unused]] uint64_t id) {}
+
 #endif

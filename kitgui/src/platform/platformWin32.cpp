@@ -6,6 +6,7 @@
 #include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_video.h>
 #include <windows.h>
+#include <unordered_map>
 
 namespace {
 void getPlatformHandles(SDL_Window* sdlWindow, HWND& hWindow) {
@@ -17,14 +18,52 @@ void getPlatformHandles(SDL_Window* sdlWindow, HWND& hWindow) {
 namespace kitgui {
 
 namespace platform {
-SDL_Window* wrapWindow(Api api, void* apiWindow) {
-    // TODO
-    return nullptr;
+SDL_Window* wrapWindow([[maybe_unused]] Api api, void* apiWindow) {
+    SDL_PropertiesID createProps = SDL_CreateProperties();
+    if (createProps == 0) {
+        LOG_SDL_ERROR();
+        return nullptr;
+    }
+
+    SDL_SetPointerProperty(createProps, SDL_PROP_WINDOW_CREATE_WIN32_HWND_POINTER, apiWindow);
+    SDL_Window* wrappedWindow = SDL_CreateWindowWithProperties(createProps);
+    SDL_DestroyProperties(createProps);
+    return wrappedWindow;
 }
+
 void onCreateWindow(Api api, SDL_Window* sdlWindow) {
     // do nothing
     (void)api;
     (void)sdlWindow;
+    SDL_SetWindowsMessageHook(kitgui_MessageHook);
+}
+
+namespace {
+std::unordered_map<uint64_t, std::function<void()>> sStoredCallbacks{};
+bool kitgui_MessageHook(void* userdata, MSG* msg) {
+    if (msg != nullptr && msg->message == WM_TIMER && msg->hwnd == nullptr) {
+        uint64_t id = msg->wParam;
+
+        if (auto iter = sStoredCallbacks.find(id), iter != mymap.end()) {
+            iter->second();
+        }
+    }
+
+    // pass message on
+    return true;
+}
+}  // namespace
+
+uint64_t createPlatformTimer(std::function<void()> fn) {
+    uint32_t timeoutMs = 10;
+    auto id = SetTimer(nullptr, 0, timeoutMs, nullptr);
+    sStoredCallbacks.insert({id, fn});
+    return id;
+}
+
+void cancelPlatformTimer(uint64_t id) {
+    KillTimer(nullptr, id);
+    sStoredCallbacks.erase(id);
 }
 
 bool setParent(Api api, SDL_Window* sdlWindow, SDL_Window* parent) {

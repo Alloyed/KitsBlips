@@ -61,6 +61,12 @@ void onCreateWindow(Api api, SDL_Window* sdlWindow) {
     }
 }
 
+uint64_t createPlatformTimer([[maybe_unused]] std::function<void()> fn) {
+    return 0;
+}
+
+void cancelPlatformTimer([[maybe_unused]] uint64_t id) {}
+
 bool setParent(Api api, SDL_Window* sdlWindow, SDL_Window* parent) {
     if (api == Api::Wayland) {
         return true;
