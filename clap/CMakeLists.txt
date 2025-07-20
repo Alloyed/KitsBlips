@@ -18,11 +18,9 @@ option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
 set(CMAKE_CXX_STANDARD 20)
 
 # shared libs
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(../content.cmake)
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
-FetchContent_MakeAvailable(clap clap-wrapper KitDSP physfs)
-find_package(Sanitizers)
+FetchContent_MakeAvailable(clap clap-wrapper clapeze KitDSP physfs)
 
 add_library(KitsBlips-lib STATIC)
 target_compile_definitions(KitsBlips-lib PUBLIC
@@ -30,19 +28,10 @@ target_compile_definitions(KitsBlips-lib PUBLIC
     PRODUCT_ID="${PRODUCT_ID}"
     PRODUCT_VERSION="${PROJECT_VERSION}"
 )
-if (MSVC)
-    target_compile_options(KitsBlips-lib PRIVATE /W4)
-else()
-    target_compile_options(KitsBlips-lib PRIVATE -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-missing-braces)
-endif()
+target_enable_warnings(KitsBlips-lib)
 
 target_sources(KitsBlips-lib PRIVATE
     src/entry.cpp
-
-    src/clapeze/basePlugin.cpp
-    src/clapeze/pluginHost.cpp
-    src/clapeze/ext/kitgui.cpp
-
     src/crunch/crunch.cpp
     src/sines/sines.cpp
     src/snecho/snecho.cpp
@@ -51,10 +40,8 @@ target_sources(KitsBlips-lib PRIVATE
 target_include_directories(KitsBlips-lib PUBLIC src)
 
 target_link_libraries(KitsBlips-lib PUBLIC
-    clap
+    clapeze
     KitDSP
-    etl
-    PhysFS::PhysFS-static
 )
 
 if(KITSBLIPS_ENABLE_GUI)

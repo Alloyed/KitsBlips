@@ -1,20 +1,20 @@
 #include "crunch/crunch.h"
 
-#include "clapeze/effectPlugin.h"
-#include "clapeze/ext/parameterConfigs.h"
-#include "clapeze/ext/parameters.h"
-#include "descriptor.h"
-
+#include <clapeze/effectPlugin.h>
+#include <clapeze/ext/parameterConfigs.h>
+#include <clapeze/ext/parameters.h>
 #include <kitdsp/dbMeter.h>
 #include <kitdsp/filters/dcBlocker.h>
 #include <kitdsp/filters/onePole.h>
 #include <kitdsp/math/approx.h>
 #include <kitdsp/math/util.h>
 
+#include "descriptor.h"
+
 #if KITSBLIPS_ENABLE_GUI
 #include <kitgui/app.h>
 #include <kitgui/context.h>
-#include "clapeze/ext/kitgui.h"
+#include <clapeze/ext/kitgui.h>
 #endif
 
 using namespace clapeze;

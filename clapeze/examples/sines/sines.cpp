@@ -1,0 +1,110 @@
+#include "sines/sines.h"
+
+#include <clapeze/common.h>
+#include <clapeze/ext/parameterConfigs.h>
+#include <clapeze/ext/parameters.h>
+#include <clapeze/instrumentPlugin.h>
+#include <clapeze/voice.h>
+
+#include <cmath>
+#include <numbers>
+#include "descriptor.h"
+
+namespace sines {
+enum class Params : clap_id { Fall, Polyphony, Count };
+using ParamsExt = clapeze::ParametersExt<Params>;
+
+inline float mtof(float midiNote) {
+    return std::exp2((midiNote - 69.0f) / 12.0f) * 440.0f;
+}
+
+inline float sinOsc(float phase) {
+    return std::sin(phase * std::numbers::pi * 2.0f);
+}
+
+class Processor : public clapeze::InstrumentProcessor<ParamsExt::ProcessParameters> {
+    class Voice {
+       public:
+        Voice(Processor& p) : mProcessor(p) {}
+        void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
+            mFrequencyHz = mtof(note.key);
+            mCurrentAmplitude = 1.0f;
+            mTargetAmplitude = 1.0f;
+        }
+        void ProcessNoteOff() { mTargetAmplitude = 0.0f; }
+        void ProcessChoke() { mCurrentAmplitude = 0.0f; }
+        bool ProcessAudio(clapeze::StereoAudioBuffer& out) {
+            const auto& params = mProcessor.mParams;
+            const float sampleRate = mProcessor.GetSampleRate();
+            float fallRate = params.Get<clapeze::NumericParam>(Params::Fall);
+
+            for (uint32_t index = 0; index < out.left.size(); index++) {
+                // NOTE: this is sample-rate dependent! do something smarter in your own plugins
+                mCurrentAmplitude = std::lerp(mCurrentAmplitude, mTargetAmplitude, fallRate);
+
+                mPhase += mFrequencyHz / sampleRate;
+                if (mPhase > 1.0f) {
+                    mPhase -= 1.0f;
+                }
+                float wave = sinOsc(mPhase);
+                out.left[index] = wave * mCurrentAmplitude;
+                out.right[index] = out.left[index];
+            }
+            if (mCurrentAmplitude < 0.0001f && mTargetAmplitude == 0.0f) {
+                // audio settled, time to sleep
+                return false;
+            }
+            return true;
+        }
+
+       private:
+        Processor& mProcessor;
+        float mFrequencyHz{};
+        float mPhase{};
+        float mCurrentAmplitude{};
+        float mTargetAmplitude{};
+    };
+
+   public:
+    Processor(ParamsExt::ProcessParameters& params) : InstrumentProcessor(params), mVoices(*this) {}
+    ~Processor() = default;
+
+    void ProcessAudio(clapeze::StereoAudioBuffer& out) override {
+        mVoices.SetNumVoices(mParams.Get<clapeze::IntegerParam>(Params::Polyphony));
+        mVoices.ProcessAudio(out);
+    }
+
+    void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) override {
+        mVoices.ProcessNoteOn(note, velocity);
+    }
+
+    void ProcessNoteOff(const clapeze::NoteTuple& note) override { mVoices.ProcessNoteOff(note); }
+
+    void ProcessNoteChoke(const clapeze::NoteTuple& note) override { mVoices.ProcessNoteChoke(note); }
+
+    void ProcessReset() override { mVoices.StopAllVoices(); }
+
+   private:
+    clapeze::PolyphonicVoicePool<Processor, Voice, 16> mVoices;
+};
+
+class Plugin : public clapeze::InstrumentPlugin {
+   public:
+    Plugin(clapeze::PluginHost& host) : clapeze::InstrumentPlugin(host) {}
+    ~Plugin() = default;
+
+   protected:
+    void Config() override {
+        clapeze::InstrumentPlugin::Config();
+        ParamsExt& params =
+            ConfigExtension<ParamsExt>(GetHost(), Params::Count)
+                .ConfigParam<clapeze::NumericParam>(Params::Fall, "Fall", 0.0001f, 1.f, .01f, "ms")
+                .ConfigParam<clapeze::IntegerParam>(Params::Polyphony, "Polyphony", 1, 16, 8, "voices", "voice");
+        ConfigProcessor<Processor>(params.GetStateForAudioThread());
+    }
+};
+
+const clapeze::PluginEntry Entry{AudioInstrumentDescriptor("kitsblips.sines", "Sines", "a simple sine wave synth"),
+                                 [](clapeze::PluginHost& host) -> clapeze::BasePlugin* { return new Plugin(host); }};
+
+}  // namespace sines

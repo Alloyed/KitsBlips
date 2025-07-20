@@ -1,10 +1,10 @@
 #pragma once
 
 #include <clap/clap.h>
+#include <clap/ext/params.h>
 #include <cstdint>
 #include <cstdio>
 
-#include "clap/ext/params.h"
 #include "clapeze/basePlugin.h"
 #include "clapeze/ext/parameters.h"
 

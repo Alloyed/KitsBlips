@@ -9,30 +9,51 @@ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 include(FetchContent)
 
+function(target_enable_warnings target_name)
+    if (MSVC)
+        target_compile_options(${target_name} PRIVATE /W4)
+    else()
+        target_compile_options(${target_name} PRIVATE -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-missing-braces)
+    endif()
+endfunction()
+
+function(enable_ccache)
+    find_program(CCACHE_PROGRAM ccache)
+    if(CCACHE_PROGRAM)
+        set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+        set(CMAKE_CUDA_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+    endif()
+endfunction()
+
 # local
+set(KITSBLIPS_DIR ${CMAKE_CURRENT_LIST_DIR})
 FetchContent_Declare(
     daisy
-    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/libDaisy
+    SOURCE_DIR ${KITSBLIPS_DIR}/sdk/libDaisy
 )
 FetchContent_Declare(
     CMSIS_5 
-    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/libDaisy/Drivers/CMSIS_5
+    SOURCE_DIR ${KITSBLIPS_DIR}/sdk/libDaisy/Drivers/CMSIS_5
 )
 FetchContent_Declare(
     CMSIS-DSP
-    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/libDaisy/Drivers/CMSIS-DSP
+    SOURCE_DIR ${KITSBLIPS_DIR}/sdk/libDaisy/Drivers/CMSIS-DSP
 )
 FetchContent_Declare(
     KitDSP
-    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/kitdsp
+    SOURCE_DIR ${KITSBLIPS_DIR}/kitdsp
 )
 FetchContent_Declare(
     KitDSP-GPL
-    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/kitdsp-gpl
+    SOURCE_DIR ${KITSBLIPS_DIR}/kitdsp-gpl
 )
 FetchContent_Declare(
     KitGui
-    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/kitgui
+    SOURCE_DIR ${KITSBLIPS_DIR}/kitgui
+)
+FetchContent_Declare(
+    clapeze
+    SOURCE_DIR ${KITSBLIPS_DIR}/clapeze
 )
 
 # TODO: switch to FetchContent?
@@ -42,12 +63,12 @@ set(IMGUI_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/imgui)
 FetchContent_Declare(
     etl
     GIT_REPOSITORY https://github.com/ETLCPP/etl
-    GIT_TAG        20.39.4
+    GIT_TAG        20.42.2
 )
 FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG        v1.15.2
+    GIT_TAG        v1.17.0
 )
 FetchContent_Declare(
     clap

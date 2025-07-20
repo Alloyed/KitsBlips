@@ -12,7 +12,7 @@
 #include <imgui.h>
 #endif
 
-#include "clapeze/ext/parameters.h"
+#include <clapeze/ext/parameters.h>
 
 namespace _clapeze_impl {
 /* safe alternative to strcpy when the buffer size is known at compile time. assumes the buffer is zero'd out in
