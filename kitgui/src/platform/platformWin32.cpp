@@ -7,12 +7,29 @@
 #include <SDL3/SDL_video.h>
 #include <windows.h>
 #include <unordered_map>
+#include <functional>
+#include "log.h"
 
 namespace {
 void getPlatformHandles(SDL_Window* sdlWindow, HWND& hWindow) {
     SDL_PropertiesID windowProps = SDL_GetWindowProperties(sdlWindow);
     hWindow = static_cast<HWND>(SDL_GetPointerProperty(windowProps, SDL_PROP_WINDOW_WIN32_HWND_POINTER, 0));
 }
+
+std::unordered_map<uint64_t, std::function<void()>> sStoredCallbacks{};
+bool kitgui_MessageHook(void* userdata, MSG* msg) {
+    if (msg != nullptr && msg->message == WM_TIMER && msg->hwnd == nullptr) {
+        uint64_t id = msg->wParam;
+        auto iter = sStoredCallbacks.find(id);
+        if (iter != sStoredCallbacks.end()) {
+            iter->second();
+        }
+    }
+
+    // pass message on
+    return true;
+}
+
 }  // namespace
 
 namespace kitgui {
@@ -35,24 +52,8 @@ void onCreateWindow(Api api, SDL_Window* sdlWindow) {
     // do nothing
     (void)api;
     (void)sdlWindow;
-    SDL_SetWindowsMessageHook(kitgui_MessageHook);
+    SDL_SetWindowsMessageHook(kitgui_MessageHook, nullptr);
 }
-
-namespace {
-std::unordered_map<uint64_t, std::function<void()>> sStoredCallbacks{};
-bool kitgui_MessageHook(void* userdata, MSG* msg) {
-    if (msg != nullptr && msg->message == WM_TIMER && msg->hwnd == nullptr) {
-        uint64_t id = msg->wParam;
-
-        if (auto iter = sStoredCallbacks.find(id), iter != mymap.end()) {
-            iter->second();
-        }
-    }
-
-    // pass message on
-    return true;
-}
-}  // namespace
 
 uint64_t createPlatformTimer(std::function<void()> fn) {
     uint32_t timeoutMs = 10;

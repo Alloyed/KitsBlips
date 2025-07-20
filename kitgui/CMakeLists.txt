@@ -10,12 +10,7 @@ FetchContent_MakeAvailable(SDL3 corrade magnum magnum-plugins)
 
 add_library(kitgui STATIC)
 set_property(TARGET kitgui PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
-
-if (MSVC)
-    target_compile_options(kitgui PRIVATE /W4)
-else()
-    target_compile_options(kitgui PRIVATE -Wall -Wextra -pedantic -Wno-unused-parameter)
-endif()
+target_enable_warnings(kitgui)
 
 target_sources(kitgui PRIVATE
     src/context.cpp
@@ -34,6 +29,7 @@ target_include_directories(kitgui PUBLIC include)
 target_include_directories(kitgui PRIVATE src)
 
 target_link_libraries(kitgui PUBLIC
+    SDL3::SDL3
     imgui
     Corrade::Main
     Magnum::GL

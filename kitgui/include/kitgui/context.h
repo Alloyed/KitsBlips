@@ -1,7 +1,5 @@
 #pragma once
 
-// has to be first
-
 #include <Magnum/Magnum.h>
 #include <Magnum/Math/Color.h>
 #include <Magnum/Platform/GLContext.h>
