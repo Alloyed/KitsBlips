@@ -16,11 +16,7 @@
 #include "clapeze/ext/kitgui.h"
 #endif
 
-using namespace kitdsp;
-using namespace clapeze;
-
-namespace snecho {
-
+namespace {
 enum class Params : clap_id {
     Mix,
     Size,
@@ -34,8 +30,63 @@ enum class Params : clap_id {
     ClearBuffer,
     Count
 };
-using ParamsExt = ParametersFeature<Params>;
+using ParamsExt = clapeze::ParametersFeature<Params>;
+}  // namespace
 
+template <>
+struct clapeze::ParamTraits<Params, Params::Mix> {
+    using _paramtype = clapeze::PercentParam;
+};
+
+template <>
+struct clapeze::ParamTraits<Params, Params::Size> {
+    using _paramtype = clapeze::PercentParam;
+};
+
+template <>
+struct clapeze::ParamTraits<Params, Params::Feedback> {
+    using _paramtype = clapeze::PercentParam;
+};
+
+template <>
+struct clapeze::ParamTraits<Params, Params::FilterPreset> {
+    using _paramtype = clapeze::IntegerParam;
+};
+
+template <>
+struct clapeze::ParamTraits<Params, Params::FreezeEcho> {
+    using _paramtype = clapeze::OnOffParam;
+};
+
+template <>
+struct clapeze::ParamTraits<Params, Params::ResetHead> {
+    using _paramtype = clapeze::OnOffParam;
+};
+
+template <>
+struct clapeze::ParamTraits<Params, Params::SizeRange> {
+    using _paramtype = clapeze::IntegerParam;
+};
+
+template <>
+struct clapeze::ParamTraits<Params, Params::EchoDelayMod> {
+    using _paramtype = clapeze::PercentParam;
+};
+
+template <>
+struct clapeze::ParamTraits<Params, Params::FilterMix> {
+    using _paramtype = clapeze::PercentParam;
+};
+
+template <>
+struct clapeze::ParamTraits<Params, Params::ClearBuffer> {
+    using _paramtype = clapeze::OnOffParam;
+};
+
+using namespace kitdsp;
+using namespace clapeze;
+
+namespace snecho {
 class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
    public:
     Processor(ParamsExt::ProcessParameters& params) : EffectProcessor(params) {}
@@ -44,18 +95,18 @@ class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
     void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
         // inputs
         // core
-        snes1.cfg.echoBufferSize = mParams.Get<NumericParam>(Params::Size);
+        snes1.cfg.echoBufferSize = mParams.Get<Params::Size>();
 
-        snes1.cfg.echoFeedback = mParams.Get<PercentParam>(Params::Feedback);
+        snes1.cfg.echoFeedback = mParams.Get<Params::Feedback>();
 
-        size_t filterPreset = mParams.Get<IntegerParam>(Params::FilterPreset);
+        size_t filterPreset = mParams.Get<Params::FilterPreset>();
         if (filterPreset != mLastFilterPreset) {
             mLastFilterPreset = filterPreset;
             memcpy(snes1.cfg.filterCoefficients, SNES::kFilterPresets[filterPreset].data, SNES::kFIRTaps);
             // snes1.cfg.filterGain = dbToRatio(-SNES::kFilterPresets[filterPreset].maxGainDb);
         }
 
-        int32_t range = mParams.Get<IntegerParam>(Params::SizeRange);
+        int32_t range = mParams.Get<Params::SizeRange>();
         if (range == 0) {
             snes1.cfg.echoBufferRangeMaxSamples = SNES::kOriginalMaxEchoSamples;
         } else if (range == 1) {
@@ -64,17 +115,17 @@ class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
             snes1.cfg.echoBufferRangeMaxSamples = SNES::MsToSamples(10000.0f);
         }
 
-        float wetDryMix = mParams.Get<PercentParam>(Params::Mix);
+        float wetDryMix = mParams.Get<Params::Mix>();
 
-        snes1.cfg.freezeEcho = mParams.Get<OnOffParam>(Params::FreezeEcho) == OnOff::On;
+        snes1.cfg.freezeEcho = mParams.Get<Params::FreezeEcho>() == OnOff::On;
 
         // extension
-        snes1.cfg.echoDelayMod = mParams.Get<NumericParam>(Params::EchoDelayMod);
+        snes1.cfg.echoDelayMod = mParams.Get<Params::EchoDelayMod>();
 
-        snes1.cfg.filterMix = mParams.Get<PercentParam>(Params::FilterMix);
+        snes1.cfg.filterMix = mParams.Get<Params::FilterMix>();
 
-        snes1.mod.clearBuffer = mParams.Get<OnOffParam>(Params::ClearBuffer) == OnOff::On;
-        snes1.mod.resetHead = mParams.Get<OnOffParam>(Params::ResetHead) == OnOff::On;
+        snes1.mod.clearBuffer = mParams.Get<Params::ClearBuffer>() == OnOff::On;
+        snes1.mod.resetHead = mParams.Get<Params::ResetHead>() == OnOff::On;
         snes1.cfg.echoBufferIncrementSamples = SNES::kOriginalEchoIncrementSamples;
 
         // processing
@@ -124,20 +175,19 @@ class Plugin : public EffectPlugin {
     void Config() override {
         EffectPlugin::Config();
 
-        ParamsExt& params =
-            ConfigFeature<ParamsExt>(GetHost(), Params::Count)
-                .ConfigModule("Original")
-                .ConfigParam<PercentParam>(Params::Mix, "Mix", 0.5f)
-                .ConfigParam<PercentParam>(Params::Size, "Size", 0.5f)
-                .ConfigParam<PercentParam>(Params::Feedback, "Feedback", 0.5f)
-                .ConfigParam<IntegerParam>(Params::FilterPreset, "Filter Preset", 0, SNES::kNumFilterPresets, 0)
-                .ConfigParam<OnOffParam>(Params::FreezeEcho, "Freeze Echo", OnOff::Off)
-                .ConfigParam<OnOffParam>(Params::ResetHead, "Reset Playhead", OnOff::Off)
-                .ConfigModule("Extensions")
-                .ConfigParam<IntegerParam>(Params::SizeRange, "Size Range", 0, 2, 0)
-                .ConfigParam<PercentParam>(Params::EchoDelayMod, "Echo Mod", 1.0f)
-                .ConfigParam<PercentParam>(Params::FilterMix, "Filter Mix", 1.0f)
-                .ConfigParam<OnOffParam>(Params::ClearBuffer, "Clear Buffer", OnOff::Off);
+        ParamsExt& params = ConfigFeature<ParamsExt>(GetHost(), Params::Count)
+                                .ConfigModule("Original")
+                                .ConfigParam<Params::Mix>("Mix", 0.5f)
+                                .ConfigParam<Params::Size>("Size", 0.5f)
+                                .ConfigParam<Params::Feedback>("Feedback", 0.5f)
+                                .ConfigParam<Params::FilterPreset>("Filter Preset", 0, SNES::kNumFilterPresets, 0)
+                                .ConfigParam<Params::FreezeEcho>("Freeze Echo", OnOff::Off)
+                                .ConfigParam<Params::ResetHead>("Reset Playhead", OnOff::Off)
+                                .ConfigModule("Extensions")
+                                .ConfigParam<Params::SizeRange>("Size Range", 0, 2, 0)
+                                .ConfigParam<Params::EchoDelayMod>("Echo Mod", 1.0f)
+                                .ConfigParam<Params::FilterMix>("Filter Mix", 1.0f)
+                                .ConfigParam<Params::ClearBuffer>("Clear Buffer", OnOff::Off);
 
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });

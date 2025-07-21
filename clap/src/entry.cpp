@@ -6,7 +6,6 @@
 #include "clapeze/basePlugin.h"
 
 #include "crunch/crunch.h"
-#include "sines/sines.h"
 #include "snecho/snecho.h"
 
 using namespace clapeze;
@@ -14,7 +13,7 @@ using namespace clapeze;
 namespace PluginFactory {
 
 const std::vector<PluginEntry> plugins{
-    snecho::Entry, sines::Entry, crunch::Entry,
+    snecho::Entry, crunch::Entry,
     // Add your plugin here!
     // Some hosts seem to store the plugin index alongside the id, so make sure
     // you only ever add to the end of the list.

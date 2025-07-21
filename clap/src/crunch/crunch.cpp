@@ -17,14 +17,8 @@
 #include <kitgui/context.h>
 #endif
 
-using namespace clapeze;
-
-namespace crunch {
-
-enum class Params : clap_id { Algorithm, Gain, Tone, Makeup, Mix, Count };
-using ParamsFeature = ParametersFeature<Params>;
-
 namespace {
+enum class Params : clap_id { Algorithm, Gain, Tone, Makeup, Mix, Count };
 enum class Algorithm {
     // base algorithms (similar to renoise's built-in distortion)
     HardClip,
@@ -34,6 +28,39 @@ enum class Algorithm {
     // not an algorithm :)
     Count
 };
+using ParamsFeature = clapeze::ParametersFeature<Params>;
+}  // namespace
+
+template <>
+struct clapeze::ParamTraits<Params, Params::Algorithm> {
+    using _paramtype = clapeze::EnumParam<Algorithm>;
+};
+
+template <>
+struct clapeze::ParamTraits<Params, Params::Gain> {
+    using _paramtype = clapeze::DbParam;
+};
+
+template <>
+struct clapeze::ParamTraits<Params, Params::Tone> {
+    using _paramtype = clapeze::PercentParam;
+};
+
+template <>
+struct clapeze::ParamTraits<Params, Params::Makeup> {
+    using _paramtype = clapeze::DbParam;
+};
+
+template <>
+struct clapeze::ParamTraits<Params, Params::Mix> {
+    using _paramtype = clapeze::PercentParam;
+};
+
+using namespace clapeze;
+
+namespace crunch {
+
+namespace {
 
 float crunch(Algorithm algorithm, float in) {
     switch (algorithm) {
@@ -81,11 +108,11 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
     ~Processor() = default;
 
     void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
-        Algorithm algorithm = mParams.Get<EnumParam<Algorithm>>(Params::Algorithm);
-        float gain = kitdsp::dbToRatio(mParams.Get<DbParam>(Params::Gain));
-        float tonef = mParams.Get<PercentParam>(Params::Tone);
-        float makeup = kitdsp::dbToRatio(mParams.Get<DbParam>(Params::Makeup));
-        float mixf = mParams.Get<PercentParam>(Params::Mix);
+        Algorithm algorithm = mParams.Get<Params::Algorithm>();
+        float gain = kitdsp::dbToRatio(mParams.Get<Params::Gain>());
+        float tonef = mParams.Get<Params::Tone>();
+        float makeup = kitdsp::dbToRatio(mParams.Get<Params::Makeup>());
+        float mixf = mParams.Get<Params::Mix>();
 
         for (size_t idx = 0; idx < in.left.size(); ++idx) {
             // in
@@ -162,13 +189,13 @@ class Plugin : public EffectPlugin {
 
         ParamsFeature& params =
             ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
-                .ConfigParam<EnumParam<Algorithm>>(Params::Algorithm, "Algorithm",
-                                                   std::vector<std::string_view>{"Clip", "Saturate", "Fold", "Rectify"},
-                                                   Algorithm::HardClip)
-                .ConfigParam<DbParam>(Params::Gain, "Gain", 0.0f, 32.0f, 0.0f)
-                .ConfigParam<PercentParam>(Params::Tone, "Tone", 0.5f)
-                .ConfigParam<DbParam>(Params::Makeup, "Makeup", -9.0f, 9.0f, 0.0f)
-                .ConfigParam<PercentParam>(Params::Mix, "Mix", 1.0f);
+                .ConfigParam<Params::Algorithm>("Algorithm",
+                                                std::vector<std::string_view>{"Clip", "Saturate", "Fold", "Rectify"},
+                                                Algorithm::HardClip)
+                .ConfigParam<Params::Gain>("Gain", 0.0f, 32.0f, 0.0f)
+                .ConfigParam<Params::Tone>("Tone", 0.5f)
+                .ConfigParam<Params::Makeup>("Makeup", -9.0f, 9.0f, 0.0f)
+                .ConfigParam<Params::Mix>("Mix", 1.0f);
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif

@@ -33,7 +33,6 @@ target_enable_warnings(KitsBlips-lib)
 target_sources(KitsBlips-lib PRIVATE
     src/entry.cpp
     src/crunch/crunch.cpp
-    src/sines/sines.cpp
     src/snecho/snecho.cpp
     src/clapeze/ext/kitgui.cpp
 )
