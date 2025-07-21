@@ -23,7 +23,7 @@ using namespace clapeze;
 
 namespace sines {
 enum class Params : clap_id { Rise, Fall, VibratoRate, VibratoDepth, Portamento, Polyphony, Count };
-using ParamsExt = ParametersExt<Params>;
+using ParamsExt = ParametersFeature<Params>;
 
 class Processor : public InstrumentProcessor<ParamsExt::ProcessParameters> {
     class Voice {
@@ -119,7 +119,7 @@ class Plugin : public InstrumentPlugin {
     void Config() override {
         InstrumentPlugin::Config();
         ParamsExt& params =
-            ConfigExtension<ParamsExt>(GetHost(), Params::Count)
+            ConfigFeature<ParamsExt>(GetHost(), Params::Count)
                 .ConfigParam<NumericParam>(Params::Rise, "Rise", 1.0f, 1000.f, 500.0f, "ms")
                 .ConfigParam<NumericParam>(Params::Fall, "Fall", 1.0f, 1000.f, 500.0f, "ms")
                 .ConfigParam<NumericParam>(Params::VibratoRate, "Vibrato Rate", .1f, 10.0f, 1.0f, "hz")
@@ -127,7 +127,7 @@ class Plugin : public InstrumentPlugin {
                 .ConfigParam<NumericParam>(Params::Portamento, "Portamento", 1.0f, 100.0f, 10.0f, "ms")
                 .ConfigParam<IntegerParam>(Params::Polyphony, "Polyphony", 1, 16, 8, "voices", "voice");
 #if KITSBLIPS_ENABLE_GUI
-        ConfigExtension<KitguiExt>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
+        ConfigFeature<KitguiFeature>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }

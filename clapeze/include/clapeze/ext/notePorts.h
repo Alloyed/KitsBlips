@@ -8,7 +8,7 @@
 namespace clapeze {
 
 template <size_t NUM_INPUTS, size_t NUM_OUTPUTS>
-class NotePortsExt : public BaseExt {
+class NotePortsFeature : public BaseFeature {
    public:
     static constexpr auto NAME = CLAP_EXT_NOTE_PORTS;
     const char* Name() const override { return NAME; }

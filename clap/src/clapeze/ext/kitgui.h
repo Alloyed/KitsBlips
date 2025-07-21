@@ -10,9 +10,9 @@
 
 namespace clapeze {
 
-class KitguiExt : public clapeze::GuiExt {
+class KitguiFeature : public clapeze::GuiFeature {
    public:
-    KitguiExt(kitgui::Context::AppFactory createAppFn);
+    KitguiFeature(kitgui::Context::AppFactory createAppFn);
     bool IsApiSupported(ClapWindowApi api, bool isFloating) override;
     bool GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) override;
     bool Create(ClapWindowApi api, bool isFloating) override;

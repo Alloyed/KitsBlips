@@ -38,11 +38,11 @@ class BaseParam {
  * - observer architecture (onParamChanged())
  * - dynamic parameter modification
  */
-template <typename PARAM_ID, typename ParamType = BaseParam>
-class ParametersExt : public BaseExt {
+template <typename TParamId, typename TBaseParam = BaseParam>
+class ParametersFeature : public BaseFeature {
    public:
-    using Id = PARAM_ID;
-    using ParamConfigs = std::vector<std::unique_ptr<ParamType>>;
+    using Id = TParamId;
+    using ParamConfigs = std::vector<std::unique_ptr<TBaseParam>>;
     enum class ChangeType { SetValue, StartGesture, StopGesture };
     struct Change {
         ChangeType type;
@@ -62,7 +62,7 @@ class ParametersExt : public BaseExt {
         return static_cast<const void*>(&value);
     }
 
-    ParametersExt(PluginHost& host, Id numParams)
+    ParametersFeature(PluginHost& host, Id numParams)
         : mHost(host),
           mNumParams(static_cast<size_t>(numParams)),
           mParams(mNumParams),
@@ -71,20 +71,20 @@ class ParametersExt : public BaseExt {
           mMainToAudio(),
           mAudioState(mParams, mNumParams, mMainToAudio, mAudioToMain) {}
 
-    template <typename InnerParamType, typename... Args>
-    ParametersExt& ConfigParam(Id id, Args&&... args) {
+    template <typename TParam, typename... TArgs>
+    ParametersFeature& ConfigParam(Id id, TArgs&&... args) {
         clap_id index = static_cast<clap_id>(id);
-        mParams[index].reset(new InnerParamType(mNextModule, std::forward<Args>(args)...));
+        mParams[index].reset(new TParam(mNextModule, std::forward<TArgs>(args)...));
         SetRaw(id, mParams[index]->GetRawDefault());
         return *this;
     }
 
-    ParametersExt& ConfigModule(std::string_view moduleName) {
+    ParametersFeature& ConfigModule(std::string_view moduleName) {
         mNextModule = moduleName;
         return *this;
     }
 
-    const ParamType* GetConfig(Id id) const {
+    const TBaseParam* GetConfig(Id id) const {
         clap_id index = static_cast<clap_id>(id);
         if (index >= mState.size()) {
             return nullptr;
@@ -127,7 +127,7 @@ class ParametersExt : public BaseExt {
     void RequestClear(Id id, clap_param_clear_flags flags = CLAP_PARAM_CLEAR_ALL) {
         const clap_host_t* rawHost;
         const clap_host_params_t* rawHostParams;
-        if (mHost.TryGetExtension(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
+        if (mHost.TryGetFeature(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
             clap_id index = static_cast<clap_id>(id);
             rawHostParams->clear(rawHost, index, flags);
         }
@@ -136,7 +136,7 @@ class ParametersExt : public BaseExt {
     void RequestRescan(clap_param_rescan_flags flags = CLAP_PARAM_RESCAN_ALL) {
         const clap_host_t* rawHost;
         const clap_host_params_t* rawHostParams;
-        if (mHost.TryGetExtension(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
+        if (mHost.TryGetFeature(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
             rawHostParams->rescan(rawHost, flags);
         }
     }
@@ -152,7 +152,7 @@ class ParametersExt : public BaseExt {
     void RequestFlushIfNotProcessing() {
         const clap_host_t* rawHost;
         const clap_host_params_t* rawHostParams;
-        if (mHost.TryGetExtension(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
+        if (mHost.TryGetFeature(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
             rawHostParams->request_flush(rawHost);
         }
     }
@@ -162,13 +162,13 @@ class ParametersExt : public BaseExt {
         ProcessParameters(const ParamConfigs& paramConfigs, size_t numParams, Queue& mainToAudio, Queue& audioToMain)
             : mParamsRef(paramConfigs), mState(numParams, 0.0f), mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {}
 
-        template <typename ParamConfig>
-        typename ParamConfig::_valuetype Get(Id id) const {
-            typename ParamConfig::_valuetype out{};
+        template <typename TParam>
+        typename TParam::_valuetype Get(Id id) const {
+            typename TParam::_valuetype out{};
             clap_id index = static_cast<clap_id>(id);
             double raw = GetRaw(id);
             if (index < mState.size()) {
-                dynamic_cast<const ParamConfig*>(mParamsRef[index].get())->ToValue(raw, out);
+                dynamic_cast<const TParam*>(mParamsRef[index].get())->ToValue(raw, out);
             }
             return out;
         }
@@ -269,13 +269,13 @@ class ParametersExt : public BaseExt {
     // impl
    private:
     static uint32_t _count(const clap_plugin_t* plugin) {
-        ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
+        ParametersFeature& self = ParametersFeature::GetFromPluginObject<ParametersFeature>(plugin);
         return self.mNumParams;
     }
     static bool _get_info(const clap_plugin_t* plugin, uint32_t index, clap_param_info_t* information) {
-        ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
+        ParametersFeature& self = ParametersFeature::GetFromPluginObject<ParametersFeature>(plugin);
 
-        const ParamType* param = self.GetConfig(static_cast<Id>(index));
+        const TBaseParam* param = self.GetConfig(static_cast<Id>(index));
         if (param != nullptr) {
             return param->FillInformation(index, information);
         }
@@ -283,7 +283,7 @@ class ParametersExt : public BaseExt {
     }
 
     static bool _get_value(const clap_plugin_t* plugin, clap_id id, double* value) {
-        ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
+        ParametersFeature& self = ParametersFeature::GetFromPluginObject<ParametersFeature>(plugin);
         // called from main thread
         if (id < self.mParams.size()) {
             self.FlushFromAudio();
@@ -298,9 +298,9 @@ class ParametersExt : public BaseExt {
                                double value,
                                char* buf,
                                uint32_t bufferSize) {
-        ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
+        ParametersFeature& self = ParametersFeature::GetFromPluginObject<ParametersFeature>(plugin);
 
-        const ParamType* param = self.GetConfig(static_cast<Id>(param_id));
+        const TBaseParam* param = self.GetConfig(static_cast<Id>(param_id));
         if (param != nullptr) {
             auto span = etl::span<char>(buf, bufferSize);
             return param->ToText(value, span);
@@ -309,9 +309,9 @@ class ParametersExt : public BaseExt {
     }
 
     static bool _text_to_value(const clap_plugin_t* plugin, clap_id param_id, const char* display, double* out) {
-        ParametersExt& self = ParametersExt::GetFromPluginObject<ParametersExt>(plugin);
+        ParametersFeature& self = ParametersFeature::GetFromPluginObject<ParametersFeature>(plugin);
 
-        const ParamType* param = self.GetConfig(static_cast<Id>(param_id));
+        const TBaseParam* param = self.GetConfig(static_cast<Id>(param_id));
         if (param != nullptr) {
             return param->FromText(display, *out);
         }
@@ -322,7 +322,7 @@ class ParametersExt : public BaseExt {
         // called from audio thread when active(), main thread when inactive
         BasePlugin& basePlugin = BasePlugin::GetFromPluginObject(plugin);
         BaseProcessor& processor = basePlugin.GetProcessor();
-        ParametersExt& self = ParametersExt::GetFromPlugin<ParametersExt>(basePlugin);
+        ParametersFeature& self = ParametersFeature::GetFromPlugin<ParametersFeature>(basePlugin);
 
         // Process events sent from the host to us
         if (in) {
@@ -336,5 +336,5 @@ class ParametersExt : public BaseExt {
     }
 };
 
-using BaseParamsExt = ParametersExt<clap_id, BaseParam>;
+using BaseParamsFeature = ParametersFeature<clap_id, BaseParam>;
 }  // namespace clapeze

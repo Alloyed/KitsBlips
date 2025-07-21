@@ -7,9 +7,9 @@
 
 namespace clapeze {
 
-class TimerSupportExt : public BaseExt {
+class TimerSupportFeature : public BaseFeature {
    public:
-    TimerSupportExt(PluginHost& host) : BaseExt() {}
+    TimerSupportFeature(PluginHost& host) : BaseFeature() {}
     static constexpr auto NAME = CLAP_EXT_TIMER_SUPPORT;
     const char* Name() const override { return NAME; }
 

@@ -8,15 +8,15 @@
 namespace crunch {
 
 enum class Params : clap_id { Gain, Makeup, Mix, Count };
-using ParamsExt = clapeze::ParametersExt<Params>;
+using ParamsFeature = clapeze::ParametersFeature<Params>;
 
 inline float dbToRatio(float db) {
     return std::pow(10, db / 20.0f);
 }
 
-class Processor : public clapeze::EffectProcessor<ParamsExt::ProcessParameters> {
+class Processor : public clapeze::EffectProcessor<ParamsFeature::ProcessParameters> {
    public:
-    Processor(ParamsExt::ProcessParameters& params) : EffectProcessor(params) {}
+    Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
     void ProcessAudio(const clapeze::StereoAudioBuffer& in, clapeze::StereoAudioBuffer& out) override {
@@ -55,10 +55,10 @@ class Plugin : public clapeze::EffectPlugin {
     void Config() override {
         EffectPlugin::Config();
 
-        ParamsExt& params = ConfigExtension<ParamsExt>(GetHost(), Params::Count)
-                                .ConfigParam<clapeze::DbParam>(Params::Gain, "Gain", 0.0f, 32.0f, 0.0f)
-                                .ConfigParam<clapeze::DbParam>(Params::Makeup, "Makeup", -9.0f, 9.0f, 0.0f)
-                                .ConfigParam<clapeze::PercentParam>(Params::Mix, "Mix", 1.0f);
+        ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
+                                    .ConfigParam<clapeze::DbParam>(Params::Gain, "Gain", 0.0f, 32.0f, 0.0f)
+                                    .ConfigParam<clapeze::DbParam>(Params::Makeup, "Makeup", -9.0f, 9.0f, 0.0f)
+                                    .ConfigParam<clapeze::PercentParam>(Params::Mix, "Mix", 1.0f);
 
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }

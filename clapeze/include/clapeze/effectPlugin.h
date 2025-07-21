@@ -58,8 +58,8 @@ class EffectPlugin : public BasePlugin {
 
    protected:
     virtual void Config() override {
-        ConfigExtension<StereoAudioPortsExt<1, 1>>();
-        ConfigExtension<StateExt>();
+        ConfigFeature<StereoAudioPortsFeature<1, 1>>();
+        ConfigFeature<StateFeature>();
     }
 };
 }  // namespace clapeze

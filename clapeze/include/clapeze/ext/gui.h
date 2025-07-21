@@ -42,10 +42,10 @@ struct WindowHandle {
     };
 };
 
-/* Unlike all other extensions, BaseGuiExt is an abstract class. Implement it with your preferred gui library! */
-class GuiExt : public BaseExt {
+/* Unlike all other extensions, BaseGuiFeature is an abstract class. Implement it with your preferred gui library! */
+class GuiFeature : public BaseFeature {
    public:
-    ~GuiExt() = default;
+    ~GuiFeature() = default;
     virtual bool IsApiSupported(ClapWindowApi api, bool isFloating) = 0;
     virtual bool GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) = 0;
     virtual bool Create(ClapWindowApi api, bool isFloating) = 0;
@@ -78,7 +78,7 @@ class GuiExt : public BaseExt {
 
     bool Validate(const BasePlugin& plugin) const override {
 #ifdef __linux
-        if (plugin.TryGetExtension(CLAP_EXT_TIMER_SUPPORT) == nullptr) {
+        if (plugin.TryGetFeature(CLAP_EXT_TIMER_SUPPORT) == nullptr) {
             plugin.GetHost().Log(LogSeverity::Fatal, "Gui on linux requires CLAP_EXT_TIMER_SUPPORT");
             return false;
         }
@@ -88,12 +88,12 @@ class GuiExt : public BaseExt {
 
    private:
     static bool _is_api_supported(const clap_plugin_t* plugin, const char* api, bool isFloating) {
-        GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
+        GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         return self.IsApiSupported(toApiEnum(api), isFloating);
     }
 
     static bool _get_preferred_api(const clap_plugin_t* plugin, const char** apiString, bool* isFloating) {
-        GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
+        GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         ClapWindowApi api;
         bool success = self.GetPreferredApi(api, *isFloating);
         if (!success) {
@@ -124,7 +124,7 @@ class GuiExt : public BaseExt {
     }
 
     static bool _create(const clap_plugin_t* plugin, const char* apiString, bool isFloating) {
-        GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
+        GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         ClapWindowApi api = toApiEnum(apiString);
         if (!self.IsApiSupported(api, isFloating)) {
             return false;
@@ -133,62 +133,62 @@ class GuiExt : public BaseExt {
     }
 
     static void _destroy(const clap_plugin_t* plugin) {
-        GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
+        GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         self.Destroy();
     }
 
     static bool _set_scale(const clap_plugin_t* plugin, double scale) {
-        GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
+        GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         return self.SetScale(scale);
     }
 
     static bool _get_size(const clap_plugin_t* plugin, uint32_t* width, uint32_t* height) {
-        GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
+        GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         return self.GetSize(*width, *height);
     }
 
     static bool _can_resize(const clap_plugin_t* plugin) {
-        GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
+        GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         return self.CanResize();
     }
 
     static bool _get_resize_hints(const clap_plugin_t* plugin, clap_gui_resize_hints_t* hints) {
-        GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
+        GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         return self.GetResizeHints(*hints);
     }
 
     static bool _adjust_size(const clap_plugin_t* plugin, uint32_t* width, uint32_t* height) {
-        GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
+        GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         return self.AdjustSize(*width, *height);
     }
 
     static bool _set_size(const clap_plugin_t* plugin, uint32_t width, uint32_t height) {
-        GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
+        GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         return self.SetSize(width, height);
     }
 
     static bool _set_parent(const clap_plugin_t* plugin, const clap_window_t* window) {
-        GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
+        GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         return self.SetParent(WindowHandle(window));
     }
 
     static bool _set_transient(const clap_plugin_t* plugin, const clap_window_t* window) {
-        GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
+        GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         return self.SetTransient(WindowHandle(window));
     }
 
     static void _suggest_title(const clap_plugin_t* plugin, const char* title) {
-        GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
+        GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         self.SuggestTitle(std::string_view(title));
     }
 
     static bool _show(const clap_plugin_t* plugin) {
-        GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
+        GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         return self.Show();
     }
 
     static bool _hide(const clap_plugin_t* plugin) {
-        GuiExt& self = GuiExt::GetFromPluginObject<GuiExt>(plugin);
+        GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         return self.Hide();
     }
 };

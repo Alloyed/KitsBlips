@@ -34,7 +34,7 @@ enum class Params : clap_id {
     ClearBuffer,
     Count
 };
-using ParamsExt = ParametersExt<Params>;
+using ParamsExt = ParametersFeature<Params>;
 
 class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
    public:
@@ -125,7 +125,7 @@ class Plugin : public EffectPlugin {
         EffectPlugin::Config();
 
         ParamsExt& params =
-            ConfigExtension<ParamsExt>(GetHost(), Params::Count)
+            ConfigFeature<ParamsExt>(GetHost(), Params::Count)
                 .ConfigModule("Original")
                 .ConfigParam<PercentParam>(Params::Mix, "Mix", 0.5f)
                 .ConfigParam<PercentParam>(Params::Size, "Size", 0.5f)
@@ -140,7 +140,7 @@ class Plugin : public EffectPlugin {
                 .ConfigParam<OnOffParam>(Params::ClearBuffer, "Clear Buffer", OnOff::Off);
 
 #if KITSBLIPS_ENABLE_GUI
-        ConfigExtension<KitguiExt>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
+        ConfigFeature<KitguiFeature>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }

@@ -6,7 +6,7 @@
 
 namespace clapeze {
 
-class TimerSupportExt;
+class TimerSupportFeature;
 enum class LogSeverity {
     Debug = 0,
     Info = 1,
@@ -21,7 +21,7 @@ enum class LogSeverity {
  * plugin safely, but only call it from the main thread.
  */
 class PluginHost {
-    friend TimerSupportExt;
+    friend TimerSupportFeature;
 
    public:
     using TimerId = clap_id;
@@ -29,8 +29,8 @@ class PluginHost {
 
     PluginHost(const clap_host_t* host);
 
-    template <typename ExtType>
-    bool TryGetExtension(const char* extensionName, const clap_host_t*& hostOut, const ExtType*& extOut) const;
+    template <typename TFeature>
+    bool TryGetFeature(const char* extensionName, const clap_host_t*& hostOut, const TFeature*& extOut) const;
     bool SupportsExtension(const char* extensionName) const;
 
     void LogSupportMatrix() const;
@@ -62,9 +62,9 @@ class PluginHost {
     std::unordered_map<TimerId, TimerFn> mActiveTimers;
 };
 
-template <typename ExtType>
-bool PluginHost::TryGetExtension(const char* extensionName, const clap_host_t*& hostOut, const ExtType*& extOut) const {
-    extOut = static_cast<const ExtType*>(mHost->get_extension(mHost, extensionName));
+template <typename TFeature>
+bool PluginHost::TryGetFeature(const char* extensionName, const clap_host_t*& hostOut, const TFeature*& extOut) const {
+    extOut = static_cast<const TFeature*>(mHost->get_extension(mHost, extensionName));
     if (extOut) {
         hostOut = mHost;
         return true;

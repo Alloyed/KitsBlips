@@ -212,14 +212,14 @@ class IntegerParam : public BaseParam {
 /**
  * Represents a selection from a fixed set of options. A handy way to represent these is with dropdown values.
  */
-template <typename EnumType>
+template <typename TEnum>
 class EnumParam : public BaseParam {
    public:
-    using _valuetype = EnumType;
+    using _valuetype = TEnum;
     EnumParam(std::string_view module,
               std::string_view mName,
               std::vector<std::string_view> mLabels,
-              EnumType mDefaultValue)
+              TEnum mDefaultValue)
         : mModule(module), mName(mName), mLabels(std::move(mLabels)), mDefaultValue(mDefaultValue) {}
     bool FillInformation(clap_id id, clap_param_info_t* information) const override {
         memset(information, 0, sizeof(clap_param_info_t));
@@ -258,14 +258,14 @@ class EnumParam : public BaseParam {
     }
 #ifdef KITSBLIPS_ENABLE_GUI
     bool DebugImGui(double& inOutRawValue) const override {
-        EnumType value{};
+        TEnum value{};
         ToValue(inOutRawValue, value);
         size_t selectedIndex = static_cast<size_t>(value);
         bool changed = false;
         if (ImGui::BeginCombo(mName.data(), mLabels[selectedIndex].data())) {
             for (size_t idx = 0; idx < mLabels.size(); ++idx) {
                 if (ImGui::Selectable(mLabels[idx].data(), idx == selectedIndex)) {
-                    FromValue(static_cast<EnumType>(idx), inOutRawValue);
+                    FromValue(static_cast<TEnum>(idx), inOutRawValue);
                     changed = true;
                 }
             }
@@ -274,12 +274,12 @@ class EnumParam : public BaseParam {
         return changed;
     }
 #endif
-    bool ToValue(double rawValue, EnumType& out) const {
+    bool ToValue(double rawValue, TEnum& out) const {
         size_t index = std::clamp<size_t>(static_cast<size_t>(rawValue), 0, mLabels.size());
-        out = static_cast<EnumType>(index);
+        out = static_cast<TEnum>(index);
         return true;
     }
-    bool FromValue(EnumType in, double& outRaw) const {
+    bool FromValue(TEnum in, double& outRaw) const {
         outRaw = static_cast<double>(in);
         return true;
     }
@@ -288,7 +288,7 @@ class EnumParam : public BaseParam {
     const std::string_view mModule;
     const std::string_view mName;
     const std::vector<std::string_view> mLabels;
-    const EnumType mDefaultValue;
+    const TEnum mDefaultValue;
 };
 
 enum class OnOff { Off, On };

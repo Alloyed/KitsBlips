@@ -12,7 +12,7 @@
 
 namespace sines {
 enum class Params : clap_id { Fall, Polyphony, Count };
-using ParamsExt = clapeze::ParametersExt<Params>;
+using ParamsFeature = clapeze::ParametersFeature<Params>;
 
 inline float mtof(float midiNote) {
     return std::exp2((midiNote - 69.0f) / 12.0f) * 440.0f;
@@ -22,7 +22,7 @@ inline float sinOsc(float phase) {
     return std::sin(phase * std::numbers::pi * 2.0f);
 }
 
-class Processor : public clapeze::InstrumentProcessor<ParamsExt::ProcessParameters> {
+class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessParameters> {
     class Voice {
        public:
         Voice(Processor& p) : mProcessor(p) {}
@@ -66,7 +66,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsExt::ProcessParamete
     };
 
    public:
-    Processor(ParamsExt::ProcessParameters& params) : InstrumentProcessor(params), mVoices(*this) {}
+    Processor(ParamsFeature::ProcessParameters& params) : InstrumentProcessor(params), mVoices(*this) {}
     ~Processor() = default;
 
     void ProcessAudio(clapeze::StereoAudioBuffer& out) override {
@@ -96,8 +96,8 @@ class Plugin : public clapeze::InstrumentPlugin {
    protected:
     void Config() override {
         clapeze::InstrumentPlugin::Config();
-        ParamsExt& params =
-            ConfigExtension<ParamsExt>(GetHost(), Params::Count)
+        ParamsFeature& params =
+            ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
                 .ConfigParam<clapeze::NumericParam>(Params::Fall, "Fall", 0.0001f, 1.f, .01f, "ms")
                 .ConfigParam<clapeze::IntegerParam>(Params::Polyphony, "Polyphony", 1, 16, 8, "voices", "voice");
         ConfigProcessor<Processor>(params.GetStateForAudioThread());

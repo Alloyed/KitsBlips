@@ -3,109 +3,28 @@
 #include <clap/clap.h>
 #include <clap/events.h>
 #include <cassert>
-#include <cstddef>
-#include <cstdio>
 #include <memory>
 #include <unordered_map>
 
+#include "clapeze/baseProcessor.h"
+#include "clapeze/ext/baseFeature.h"
 #include "clapeze/pluginHost.h"
+
 namespace clapeze {
 
 class BasePlugin;
-
-class BaseExt {
-    friend class BasePlugin;
-    /* abstract interface */
-   public:
-    virtual ~BaseExt() = default;
-    virtual const char* Name() const = 0;
-    virtual const void* Extension() const = 0;
-    virtual bool Validate(const BasePlugin& plugin) const { return true; }
-
-    template <typename ExtType = BaseExt>
-    static ExtType& GetFromPlugin(BasePlugin& plugin);
-
-   protected:
-    template <typename ExtType = BaseExt>
-    static ExtType& GetFromPluginObject(const clap_plugin_t* plugin);
-};
-
-class BaseProcessor {
-    friend class BasePlugin;
-
-   public:
-    BaseProcessor() {}
-    virtual ~BaseProcessor() = default;
-
-    /**
-     * Called when the plugin is first activated. This is a good place to allocate resources, and do any state setup
-     * before the main thread can no longer communicate with the processor directly.
-     *
-     * [main-thread & !active]
-     */
-    virtual void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) {};
-    /**
-     * Called when the plugin is deactivated.
-     *
-     * [main-thread & active]
-     */
-    virtual void Deactivate() {};
-    /**
-     * Override to handle discrete events coming from the host.
-     *
-     * [audio-thread & active & processing]
-     */
-    virtual void ProcessEvent(const clap_event_header_t& event) = 0;
-    /**
-     * Override to process an audio block. the block size can be anything below GetMaxBlockSize(). This is to support
-     * sample-accurate timing for events.
-     *
-     * [audio-thread & active & processing]
-     */
-    virtual void ProcessAudio(const clap_process_t& process, size_t blockStart, size_t blockStop) = 0;
-    /**
-     * Override to communicate with the main thread. Called once per process.
-     *
-     * [audio-thread & active & processing]
-     */
-    virtual void ProcessFlush(const clap_process_t& process) = 0;
-    /**
-     * Override to reset internal state. you should kill all playing voices, clear all buffers, reset oscillator phases,
-     * etc.
-     *
-     * [audio-thread & active]
-     */
-    virtual void ProcessReset() {};
-
-    /* only valid while processing. using contextual state. */
-    void SendEvent(clap_event_header_t& event) {
-        event.time += mTime;  // this is probably very not smart
-        mOutEvents->try_push(mOutEvents, &event);
-    }
-
-   protected:
-    /**
-     * Returns the sample rate in hz
-     */
-    double GetSampleRate() const { return mSampleRate; }
-    size_t GetMaxBlockSize() const { return mMinBlockSize; }
-    size_t GetMinBlockSize() const { return mMaxBlockSize; }
-
-   private:
-    double mSampleRate;
-    size_t mMinBlockSize;
-    size_t mMaxBlockSize;
-
-    const clap_output_events_t* mOutEvents;
-    uint32_t mTime;
-};
 
 struct PluginEntry {
     clap_plugin_descriptor_t meta;
     BasePlugin* (*factory)(PluginHost& host);
 };
 
-/* Override to create a new plugin */
+/**
+ * A plugin is the unit of functionality exposed to users in their DAW host.
+ * To create your own plugin, extend this base class, implement Plugin::Config(), then register it to a PluginFactory.
+ * As a starting point, clapeze::InstrumentPlugin and clapeze::EffectPlugin define reasonable defaults for basic
+ * instruments and effects.
+ */
 class BasePlugin {
    public:
     BasePlugin(PluginHost& host) : mHost(host) {}
@@ -123,24 +42,24 @@ class BasePlugin {
     virtual bool ValidateConfig();
 
     /* implementation methods */
-    template <class BaseExtT, class... Args>
-    BaseExtT& ConfigExtension(Args&&... args);
+    template <typename TFeature, typename... TArgs>
+    TFeature& ConfigFeature(TArgs&&... args);
 
-    template <class BaseExtT, class... Args>
-    BaseExtT* TryConfigExtension(Args&&... args);
+    template <typename TFeature, typename... TArgs>
+    TFeature* TryConfigFeature(TArgs&&... args);
 
-    template <class BaseProcessorT, class... Args>
-    BaseProcessorT& ConfigProcessor(Args&&... args);
+    template <typename TProcessor, typename... TArgs>
+    TProcessor& ConfigProcessor(TArgs&&... args);
 
     /* helpers */
    public:
     const clap_plugin_t* GetOrCreatePluginObject(const clap_plugin_descriptor_t* meta);
 
-    template <typename PluginType = BasePlugin>
-    static PluginType& GetFromPluginObject(const clap_plugin_t* plugin);
+    template <typename TPlugin = BasePlugin>
+    static TPlugin& GetFromPluginObject(const clap_plugin_t* plugin);
 
-    BaseExt* TryGetExtension(const char* name);
-    const BaseExt* TryGetExtension(const char* name) const;
+    BaseFeature* TryGetFeature(const char* name);
+    const BaseFeature* TryGetFeature(const char* name) const;
     BaseProcessor& GetProcessor() const;
     PluginHost& GetHost();
     const PluginHost& GetHost() const;
@@ -148,7 +67,7 @@ class BasePlugin {
     /* internal implementation*/
    private:
     std::unique_ptr<clap_plugin_t> mPlugin;
-    std::unordered_map<std::string, std::unique_ptr<BaseExt>> mExtensions;
+    std::unordered_map<std::string, std::unique_ptr<BaseFeature>> mFeatures;
     PluginHost& mHost;
     std::unique_ptr<BaseProcessor> mProcessor;
 
@@ -168,48 +87,48 @@ class BasePlugin {
 };
 
 // template implementations
-template <typename ExtType, typename... Args>
-ExtType& BasePlugin::ConfigExtension(Args&&... args) {
-    auto ptr = std::make_unique<ExtType>(std::forward<Args>(args)...);
+template <typename TFeature, typename... TArgs>
+TFeature& BasePlugin::ConfigFeature(TArgs&&... args) {
+    auto ptr = std::make_unique<TFeature>(std::forward<TArgs>(args)...);
     const char* name = ptr->Name();
-    ExtType* out = ptr.get();
-    mExtensions.emplace(name, std::move(ptr));
+    TFeature* out = ptr.get();
+    mFeatures.emplace(name, std::move(ptr));
     return *out;
 }
 
-template <typename ExtType, typename... Args>
-ExtType* BasePlugin::TryConfigExtension(Args&&... args) {
-    if (GetHost().SupportsExtension(ExtType::NAME)) {
-        return &ConfigExtension<ExtType>(std::forward<Args>(args)...);
+template <typename TFeature, typename... TArgs>
+TFeature* BasePlugin::TryConfigFeature(TArgs&&... args) {
+    if (GetHost().SupportsExtension(TFeature::NAME)) {
+        return &ConfigFeature<TFeature>(std::forward<TArgs>(args)...);
     }
     return nullptr;
 }
 
-template <typename ProcessorType, typename... Args>
-ProcessorType& BasePlugin::ConfigProcessor(Args&&... args) {
-    mProcessor = std::make_unique<ProcessorType>(std::forward<Args>(args)...);
-    return static_cast<ProcessorType&>(*mProcessor);
+template <typename TProcessor, typename... TArgs>
+TProcessor& BasePlugin::ConfigProcessor(TArgs&&... args) {
+    mProcessor = std::make_unique<TProcessor>(std::forward<TArgs>(args)...);
+    return static_cast<TProcessor&>(*mProcessor);
 }
 
-template <typename PluginType>
-PluginType& BasePlugin::GetFromPluginObject(const clap_plugin_t* plugin) {
+template <typename TPlugin>
+TPlugin& BasePlugin::GetFromPluginObject(const clap_plugin_t* plugin) {
     BasePlugin* self = static_cast<BasePlugin*>(plugin->plugin_data);
-    return static_cast<PluginType&>(*self);
+    return static_cast<TPlugin&>(*self);
 }
 
-template <typename ExtType>
-ExtType& BaseExt::GetFromPluginObject(const clap_plugin_t* plugin) {
+template <typename TFeature>
+TFeature& BaseFeature::GetFromPluginObject(const clap_plugin_t* plugin) {
     BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
-    BaseExt* ext = self.TryGetExtension(ExtType::NAME);
+    BaseFeature* ext = self.TryGetFeature(TFeature::NAME);
     assert(ext);
-    return static_cast<ExtType&>(*ext);
+    return static_cast<TFeature&>(*ext);
 }
 
-template <typename ExtType>
-ExtType& BaseExt::GetFromPlugin(BasePlugin& self) {
-    BaseExt* ext = self.TryGetExtension(ExtType::NAME);
+template <typename TFeature>
+TFeature& BaseFeature::GetFromPlugin(BasePlugin& self) {
+    BaseFeature* ext = self.TryGetFeature(TFeature::NAME);
     assert(ext);
-    return static_cast<ExtType&>(*ext);
+    return static_cast<TFeature&>(*ext);
 }
 
 }  // namespace clapeze

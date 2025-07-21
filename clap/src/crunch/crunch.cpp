@@ -12,9 +12,9 @@
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI
+#include <clapeze/ext/kitgui.h>
 #include <kitgui/app.h>
 #include <kitgui/context.h>
-#include <clapeze/ext/kitgui.h>
 #endif
 
 using namespace clapeze;
@@ -22,7 +22,7 @@ using namespace clapeze;
 namespace crunch {
 
 enum class Params : clap_id { Algorithm, Gain, Tone, Makeup, Mix, Count };
-using ParamsExt = ParametersExt<Params>;
+using ParamsFeature = ParametersFeature<Params>;
 
 namespace {
 enum class Algorithm {
@@ -75,9 +75,9 @@ class ToneFilter {
 };
 }  // namespace
 
-class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
+class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
    public:
-    Processor(ParamsExt::ProcessParameters& params) : EffectProcessor(params) {}
+    Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
     void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
@@ -142,11 +142,11 @@ class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
 #if KITSBLIPS_ENABLE_GUI
 class GuiApp : public kitgui::BaseApp {
    public:
-    GuiApp(kitgui::Context& ctx, ParamsExt& params) : kitgui::BaseApp(ctx), mParams(params) {}
+    GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override { mParams.DebugImGui(); }
 
    private:
-    ParamsExt& mParams;
+    ParamsFeature& mParams;
 };
 #endif
 
@@ -160,8 +160,8 @@ class Plugin : public EffectPlugin {
     void Config() override {
         EffectPlugin::Config();
 
-        ParamsExt& params =
-            ConfigExtension<ParamsExt>(GetHost(), Params::Count)
+        ParamsFeature& params =
+            ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
                 .ConfigParam<EnumParam<Algorithm>>(Params::Algorithm, "Algorithm",
                                                    std::vector<std::string_view>{"Clip", "Saturate", "Fold", "Rectify"},
                                                    Algorithm::HardClip)
@@ -170,7 +170,7 @@ class Plugin : public EffectPlugin {
                 .ConfigParam<DbParam>(Params::Makeup, "Makeup", -9.0f, 9.0f, 0.0f)
                 .ConfigParam<PercentParam>(Params::Mix, "Mix", 1.0f);
 #if KITSBLIPS_ENABLE_GUI
-        ConfigExtension<KitguiExt>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
+        ConfigFeature<KitguiFeature>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif
 
         ConfigProcessor<Processor>(params.GetStateForAudioThread());

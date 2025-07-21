@@ -35,6 +35,7 @@ target_sources(KitsBlips-lib PRIVATE
     src/crunch/crunch.cpp
     src/sines/sines.cpp
     src/snecho/snecho.cpp
+    src/clapeze/ext/kitgui.cpp
 )
 
 target_include_directories(KitsBlips-lib PUBLIC src)

@@ -4,11 +4,11 @@
 
 namespace clapeze {
 
-int32_t KitguiExt::sInitCount = 0;
+int32_t KitguiFeature::sInitCount = 0;
 
-KitguiExt::KitguiExt(kitgui::Context::AppFactory createAppFn) : mCtx(createAppFn) {}
+KitguiFeature::KitguiFeature(kitgui::Context::AppFactory createAppFn) : mCtx(createAppFn) {}
 
-bool KitguiExt::IsApiSupported(ClapWindowApi api, bool isFloating) {
+bool KitguiFeature::IsApiSupported(ClapWindowApi api, bool isFloating) {
     // TODO: lots of apis to support out there
     if (isFloating) {
         // we can get away with using all native SDL
@@ -30,7 +30,7 @@ bool KitguiExt::IsApiSupported(ClapWindowApi api, bool isFloating) {
     return false;
 }
 
-bool KitguiExt::GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) {
+bool KitguiFeature::GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) {
     kitgui::platform::Api guiApi;
     kitgui::Context::GetPreferredApi(guiApi, isFloatingOut);
     switch (guiApi) {
@@ -58,7 +58,7 @@ bool KitguiExt::GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) {
     return true;
 }
 
-bool KitguiExt::Create(ClapWindowApi api, bool isFloating) {
+bool KitguiFeature::Create(ClapWindowApi api, bool isFloating) {
     sInitCount++;
     if (sInitCount == 1) {
         kitgui::init();
@@ -67,7 +67,7 @@ bool KitguiExt::Create(ClapWindowApi api, bool isFloating) {
     return mCtx.Create(ToPlatformApi(api), isFloating);
 }
 
-void KitguiExt::Destroy() {
+void KitguiFeature::Destroy() {
     mCtx.Destroy();
     sInitCount--;
     if (sInitCount == 1) {
@@ -75,19 +75,19 @@ void KitguiExt::Destroy() {
     }
 }
 
-bool KitguiExt::SetScale(double scale) {
+bool KitguiFeature::SetScale(double scale) {
     return mCtx.SetScale(scale);
 }
 
-bool KitguiExt::GetSize(uint32_t& widthOut, uint32_t& heightOut) {
+bool KitguiFeature::GetSize(uint32_t& widthOut, uint32_t& heightOut) {
     return mCtx.GetSize(widthOut, heightOut);
 }
 
-bool KitguiExt::CanResize() {
+bool KitguiFeature::CanResize() {
     return mCtx.GetSizeConfig().resizable;
 }
 
-bool KitguiExt::GetResizeHints(clap_gui_resize_hints_t& hintsOut) {
+bool KitguiFeature::GetResizeHints(clap_gui_resize_hints_t& hintsOut) {
     const auto& cfg = mCtx.GetSizeConfig();
     hintsOut.preserve_aspect_ratio = cfg.preserveAspectRatio;
     hintsOut.aspect_ratio_width = cfg.startingWidth;
@@ -97,7 +97,7 @@ bool KitguiExt::GetResizeHints(clap_gui_resize_hints_t& hintsOut) {
     return true;
 }
 
-bool KitguiExt::AdjustSize(uint32_t& widthInOut, uint32_t& heightInOut) {
+bool KitguiFeature::AdjustSize(uint32_t& widthInOut, uint32_t& heightInOut) {
     const auto& cfg = mCtx.GetSizeConfig();
     if (cfg.resizable && cfg.preserveAspectRatio) {
         float ratio = static_cast<float>(cfg.startingWidth) / static_cast<float>(cfg.startingHeight);
@@ -106,33 +106,33 @@ bool KitguiExt::AdjustSize(uint32_t& widthInOut, uint32_t& heightInOut) {
     return true;
 }
 
-bool KitguiExt::SetSize(uint32_t width, uint32_t height) {
+bool KitguiFeature::SetSize(uint32_t width, uint32_t height) {
     return mCtx.SetSizeDirectly(width, height);
 }
 
-bool KitguiExt::SetParent(WindowHandle handle) {
+bool KitguiFeature::SetParent(WindowHandle handle) {
     SDL_Window* desiredParent = kitgui::platform::wrapWindow(ToPlatformApi(handle.api), handle.ptr);
     return mCtx.SetParent(desiredParent);
 }
 
-bool KitguiExt::SetTransient(WindowHandle handle) {
+bool KitguiFeature::SetTransient(WindowHandle handle) {
     SDL_Window* desiredTransient = kitgui::platform::wrapWindow(ToPlatformApi(handle.api), handle.ptr);
     return mCtx.SetTransient(desiredTransient);
 }
 
-void KitguiExt::SuggestTitle(std::string_view title) {
+void KitguiFeature::SuggestTitle(std::string_view title) {
     mCtx.SuggestTitle(title);
 }
 
-bool KitguiExt::Show() {
+bool KitguiFeature::Show() {
     return mCtx.Show();
 }
 
-bool KitguiExt::Hide() {
+bool KitguiFeature::Hide() {
     return mCtx.Hide();
 }
 
-kitgui::platform::Api KitguiExt::ToPlatformApi(ClapWindowApi api) {
+kitgui::platform::Api KitguiFeature::ToPlatformApi(ClapWindowApi api) {
     switch (api) {
         case clapeze::ClapWindowApi::_None: {
             return kitgui::platform::Api::Any;

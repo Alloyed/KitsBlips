@@ -61,8 +61,8 @@ class InstrumentProcessor : public BaseProcessor {
     // impl
     void ProcessFlush(const clap_process_t& process) final { mParams.FlushEventsFromMain(*this, process.out_events); }
     void ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) final {
-        // BaseParamsExt::AudioParameters& params =
-        // BaseParamsExt::GetFromPlugin<BaseParamsExt>(*this).GetStateForAudioThread();
+        // BaseParamsFeature::AudioParameters& params =
+        // BaseParamsFeature::GetFromPlugin<BaseParamsFeature>(*this).GetStateForAudioThread();
         size_t numSamples = rangeStop - rangeStart;
         StereoAudioBuffer out{
             // outLeft
@@ -89,9 +89,9 @@ class InstrumentPlugin : public BasePlugin {
    protected:
     // impl
     virtual void Config() override {
-        ConfigExtension<NotePortsExt<1, 0>>();
-        ConfigExtension<StereoAudioPortsExt<0, 1>>();
-        ConfigExtension<StateExt>();
+        ConfigFeature<NotePortsFeature<1, 0>>();
+        ConfigFeature<StereoAudioPortsFeature<0, 1>>();
+        ConfigFeature<StateFeature>();
     }
 };
 }  // namespace clapeze

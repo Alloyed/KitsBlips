@@ -3,12 +3,12 @@
 #include <clap/clap.h>
 #include <cstdint>
 #include <cstdio>
+#include "clapeze/ext/baseFeature.h"
 
-#include "clapeze/basePlugin.h"
 namespace clapeze {
 
 template <size_t NUM_INPUTS, size_t NUM_OUTPUTS>
-class StereoAudioPortsExt : public BaseExt {
+class StereoAudioPortsFeature : public BaseFeature {
    public:
     static constexpr auto NAME = CLAP_EXT_AUDIO_PORTS;
     const char* Name() const override { return NAME; }

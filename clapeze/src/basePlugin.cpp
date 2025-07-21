@@ -5,15 +5,15 @@
 
 namespace clapeze {
 
-BaseExt* BasePlugin::TryGetExtension(const char* name) {
-    if (auto search = mExtensions.find(name); search != mExtensions.end()) {
+BaseFeature* BasePlugin::TryGetFeature(const char* name) {
+    if (auto search = mFeatures.find(name); search != mFeatures.end()) {
         return search->second.get();
     } else {
         return nullptr;
     }
 }
-const BaseExt* BasePlugin::TryGetExtension(const char* name) const {
-    if (auto search = mExtensions.find(name); search != mExtensions.end()) {
+const BaseFeature* BasePlugin::TryGetFeature(const char* name) const {
+    if (auto search = mFeatures.find(name); search != mFeatures.end()) {
         return search->second.get();
     } else {
         return nullptr;
@@ -38,7 +38,7 @@ bool BasePlugin::ValidateConfig() {
                   "mProcessor is null. did you forget to call ConfigProcessor() in your Config method?");
         return false;
     }
-    for (const auto& [_, extension] : mExtensions) {
+    for (const auto& [_, extension] : mFeatures) {
         if (!extension->Validate(*this)) {
             return false;
         }
@@ -143,7 +143,7 @@ clap_process_status BasePlugin::_process(const clap_plugin* plugin, const clap_p
 
 const void* BasePlugin::_get_extension(const clap_plugin* plugin, const char* name) {
     BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
-    const BaseExt* extension = self.TryGetExtension(name);
+    const BaseFeature* extension = self.TryGetFeature(name);
     return extension != nullptr ? extension->Extension() : nullptr;
 }
 

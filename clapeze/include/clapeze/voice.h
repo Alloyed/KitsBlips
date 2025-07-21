@@ -16,16 +16,16 @@ namespace clapeze {
  * Helper classes for building polyphonic synths that support clap's per note/per voice modulation options
  */
 
-template <typename ProcessorType, typename VoiceType, size_t MaxVoices>
+template <typename TProcessor, typename TVoice, size_t TMaxVoices>
 class PolyphonicVoicePool {
    public:
-    PolyphonicVoicePool(ProcessorType& p, size_t numVoices = MaxVoices) : mProcessor(p), mVoices() {
+    PolyphonicVoicePool(TProcessor& p, size_t numVoices = TMaxVoices) : mProcessor(p), mVoices() {
         SetNumVoices(numVoices);
     }
 
     void SetNumVoices(size_t numVoices) {
         if (numVoices != mVoices.size()) {
-            assert(numVoices <= MaxVoices);
+            assert(numVoices <= TMaxVoices);
             StopAllVoices();
             mVoices.clear();
             for (size_t idx = 0; idx < numVoices; ++idx) {
@@ -120,20 +120,20 @@ class PolyphonicVoicePool {
     }
 
     struct VoiceData {
-        VoiceData(ProcessorType& p) : voice(p) {}
-        VoiceType voice;
+        VoiceData(TProcessor& p) : voice(p) {}
+        TVoice voice;
         std::optional<NoteTuple> activeNote;
     };
 
-    ProcessorType& mProcessor;
-    etl::vector<VoiceData, MaxVoices> mVoices;
-    etl::circular_buffer<VoiceIndex, MaxVoices> mVoicesByLastUsed{};
+    TProcessor& mProcessor;
+    etl::vector<VoiceData, TMaxVoices> mVoices;
+    etl::circular_buffer<VoiceIndex, TMaxVoices> mVoicesByLastUsed{};
 };
 
-template <typename ProcessorType, typename VoiceType>
+template <typename TProcessor, typename VoiceType>
 class MonophonicVoicePool {
    public:
-    MonophonicVoicePool(ProcessorType& p) : mProcessor(p), mVoice(p) {}
+    MonophonicVoicePool(TProcessor& p) : mProcessor(p), mVoice(p) {}
 
     void ProcessNoteOn(const NoteTuple& note, float velocity) {
         if (!mActiveNotes.empty()) {
@@ -205,7 +205,7 @@ class MonophonicVoicePool {
         mProcessor.SendEvent(event.header);
     }
 
-    ProcessorType& mProcessor;
+    TProcessor& mProcessor;
     VoiceType mVoice;
     etl::vector<std::pair<NoteTuple, float>, 16> mActiveNotes{};
     bool mPlaying = false;
