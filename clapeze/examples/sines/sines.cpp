@@ -10,10 +10,22 @@
 #include <numbers>
 #include "descriptor.h"
 
-namespace sines {
+namespace {
 enum class Params : clap_id { Fall, Polyphony, Count };
 using ParamsFeature = clapeze::ParametersFeature<Params>;
+}  // namespace
 
+template <>
+struct clapeze::ParamTraits<Params, Params::Fall> {
+    using _paramtype = clapeze::NumericParam;
+};
+
+template <>
+struct clapeze::ParamTraits<Params, Params::Polyphony> {
+    using _paramtype = clapeze::IntegerParam;
+};
+
+namespace sines {
 inline float mtof(float midiNote) {
     return std::exp2((midiNote - 69.0f) / 12.0f) * 440.0f;
 }
@@ -36,7 +48,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
         bool ProcessAudio(clapeze::StereoAudioBuffer& out) {
             const auto& params = mProcessor.mParams;
             const float sampleRate = mProcessor.GetSampleRate();
-            float fallRate = params.Get<clapeze::NumericParam>(Params::Fall);
+            float fallRate = params.Get<Params::Fall>();
 
             for (uint32_t index = 0; index < out.left.size(); index++) {
                 // NOTE: this is sample-rate dependent! do something smarter in your own plugins
@@ -70,7 +82,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
     ~Processor() = default;
 
     void ProcessAudio(clapeze::StereoAudioBuffer& out) override {
-        mVoices.SetNumVoices(mParams.Get<clapeze::IntegerParam>(Params::Polyphony));
+        mVoices.SetNumVoices(mParams.Get<Params::Polyphony>());
         mVoices.ProcessAudio(out);
     }
 
@@ -96,10 +108,9 @@ class Plugin : public clapeze::InstrumentPlugin {
    protected:
     void Config() override {
         clapeze::InstrumentPlugin::Config();
-        ParamsFeature& params =
-            ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
-                .ConfigParam<clapeze::NumericParam>(Params::Fall, "Fall", 0.0001f, 1.f, .01f, "ms")
-                .ConfigParam<clapeze::IntegerParam>(Params::Polyphony, "Polyphony", 1, 16, 8, "voices", "voice");
+        ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
+                                    .ConfigParam<Params::Fall>("Fall", 0.0001f, 1.f, .01f, "ms")
+                                    .ConfigParam<Params::Polyphony>("Polyphony", 1, 16, 8, "voices", "voice");
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }
 };

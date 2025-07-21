@@ -29,6 +29,10 @@ class BaseParam {
 #endif
 };
 
+/** For each id you must provide a specialization of ParamTraits that define _paramtype as a base param */
+template <typename TParamId, TParamId id>
+struct ParamTraits;
+
 /*
  * TODO this is very complex and deserves to be subclassed a bit so that you can pick between a batteries included
  * "easy" interface, a complex but configurable "hard" interface, or just "here's the basics make your own thing"
@@ -38,11 +42,12 @@ class BaseParam {
  * - observer architecture (onParamChanged())
  * - dynamic parameter modification
  */
-template <typename TParamId, typename TBaseParam = BaseParam>
+template <typename TParamId>
 class ParametersFeature : public BaseFeature {
    public:
     using Id = TParamId;
-    using ParamConfigs = std::vector<std::unique_ptr<TBaseParam>>;
+
+    using ParamConfigs = std::vector<std::unique_ptr<BaseParam>>;
     enum class ChangeType { SetValue, StartGesture, StopGesture };
     struct Change {
         ChangeType type;
@@ -71,10 +76,11 @@ class ParametersFeature : public BaseFeature {
           mMainToAudio(),
           mAudioState(mParams, mNumParams, mMainToAudio, mAudioToMain) {}
 
-    template <typename TParam, typename... TArgs>
-    ParametersFeature& ConfigParam(Id id, TArgs&&... args) {
+    template <Id id, typename... TArgs>
+    ParametersFeature& ConfigParam(TArgs&&... args) {
+        using ParamType = typename ParamTraits<Id, id>::_paramtype;
         clap_id index = static_cast<clap_id>(id);
-        mParams[index].reset(new TParam(mNextModule, std::forward<TArgs>(args)...));
+        mParams[index].reset(new ParamType(mNextModule, std::forward<TArgs>(args)...));
         SetRaw(id, mParams[index]->GetRawDefault());
         return *this;
     }
@@ -84,12 +90,22 @@ class ParametersFeature : public BaseFeature {
         return *this;
     }
 
-    const TBaseParam* GetConfig(Id id) const {
+    const BaseParam* GetBaseParam(Id id) const {
         clap_id index = static_cast<clap_id>(id);
         if (index >= mState.size()) {
             return nullptr;
         }
         return mParams[index].get();
+    }
+
+    template <Id id>
+    const typename ParamTraits<Id, id>::_paramtype* GetSpecificParam() const {
+        using ParamType = typename ParamTraits<Id, id>::_paramtype;
+        clap_id index = static_cast<clap_id>(id);
+        if (index >= mState.size()) {
+            return nullptr;
+        }
+        return static_cast<const ParamType*>(mParams[index].get());
     }
 
     double GetRaw(Id id) const {
@@ -162,13 +178,14 @@ class ParametersFeature : public BaseFeature {
         ProcessParameters(const ParamConfigs& paramConfigs, size_t numParams, Queue& mainToAudio, Queue& audioToMain)
             : mParamsRef(paramConfigs), mState(numParams, 0.0f), mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {}
 
-        template <typename TParam>
-        typename TParam::_valuetype Get(Id id) const {
-            typename TParam::_valuetype out{};
+        template <Id id>
+        typename ParamTraits<Id, id>::_paramtype::_valuetype Get() const {
+            using ParamType = typename ParamTraits<Id, id>::_paramtype;
+            typename ParamType::_valuetype out{};
             clap_id index = static_cast<clap_id>(id);
             double raw = GetRaw(id);
             if (index < mState.size()) {
-                dynamic_cast<const TParam*>(mParamsRef[index].get())->ToValue(raw, out);
+                static_cast<const ParamType*>(mParamsRef[index].get())->ToValue(raw, out);
             }
             return out;
         }
@@ -275,7 +292,7 @@ class ParametersFeature : public BaseFeature {
     static bool _get_info(const clap_plugin_t* plugin, uint32_t index, clap_param_info_t* information) {
         ParametersFeature& self = ParametersFeature::GetFromPluginObject<ParametersFeature>(plugin);
 
-        const TBaseParam* param = self.GetConfig(static_cast<Id>(index));
+        const BaseParam* param = self.GetBaseParam(static_cast<Id>(index));
         if (param != nullptr) {
             return param->FillInformation(index, information);
         }
@@ -300,7 +317,7 @@ class ParametersFeature : public BaseFeature {
                                uint32_t bufferSize) {
         ParametersFeature& self = ParametersFeature::GetFromPluginObject<ParametersFeature>(plugin);
 
-        const TBaseParam* param = self.GetConfig(static_cast<Id>(param_id));
+        const BaseParam* param = self.GetBaseParam(static_cast<Id>(param_id));
         if (param != nullptr) {
             auto span = etl::span<char>(buf, bufferSize);
             return param->ToText(value, span);
@@ -311,7 +328,7 @@ class ParametersFeature : public BaseFeature {
     static bool _text_to_value(const clap_plugin_t* plugin, clap_id param_id, const char* display, double* out) {
         ParametersFeature& self = ParametersFeature::GetFromPluginObject<ParametersFeature>(plugin);
 
-        const TBaseParam* param = self.GetConfig(static_cast<Id>(param_id));
+        const BaseParam* param = self.GetBaseParam(static_cast<Id>(param_id));
         if (param != nullptr) {
             return param->FromText(display, *out);
         }
@@ -336,5 +353,5 @@ class ParametersFeature : public BaseFeature {
     }
 };
 
-using BaseParamsFeature = ParametersFeature<clap_id, BaseParam>;
+using BaseParamsFeature = ParametersFeature<clap_id>;
 }  // namespace clapeze
