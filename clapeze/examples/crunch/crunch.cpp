@@ -11,18 +11,18 @@ using ParamsFeature = clapeze::ParametersFeature<Params>;
 }  // namespace
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Gain> {
-    using _paramtype = clapeze::DbParam;
+struct clapeze::ParamTraits<Params::Gain> : public clapeze::DbParam {
+    ParamTraits() : clapeze::DbParam("Gain", 0.0f, 32.0f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Makeup> {
-    using _paramtype = clapeze::DbParam;
+struct clapeze::ParamTraits<Params::Makeup> : public clapeze::DbParam {
+    ParamTraits() : clapeze::DbParam("Makeup", -9.0f, 9.0f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Mix> {
-    using _paramtype = clapeze::PercentParam;
+struct clapeze::ParamTraits<Params::Mix> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("Mix", 1.0f) {}
 };
 
 namespace crunch {
@@ -72,9 +72,10 @@ class Plugin : public clapeze::EffectPlugin {
         EffectPlugin::Config();
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
-                                    .ConfigParam<Params::Gain>("Gain", 0.0f, 32.0f, 0.0f)
-                                    .ConfigParam<Params::Makeup>("Makeup", -9.0f, 9.0f, 0.0f)
-                                    .ConfigParam<Params::Mix>("Mix", 1.0f);
+                                    .Module("Main")
+                                    .Parameter<Params::Gain>()
+                                    .Parameter<Params::Makeup>()
+                                    .Parameter<Params::Mix>();
 
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }

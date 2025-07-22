@@ -16,13 +16,13 @@ using ParamsFeature = clapeze::ParametersFeature<Params>;
 }  // namespace
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Fall> {
-    using _paramtype = clapeze::NumericParam;
+struct clapeze::ParamTraits<Params::Fall> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("Fall", 0.0001f, 1.f, .01f, "ms") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Polyphony> {
-    using _paramtype = clapeze::IntegerParam;
+struct clapeze::ParamTraits<Params::Polyphony> : public clapeze::IntegerParam {
+    ParamTraits() : clapeze::IntegerParam("Polyphony", 1, 16, 8, "voices", "voice") {}
 };
 
 namespace sines {
@@ -109,8 +109,8 @@ class Plugin : public clapeze::InstrumentPlugin {
     void Config() override {
         clapeze::InstrumentPlugin::Config();
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
-                                    .ConfigParam<Params::Fall>("Fall", 0.0001f, 1.f, .01f, "ms")
-                                    .ConfigParam<Params::Polyphony>("Polyphony", 1, 16, 8, "voices", "voice");
+                                    .Parameter<Params::Fall>()
+                                    .Parameter<Params::Polyphony>();
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }
 };

@@ -13,6 +13,7 @@ target_enable_warnings(clapeze)
 target_sources(clapeze PRIVATE
     src/basePlugin.cpp
     src/pluginHost.cpp
+    src/ext/parameterConfigs.cpp
 )
 
 target_include_directories(clapeze PUBLIC include)

@@ -9,6 +9,7 @@
 #include <cstring>
 #include <memory>
 #include <string_view>
+#include <type_traits>
 
 #include "clap/events.h"
 #include "clap/ext/params.h"
@@ -24,13 +25,17 @@ class BaseParam {
     virtual bool ToText(double rawValue, etl::span<char>& outTextBuf) const = 0;
     virtual bool FromText(std::string_view text, double& outRawValue) const = 0;
     virtual double GetRawDefault() const = 0;
-#ifdef KITSBLIPS_ENABLE_GUI
-    virtual bool DebugImGui(double& inOutRawValue) const = 0;
-#endif
+
+    const std::string& GetModule() const { return mModule; }
+    void SetModule(std::string_view module) { mModule = module; }
+
+   private:
+    std::string mModule;
 };
 
-/** For each id you must provide a specialization of ParamTraits that define _paramtype as a base param */
-template <typename TParamId, TParamId id>
+/** specialize by inheriting from baseparam */
+template <auto id>
+    requires std::is_same_v<std::underlying_type_t<decltype(id)>, clap_id>
 struct ParamTraits;
 
 /*
@@ -43,6 +48,7 @@ struct ParamTraits;
  * - dynamic parameter modification
  */
 template <typename TParamId>
+    requires std::is_same_v<std::underlying_type_t<TParamId>, clap_id> || std::is_same_v<TParamId, clap_id>
 class ParametersFeature : public BaseFeature {
    public:
     using Id = TParamId;
@@ -76,16 +82,17 @@ class ParametersFeature : public BaseFeature {
           mMainToAudio(),
           mAudioState(mParams, mNumParams, mMainToAudio, mAudioToMain) {}
 
-    template <Id id, typename... TArgs>
-    ParametersFeature& ConfigParam(TArgs&&... args) {
-        using ParamType = typename ParamTraits<Id, id>::_paramtype;
+    template <Id id>
+    ParametersFeature& Parameter() {
+        using ParamType = ParamTraits<id>;
         clap_id index = static_cast<clap_id>(id);
-        mParams[index].reset(new ParamType(mNextModule, std::forward<TArgs>(args)...));
+        mParams[index].reset(new ParamType());
+        mParams[index]->SetModule(mNextModule);
         SetRaw(id, mParams[index]->GetRawDefault());
         return *this;
     }
 
-    ParametersFeature& ConfigModule(std::string_view moduleName) {
+    ParametersFeature& Module(std::string_view moduleName) {
         mNextModule = moduleName;
         return *this;
     }
@@ -99,8 +106,8 @@ class ParametersFeature : public BaseFeature {
     }
 
     template <Id id>
-    const typename ParamTraits<Id, id>::_paramtype* GetSpecificParam() const {
-        using ParamType = typename ParamTraits<Id, id>::_paramtype;
+    const typename ParamTraits<id>::_paramtype* GetSpecificParam() const {
+        using ParamType = typename ParamTraits<id>::_paramtype;
         clap_id index = static_cast<clap_id>(id);
         if (index >= mState.size()) {
             return nullptr;
@@ -127,18 +134,6 @@ class ParametersFeature : public BaseFeature {
     void StartGesture(Id id) { mMainToAudio.push({ChangeType::StartGesture, id, 0.0}); }
 
     void StopGesture(Id id) { mMainToAudio.push({ChangeType::StopGesture, id, 0.0}); }
-
-#ifdef KITSBLIPS_ENABLE_GUI
-    void DebugImGui() {
-        for (clap_id index = 0; index < mParams.size(); ++index) {
-            Id id = static_cast<Id>(index);
-            double raw = GetRaw(id);
-            if (mParams[index]->DebugImGui(raw)) {
-                SetRaw(id, raw);
-            }
-        }
-    }
-#endif
 
     void RequestClear(Id id, clap_param_clear_flags flags = CLAP_PARAM_CLEAR_ALL) {
         const clap_host_t* rawHost;
@@ -179,8 +174,8 @@ class ParametersFeature : public BaseFeature {
             : mParamsRef(paramConfigs), mState(numParams, 0.0f), mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {}
 
         template <Id id>
-        typename ParamTraits<Id, id>::_paramtype::_valuetype Get() const {
-            using ParamType = typename ParamTraits<Id, id>::_paramtype;
+        typename ParamTraits<id>::_valuetype Get() const {
+            using ParamType = ParamTraits<id>;
             typename ParamType::_valuetype out{};
             clap_id index = static_cast<clap_id>(id);
             double raw = GetRaw(id);

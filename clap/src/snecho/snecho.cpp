@@ -34,53 +34,53 @@ using ParamsExt = clapeze::ParametersFeature<Params>;
 }  // namespace
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Mix> {
-    using _paramtype = clapeze::PercentParam;
+struct clapeze::ParamTraits<Params::Mix> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("", "Mix", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Size> {
-    using _paramtype = clapeze::PercentParam;
+struct clapeze::ParamTraits<Params::Size> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("", "Size", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Feedback> {
-    using _paramtype = clapeze::PercentParam;
+struct clapeze::ParamTraits<Params::Feedback> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("", "Feedback", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::FilterPreset> {
-    using _paramtype = clapeze::IntegerParam;
+struct clapeze::ParamTraits<Params::FilterPreset> : public clapeze::IntegerParam {
+    ParamTraits() : clapeze::IntegerParam("", "Filter Preset", 0, kitdsp::SNES::kNumFilterPresets, 0) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::FreezeEcho> {
-    using _paramtype = clapeze::OnOffParam;
+struct clapeze::ParamTraits<Params::FreezeEcho> : public clapeze::OnOffParam {
+    ParamTraits() : clapeze::OnOffParam("", "Freeze Echo", OnOff::Off) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::ResetHead> {
-    using _paramtype = clapeze::OnOffParam;
+struct clapeze::ParamTraits<Params::ResetHead> : public clapeze::OnOffParam {
+    ParamTraits() : clapeze::OnOffParam("", "Reset Playhead", OnOff::Off) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::SizeRange> {
-    using _paramtype = clapeze::IntegerParam;
+struct clapeze::ParamTraits<Params::SizeRange> : public clapeze::IntegerParam {
+    ParamTraits() : clapeze::IntegerParam("", "Size Range", 0, 2, 0) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::EchoDelayMod> {
-    using _paramtype = clapeze::PercentParam;
+struct clapeze::ParamTraits<Params::EchoDelayMod> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("", "Echo Mod", 1.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::FilterMix> {
-    using _paramtype = clapeze::PercentParam;
+struct clapeze::ParamTraits<Params::FilterMix> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("", "Filter Mix", 1.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::ClearBuffer> {
-    using _paramtype = clapeze::OnOffParam;
+struct clapeze::ParamTraits<Params::ClearBuffer> : public clapeze::OnOffParam {
+    ParamTraits() : clapeze::OnOffParam("", "Clear Buffer", OnOff::Off) {}
 };
 
 using namespace kitdsp;
@@ -158,7 +158,7 @@ class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
 class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsExt& params) : kitgui::BaseApp(ctx), mParams(params) {}
-    void OnUpdate() override { mParams.DebugImGui(); }
+    void OnUpdate() override { /*mParams.DebugImGui();*/ }
 
    private:
     ParamsExt& mParams;
@@ -176,18 +176,18 @@ class Plugin : public EffectPlugin {
         EffectPlugin::Config();
 
         ParamsExt& params = ConfigFeature<ParamsExt>(GetHost(), Params::Count)
-                                .ConfigModule("Original")
-                                .ConfigParam<Params::Mix>("Mix", 0.5f)
-                                .ConfigParam<Params::Size>("Size", 0.5f)
-                                .ConfigParam<Params::Feedback>("Feedback", 0.5f)
-                                .ConfigParam<Params::FilterPreset>("Filter Preset", 0, SNES::kNumFilterPresets, 0)
-                                .ConfigParam<Params::FreezeEcho>("Freeze Echo", OnOff::Off)
-                                .ConfigParam<Params::ResetHead>("Reset Playhead", OnOff::Off)
-                                .ConfigModule("Extensions")
-                                .ConfigParam<Params::SizeRange>("Size Range", 0, 2, 0)
-                                .ConfigParam<Params::EchoDelayMod>("Echo Mod", 1.0f)
-                                .ConfigParam<Params::FilterMix>("Filter Mix", 1.0f)
-                                .ConfigParam<Params::ClearBuffer>("Clear Buffer", OnOff::Off);
+                                .Module("Original")
+                                .Parameter<Params::Mix>()
+                                .Parameter<Params::Size>()
+                                .Parameter<Params::Feedback>()
+                                .Parameter<Params::FilterPreset>()
+                                .Parameter<Params::FreezeEcho>()
+                                .Parameter<Params::ResetHead>()
+                                .Module("Extensions")
+                                .Parameter<Params::SizeRange>()
+                                .Parameter<Params::EchoDelayMod>()
+                                .Parameter<Params::FilterMix>()
+                                .Parameter<Params::ClearBuffer>();
 
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });

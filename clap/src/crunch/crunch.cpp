@@ -32,28 +32,30 @@ using ParamsFeature = clapeze::ParametersFeature<Params>;
 }  // namespace
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Algorithm> {
-    using _paramtype = clapeze::EnumParam<Algorithm>;
+struct clapeze::ParamTraits<Params::Algorithm> : public clapeze::EnumParam<Algorithm> {
+    ParamTraits()
+        : clapeze::EnumParam<Algorithm>("", "Algorithm", {"Clip", "Saturate", "Fold", "Rectify"}, Algorithm::HardClip) {
+    }
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Gain> {
-    using _paramtype = clapeze::DbParam;
+struct clapeze::ParamTraits<Params::Gain> : public clapeze::DbParam {
+    ParamTraits() : clapeze::DbParam("", "Gain", 0.0f, 32.0f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Tone> {
-    using _paramtype = clapeze::PercentParam;
+struct clapeze::ParamTraits<Params::Tone> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("", "Tone", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Makeup> {
-    using _paramtype = clapeze::DbParam;
+struct clapeze::ParamTraits<Params::Makeup> : public clapeze::DbParam {
+    ParamTraits() : clapeze::DbParam("", "Makeup", -9.0f, 9.0f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Mix> {
-    using _paramtype = clapeze::PercentParam;
+struct clapeze::ParamTraits<Params::Mix> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("", "Mix", 1.0f) {}
 };
 
 using namespace clapeze;
@@ -84,7 +86,7 @@ float crunch(Algorithm algorithm, float in) {
 }
 
 // lazy tone control
-// TODO: this was too lazy, time to find a nice shelf filter
+/ TODO: this was too lazy, time to find a nice shelf filter
 class ToneFilter {
    public:
     ToneFilter(float sampleRate) { mPole1.SetFrequency(1200.0f, sampleRate); }
@@ -170,7 +172,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
 class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
-    void OnUpdate() override { mParams.DebugImGui(); }
+    void OnUpdate() override { /*mParams.DebugImGui();*/ }
 
    private:
     ParamsFeature& mParams;
@@ -187,15 +189,12 @@ class Plugin : public EffectPlugin {
     void Config() override {
         EffectPlugin::Config();
 
-        ParamsFeature& params =
-            ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
-                .ConfigParam<Params::Algorithm>("Algorithm",
-                                                std::vector<std::string_view>{"Clip", "Saturate", "Fold", "Rectify"},
-                                                Algorithm::HardClip)
-                .ConfigParam<Params::Gain>("Gain", 0.0f, 32.0f, 0.0f)
-                .ConfigParam<Params::Tone>("Tone", 0.5f)
-                .ConfigParam<Params::Makeup>("Makeup", -9.0f, 9.0f, 0.0f)
-                .ConfigParam<Params::Mix>("Mix", 1.0f);
+        ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
+                                    .Parameter<Params::Algorithm>()
+                                    .Parameter<Params::Gain>()
+                                    .Parameter<Params::Tone>()
+                                    .Parameter<Params::Makeup>()
+                                    .Parameter<Params::Mix>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif

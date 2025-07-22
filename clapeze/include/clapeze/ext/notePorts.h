@@ -4,7 +4,8 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "clapeze/basePlugin.h"
+#include "clapeze/ext/baseFeature.h"
+
 namespace clapeze {
 
 template <size_t NUM_INPUTS, size_t NUM_OUTPUTS>
