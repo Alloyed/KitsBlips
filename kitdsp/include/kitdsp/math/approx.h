@@ -60,13 +60,13 @@ inline float cos2pif_nasty(float x) {
 inline float sinf_squinky(float _x) {
     _x -= (_x > kPi) ? kTwoPi : 0.0f;
 
-    float xneg = _x < 0;
+    bool xneg = _x < 0;
     float xOffset = xneg ? kPi / 2.f : -kPi / 2.f;
     xOffset += _x;
     float xSquared = xOffset * xOffset;
     float ret = xSquared * 1.f / 24.f;
-    float correction = ret * xSquared * .02 / .254;
-    ret += -.5;
+    float correction = ret * xSquared * .02f / .254f;
+    ret += -.5f;
     ret *= xSquared;
     ret += 1.f;
 
@@ -90,7 +90,7 @@ inline float atanf(float x) {
 }
 
 inline float atan2f(float x, float y) {
-    bool swap = fabs(x) < fabs(y);
+    bool swap = std::abs(x) < std::abs(y);
     float atan_input = swap ? x / y : y / x;
 
     // Approximate atan

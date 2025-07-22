@@ -27,13 +27,14 @@
 // Single waveform oscillator. Can optionally do audio-rate linear FM, with
 // through-zero capabilities (negative frequencies).
 
-#ifndef PLAITS_DSP_OSCILLATOR_OSCILLATOR_H_
-#define PLAITS_DSP_OSCILLATOR_OSCILLATOR_H_
+#pragma once
 
-#include "stmlib/dsp/polyblep.h"
+#include <cmath>
+#include <cstddef>
+#include "kitdsp/math/util.h"
+#include "kitdsp/osc/polyBlep.h"
 
-namespace kitdsp {
-namespace emile {
+namespace kitdsp::emile {
 
 enum OscillatorShape {
     OSCILLATOR_SHAPE_IMPULSE_TRAIN,
@@ -51,9 +52,6 @@ const float kMinFrequency = 0.000001f;
 
 class Oscillator {
    public:
-    Oscillator() {}
-    ~Oscillator() {}
-
     void Init() {
         phase_ = 0.5f;
         next_sample_ = 0.0f;
@@ -67,13 +65,13 @@ class Oscillator {
 
     template <OscillatorShape shape>
     void Render(float frequency, float pw, float* out, size_t size) {
-        Render<shape, false, false>(frequency, pw, NULL, out, size);
+        Render<shape, false, false>(frequency, pw, nullptr, out, size);
     }
 
     template <OscillatorShape shape>
     void Render(float frequency, float pw, const float* fm, float* out, size_t size) {
         if (!fm) {
-            Render<shape, false, false>(frequency, pw, NULL, out, size);
+            Render<shape, false, false>(frequency, pw, nullptr, out, size);
         } else {
             Render<shape, true, true>(frequency, pw, fm, out, size);
         }
@@ -83,11 +81,11 @@ class Oscillator {
     void Render(float frequency, float pw, const float* external_fm, float* out, size_t size) {
         if (!has_external_fm) {
             if (!through_zero_fm) {
-                CONSTRAIN(frequency, kMinFrequency, kMaxFrequency);
+                frequency = clamp(frequency, kMinFrequency, kMaxFrequency);
             } else {
-                CONSTRAIN(frequency, -kMaxFrequency, kMaxFrequency);
+                frequency = clamp(frequency, -kMaxFrequency, kMaxFrequency);
             }
-            CONSTRAIN(pw, fabsf(frequency) * 2.0f, 1.0f - 2.0f * fabsf(frequency))
+            pw = clamp(pw, fabsf(frequency) * 2.0f, 1.0f - 2.0f * fabsf(frequency));
         }
 
         float next_sample = next_sample_;
@@ -98,7 +96,7 @@ class Oscillator {
 
             float pw = (shape == OSCILLATOR_SHAPE_SQUARE_TRIANGLE || shape == OSCILLATOR_SHAPE_TRIANGLE) ? 0.5f : 0.5f;
             if (has_external_fm) {
-                CONSTRAIN(pw, fabsf(frequency) * 2.0f, 1.0f - 2.0f * fabsf(frequency))
+                pw = clamp(pw, fabsf(frequency) * 2.0f, 1.0f - 2.0f * fabsf(frequency));
             }
             phase_ += frequency;
 
@@ -106,13 +104,13 @@ class Oscillator {
                 if (phase_ >= 1.0f) {
                     phase_ -= 1.0f;
                     float t = phase_ / frequency;
-                    this_sample -= stmlib::ThisBlepSample(t);
-                    next_sample -= stmlib::NextBlepSample(t);
+                    this_sample -= polyblep::ThisBlepSample(t);
+                    next_sample -= polyblep::NextBlepSample(t);
                 } else if (through_zero_fm && phase_ < 0.0f) {
                     float t = phase_ / frequency;
                     phase_ += 1.0f;
-                    this_sample += stmlib::ThisBlepSample(t);
-                    next_sample += stmlib::NextBlepSample(t);
+                    this_sample += polyblep::ThisBlepSample(t);
+                    next_sample += polyblep::NextBlepSample(t);
                 }
                 next_sample += phase_;
 
@@ -136,23 +134,23 @@ class Oscillator {
                     if (through_zero_fm && frequency < 0.0f) {
                         discontinuity = -discontinuity;
                     }
-                    this_sample -= stmlib::ThisIntegratedBlepSample(t) * discontinuity;
-                    next_sample -= stmlib::NextIntegratedBlepSample(t) * discontinuity;
+                    this_sample -= polyblep::ThisIntegratedBlepSample(t) * discontinuity;
+                    next_sample -= polyblep::NextIntegratedBlepSample(t) * discontinuity;
                     high_ = phase_ < pw;
                 }
                 if (phase_ >= 1.0f) {
                     phase_ -= 1.0f;
                     float t = phase_ / frequency;
                     float discontinuity = (slope_up + slope_down) * frequency;
-                    this_sample += stmlib::ThisIntegratedBlepSample(t) * discontinuity;
-                    next_sample += stmlib::NextIntegratedBlepSample(t) * discontinuity;
+                    this_sample += polyblep::ThisIntegratedBlepSample(t) * discontinuity;
+                    next_sample += polyblep::NextIntegratedBlepSample(t) * discontinuity;
                     high_ = true;
                 } else if (through_zero_fm && phase_ < 0.0f) {
                     float t = phase_ / frequency;
                     phase_ += 1.0f;
                     float discontinuity = (slope_up + slope_down) * frequency;
-                    this_sample -= stmlib::ThisIntegratedBlepSample(t) * discontinuity;
-                    next_sample -= stmlib::NextIntegratedBlepSample(t) * discontinuity;
+                    this_sample -= polyblep::ThisIntegratedBlepSample(t) * discontinuity;
+                    next_sample -= polyblep::NextIntegratedBlepSample(t) * discontinuity;
                     high_ = false;
                 }
                 next_sample += high_ ? phase_ * slope_up : 1.0f - (phase_ - pw) * slope_down;
@@ -164,21 +162,21 @@ class Oscillator {
                     if (through_zero_fm && frequency < 0.0f) {
                         discontinuity = -discontinuity;
                     }
-                    this_sample += stmlib::ThisBlepSample(t) * discontinuity;
-                    next_sample += stmlib::NextBlepSample(t) * discontinuity;
+                    this_sample += polyblep::ThisBlepSample(t) * discontinuity;
+                    next_sample += polyblep::NextBlepSample(t) * discontinuity;
                     high_ = phase_ >= pw;
                 }
                 if (phase_ >= 1.0f) {
                     phase_ -= 1.0f;
                     float t = phase_ / frequency;
-                    this_sample -= stmlib::ThisBlepSample(t);
-                    next_sample -= stmlib::NextBlepSample(t);
+                    this_sample -= polyblep::ThisBlepSample(t);
+                    next_sample -= polyblep::NextBlepSample(t);
                     high_ = false;
                 } else if (through_zero_fm && phase_ < 0.0f) {
                     float t = phase_ / frequency;
                     phase_ += 1.0f;
-                    this_sample += stmlib::ThisBlepSample(t);
-                    next_sample += stmlib::NextBlepSample(t);
+                    this_sample += polyblep::ThisBlepSample(t);
+                    next_sample += polyblep::NextBlepSample(t);
                     high_ = true;
                 }
                 next_sample += phase_ < pw ? 0.0f : 1.0f;
@@ -218,10 +216,5 @@ class Oscillator {
     // For interpolation of parameters.
     float frequency_;
     float pw_;
-
-    DISALLOW_COPY_AND_ASSIGN(Oscillator);
 };
-}  // namespace emile
-}  // namespace kitdsp
-
-#endif  // PLAITS_DSP_OSCILLATOR_OSCILLATOR_H_
+}  // namespace kitdsp::emile

@@ -14,7 +14,6 @@ class OnePole {
         SetFrequency(1200.0f, 48000.0f);
         Reset();
     }
-    ~OnePole() {}
 
     inline void Reset() { mState = 0.0f; }
 
@@ -30,8 +29,7 @@ class OnePole {
     }
 
     inline float Process(float in) {
-        float lowpass;
-        lowpass = (mG * in + mState) * mGi;
+        float lowpass = (mG * in + mState) * mGi;
         mState = mG * (in - lowpass) + lowpass;
         return lowpass;
     }

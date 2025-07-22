@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cmath>
-#include <cstdio>
 #include "kitdsp/math/util.h"
 
 namespace kitdsp {

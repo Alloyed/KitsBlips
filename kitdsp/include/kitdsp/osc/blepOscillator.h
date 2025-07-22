@@ -118,7 +118,7 @@ class TriangleOscillator : public Phasor {
     }
 
    private:
-    float Wave(float phase) { return fabsf(mPhase - cMidpoint) * 4.0f - 1.0f; }
+    static constexpr float Wave(float phase) { return fabsf(phase - cMidpoint) * 4.0f - 1.0f; }
     polyblep::PolyBlepProcessor<float> mBlep;
     static constexpr float cMidpoint = 0.5f;
 };

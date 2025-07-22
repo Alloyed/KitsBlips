@@ -17,6 +17,7 @@ void stringCopy(char (&buffer)[BUFFER_SIZE], std::string_view src) {
     // zero-out memory. This implicitly null-terminates, and avoids accidental garbage lying around
     std::memset(buffer, '\0', BUFFER_SIZE);
     // copy at most BUFFER_SIZE-1 bytes. the last byte is reserved for the null terminator
+    // NOLINTNEXTLINE
     std::memcpy(buffer, src.data(), kitdsp::min(src.length(), BUFFER_SIZE - 1));
 }
 /* safe alternative to strcpy when the buffer size is known at runtime*/

@@ -2,11 +2,13 @@
 
 #include "clapeze/ext/kitgui.h"
 
+#include <utility>
+
 namespace clapeze {
 
 int32_t KitguiFeature::sInitCount = 0;
 
-KitguiFeature::KitguiFeature(kitgui::Context::AppFactory createAppFn) : mCtx(createAppFn) {}
+KitguiFeature::KitguiFeature(kitgui::Context::AppFactory createAppFn) : mCtx(std::move(createAppFn)) {}
 
 bool KitguiFeature::IsApiSupported(ClapWindowApi api, bool isFloating) {
     // TODO: lots of apis to support out there
@@ -17,7 +19,7 @@ bool KitguiFeature::IsApiSupported(ClapWindowApi api, bool isFloating) {
 
     // embedding requires API-specific code, still a work in progress
     switch (api) {
-        case _None:
+        case None:
         case Wayland:
         case Win32:
         case Cocoa: {
@@ -31,11 +33,11 @@ bool KitguiFeature::IsApiSupported(ClapWindowApi api, bool isFloating) {
 }
 
 bool KitguiFeature::GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) {
-    kitgui::platform::Api guiApi;
+    kitgui::platform::Api guiApi{};
     kitgui::Context::GetPreferredApi(guiApi, isFloatingOut);
     switch (guiApi) {
         case kitgui::platform::Api::Any: {
-            apiOut = ClapWindowApi::_None;
+            apiOut = ClapWindowApi::None;
             break;
         }
         case kitgui::platform::Api::Win32: {
@@ -100,8 +102,7 @@ bool KitguiFeature::GetResizeHints(clap_gui_resize_hints_t& hintsOut) {
 bool KitguiFeature::AdjustSize(uint32_t& widthInOut, uint32_t& heightInOut) {
     const auto& cfg = mCtx.GetSizeConfig();
     if (cfg.resizable && cfg.preserveAspectRatio) {
-        float ratio = static_cast<float>(cfg.startingWidth) / static_cast<float>(cfg.startingHeight);
-        heightInOut = widthInOut * ratio;
+        heightInOut = widthInOut * cfg.startingWidth / cfg.startingHeight;
     }
     return true;
 }
@@ -134,7 +135,7 @@ bool KitguiFeature::Hide() {
 
 kitgui::platform::Api KitguiFeature::ToPlatformApi(ClapWindowApi api) {
     switch (api) {
-        case clapeze::ClapWindowApi::_None: {
+        case clapeze::ClapWindowApi::None: {
             return kitgui::platform::Api::Any;
         }
         case clapeze::ClapWindowApi::Win32: {

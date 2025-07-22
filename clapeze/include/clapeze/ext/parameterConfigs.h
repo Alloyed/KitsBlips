@@ -104,10 +104,7 @@ template <typename TEnum>
 class EnumParam : public BaseParam {
    public:
     using _valuetype = TEnum;
-    EnumParam(std::string_view module,
-              std::string_view mName,
-              std::vector<std::string_view> mLabels,
-              TEnum mDefaultValue)
+    EnumParam(std::string_view mName, std::vector<std::string_view> mLabels, TEnum mDefaultValue)
         : mName(mName), mLabels(std::move(mLabels)), mDefaultValue(mDefaultValue) {}
     bool FillInformation(clap_id id, clap_param_info_t* information) const override {
         memset(information, 0, sizeof(clap_param_info_t));
@@ -166,7 +163,6 @@ enum class OnOff : uint8_t { Off, On };
  */
 class OnOffParam : public EnumParam<OnOff> {
    public:
-    OnOffParam(std::string_view module, std::string_view name, OnOff defaultValue)
-        : EnumParam(module, name, {"Off", "On"}, defaultValue) {}
+    OnOffParam(std::string_view name, OnOff defaultValue) : EnumParam(name, {"Off", "On"}, defaultValue) {}
 };
 }  // namespace clapeze

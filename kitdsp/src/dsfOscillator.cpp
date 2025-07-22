@@ -9,7 +9,7 @@ using namespace kitdsp;
 // #define sin_(x) sinf(x *kTwoPi)
 // #define cos_(x) cosf(x *kTwoPi)
 #define sin_(x) sin2pif_lut(x)
-#define cos_(x) sin2pif_lut(x + 0.25f)
+#define cos_(x) sin2pif_lut((x) + 0.25f)
 
 void DsfOscillator::Process() {
     mPhaseCarrier = Phasor::WrapPhase(mPhaseCarrier + mFreqCarrier * mSecondsPerSample);

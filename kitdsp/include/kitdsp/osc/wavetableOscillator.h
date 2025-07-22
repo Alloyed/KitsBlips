@@ -8,7 +8,7 @@ namespace kitdsp {
 template <typename SAMPLE, size_t SIZE, interpolate::InterpolationStrategy STRATEGY>
 class WavetableOscillator : public Phasor {
    public:
-    WavetableOscillator(SAMPLE* buffer) : mPlayer(buffer, SIZE) {}
+    explicit WavetableOscillator(SAMPLE* buffer) : mPlayer(buffer, SIZE) {}
     float Process() {
         Advance();
         // assumption: sample is exactly one period long

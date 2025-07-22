@@ -7,7 +7,7 @@ namespace kitdsp {
 template <typename SAMPLE, size_t FACTOR>
 class Oversampler {
    public:
-    Oversampler(float sourceRate) { SetSampleRate(sourceRate); }
+    explicit Oversampler(float sourceRate) { SetSampleRate(sourceRate); }
 
     void Reset() {
         mFilterUp.Reset();

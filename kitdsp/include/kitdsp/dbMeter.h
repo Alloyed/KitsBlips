@@ -6,7 +6,7 @@
 namespace kitdsp {
 class DbMeter : public OnePole {
    public:
-    DbMeter(float sampleRate) : OnePole() {
+    explicit DbMeter(float sampleRate) : OnePole() {
         // this is a time constant of about 100 ms
         SetFrequency(1.6f, sampleRate);
     }

@@ -64,7 +64,7 @@ class WavFile {
 
         fseek(mFp, mTellWavDataSize, SEEK_SET);
         uint32_t wavDataSize = mNumSamples * NUM_CHANNELS * mBytesPerSample;
-        fwrite(&fileSize, sizeof(fileSize), 1, mFp);
+        fwrite(&wavDataSize, sizeof(wavDataSize), 1, mFp);
     }
 
     uint32_t GetSampleRate() { return mSampleRate; }

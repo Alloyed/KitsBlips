@@ -11,9 +11,6 @@ namespace kitdsp {
 template <typename SAMPLE>
 class Limiter {
    public:
-    Limiter() {}
-    ~Limiter() {}
-
     void Reset() { mPeak = 0.5f; }
 
     SAMPLE Process(SAMPLE in) {

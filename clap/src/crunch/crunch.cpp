@@ -34,28 +34,27 @@ using ParamsFeature = clapeze::ParametersFeature<Params>;
 template <>
 struct clapeze::ParamTraits<Params::Algorithm> : public clapeze::EnumParam<Algorithm> {
     ParamTraits()
-        : clapeze::EnumParam<Algorithm>("", "Algorithm", {"Clip", "Saturate", "Fold", "Rectify"}, Algorithm::HardClip) {
-    }
+        : clapeze::EnumParam<Algorithm>("Algorithm", {"Clip", "Saturate", "Fold", "Rectify"}, Algorithm::HardClip) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params::Gain> : public clapeze::DbParam {
-    ParamTraits() : clapeze::DbParam("", "Gain", 0.0f, 32.0f, 0.0f) {}
+    ParamTraits() : clapeze::DbParam("Gain", 0.0f, 32.0f, 0.0f) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params::Tone> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("", "Tone", 0.5f) {}
+    ParamTraits() : clapeze::PercentParam("Tone", 0.5f) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params::Makeup> : public clapeze::DbParam {
-    ParamTraits() : clapeze::DbParam("", "Makeup", -9.0f, 9.0f, 0.0f) {}
+    ParamTraits() : clapeze::DbParam("Makeup", -9.0f, 9.0f, 0.0f) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params::Mix> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("", "Mix", 1.0f) {}
+    ParamTraits() : clapeze::PercentParam("Mix", 1.0f) {}
 };
 
 using namespace clapeze;
@@ -86,10 +85,10 @@ float crunch(Algorithm algorithm, float in) {
 }
 
 // lazy tone control
-/ TODO: this was too lazy, time to find a nice shelf filter
+// TODO : this was too lazy, time to find a nice shelf filter
 class ToneFilter {
    public:
-    ToneFilter(float sampleRate) { mPole1.SetFrequency(1200.0f, sampleRate); }
+    explicit ToneFilter(float sampleRate) { mPole1.SetFrequency(1200.0f, sampleRate); }
     float Process(float in, float tone) {
         float lowpass = mPole1.Process(in);
         float highpass = in - lowpass;
@@ -106,7 +105,7 @@ class ToneFilter {
 
 class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
    public:
-    Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
+    explicit Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
     void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
@@ -152,10 +151,10 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
 
     void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) override {
         float sampleRatef = static_cast<float>(sampleRate);
-        tonePreLeft = {sampleRatef};
-        tonePreRight = {sampleRatef};
-        tonePostLeft = {sampleRatef};
-        tonePostRight = {sampleRatef};
+        tonePreLeft = ToneFilter(sampleRatef);
+        tonePreRight = ToneFilter(sampleRatef);
+        tonePostLeft = ToneFilter(sampleRatef);
+        tonePostRight = ToneFilter(sampleRatef);
     }
 
    private:
@@ -182,7 +181,7 @@ class GuiApp : public kitgui::BaseApp {
 class Plugin : public EffectPlugin {
    public:
     static const PluginEntry Entry;
-    Plugin(PluginHost& host) : EffectPlugin(host) {}
+    explicit Plugin(PluginHost& host) : EffectPlugin(host) {}
     ~Plugin() = default;
 
    protected:

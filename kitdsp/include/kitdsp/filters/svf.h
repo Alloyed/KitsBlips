@@ -19,7 +19,6 @@ class EmileSvf {
         SetFrequency(1000.0f, 48000.0f, 100.0f);
         Reset();
     }
-    ~EmileSvf() {}
 
     void Reset() { mState1 = mState2 = 0.0f; }
 
@@ -56,7 +55,9 @@ class EmileSvf {
     }
 
     inline float Process(float in, SvfFilterMode mode) {
-        float hp, bp, lp;
+        float hp{};
+        float bp{};
+        float lp{};
         ProcessAll(in, hp, bp, lp);
 
         switch (mode) {

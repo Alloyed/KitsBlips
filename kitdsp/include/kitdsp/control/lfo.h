@@ -29,7 +29,7 @@ class Phasor {
         mAdvance = 0.0f;
     }
     /** take an arbitrary value and wrap into 0-1 (phasor range) */
-    static float WrapPhase(float phase) { return phase - floor(phase); }
+    static float WrapPhase(float phase) { return phase - std::floor(phase); }
 
    protected:
     bool Advance() {

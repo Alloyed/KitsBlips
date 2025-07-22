@@ -13,8 +13,7 @@ namespace kitdsp {
 template <typename SAMPLE, size_t SIZE>
 class DelayLine {
    public:
-    DelayLine(SAMPLE* buffer) : mBuffer(buffer) { Reset(); }
-    ~DelayLine() {}
+    explicit DelayLine(SAMPLE* buffer) : mBuffer(buffer) { Reset(); }
 
     void Reset() {
         std::memset(mBuffer, 0, SIZE * sizeof(mBuffer[0]));

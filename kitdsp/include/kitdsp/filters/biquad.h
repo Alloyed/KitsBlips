@@ -34,8 +34,8 @@ class BiquadFilter {
         CalculateCoefficients();
     }
 
-    inline void SetQ(float _Q) {
-        Q = _Q;
+    inline void SetQ(float Q_) {
+        Q = Q_;
         CalculateCoefficients();
     }
 
@@ -44,8 +44,8 @@ class BiquadFilter {
      * @param Q
      * @param dbGain
      */
-    inline void SetShelf(float _Q, float dbGain) {
-        Q = _Q;
+    inline void SetShelf(float Q_, float dbGain) {
+        Q = Q_;
         A = std::sqrt(std::pow(10.0f, dbGain / 20.0f));
         A_p_1 = A + 1.0f;
         A_m_1 = A - 1.0f;

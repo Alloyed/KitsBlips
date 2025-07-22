@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cmath>
-#include <cstdint>
 
 namespace kitdsp {
 /**
@@ -19,8 +18,6 @@ namespace kitdsp {
  */
 class DsfOscillator {
    public:
-    DsfOscillator() {}
-    ~DsfOscillator() {}
     void Init(float sampleRate) {
         mSecondsPerSample = 1.0f / sampleRate;
         mNyquistFrequency = sampleRate * 0.5f;
@@ -91,7 +88,7 @@ class DsfOscillator {
     }
 
     inline void CalcFrequencyBands() {
-        float N = static_cast<int32_t>((mNyquistFrequency - mFreqCarrier) / mFreqModulator);
+        float N = std::floor((mNyquistFrequency - mFreqCarrier) / mFreqModulator);
         if (N != mNumFrequencyBands) {
             mNumFrequencyBands = N;
             CalcAmplitude();

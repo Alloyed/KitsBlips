@@ -5,7 +5,7 @@
 #include <string_view>
 
 using namespace clapeze;
-using namespace _clapeze_impl;
+using namespace clapeze_impl;
 
 bool NumericParam::FillInformation(clap_id id, clap_param_info_t* information) const {
     memset(information, 0, sizeof(clap_param_info_t));

@@ -9,7 +9,7 @@ namespace SNES {
 // low sample rate for OG crunchiness
 static constexpr int32_t kOriginalSampleRate = 32000;
 static constexpr size_t MsToSamples(int32_t ms) {
-    return ms * kOriginalSampleRate * 0.001f;
+    return ms * kOriginalSampleRate / 1000;
 }
 static constexpr size_t GetBufferDesiredCapacityInt16s(int32_t desiredMaxEchoMs) {
     return MsToSamples(desiredMaxEchoMs);

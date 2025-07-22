@@ -35,52 +35,52 @@ using ParamsExt = clapeze::ParametersFeature<Params>;
 
 template <>
 struct clapeze::ParamTraits<Params::Mix> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("", "Mix", 0.5f) {}
+    ParamTraits() : clapeze::PercentParam("Mix", 0.5f) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params::Size> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("", "Size", 0.5f) {}
+    ParamTraits() : clapeze::PercentParam("Size", 0.5f) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params::Feedback> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("", "Feedback", 0.5f) {}
+    ParamTraits() : clapeze::PercentParam("Feedback", 0.5f) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params::FilterPreset> : public clapeze::IntegerParam {
-    ParamTraits() : clapeze::IntegerParam("", "Filter Preset", 0, kitdsp::SNES::kNumFilterPresets, 0) {}
+    ParamTraits() : clapeze::IntegerParam("Filter Preset", 0, kitdsp::SNES::kNumFilterPresets, 0) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params::FreezeEcho> : public clapeze::OnOffParam {
-    ParamTraits() : clapeze::OnOffParam("", "Freeze Echo", OnOff::Off) {}
+    ParamTraits() : clapeze::OnOffParam("Freeze Echo", OnOff::Off) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params::ResetHead> : public clapeze::OnOffParam {
-    ParamTraits() : clapeze::OnOffParam("", "Reset Playhead", OnOff::Off) {}
+    ParamTraits() : clapeze::OnOffParam("Reset Playhead", OnOff::Off) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params::SizeRange> : public clapeze::IntegerParam {
-    ParamTraits() : clapeze::IntegerParam("", "Size Range", 0, 2, 0) {}
+    ParamTraits() : clapeze::IntegerParam("Size Range", 0, 2, 0) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params::EchoDelayMod> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("", "Echo Mod", 1.0f) {}
+    ParamTraits() : clapeze::PercentParam("Echo Mod", 1.0f) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params::FilterMix> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("", "Filter Mix", 1.0f) {}
+    ParamTraits() : clapeze::PercentParam("Filter Mix", 1.0f) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params::ClearBuffer> : public clapeze::OnOffParam {
-    ParamTraits() : clapeze::OnOffParam("", "Clear Buffer", OnOff::Off) {}
+    ParamTraits() : clapeze::OnOffParam("Clear Buffer", OnOff::Off) {}
 };
 
 using namespace kitdsp;
@@ -89,7 +89,7 @@ using namespace clapeze;
 namespace snecho {
 class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
    public:
-    Processor(ParamsExt::ProcessParameters& params) : EffectProcessor(params) {}
+    explicit Processor(ParamsExt::ProcessParameters& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
     void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
@@ -168,7 +168,7 @@ class GuiApp : public kitgui::BaseApp {
 class Plugin : public EffectPlugin {
    public:
     static const PluginEntry Entry;
-    Plugin(PluginHost& host) : EffectPlugin(host) {}
+    explicit Plugin(PluginHost& host) : EffectPlugin(host) {}
     ~Plugin() = default;
 
    protected:

@@ -16,7 +16,7 @@ class Phasor {
         mAdvance = 0.0f;
     }
     /** take an arbitrary value and wrap into 0-1 (phasor range) */
-    static float WrapPhase(float phase) { return phase - floor(phase); }
+    static float WrapPhase(float phase) { return phase - std::floor(phase); }
 
    protected:
     bool Advance() {
@@ -25,7 +25,7 @@ class Phasor {
         // true if wrapped, false if not
         return mPhase != nextPhase;
     }
-    bool WillWrapNext() { return mPhase + mAdvance > 1.0f; }
+    bool WillWrapNext() const { return mPhase + mAdvance > 1.0f; }
     float mPhase = 0.0f;
     float mAdvance = 0.0f;
 };
