@@ -31,13 +31,13 @@ inline float mtof(float midiNote) {
 }
 
 inline float sinOsc(float phase) {
-    return std::sin(phase * std::numbers::pi * 2.0f);
+    return std::sinf(phase * std::numbers::pi_v<float> * 2.0f);
 }
 
 class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessParameters> {
     class Voice {
        public:
-        Voice(Processor& p) : mProcessor(p) {}
+        explicit Voice(Processor& p) : mProcessor(p) {}
         void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
             mFrequencyHz = mtof(note.key);
             mCurrentAmplitude = 1.0f;
@@ -47,7 +47,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
         void ProcessChoke() { mCurrentAmplitude = 0.0f; }
         bool ProcessAudio(clapeze::StereoAudioBuffer& out) {
             const auto& params = mProcessor.mParams;
-            const float sampleRate = mProcessor.GetSampleRate();
+            const float sampleRate = static_cast<float>(mProcessor.GetSampleRate());
             float fallRate = params.Get<Params::Fall>();
 
             for (uint32_t index = 0; index < out.left.size(); index++) {
@@ -78,7 +78,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
     };
 
    public:
-    Processor(ParamsFeature::ProcessParameters& params) : InstrumentProcessor(params), mVoices(*this) {}
+    explicit Processor(ParamsFeature::ProcessParameters& params) : InstrumentProcessor(params), mVoices(*this) {}
     ~Processor() = default;
 
     void ProcessAudio(clapeze::StereoAudioBuffer& out) override {
@@ -102,7 +102,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
 
 class Plugin : public clapeze::InstrumentPlugin {
    public:
-    Plugin(clapeze::PluginHost& host) : clapeze::InstrumentPlugin(host) {}
+    explicit Plugin(clapeze::PluginHost& host) : clapeze::InstrumentPlugin(host) {}
     ~Plugin() = default;
 
    protected:

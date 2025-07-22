@@ -19,7 +19,7 @@ namespace clapeze {
 template <typename TProcessor, typename TVoice, size_t TMaxVoices>
 class PolyphonicVoicePool {
    public:
-    PolyphonicVoicePool(TProcessor& p, size_t numVoices = TMaxVoices) : mProcessor(p), mVoices() {
+    explicit PolyphonicVoicePool(TProcessor& p, size_t numVoices = TMaxVoices) : mProcessor(p), mVoices() {
         SetNumVoices(numVoices);
     }
 
@@ -120,7 +120,7 @@ class PolyphonicVoicePool {
     }
 
     struct VoiceData {
-        VoiceData(TProcessor& p) : voice(p) {}
+        explicit VoiceData(TProcessor& p) : voice(p) {}
         TVoice voice;
         std::optional<NoteTuple> activeNote;
     };
@@ -133,7 +133,7 @@ class PolyphonicVoicePool {
 template <typename TProcessor, typename VoiceType>
 class MonophonicVoicePool {
    public:
-    MonophonicVoicePool(TProcessor& p) : mProcessor(p), mVoice(p) {}
+    explicit MonophonicVoicePool(TProcessor& p) : mProcessor(p), mVoice(p) {}
 
     void ProcessNoteOn(const NoteTuple& note, float velocity) {
         if (!mActiveNotes.empty()) {

@@ -10,7 +10,7 @@ namespace clapeze {
 template <typename ParamsType>
 class EffectProcessor : public BaseProcessor {
    public:
-    EffectProcessor(ParamsType& params) : BaseProcessor(), mParams(params) {}
+    explicit EffectProcessor(ParamsType& params) : BaseProcessor(), mParams(params) {}
     ~EffectProcessor() = default;
 
     void ProcessEvent(const clap_event_header_t& event) final {
@@ -53,7 +53,7 @@ class EffectProcessor : public BaseProcessor {
 /* pre-configured for simple stereo effects */
 class EffectPlugin : public BasePlugin {
    public:
-    EffectPlugin(PluginHost& host) : BasePlugin(host) {}
+    explicit EffectPlugin(PluginHost& host) : BasePlugin(host) {}
     ~EffectPlugin() = default;
 
    protected:

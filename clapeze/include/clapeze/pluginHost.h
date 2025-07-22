@@ -7,7 +7,7 @@
 namespace clapeze {
 
 class TimerSupportFeature;
-enum class LogSeverity {
+enum class LogSeverity : uint8_t {
     Debug = 0,
     Info = 1,
     Warning = 2,
@@ -27,7 +27,7 @@ class PluginHost {
     using TimerId = clap_id;
     using TimerFn = std::function<void()>;
 
-    PluginHost(const clap_host_t* host);
+    explicit PluginHost(const clap_host_t* host);
 
     template <typename TFeature>
     bool TryGetFeature(const char* extensionName, const clap_host_t*& hostOut, const TFeature*& extOut) const;

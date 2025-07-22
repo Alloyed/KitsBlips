@@ -7,7 +7,7 @@
 #include "clapeze/basePlugin.h"
 namespace clapeze {
 
-enum ClapWindowApi { _None = 0, X11, Wayland, Win32, Cocoa };
+enum ClapWindowApi { None = 0, X11, Wayland, Win32, Cocoa };
 
 inline ClapWindowApi toApiEnum(std::string_view api) {
     // clap promises that equal api types are the same pointer
@@ -24,11 +24,11 @@ inline ClapWindowApi toApiEnum(std::string_view api) {
         return ClapWindowApi::Cocoa;
     }
     // should never happen
-    return ClapWindowApi::_None;
+    return ClapWindowApi::None;
 }
 
 struct WindowHandle {
-    WindowHandle(const clap_window_t* window) : api(toApiEnum(window->api)) {
+    explicit WindowHandle(const clap_window_t* window) : api(toApiEnum(window->api)) {
         if (api == ClapWindowApi::X11) {
             x11 = window->x11;
         } else {
@@ -94,7 +94,7 @@ class GuiFeature : public BaseFeature {
 
     static bool _get_preferred_api(const clap_plugin_t* plugin, const char** apiString, bool* isFloating) {
         GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
-        ClapWindowApi api;
+        ClapWindowApi api{};
         bool success = self.GetPreferredApi(api, *isFloating);
         if (!success) {
             return false;
@@ -116,7 +116,7 @@ class GuiFeature : public BaseFeature {
                 *apiString = CLAP_WINDOW_API_COCOA;
                 break;
             }
-            case ClapWindowApi::_None: {
+            case ClapWindowApi::None: {
                 return false;
             }
         }

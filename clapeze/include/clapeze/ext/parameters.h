@@ -54,7 +54,7 @@ class ParametersFeature : public BaseFeature {
     using Id = TParamId;
 
     using ParamConfigs = std::vector<std::unique_ptr<BaseParam>>;
-    enum class ChangeType { SetValue, StartGesture, StopGesture };
+    enum class ChangeType : uint8_t { SetValue, StartGesture, StopGesture };
     struct Change {
         ChangeType type;
         Id id;
@@ -136,8 +136,8 @@ class ParametersFeature : public BaseFeature {
     void StopGesture(Id id) { mMainToAudio.push({ChangeType::StopGesture, id, 0.0}); }
 
     void RequestClear(Id id, clap_param_clear_flags flags = CLAP_PARAM_CLEAR_ALL) {
-        const clap_host_t* rawHost;
-        const clap_host_params_t* rawHostParams;
+        const clap_host_t* rawHost = nullptr;
+        const clap_host_params_t* rawHostParams = nullptr;
         if (mHost.TryGetFeature(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
             clap_id index = static_cast<clap_id>(id);
             rawHostParams->clear(rawHost, index, flags);
@@ -145,8 +145,8 @@ class ParametersFeature : public BaseFeature {
     }
 
     void RequestRescan(clap_param_rescan_flags flags = CLAP_PARAM_RESCAN_ALL) {
-        const clap_host_t* rawHost;
-        const clap_host_params_t* rawHostParams;
+        const clap_host_t* rawHost = nullptr;
+        const clap_host_params_t* rawHostParams = nullptr;
         if (mHost.TryGetFeature(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
             rawHostParams->rescan(rawHost, flags);
         }
@@ -161,8 +161,8 @@ class ParametersFeature : public BaseFeature {
     }
 
     void RequestFlushIfNotProcessing() {
-        const clap_host_t* rawHost;
-        const clap_host_params_t* rawHostParams;
+        const clap_host_t* rawHost{};
+        const clap_host_params_t* rawHostParams{};
         if (mHost.TryGetFeature(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
             rawHostParams->request_flush(rawHost);
         }
@@ -208,6 +208,9 @@ class ParametersFeature : public BaseFeature {
                         const Id id = static_cast<Id>(paramChange.param_id);
                         SetRaw(id, paramChange.value);
                         return true;
+                    }
+                    default: {
+                        break;
                     }
                 }
             }

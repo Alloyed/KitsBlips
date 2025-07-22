@@ -27,12 +27,12 @@ struct clapeze::ParamTraits<Params::Mix> : public clapeze::PercentParam {
 
 namespace crunch {
 inline float dbToRatio(float db) {
-    return std::pow(10, db / 20.0f);
+    return std::pow(10.0f, db / 20.0f);
 }
 
 class Processor : public clapeze::EffectProcessor<ParamsFeature::ProcessParameters> {
    public:
-    Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
+    explicit Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
     void ProcessAudio(const clapeze::StereoAudioBuffer& in, clapeze::StereoAudioBuffer& out) override {
@@ -64,7 +64,7 @@ class Processor : public clapeze::EffectProcessor<ParamsFeature::ProcessParamete
 class Plugin : public clapeze::EffectPlugin {
    public:
     static const clapeze::PluginEntry Entry;
-    Plugin(clapeze::PluginHost& host) : EffectPlugin(host) {}
+    explicit Plugin(clapeze::PluginHost& host) : EffectPlugin(host) {}
     ~Plugin() = default;
 
    protected:

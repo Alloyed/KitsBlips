@@ -27,7 +27,7 @@ struct PluginEntry {
  */
 class BasePlugin {
    public:
-    BasePlugin(PluginHost& host) : mHost(host) {}
+    explicit BasePlugin(PluginHost& host) : mHost(host) {}
     virtual ~BasePlugin() = default;
 
    protected:

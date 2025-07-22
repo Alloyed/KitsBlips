@@ -10,16 +10,17 @@
 
 #include <clapeze/ext/parameters.h>
 
-namespace _clapeze_impl {
+namespace clapeze_impl {
 /* safe alternative to strcpy when the buffer size is known at compile time. assumes the buffer is zero'd out in
  * advance*/
 template <size_t BUFFER_SIZE>
 void stringCopy(char (&buffer)[BUFFER_SIZE], std::string_view src) {
     static_assert(BUFFER_SIZE > 0);
     // copy at most BUFFER_SIZE-1 bytes. the last byte is reserved for the null terminator
+    // NOLINTNEXTLINE
     std::memcpy(buffer, src.data(), std::min(src.length(), BUFFER_SIZE - 1));
 }
-}  // namespace _clapeze_impl
+}  // namespace clapeze_impl
 
 namespace clapeze {
 /**
@@ -115,8 +116,8 @@ class EnumParam : public BaseParam {
         information->min_value = 0;
         information->max_value = static_cast<double>(mLabels.size() - 1);
         information->default_value = GetRawDefault();
-        _clapeze_impl::stringCopy(information->name, mName);
-        _clapeze_impl::stringCopy(information->module, GetModule());
+        clapeze_impl::stringCopy(information->name, mName);
+        clapeze_impl::stringCopy(information->module, GetModule());
 
         return true;
     }
@@ -159,7 +160,7 @@ class EnumParam : public BaseParam {
     const TEnum mDefaultValue;
 };
 
-enum class OnOff { Off, On };
+enum class OnOff : uint8_t { Off, On };
 /**
  * Represents a boolean on/off selection
  */

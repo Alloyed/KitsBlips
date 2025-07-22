@@ -1,0 +1,22 @@
+---
+WarningsAsErrors: true
+HeaderFilterRegex: "include/clapeze"
+FormatStyle: file
+Checks: >-
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  clang-analyzer-*,
+  cppcoreguidelines-init-variables,
+  cppcoreguidelines-slicing,
+  cppcoreguidelines-special-member-functions,
+  google-explicit-constructor,
+  misc-include-cleaner,
+  modernize-use-override,
+  performance-*,
+  -performance-enum-size,
+  readability-convert-member-functions-to-static,
+  readability-make-member-function-const,
+  readability-static-accessed-through-instance
+CheckOptions:
+  - key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
+    value: true

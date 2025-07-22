@@ -14,7 +14,7 @@ namespace clapeze {
 template <typename ParamsType>
 class InstrumentProcessor : public BaseProcessor {
    public:
-    InstrumentProcessor(ParamsType& params) : BaseProcessor(), mParams(params) {}
+    explicit InstrumentProcessor(ParamsType& params) : BaseProcessor(), mParams(params) {}
     ~InstrumentProcessor() = default;
 
     void ProcessEvent(const clap_event_header_t& event) final {
@@ -29,23 +29,30 @@ class InstrumentProcessor : public BaseProcessor {
                     const clap_event_note_t& noteChange = reinterpret_cast<const clap_event_note_t&>(event);
                     NoteTuple note{noteChange.note_id, noteChange.port_index, noteChange.channel, noteChange.key};
                     ProcessNoteOn(note, static_cast<float>(noteChange.velocity));
-                } break;
+                    break;
+                }
                 case CLAP_EVENT_NOTE_OFF: {
                     const clap_event_note_t& noteChange = reinterpret_cast<const clap_event_note_t&>(event);
                     NoteTuple note{noteChange.note_id, noteChange.port_index, noteChange.channel, noteChange.key};
                     ProcessNoteOff(note);
-                } break;
+                    break;
+                }
                 case CLAP_EVENT_NOTE_CHOKE: {
                     const clap_event_note_t& noteChange = reinterpret_cast<const clap_event_note_t&>(event);
                     NoteTuple note{noteChange.note_id, noteChange.port_index, noteChange.channel, noteChange.key};
                     ProcessNoteChoke(note);
-                } break;
+                    break;
+                }
                 case CLAP_EVENT_NOTE_EXPRESSION: {
                     const clap_event_note_expression_t& noteChange =
                         reinterpret_cast<const clap_event_note_expression_t&>(event);
                     NoteTuple note{noteChange.note_id, noteChange.port_index, noteChange.channel, noteChange.key};
                     ProcessNoteExpression(note, noteChange.expression_id, static_cast<float>(noteChange.value));
-                } break;
+                    break;
+                }
+                default: {
+                    break;
+                }
             }
         }
     }
@@ -83,7 +90,7 @@ class InstrumentProcessor : public BaseProcessor {
 /* pre-configured for simple stereo instruments */
 class InstrumentPlugin : public BasePlugin {
    public:
-    InstrumentPlugin(PluginHost& host) : BasePlugin(host) {}
+    explicit InstrumentPlugin(PluginHost& host) : BasePlugin(host) {}
     ~InstrumentPlugin() = default;
 
    protected:

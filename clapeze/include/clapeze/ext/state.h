@@ -58,7 +58,7 @@ class StateFeature : public BaseFeature {
         clap_id id = 0;
         while (id < numParams) {
             double value = 0.0f;
-            int32_t result = in->read(in, &value, sizeof(double));
+            int64_t result = in->read(in, &value, sizeof(double));
             if (result == -1) {
                 // error
                 return false;
