@@ -1,6 +1,6 @@
 #include "kitdsp/snesEcho.h"
 #include <gtest/gtest.h>
-#include "kitdsp/dbMeter.h"
+#include "kitdsp/math/units.h"
 #include "kitdsp/math/util.h"
 #include "kitdsp/snesEchoFilterPresets.h"
 #include "kitdsp/wavFile.h"

@@ -9,6 +9,7 @@ add_executable(testdsp
     oscillatorSweeps.test.cpp
     snesEcho.test.cpp
     psxReverb.test.cpp
+    chorus.test.cpp
 )
 
 target_link_libraries(testdsp
