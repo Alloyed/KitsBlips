@@ -1,5 +1,5 @@
-#include "kitdsp/psxReverb.h"
-#include "kitdsp/psxReverbPresets.h"
+#include "kitdsp/apps/psxReverb.h"
+#include "kitdsp/apps/psxReverbPresets.h"
 #include "kitdsp/samplerate/resampler.h"
 #include "plugin.hpp"
 

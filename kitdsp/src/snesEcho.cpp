@@ -1,4 +1,4 @@
-#include "kitdsp/snesEcho.h"
+#include "kitdsp/apps/snesEcho.h"
 #include "kitdsp/math/util.h"
 
 #include <cassert>

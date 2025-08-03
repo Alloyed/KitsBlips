@@ -1,7 +1,7 @@
-#include "kitdsp/psxReverb.h"
+#include "kitdsp/apps/psxReverb.h"
 #include <gtest/gtest.h>
+#include "kitdsp/apps/psxReverbPresets.h"
 #include "kitdsp/math/util.h"
-#include "kitdsp/psxReverbPresets.h"
 #include "kitdsp/wavFile.h"
 
 using namespace kitdsp;
@@ -13,7 +13,7 @@ TEST(psxEcho, works) {
 
     FILE* fp = fopen("psxverb.wav", "wb");
     ASSERT_NE(fp, nullptr);
-    WavFile<2> f{PSX::kOriginalSampleRate, fp};
+    WavFileWriter<2> f{PSX::kOriginalSampleRate, fp};
 
     f.Start();
 

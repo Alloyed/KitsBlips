@@ -8,9 +8,9 @@
 
 namespace kitdsp {
 template <size_t NUM_CHANNELS>
-class WavFile {
+class WavFileWriter {
    public:
-    WavFile(float sampleRate, FILE* fp) : mFp(fp), mSampleRate(static_cast<uint32_t>(sampleRate)) {}
+    WavFileWriter(float sampleRate, FILE* fp) : mFp(fp), mSampleRate(static_cast<uint32_t>(sampleRate)) {}
 
     void Start() {
         // implied

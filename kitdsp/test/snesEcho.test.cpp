@@ -1,8 +1,8 @@
-#include "kitdsp/snesEcho.h"
+#include "kitdsp/apps/snesEcho.h"
 #include <gtest/gtest.h>
+#include "kitdsp/apps/snesEchoFilterPresets.h"
 #include "kitdsp/math/units.h"
 #include "kitdsp/math/util.h"
-#include "kitdsp/snesEchoFilterPresets.h"
 #include "kitdsp/wavFile.h"
 
 using namespace kitdsp;
@@ -14,7 +14,7 @@ TEST(snesEcho, works) {
 
     FILE* fp = fopen("snecho.wav", "wb");
     ASSERT_NE(fp, nullptr);
-    WavFile<1> f{SNES::kOriginalSampleRate, fp};
+    WavFileWriter<1> f{SNES::kOriginalSampleRate, fp};
 
     f.Start();
 
@@ -87,7 +87,7 @@ TEST(snesEchoFilter, works) {
 
     FILE* fp = fopen("snechoFilter.wav", "wb");
     ASSERT_NE(fp, nullptr);
-    WavFile<1> f{SNES::kOriginalSampleRate, fp};
+    WavFileWriter<1> f{SNES::kOriginalSampleRate, fp};
 
     f.Start();
 
@@ -126,7 +126,7 @@ TEST(snesEchoBufferSize, isLinearQuantized) {
 
     FILE* fp = fopen("snechoDelay.wav", "wb");
     ASSERT_NE(fp, nullptr);
-    WavFile<1> f{SNES::kOriginalSampleRate, fp};
+    WavFileWriter<1> f{SNES::kOriginalSampleRate, fp};
 
     f.Start();
 

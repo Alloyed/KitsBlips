@@ -15,9 +15,9 @@
   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
-#include "kitdsp/psxReverb.h"
+#include "kitdsp/apps/psxReverb.h"
+#include "kitdsp/apps/psxReverbPresets.h"
 #include "kitdsp/math/util.h"
-#include "kitdsp/psxReverbPresets.h"
 
 /** Include standard C headers */
 #include <cassert>

@@ -1,5 +1,5 @@
 #pragma once
-#include "kitdsp/snesEcho.h"
+#include "kitdsp/apps/snesEcho.h"
 
 namespace kitdsp {
 namespace SNES {

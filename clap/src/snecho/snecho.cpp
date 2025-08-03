@@ -7,8 +7,8 @@
 
 #include <kitdsp/dbMeter.h>
 #include <kitdsp/samplerate/resampler.h>
-#include <kitdsp/snesEcho.h>
-#include <kitdsp/snesEchoFilterPresets.h>
+#include <kitdsp/apps/snesEcho.h>
+#include <kitdsp/apps/snesEchoFilterPresets.h>
 
 #if KITSBLIPS_ENABLE_GUI
 #include <kitgui/app.h>

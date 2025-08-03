@@ -6,12 +6,11 @@
 #include "kitdsp/math/vector.h"
 
 namespace kitdsp {
-template <size_t TMaxTaps>
 class Chorus {
    public:
     struct Config {
         /// [0, TMaxTaps] number of taps to apply.
-        size_t numTaps = TMaxTaps;
+        size_t numTaps = 1;
 
         /// [0, 1] triangle->saw? maybe
         float lfoShape = 0.0f;
@@ -33,33 +32,11 @@ class Chorus {
 
     Config cfg;
 
-    Chorus(etl::span<float> buffer, float sampleRate) : mDelayLine(buffer), mSampleRate(sampleRate) {}
+    Chorus(etl::span<float> buffer, float sampleRate);
 
-    void Reset() {
-        cfg = {};
-        mDelayLine.Reset();
-        mLfo.Reset();
-    }
+    void Reset();
 
-    float_2 Process(float in) {
-        mLfo.SetFrequency(cfg.lfoRateHz, mSampleRate);
-
-        float_2 out{};
-        // TODO: multiple taps
-        using namespace kitdsp::interpolate;
-        float delayMs = cfg.delayBaseMs + (mLfo.Process() * cfg.delayModMs);
-        float delaySamples = delayMs * mSampleRate / 1000.0f;
-        float tap = mDelayLine.Read<InterpolationStrategy::Linear>(delaySamples);
-
-        out.left += tap;
-        out.right += tap;
-
-        // send input in
-        float outMono = (out.left + out.right) * 0.5f;
-        mDelayLine.Write(in + (outMono * cfg.feedback));
-
-        return out;
-    }
+    float_2 Process(float in);
 
    private:
     DelayLine<float> mDelayLine;

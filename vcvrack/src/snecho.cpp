@@ -1,7 +1,7 @@
 #include "kitdsp/dbMeter.h"
 #include "kitdsp/samplerate/resampler.h"
-#include "kitdsp/snesEcho.h"
-#include "kitdsp/snesEchoFilterPresets.h"
+#include "kitdsp/apps/snesEcho.h"
+#include "kitdsp/apps/snesEchoFilterPresets.h"
 #include "plugin.hpp"
 
 #define SAMPLE_RATE 32000

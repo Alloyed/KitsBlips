@@ -15,7 +15,7 @@ using namespace patch_sm;
 
 DaisyPatchSM hw;
 Switch button, toggle;
-kitdsp::DbMeter meter{0};
+kitdsp::DbMeter meter(0.0f);
 kitDaisy::controls::LinearControl baseGain1(hw.controls[CV_1], nullptr, 0.0f, 1.0f);
 kitDaisy::controls::LinearControl baseGain2(hw.controls[CV_2], nullptr, 0.0f, 1.0f);
 kitDaisy::controls::AttenuvertedControl vc1(nullptr, hw.controls[CV_3], hw.controls[CV_5], 0.0f, 1.0f);
@@ -52,7 +52,7 @@ int main(void) {
     hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_96KHZ);
     button.Init(DaisyPatchSM::B7, hw.AudioCallbackRate());
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
-    meter = {hw.AudioSampleRate()};
+    meter = kitdsp::DbMeter(hw.AudioSampleRate());
     hw.StartAudio(AudioCallback);
 
     for (;;) {

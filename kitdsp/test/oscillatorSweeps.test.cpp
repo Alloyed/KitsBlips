@@ -11,7 +11,7 @@ static const float SR = 48000.0f;
 
 namespace {
 template <typename OSC1, typename OSC2>
-void Sweep(WavFile<2>& f, OSC1& osc1, OSC2& osc2) {
+void Sweep(WavFileWriter<2>& f, OSC1& osc1, OSC2& osc2) {
     size_t len = static_cast<size_t>(4.0f * f.GetSampleRate());
     osc1.Reset();
     osc2.Reset();
@@ -25,7 +25,7 @@ void Sweep(WavFile<2>& f, OSC1& osc1, OSC2& osc2) {
 }
 
 template <typename OSC1>
-void Sweep(WavFile<1>& f, OSC1& osc1) {
+void Sweep(WavFileWriter<1>& f, OSC1& osc1) {
     size_t len = static_cast<size_t>(4.0f * f.GetSampleRate());
     osc1.Reset();
     for (size_t i = 0; i < len; ++i) {
@@ -86,7 +86,7 @@ TEST(blepOscillator, sweep) {
 
         FILE* fp = fopen("saw_sweeps.wav", "wb");
         ASSERT_NE(fp, nullptr);
-        WavFile<1> f{SR, fp};
+        WavFileWriter<1> f{SR, fp};
 
         f.Start();
         Sweep(f, osc1);
@@ -104,7 +104,7 @@ TEST(blepOscillator, sweep) {
         blep::PulseOscillator osc2b;
         FILE* fp = fopen("square_sweeps.wav", "wb");
         ASSERT_NE(fp, nullptr);
-        WavFile<2> f{SR, fp};
+        WavFileWriter<2> f{SR, fp};
 
         f.Start();
         Sweep(f, osc2, osc2b);
@@ -118,7 +118,7 @@ TEST(blepOscillator, sweep) {
         blep::TriangleOscillator osc3b;
         FILE* fp = fopen("tri_sweeps.wav", "wb");
         ASSERT_NE(fp, nullptr);
-        WavFile<2> f{SR, fp};
+        WavFileWriter<2> f{SR, fp};
 
         f.Start();
         Sweep(f, osc3, osc3b);
@@ -134,7 +134,7 @@ TEST(dsfOscillator, sweep) {
     {
         FILE* fp = fopen("dsf_sweeps_up.wav", "wb");
         ASSERT_NE(fp, nullptr);
-        WavFile<2> f{SR, fp};
+        WavFileWriter<2> f{SR, fp};
 
         f.Start();
         size_t len = static_cast<size_t>(4.0f * f.GetSampleRate());
@@ -155,7 +155,7 @@ TEST(dsfOscillator, sweep) {
     {
         FILE* fp = fopen("dsf_sweeps_updown.wav", "wb");
         ASSERT_NE(fp, nullptr);
-        WavFile<2> f{SR, fp};
+        WavFileWriter<2> f{SR, fp};
 
         f.Start();
         size_t len = static_cast<size_t>(4.0f * f.GetSampleRate());

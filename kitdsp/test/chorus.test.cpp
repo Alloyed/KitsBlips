@@ -13,7 +13,7 @@ TEST(chorus, works) {
 
     FILE* fp = fopen("chorus.wav", "wb");
     ASSERT_NE(fp, nullptr);
-    WavFile<1> f{sampleRate, fp};
+    WavFileWriter<1> f{sampleRate, fp};
 
     f.Start();
 

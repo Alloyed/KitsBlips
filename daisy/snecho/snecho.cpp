@@ -1,8 +1,8 @@
 #include "daisy_patch_sm.h"
 
+#include <kitdsp/apps/snesEcho.h>
 #include <kitdsp/math/util.h>
 #include <kitdsp/samplerate/resampler.h>
-#include <kitdsp/snesEcho.h>
 
 #include "kitDaisy/controls.h"
 
