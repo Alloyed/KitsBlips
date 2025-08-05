@@ -31,9 +31,9 @@ jobs:
         include:
           - name: Linux
             os: ubuntu-24.04
-          #- name: macOS
-          #  os: macos-14
-          #  extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+          - name: macOS
+            os: macos-14
+            extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
           - name: Windows
             # https://github.com/actions/runner-images/issues/10980
             os: windows-2025
