@@ -27,13 +27,7 @@ target_include_directories(KitDSP PUBLIC
 )
 
 target_link_libraries(KitDSP PUBLIC etl::etl)
-
-if (MSVC)
-    target_compile_options(KitDSP PRIVATE /W4)
-else()
-	# pedantic disabled so i can use type-punning >:(
-    target_compile_options(KitDSP PRIVATE -Wall -Wextra)
-endif()
+target_enable_warnings(KitDSP)
 
 # when built standalone, enable tests
 if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
