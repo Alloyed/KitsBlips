@@ -31,9 +31,9 @@ jobs:
         include:
           - name: Linux
             os: ubuntu-24.04
-          #- name: macOS
-          #  os: macos-14
-          #  extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+          - name: macOS
+            os: macos-14
+            extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
           - name: Windows
             # https://github.com/actions/runner-images/issues/10980
             os: windows-2025
@@ -60,7 +60,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: KitsBlips-DAW-${{ matrix.name }}
-          path: "${{github.workspace}}/build/dist" 
+          path: "${{github.workspace}}/build/dist"
 
   #modify-plugin-version:
   #  name: Modify plugin version
@@ -126,7 +126,7 @@ jobs:
 
       - name: Build
         run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
-        
+
       - name: install
         run: cmake --install "${{github.workspace}}/build" --prefix "${{github.workspace}}/build/dist"
 

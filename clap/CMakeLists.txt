@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.22)
 cmake_policy(SET CMP0048 NEW)
 
+project(KitsBlips VERSION 0.0.0)
+set(PRODUCT_NAME "KitsBlips")
+set(PRODUCT_ID "me.alloyed.KitsBlips")
+option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
+
 # TODO: needed for clap-wrapper, who should really be doing this for us
 if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15")
@@ -9,11 +14,6 @@ endif()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 #end globals
-
-project(KitsBlips VERSION 0.0.0)
-set(PRODUCT_NAME "KitsBlips")
-set(PRODUCT_ID "me.alloyed.KitsBlips")
-option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -51,16 +51,6 @@ if(KITSBLIPS_ENABLE_GUI)
     target_link_libraries(KitsBlips-lib PUBLIC kitgui)
 endif()
 
-# bleh
-# Create a .dSYM file on macOS
-if(APPLE)
-  add_custom_command(
-    TARGET KitsBlips-lib
-    POST_BUILD
-    COMMAND dsymutil $<TARGET_FILE:KitsBlips-lib>
-  )
-endif()
-
 make_clapfirst_plugins(
     TARGET_NAME KitsBlips
     IMPL_TARGET KitsBlips-lib
@@ -84,9 +74,4 @@ make_clapfirst_plugins(
     # AUV2_MANUFACTURER_CODE "FrAD"
     # AUV2_SUBTYPE_CODE "BdDt"
     # AUV2_INSTRUMENT_TYPE "aufx"
-
-    # You can add a target-per-standalone you want. Syntax here is
-    #   target-postfix output-name clap-id
-    STANDALONE_CONFIGURATIONS
-    sines "sines" "kitsblips.sines"
 )
