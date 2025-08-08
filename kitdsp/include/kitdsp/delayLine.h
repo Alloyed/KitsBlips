@@ -35,6 +35,10 @@ class DelayLine {
         return mBuffer[(mWriteIndex + delayIndex) % size];
     }
 
+    inline size_t Size() const {
+        return mBuffer.size();
+    }
+
     template <interpolate::InterpolationStrategy strategy>
     inline const TSample Read(float delay) const {
         // read with interpolation

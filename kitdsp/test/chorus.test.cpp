@@ -15,7 +15,7 @@ TEST(chorus, works) {
     float sampleRate = f.getSampleRate();
     size_t len = f.getNumSamplesPerChannel();
 
-    constexpr size_t snesBufferSize = 7680UL;
+    constexpr size_t snesBufferSize = 41000;
     float snesBuffer[snesBufferSize];
     Chorus chorus(etl::span<float>(snesBuffer, snesBufferSize), sampleRate);
 
@@ -23,14 +23,13 @@ TEST(chorus, works) {
     chorus.Reset();
     for (size_t i = 0; i < len; ++i) {
         float in = f.samples[0][i];
-        //float_2 out = chorus.Process(in);
-        float_2 out = {in, in};
+        float_2 out = chorus.Process(in);
         ASSERT_GE(out.left, -1.0f);
         ASSERT_LE(out.left, 1.0f);
         ASSERT_GE(out.right, -1.0f);
         ASSERT_LE(out.right, 1.0f);
-        f.samples[0][i] = in;
-        f.samples[1][i] = in;
+        f.samples[0][i] = out.left;
+        f.samples[1][i] = out.right;
     }
 
     f.save("chorus.wav");

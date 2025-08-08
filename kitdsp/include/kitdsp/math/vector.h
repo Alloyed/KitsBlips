@@ -30,6 +30,12 @@ struct Vector<TYPE, 2> {
         };
     };
 
+    Vector(): left(0), right(0) { }
+
+    Vector(type left, type right): left(left), right(right) { }
+
+    explicit Vector(type in): left(in), right(in) { }
+
     Vector<type, size> operator+(const Vector<type, size>& other) const {
         return {data[0] + other.data[0], data[1] + other.data[1]};
     }

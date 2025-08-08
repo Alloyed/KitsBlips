@@ -111,8 +111,8 @@ void PSX::Reverb::Reset() {
 }
 
 float_2 PSX::Reverb::Get(size_2 index) {
-    return float_2{{mBuffer[(index.left + mBufferHeadIndex) & mBufferWrapMask],
-                    mBuffer[(index.right + mBufferHeadIndex) & mBufferWrapMask]}};
+    return float_2(mBuffer[(index.left + mBufferHeadIndex) & mBufferWrapMask],
+                    mBuffer[(index.right + mBufferHeadIndex) & mBufferWrapMask]);
 }
 
 void PSX::Reverb::Set(size_2 index, float_2 sample) {
