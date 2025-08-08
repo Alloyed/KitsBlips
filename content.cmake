@@ -34,7 +34,7 @@ FetchContent_Declare(
     SOURCE_DIR ${KITSBLIPS_DIR}/sdk/libDaisy
 )
 FetchContent_Declare(
-    CMSIS_5 
+    CMSIS_5
     SOURCE_DIR ${KITSBLIPS_DIR}/sdk/libDaisy/Drivers/CMSIS_5
 )
 FetchContent_Declare(
@@ -86,6 +86,11 @@ FetchContent_Declare(
     cpptrace
     GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
     GIT_TAG        v1.0.0
+)
+FetchContent_Declare(
+    AudioFile
+    GIT_REPOSITORY https://github.com/adamstark/AudioFile.git
+    GIT_TAG        1.1.3
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
