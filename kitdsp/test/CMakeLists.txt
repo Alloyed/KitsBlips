@@ -2,7 +2,7 @@ set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
 set(BUILD_GTEST ON CACHE BOOL "" FORCE)
 
 include(../../content.cmake)
-FetchContent_MakeAvailable(googletest)
+FetchContent_MakeAvailable(googletest AudioFile)
 
 add_executable(testdsp
     dsfOscillator.test.cpp

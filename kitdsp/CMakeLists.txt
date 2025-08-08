@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.26)
 project(KitDSP)
 
 include(../content.cmake)
-FetchContent_MakeAvailable(etl AudioFile)
+FetchContent_MakeAvailable(etl)
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM")
     FetchContent_MakeAvailable(CMSIS-DSP)
 endif()
