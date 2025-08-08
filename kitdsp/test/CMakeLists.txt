@@ -14,7 +14,12 @@ add_executable(testdsp
 
 target_link_libraries(testdsp
     KitDSP
+    AudioFile
     gtest_main
+)
+
+target_compile_definitions(testdsp PUBLIC
+    -DPROJECT_DIR="${CMAKE_SOURCE_DIR}"
 )
 
 add_test(NAME testdsp

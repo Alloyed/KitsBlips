@@ -1,5 +1,6 @@
 #include "kitdsp/osc/dsfOscillator.h"
 #include <gtest/gtest.h>
+#include <AudioFile.h>
 #include "kitdsp/wavFile.h"
 
 using namespace kitdsp;
@@ -11,12 +12,12 @@ TEST(dsfOscillator, CanBeUsed) {
     osc.SetFreqModulator(2000.0f);
     osc.SetFalloff(0.4f);
 
-    FILE* fp = fopen("dsf.wav", "wb");
-    ASSERT_NE(fp, nullptr);
-    WavFileWriter<1> f{44100.0f, fp};
-
-    f.Start();
     size_t len = static_cast<size_t>(4.0f * 44100.f);
+
+    AudioFile<float> f;
+    f.setAudioBufferSize(1, len);
+    f.setSampleRate(44100);
+
     for (size_t i = 0; i < len; ++i) {
         float t = i / static_cast<float>(len);
         osc.SetFalloff(0.9f - (t * 0.9f));
@@ -38,9 +39,7 @@ TEST(dsfOscillator, CanBeUsed) {
         EXPECT_LE(out4, 1.0);
         EXPECT_GE(out4, -1.0);
 
-        f.Add(out3);
+        f.samples[0][i] = out3;
     }
-    f.Finish();
-
-    fclose(fp);
+    f.save("dsf.wav");
 }
