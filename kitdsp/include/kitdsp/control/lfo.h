@@ -30,6 +30,10 @@ class Phasor {
     }
     /** take an arbitrary value and wrap into 0-1 (phasor range) */
     static float WrapPhase(float phase) { return phase - std::floor(phase); }
+    float Process() {
+        Advance();
+        return mPhase;
+    }
 
    protected:
     bool Advance() {

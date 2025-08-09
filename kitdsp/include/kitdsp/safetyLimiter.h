@@ -9,7 +9,7 @@ namespace kitdsp {
  * https://github.com/pichenettes/stmlib/blob/master/dsp/limiter.h
  */
 template <typename SAMPLE>
-class Limiter {
+class SafetyLimiter {
    public:
     void Reset() { mPeak = 0.5f; }
 

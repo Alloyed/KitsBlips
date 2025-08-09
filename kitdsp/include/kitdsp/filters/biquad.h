@@ -22,6 +22,7 @@ enum class BiquadFilterMode {
 
 template <BiquadFilterMode MODE>
 class BiquadFilter {
+    public:
     /**
      * Set frequency + resonance.
      * @param frequencyHz in hertz
