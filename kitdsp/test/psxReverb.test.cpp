@@ -1,8 +1,8 @@
 #include "kitdsp/apps/psxReverb.h"
+#include <AudioFile.h>
 #include <gtest/gtest.h>
 #include "kitdsp/apps/psxReverbPresets.h"
 #include "kitdsp/math/util.h"
-#include "kitdsp/wavFile.h"
 
 using namespace kitdsp;
 
@@ -11,14 +11,11 @@ TEST(psxEcho, works) {
     float psxBuffer[psxBufferSize];
     PSX::Reverb psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
 
-    FILE* fp = fopen("psxverb.wav", "wb");
-    ASSERT_NE(fp, nullptr);
-    WavFileWriter<2> f{PSX::kOriginalSampleRate, fp};
-
-    f.Start();
-
     size_t len = static_cast<size_t>(1.0f * PSX::kOriginalSampleRate);
-    float out1, out2;
+
+    AudioFile<float> f;
+    f.setAudioBufferSize(2, len);
+    f.setSampleRate(PSX::kOriginalSampleRate);
 
     // test 4 filter
     for (size_t filter = 0; filter < PSX::kNumPresets; ++filter) {
@@ -31,11 +28,12 @@ TEST(psxEcho, works) {
             float in = fmodf(t * 440.f, 1.0f) * clamp(1.0f - t * 10.0f, 0.0f, 1.0f);
 
             float_2 out = psx.Process(float_2{in, in});
-            f.Add((out + in) * 0.5f);
+            float_2 mixed = (out + float_2{in, in}) * 0.5f;
+
+            f.samples[0][i] = mixed.left;
+            f.samples[1][i] = mixed.right;
         }
     }
 
-    f.Finish();
-
-    fclose(fp);
+    f.save("psxverb.wav");
 }

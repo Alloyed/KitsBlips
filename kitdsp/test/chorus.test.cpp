@@ -8,8 +8,7 @@ using namespace kitdsp;
 TEST(chorus, works) {
 
     AudioFile<float> f;
-    std::string path =PROJECT_DIR "/test/guitar.wav";
-    bool ok = f.load(path);
+    bool ok = f.load(PROJECT_DIR "/test/guitar.wav");
     ASSERT_TRUE(ok);
 
     float sampleRate = f.getSampleRate();
