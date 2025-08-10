@@ -11,6 +11,7 @@ add_executable(testdsp
     psxReverb.test.cpp
     chorus.test.cpp
     harmonizer.test.cpp
+    frequencyShifter.test.cpp
 )
 
 target_link_libraries(testdsp

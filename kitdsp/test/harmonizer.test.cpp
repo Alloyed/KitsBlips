@@ -15,14 +15,14 @@ TEST(harmonizer, works) {
 
     constexpr size_t snesBufferSize = 41000;
     float snesBuffer[snesBufferSize];
-    Harmonizer chorus(etl::span<float>(snesBuffer, snesBufferSize), sampleRate);
+    Harmonizer harmonizer(etl::span<float>(snesBuffer, snesBufferSize), sampleRate);
 
     // test 1 default settings
-    chorus.Reset();
+    harmonizer.Reset();
     for (size_t i = 0; i < len; ++i) {
         float in = f.samples[0][i];
-        // chorus.SetParams();
-        float_2 out = float_2(chorus.Process(in));
+        // harmonizer.SetParams();
+        float_2 out = float_2(harmonizer.Process(in));
         ASSERT_GE(out.left, -1.0f);
         ASSERT_LE(out.left, 1.0f);
         ASSERT_GE(out.right, -1.0f);

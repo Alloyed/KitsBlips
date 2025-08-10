@@ -13,6 +13,7 @@ add_library(KitDSP STATIC
     src/dsfOscillator.cpp
     src/chorus.cpp
     src/harmonizer.cpp
+    src/frequencyShifter.cpp
 )
 
 # C++11 is required for ABI compatibility with VCV Rack 2, which has standardized on an old version of mingw

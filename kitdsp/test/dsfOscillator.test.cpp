@@ -1,7 +1,6 @@
 #include "kitdsp/osc/dsfOscillator.h"
 #include <gtest/gtest.h>
 #include <AudioFile.h>
-#include "kitdsp/wavFile.h"
 
 using namespace kitdsp;
 

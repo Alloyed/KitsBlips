@@ -5,9 +5,9 @@
 #include "kitdsp/macros.h"
 
 namespace kitdsp {
-constexpr float kTwoPi = 6.28318530718;
-constexpr float kPi = 3.14159265359;
-constexpr float kHalfPi = 1.57079632679;
+constexpr float kTwoPi = 6.28318530718f;
+constexpr float kPi = 3.14159265359f;
+constexpr float kHalfPi = 1.57079632679f;
 
 template <typename F>
 inline F min(F a, F b) {
