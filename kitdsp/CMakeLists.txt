@@ -12,7 +12,7 @@ add_library(KitDSP STATIC
     src/snesEcho.cpp
     src/dsfOscillator.cpp
     src/chorus.cpp
-    src/grainPlayer.cpp
+    src/harmonizer.cpp
 )
 
 # C++11 is required for ABI compatibility with VCV Rack 2, which has standardized on an old version of mingw

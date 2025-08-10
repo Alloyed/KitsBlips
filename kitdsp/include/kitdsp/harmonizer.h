@@ -2,14 +2,14 @@
 
 #include "kitdsp/control/lfo.h"
 #include "kitdsp/delayLine.h"
+#include "kitdsp/filters/biquad.h"
 #include "kitdsp/math/interpolate.h"
 #include "kitdsp/math/vector.h"
-#include "kitdsp/filters/biquad.h"
 
 namespace kitdsp {
-class GrainPlayer {
+class Harmonizer {
    public:
-    GrainPlayer(etl::span<float> buffer, float sampleRate);
+    Harmonizer(etl::span<float> buffer, float sampleRate);
     void Reset();
 
     void SetParams(float transpose, size_t grainSize);

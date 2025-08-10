@@ -10,7 +10,7 @@ add_executable(testdsp
     snesEcho.test.cpp
     psxReverb.test.cpp
     chorus.test.cpp
-    grainPlayer.test.cpp
+    harmonizer.test.cpp
 )
 
 target_link_libraries(testdsp
