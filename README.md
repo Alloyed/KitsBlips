@@ -1,3 +1,6 @@
+# Moved
+canonical source moved to https://codeberg.org/alloyed/KitsBlips
+
 # KitsBlips
 
 Monorepo for my Eurorack/synthesizer hobby projects! (that's me, I'm kit)
