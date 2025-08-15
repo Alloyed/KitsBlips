@@ -32,30 +32,37 @@ set(KITSBLIPS_DIR ${CMAKE_CURRENT_LIST_DIR})
 FetchContent_Declare(
     daisy
     SOURCE_DIR ${KITSBLIPS_DIR}/sdk/libDaisy
+    EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     CMSIS_5
     SOURCE_DIR ${KITSBLIPS_DIR}/sdk/libDaisy/Drivers/CMSIS_5
+    EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     CMSIS-DSP
     SOURCE_DIR ${KITSBLIPS_DIR}/sdk/libDaisy/Drivers/CMSIS-DSP
+    EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     KitDSP
     SOURCE_DIR ${KITSBLIPS_DIR}/kitdsp
+    EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     KitDSP-GPL
     SOURCE_DIR ${KITSBLIPS_DIR}/kitdsp-gpl
+    EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     KitGui
     SOURCE_DIR ${KITSBLIPS_DIR}/kitgui
+    EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     clapeze
     SOURCE_DIR ${KITSBLIPS_DIR}/clapeze
+    EXCLUDE_FROM_ALL
 )
 
 # TODO: switch to FetchContent?
@@ -66,31 +73,37 @@ FetchContent_Declare(
     etl
     GIT_REPOSITORY https://github.com/ETLCPP/etl
     GIT_TAG        20.42.2
+    EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG        v1.17.0
+    EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     clap
     GIT_REPOSITORY https://github.com/free-audio/clap.git
     GIT_TAG        1.2.6
+    EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     clap-wrapper
     GIT_REPOSITORY https://github.com/free-audio/clap-wrapper.git
     GIT_TAG main
+    EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     cpptrace
     GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
     GIT_TAG        v1.0.0
+    EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     AudioFile
     GIT_REPOSITORY https://github.com/adamstark/AudioFile.git
     GIT_TAG        1.1.3
+    EXCLUDE_FROM_ALL
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -104,6 +117,7 @@ FetchContent_Declare(
     SDL3
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
     GIT_TAG release-3.2.14
+    EXCLUDE_FROM_ALL
     FIND_PACKAGE_ARGS
 )
 
@@ -128,8 +142,10 @@ FetchContent_Declare(
 	physfs
 	GIT_REPOSITORY	https://github.com/icculus/physfs.git
 	GIT_TAG 	adfdec6af14e4d12551446e7ad060415ca563950
+    EXCLUDE_FROM_ALL
 )
 
+set(CORRADE_BUILD_STATIC ON)
 set(MAGNUM_BUILD_STATIC ON)
 set(MAGNUM_BUILD_PLUGINS_STATIC ON)
 
@@ -160,14 +176,17 @@ FetchContent_Declare(
     corrade
     GIT_REPOSITORY https://github.com/mosra/corrade.git
     GIT_TAG        8b3c02277020d9c609f54200d050ff665c4431e1
+    EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     magnum
     GIT_REPOSITORY https://github.com/mosra/magnum.git
     GIT_TAG        be38d5e2bbd03cab4f31707d8a012a4ce119fc40
+    EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     magnum-plugins
     GIT_REPOSITORY https://github.com/mosra/magnum-plugins.git
     GIT_TAG        9f31cf5a0a6a44a63e320924141513d473586760
+    EXCLUDE_FROM_ALL
 )

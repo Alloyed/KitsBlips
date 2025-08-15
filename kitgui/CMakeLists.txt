@@ -31,7 +31,6 @@ target_include_directories(kitgui PRIVATE src)
 target_link_libraries(kitgui PUBLIC
     SDL3::SDL3
     imgui
-    Corrade::Main
     Magnum::GL
     Magnum::Magnum
     Magnum::SceneGraph
@@ -65,7 +64,8 @@ endif()
 
 if (PROJECT_IS_TOP_LEVEL)
     # add example exes
+    set(CMAKE_CXX_STANDARD 20)
     corrade_add_resource(embeddedAssets assets/embedded.conf)
     add_executable(multiwindow examples/multiwindow.cpp ${embeddedAssets})
-    target_link_libraries(multiwindow kitgui Corrade::Utility)
+    target_link_libraries(multiwindow kitgui Corrade::Utility Corrade::Main)
 endif()
