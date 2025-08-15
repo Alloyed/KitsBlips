@@ -13,6 +13,10 @@ void FrequencyShifter::Reset() {
     mPhasor.Reset();
 }
 
+void FrequencyShifter::SetFrequencyOffset(float frequencyHz, float sampleRate) {
+    mPhasor.SetFrequency(frequencyHz, sampleRate);
+}
+
 float FrequencyShifter::Process(float in) {
     // https://www.dsprelated.com/showarticle/1147.php
     // the real value is i, the "in-phase" component, and the imaginary value is q, the "quadrature" component.

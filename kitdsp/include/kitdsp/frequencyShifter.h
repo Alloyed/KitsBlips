@@ -6,9 +6,10 @@
 namespace kitdsp {
 class FrequencyShifter {
    public:
-    FrequencyShifter(float sampleRate);
+    explicit FrequencyShifter(float sampleRate);
     void Reset();
 
+    void SetFrequencyOffset(float frequencyHz, float sampleRate);
     float Process(float in);
 
    private:
