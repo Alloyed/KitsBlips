@@ -3,7 +3,6 @@
 #include <Magnum/Magnum.h>
 #include <Magnum/Math/Color.h>
 #include <Magnum/Platform/GLContext.h>
-#include <SDL3/SDL_video.h>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -36,15 +35,15 @@ class Context {
     static void deinit();
 
     // host events: (matches clap API)
-    bool Create(platform::Api api, bool isFloating);
+    bool Create(kitgui::WindowApi api, bool isFloating);
     bool Destroy();
     bool SetScale(double scale);
     const SizeConfig& GetSizeConfig() const;
     void SetSizeConfig(const SizeConfig& cfg);
     bool GetSize(uint32_t& widthOut, uint32_t& heightOut) const;
     bool SetSizeDirectly(uint32_t width, uint32_t height);
-    bool SetParent(const platform::WindowRef& handle);
-    bool SetTransient(const platform::WindowRef& handle);
+    bool SetParent(const kitgui::WindowRef& handle);
+    bool SetTransient(const kitgui::WindowRef& handle);
     void SuggestTitle(std::string_view title);
     bool Show();
     bool Hide();
@@ -52,7 +51,7 @@ class Context {
 
     void MakeCurrent();
 
-    static bool GetPreferredApi(platform::Api& apiOut, bool& isFloatingOut);
+    static bool GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut);
 
     // use if we can monopolize the main thread
     static void RunLoop();

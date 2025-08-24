@@ -23,7 +23,7 @@ void Context::deinit() {
 
 Context::Context(Context::AppFactory fn) : mCreateAppFn(std::move(fn)), mImpl(std::make_unique<Impl>(*this)) {}
 
-bool Context::Create(platform::Api api, bool isFloating) {
+bool Context::Create(kitgui::WindowApi api, bool isFloating) {
     if (!mImpl->Create(api, isFloating)) {
         return false;
     }
@@ -58,10 +58,10 @@ bool Context::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
 bool Context::SetSizeDirectly(uint32_t width, uint32_t height) {
     return mImpl->SetSizeDirectly(width, height);
 }
-bool Context::SetParent(const platform::WindowRef& window) {
+bool Context::SetParent(const kitgui::WindowRef& window) {
     return mImpl->SetParent(window);
 }
-bool Context::SetTransient(const platform::WindowRef& window) {
+bool Context::SetTransient(const kitgui::WindowRef& window) {
     return mImpl->SetTransient(window);
 }
 void Context::SuggestTitle(std::string_view title) {
@@ -89,7 +89,7 @@ void Context::RunSingleFrame() {
     Impl::RunSingleFrame();
 }
 
-bool Context::GetPreferredApi(platform::Api& apiOut, bool& isFloatingOut) {
+bool Context::GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
     return Impl::GetPreferredApi(apiOut, isFloatingOut);
 }
 

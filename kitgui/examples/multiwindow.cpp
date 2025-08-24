@@ -11,7 +11,7 @@ using namespace Magnum;
 
 class MyApp2 : public kitgui::BaseApp {
    public:
-    MyApp2(kitgui::Context& mContext) : kitgui::BaseApp(mContext) {}
+    explicit MyApp2(kitgui::Context& mContext) : kitgui::BaseApp(mContext) {}
     ~MyApp2() = default;
 
    protected:
@@ -25,7 +25,7 @@ class MyApp2 : public kitgui::BaseApp {
 
 class MyApp : public kitgui::BaseApp {
    public:
-    MyApp(kitgui::Context& mContext) : kitgui::BaseApp(mContext), mScene(kitgui::DomScene::Create()) {
+    explicit MyApp(kitgui::Context& mContext) : kitgui::BaseApp(mContext), mScene(kitgui::DomScene::Create()) {
         mContext.SetSizeConfig({400, 400});
         mContext.SetClearColor({0.3f, 0.7f, 0.3f, 1.0f});
 
@@ -73,10 +73,10 @@ int main() {
 
     {
         kitgui::Context ctx1([](kitgui::Context& ctx) { return std::make_unique<MyApp2>(ctx); });
-        ctx1.Create(kitgui::platform::Api::Any, true);
+        ctx1.Create(kitgui::WindowApi::Any, true);
 
         kitgui::Context ctx2([](kitgui::Context& ctx) { return std::make_unique<MyApp2>(ctx); });
-        ctx2.Create(kitgui::platform::Api::Any, true);
+        ctx2.Create(kitgui::WindowApi::Any, true);
 
         ctx1.Show();
         ctx2.Show();

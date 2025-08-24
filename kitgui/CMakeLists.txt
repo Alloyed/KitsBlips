@@ -45,22 +45,17 @@ target_link_libraries(kitgui PRIVATE
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    target_sources(kitgui PRIVATE
-        src/platform/platformWin32.cpp
-    )
+    target_sources(kitgui PRIVATE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    target_sources(kitgui PRIVATE
-        src/platform/platformCocoa.cpp
-        src/platform/platformCocoa.m
-    )
+    target_sources(kitgui PRIVATE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(X11)
     target_sources(kitgui PRIVATE
-        src/platform/platformLinux.cpp
         src/impl/sdl/contextImpl.cpp
     )
-    target_link_libraries(kitgui PUBLIC X11::X11 X11::Xutil)
     target_link_libraries(kitgui PRIVATE
+        X11::X11
+        X11::Xutil
         SDL3::SDL3
         imgui_opengl_sdl3
     )

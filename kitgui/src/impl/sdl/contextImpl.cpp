@@ -4,6 +4,8 @@
 #include <Magnum/Platform/GLContext.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_hints.h>
+#include <SDL3/SDL_log.h>
+#include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
 #include <imgui.h>
@@ -14,7 +16,83 @@
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
 #include "log.h"
-#include "platform/platform.h"
+
+// linux-specific platform details
+#ifdef __linux__
+#include <X11/Xlib.h>
+#include <X11/Xos.h>
+#include <X11/Xutil.h>
+namespace {
+using X11Window = Window;
+using X11Display = Display;
+void getX11Handles(SDL_Window* sdlWindow, X11Window& xWindow, X11Display*& xDisplay) {
+    SDL_PropertiesID windowProps = SDL_GetWindowProperties(sdlWindow);
+    xWindow = SDL_GetNumberProperty(windowProps, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
+    xDisplay =
+        static_cast<X11Display*>(SDL_GetPointerProperty(windowProps, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr));
+}
+X11Window getX11Window(const kitgui::WindowRef& ref) {
+    if (ref.api == kitgui::WindowApi::X11) {
+        return reinterpret_cast<unsigned long>(ref.ptr);
+    }
+    return 0;
+}
+void onCreateWindow(kitgui::WindowApi api, SDL_Window* sdlWindow) {
+    if (api == kitgui::WindowApi::Wayland) {
+        return;
+    } else if (api == kitgui::WindowApi::X11) {
+        Window xWindow{};
+        Display* xDisplay{};
+        getX11Handles(sdlWindow, xWindow, xDisplay);
+
+        // mark window as embedded
+        // https://specifications.freedesktop.org/xembed-spec/0.5/lifecycle.html
+        Atom embedInfoAtom = XInternAtom(xDisplay, "_XEMBED_INFO", 0);
+        uint32_t embedInfoData[2] = {0 /* version */, 1 /* mapped = true */};
+        int32_t bitFormat = 32;
+        int32_t numElements = 2;
+        XChangeProperty(xDisplay, xWindow, embedInfoAtom, embedInfoAtom, bitFormat, PropModeReplace,
+                        (uint8_t*)embedInfoData, numElements);
+    }
+}
+bool setParent(kitgui::WindowApi api, SDL_Window* sdlWindow, const kitgui::WindowRef& parentRef) {
+    if (api == kitgui::WindowApi::Wayland) {
+        return true;
+    } else if (api == kitgui::WindowApi::X11) {
+        X11Window xWindow{};
+        X11Display* xDisplay{};
+        getX11Handles(sdlWindow, xWindow, xDisplay);
+        X11Window parentWindow = getX11Window(parentRef);
+
+        XReparentWindow(xDisplay, xWindow, parentWindow, 0, 0);
+        XFlush(xDisplay);
+    }
+
+    return true;
+}
+
+bool setTransient(kitgui::WindowApi api, SDL_Window* sdlWindow, const kitgui::WindowRef& parentRef) {
+    if (api == kitgui::WindowApi::Wayland) {
+        return true;
+    } else if (api == kitgui::WindowApi::X11) {
+        X11Window xWindow{};
+        X11Display* xDisplay{};
+        getX11Handles(sdlWindow, xWindow, xDisplay);
+        X11Window parentWindow = getX11Window(parentRef);
+
+        XSetTransientForHint(xDisplay, xWindow, parentWindow);
+        return true;
+    }
+
+    return true;
+}
+bool getPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
+    apiOut = kitgui::WindowApi::X11;
+    isFloatingOut = false;
+    return true;
+}
+}  // namespace
+#endif
 
 using namespace Magnum;
 
@@ -40,28 +118,25 @@ void ContextImpl::deinit() {
 
 ContextImpl::ContextImpl(kitgui::Context& ctx) : mContext(ctx) {}
 
-bool ContextImpl::Create(platform::Api api, bool isFloating) {
+bool ContextImpl::Create(kitgui::WindowApi api, bool isFloating) {
     mApi = api;
     switch (mApi) {
         // only one API possible on these platforms
-        case platform::Api::Any:
-        case platform::Api::Cocoa: {
+        case kitgui::WindowApi::Any:
+        case kitgui::WindowApi::Win32:
+        case kitgui::WindowApi::Cocoa: {
             break;
         }
-        case platform::Api::Win32: {
-            // We're assuming the host platform has a message loop
-            SDL_SetHint(SDL_HINT_WINDOWS_ENABLE_MESSAGELOOP, "0");
-            break;
-        }
-        case platform::Api::X11: {
+        case kitgui::WindowApi::X11: {
             SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11");
             break;
         }
-        case platform::Api::Wayland: {
+        case kitgui::WindowApi::Wayland: {
             SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "wayland");
             break;
         }
     }
+    // uncomment to see verbose event logs
     // SDL_SetHint(SDL_HINT_EVENT_LOGGING, "1");
 
     SDL_PropertiesID createProps = SDL_CreateProperties();
@@ -83,7 +158,8 @@ bool ContextImpl::Create(platform::Api api, bool isFloating) {
         LOG_SDL_ERROR();
         return false;
     }
-    platform::onCreateWindow(mApi, mWindow);
+
+    onCreateWindow(mApi, mWindow);
 
     SDL_GLContext gl_context = SDL_GL_CreateContext(mWindow);
     if (gl_context == nullptr) {
@@ -153,15 +229,13 @@ bool ContextImpl::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     return success;
 }
 bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height) {
-    return SDL_SetWindowSize(mWindow, width, height);
+    return SDL_SetWindowSize(mWindow, static_cast<int32_t>(width), static_cast<int32_t>(height));
 }
-bool ContextImpl::SetParent(const platform::WindowRef& window) {
-    SDL_Window* handle = platform::sdl::wrapWindow(window);
-    return platform::setParent(mApi, mWindow, handle);
+bool ContextImpl::SetParent(const kitgui::WindowRef& parentWindowRef) {
+    return setParent(mApi, mWindow, parentWindowRef);
 }
-bool ContextImpl::SetTransient(const platform::WindowRef& window) {
-    SDL_Window* handle = platform::sdl::wrapWindow(window);
-    return platform::setTransient(mApi, mWindow, handle);
+bool ContextImpl::SetTransient(const kitgui::WindowRef& transientWindowRef) {
+    return setTransient(mApi, mWindow, transientWindowRef);
 }
 void ContextImpl::SuggestTitle(std::string_view title) {
     std::string titleTemp(title);
@@ -294,20 +368,8 @@ void ContextImpl::RunSingleFrame() {
     }
 }
 
-bool ContextImpl::GetPreferredApi(platform::Api& apiOut, bool& isFloatingOut) {
-#if _WIN32
-    apiOut = platform::Api::Win32;
-    isFloatingOut = false;
-    return true;
-#elif __APPLE__
-    apiOut = platform::Api::Cocoa;
-    isFloatingOut = false;
-    return true;
-#elif __linux__
-    apiOut = platform::Api::X11;
-    isFloatingOut = false;
-    return true;
-#endif
+bool ContextImpl::GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
+    return getPreferredApi(apiOut, isFloatingOut);
 }
 
 ContextImpl* ContextImpl::FindContextImplForWindow(SDL_Window* win) {

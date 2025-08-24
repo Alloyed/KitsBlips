@@ -28,13 +28,13 @@ class ContextImpl {
     static void deinit();
 
     // host events: (matches clap API)
-    bool Create(platform::Api api, bool isFloating);
+    bool Create(kitgui::WindowApi api, bool isFloating);
     bool Destroy();
     bool SetScale(double scale);
     bool GetSize(uint32_t& widthOut, uint32_t& heightOut) const;
     bool SetSizeDirectly(uint32_t width, uint32_t height);
-    bool SetParent(const platform::WindowRef& handle);
-    bool SetTransient(const platform::WindowRef& handle);
+    bool SetParent(const kitgui::WindowRef& handle);
+    bool SetTransient(const kitgui::WindowRef& handle);
     void SuggestTitle(std::string_view title);
     bool Show();
     bool Hide();
@@ -42,7 +42,7 @@ class ContextImpl {
 
     void MakeCurrent();
 
-    static bool GetPreferredApi(platform::Api& apiOut, bool& isFloatingOut);
+    static bool GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut);
 
     // use if we can monopolize the main thread
     static void RunLoop();
@@ -54,7 +54,7 @@ class ContextImpl {
 
    private:
     kitgui::Context& mContext;
-    platform::Api mApi;
+    kitgui::WindowApi mApi;
     SDL_Window* mWindow = nullptr;
     SDL_GLContext mSdlGl;
     std::unique_ptr<Magnum::Platform::GLContext> mGl = nullptr;
