@@ -1,3 +1,6 @@
+#include "kitgui/kitgui.h"
+#include "clapeze/ext/gui.h"
+#include "kitgui/context.h"
 #if KITSBLIPS_ENABLE_GUI
 
 #include "clapeze/ext/kitgui.h"
@@ -33,26 +36,26 @@ bool KitguiFeature::IsApiSupported(ClapWindowApi api, bool isFloating) {
 }
 
 bool KitguiFeature::GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) {
-    kitgui::platform::Api guiApi{};
+    kitgui::WindowApi guiApi{};
     kitgui::Context::GetPreferredApi(guiApi, isFloatingOut);
     switch (guiApi) {
-        case kitgui::platform::Api::Any: {
+        case kitgui::WindowApi::Any: {
             apiOut = ClapWindowApi::None;
             break;
         }
-        case kitgui::platform::Api::Win32: {
+        case kitgui::WindowApi::Win32: {
             apiOut = ClapWindowApi::Win32;
             break;
         }
-        case kitgui::platform::Api::Cocoa: {
+        case kitgui::WindowApi::Cocoa: {
             apiOut = ClapWindowApi::Cocoa;
             break;
         }
-        case kitgui::platform::Api::X11: {
+        case kitgui::WindowApi::X11: {
             apiOut = ClapWindowApi::X11;
             break;
         }
-        case kitgui::platform::Api::Wayland: {
+        case kitgui::WindowApi::Wayland: {
             apiOut = ClapWindowApi::Wayland;
             break;
         }
@@ -63,7 +66,7 @@ bool KitguiFeature::GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) 
 bool KitguiFeature::Create(ClapWindowApi api, bool isFloating) {
     sInitCount++;
     if (sInitCount == 1) {
-        kitgui::init();
+        kitgui::Context::init();
     }
 
     return mCtx.Create(ToPlatformApi(api), isFloating);
@@ -73,7 +76,7 @@ void KitguiFeature::Destroy() {
     mCtx.Destroy();
     sInitCount--;
     if (sInitCount == 1) {
-        kitgui::deinit();
+        kitgui::Context::deinit();
     }
 }
 
@@ -112,12 +115,12 @@ bool KitguiFeature::SetSize(uint32_t width, uint32_t height) {
 }
 
 bool KitguiFeature::SetParent(WindowHandle handle) {
-    SDL_Window* desiredParent = kitgui::platform::wrapWindow(ToPlatformApi(handle.api), handle.ptr);
+    kitgui::WindowRef desiredParent = kitgui::wrapWindow(ToPlatformApi(handle.api), handle.ptr);
     return mCtx.SetParent(desiredParent);
 }
 
 bool KitguiFeature::SetTransient(WindowHandle handle) {
-    SDL_Window* desiredTransient = kitgui::platform::wrapWindow(ToPlatformApi(handle.api), handle.ptr);
+    kitgui::WindowRef desiredTransient = kitgui::wrapWindow(ToPlatformApi(handle.api), handle.ptr);
     return mCtx.SetTransient(desiredTransient);
 }
 
@@ -133,26 +136,26 @@ bool KitguiFeature::Hide() {
     return mCtx.Hide();
 }
 
-kitgui::platform::Api KitguiFeature::ToPlatformApi(ClapWindowApi api) {
+kitgui::WindowApi KitguiFeature::ToPlatformApi(ClapWindowApi api) {
     switch (api) {
         case clapeze::ClapWindowApi::None: {
-            return kitgui::platform::Api::Any;
+            return kitgui::WindowApi::Any;
         }
         case clapeze::ClapWindowApi::Win32: {
-            return kitgui::platform::Api::Win32;
+            return kitgui::WindowApi::Win32;
         }
         case clapeze::ClapWindowApi::Cocoa: {
-            return kitgui::platform::Api::Cocoa;
+            return kitgui::WindowApi::Cocoa;
         }
         case clapeze::ClapWindowApi::X11: {
-            return kitgui::platform::Api::X11;
+            return kitgui::WindowApi::X11;
         }
         case clapeze::ClapWindowApi::Wayland: {
-            return kitgui::platform::Api::Wayland;
+            return kitgui::WindowApi::Wayland;
         }
     }
     assert(false);
-    return kitgui::platform::Api::Any;
+    return kitgui::WindowApi::Any;
 }
 
 }  // namespace clapeze

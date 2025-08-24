@@ -12,7 +12,7 @@ namespace clapeze {
 
 class KitguiFeature : public clapeze::GuiFeature {
    public:
-    KitguiFeature(kitgui::Context::AppFactory createAppFn);
+    explicit KitguiFeature(kitgui::Context::AppFactory createAppFn);
     bool IsApiSupported(ClapWindowApi api, bool isFloating) override;
     bool GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) override;
     bool Create(ClapWindowApi api, bool isFloating) override;
@@ -33,7 +33,7 @@ class KitguiFeature : public clapeze::GuiFeature {
     kitgui::Context mCtx;
     static int32_t sInitCount;
 
-    static kitgui::platform::Api ToPlatformApi(ClapWindowApi api);
+    static kitgui::WindowApi ToPlatformApi(ClapWindowApi api);
 };
 }  // namespace clapeze
 #endif
