@@ -36,8 +36,6 @@ target_link_libraries(kitgui PUBLIC
     Magnum::SceneGraph
 )
 target_link_libraries(kitgui PRIVATE
-    SDL3::SDL3
-    imgui_opengl_sdl3
     ${MAGNUM_PLATFORMGL}
     Magnum::MeshTools
     Magnum::Shaders
@@ -59,8 +57,13 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(X11)
     target_sources(kitgui PRIVATE
         src/platform/platformLinux.cpp
+        src/impl/sdl/contextImpl.cpp
     )
     target_link_libraries(kitgui PUBLIC X11::X11 X11::Xutil)
+    target_link_libraries(kitgui PRIVATE
+        SDL3::SDL3
+        imgui_opengl_sdl3
+    )
 endif()
 
 if (PROJECT_IS_TOP_LEVEL)

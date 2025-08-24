@@ -96,9 +96,9 @@ bool setTransient(Api api, SDL_Window* sdlWindow, SDL_Window* parent) {
     if (api == Api::Wayland) {
         return true;
     } else if (api == Api::X11) {
-        Window xWindow;
-        Window parentWindow;
-        Display* xDisplay;
+        Window xWindow{};
+        Window parentWindow{};
+        Display* xDisplay{};
         getX11Handles(sdlWindow, xWindow, xDisplay);
         getX11Handles(parent, parentWindow, xDisplay);
 

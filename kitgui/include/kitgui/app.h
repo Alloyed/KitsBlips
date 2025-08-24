@@ -1,7 +1,5 @@
 #pragma once
 
-union SDL_Event;
-
 namespace kitgui {
 class Context;
 /**
@@ -13,7 +11,7 @@ class BaseApp {
     friend class Context;
 
    public:
-    BaseApp(Context& mContext) : mContext(mContext) {}
+    explicit BaseApp(Context& mContext) : mContext(mContext) {}
     virtual ~BaseApp() = default;
     // override to customize
    protected:
@@ -35,11 +33,6 @@ class BaseApp {
      * Triggers on a regular basis. use gl to manipulate the visual state.
      */
     virtual void OnDraw() {}
-    /**
-     * Triggers on otherwise unhandled events
-     * return true if event handled, false otherwise
-     */
-    virtual bool OnRawEvent([[maybe_unused]] SDL_Event& event) { return false; }
 
     Context& GetContext() { return mContext; }
 

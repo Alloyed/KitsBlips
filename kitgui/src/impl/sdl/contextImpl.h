@@ -5,33 +5,25 @@
 #include <Magnum/Platform/GLContext.h>
 #include <SDL3/SDL_video.h>
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <string_view>
+#include <vector>
 #include "kitgui/app.h"
+#include "kitgui/context.h"
 #include "kitgui/kitgui.h"
 
 struct ImGuiContext;
 
-namespace kitgui::sdl {
-class ContextImpl;
-}
-
 namespace kitgui {
 class BaseApp;
+struct SizeConfig;
+}  // namespace kitgui
 
-struct SizeConfig {
-    uint32_t startingWidth{400};
-    uint32_t startingHeight{400};
-    bool resizable{false};
-    bool preserveAspectRatio{true};
-};
-
-class Context {
+namespace kitgui::sdl {
+class ContextImpl {
    public:
-    using AppFactory = std::function<std::unique_ptr<BaseApp>(Context& ctx)>;
-    explicit Context(AppFactory createAppFn);
-    ~Context();
+    explicit ContextImpl(kitgui::Context& ctx);
+    ~ContextImpl() = default;
     static void init();
     static void deinit();
 
@@ -39,8 +31,6 @@ class Context {
     bool Create(platform::Api api, bool isFloating);
     bool Destroy();
     bool SetScale(double scale);
-    const SizeConfig& GetSizeConfig() const;
-    void SetSizeConfig(const SizeConfig& cfg);
     bool GetSize(uint32_t& widthOut, uint32_t& heightOut) const;
     bool SetSizeDirectly(uint32_t width, uint32_t height);
     bool SetParent(const platform::WindowRef& handle);
@@ -60,24 +50,23 @@ class Context {
     static void RunSingleFrame();
 
     bool IsCreated() const;
-    void SetClearColor(Magnum::Color4 color);
-
-    // app events. forwards otherwise hidden events to impl
-   protected:
-    void OnActivate();
-    void OnDeactivate();
-    void OnUpdate();
-    void OnDraw();
+    void SetClearColor(Magnum::Color4 color) { mClearColor = color; }
 
    private:
-    // TODO: swap out
-    using Impl = sdl::ContextImpl;
-    friend class sdl::ContextImpl;
+    kitgui::Context& mContext;
+    platform::Api mApi;
+    SDL_Window* mWindow = nullptr;
+    SDL_GLContext mSdlGl;
+    std::unique_ptr<Magnum::Platform::GLContext> mGl = nullptr;
+    ImGuiContext* mImgui = nullptr;
+    bool mActive = false;
+    bool mDestroy = false;
+    Magnum::Color4 mClearColor = {0.5f, 0.5f, 0.5f, 1.0f};
 
-    AppFactory mCreateAppFn;
-    SizeConfig mSizeConfig{};
-    std::unique_ptr<BaseApp> mApp = nullptr;
-    std::unique_ptr<Impl> mImpl = nullptr;
+    static void AddActiveInstance(ContextImpl* instance);
+    static void RemoveActiveInstance(ContextImpl* instance);
+    static ContextImpl* FindContextImplForWindow(SDL_Window* win);
+    static std::vector<ContextImpl*> sActiveInstances;
 };
 
-}  // namespace kitgui
+}  // namespace kitgui::sdl
