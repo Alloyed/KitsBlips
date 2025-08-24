@@ -93,34 +93,38 @@ namespace {
 
 TEST(blepOscillator, sweep) {
     {
-        naive::RampUpOscillator osc1;
-        blep::RampUpOscillator osc2;
-        OversampledOscillator<naive::RampUpOscillator, 8> osc3;
-        OversampledOscillator<blep::RampUpOscillator, 8> osc4;
-        OversampledOscillator<TestPolyOsc, 8> osc5;
-
-        AudioFile<float> f;
-        f.setSampleRate(SR);
-        std::vector<float> buf;
-
-        Sweep(buf, f.getSampleRate(), osc1);
-        Sweep(buf, f.getSampleRate(), osc2);
-        Sweep(buf, f.getSampleRate(), osc3);
-        Sweep(buf, f.getSampleRate(), osc4);
-        Sweep(buf, f.getSampleRate(), osc5);
-        CopyOut(buf, f);
-        f.save("saw_sweeps");
-    }
-
-    {
-        naive::PulseOscillator osc2;
-        blep::PulseOscillator osc2b;
+        OversampledOscillator<TestPolyOsc, 8> oscRef;
+        naive::RampUpOscillator oscNaive;
+        blep::RampUpOscillator oscBlep;
+        OversampledOscillator<naive::RampUpOscillator, 8> oscOSNaive;
+        OversampledOscillator<blep::RampUpOscillator, 8> oscOSBlep;
 
         AudioFile<float> f;
         f.setSampleRate(SR);
         std::vector<float_2> buf;
 
-        Sweep(buf, SR, osc2, osc2b);
+        Sweep(buf, f.getSampleRate(), oscRef, oscNaive);
+        Sweep(buf, f.getSampleRate(), oscRef, oscOSNaive);
+        Sweep(buf, f.getSampleRate(), oscRef, oscBlep);
+        Sweep(buf, f.getSampleRate(), oscRef, oscOSBlep);
+        CopyOut(buf, f);
+        f.save("saw_sweeps.wav");
+    }
+
+    {
+        naive::PulseOscillator oscNaive;
+        blep::PulseOscillator oscBlep;
+        OversampledOscillator<naive::PulseOscillator, 8> oscOSNaive;
+        OversampledOscillator<blep::PulseOscillator, 8> oscOSBlep;
+
+        AudioFile<float> f;
+        f.setSampleRate(SR);
+        std::vector<float> buf;
+
+        Sweep(buf, f.getSampleRate(), oscNaive);
+        Sweep(buf, f.getSampleRate(), oscOSNaive);
+        Sweep(buf, f.getSampleRate(), oscBlep);
+        Sweep(buf, f.getSampleRate(), oscOSBlep);
         CopyOut(buf, f);
         f.save("pulse_sweeps.wav");
     }
@@ -147,14 +151,18 @@ TEST(dsfOscillator, sweep) {
         f.setSampleRate(SR);
         std::vector<float_2> buf;
 
-        size_t len = static_cast<size_t>(4.0f * SR);
+        size_t len = static_cast<size_t>(SR);
         for (size_t i = 0; i < len; ++i) {
             float t = i / static_cast<float>(len);
             osc.SetFreqCarrier(t * SR * 0.5f);
-            osc.SetFreqModulator(t * SR * 0.5f);
-            osc.SetFalloff(0.5f);
+            osc.SetFreqModulator(0);
+            osc.SetFalloff(0.0f);
             osc.Process();
-            buf.emplace_back(osc.Formula1(), osc.Formula2());
+            float f1 = osc.Formula1();
+            float f2 = osc.Formula2();
+            ASSERT_EQ(f1, f1);
+            ASSERT_EQ(f2, f2);
+            buf.emplace_back(f1, f2);
         }
         CopyOut(buf, f);
         f.save("dsf_sweeps_up.wav");

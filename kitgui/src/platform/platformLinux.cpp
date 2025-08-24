@@ -24,23 +24,26 @@ void getX11Handles(SDL_Window* sdlWindow, Window& xWindow, Display*& xDisplay) {
 namespace kitgui {
 
 namespace platform {
-SDL_Window* wrapWindow(Api api, void* apiWindow) {
+namespace sdl {
+
+SDL_Window* wrapWindow(const platform::WindowRef& win) {
     SDL_PropertiesID createProps = SDL_CreateProperties();
     if (createProps == 0) {
         LOG_SDL_ERROR();
         return nullptr;
     }
 
-    if (api == Api::X11) {
+    if (win.api == Api::X11) {
         SDL_SetNumberProperty(createProps, SDL_PROP_WINDOW_CREATE_X11_WINDOW_NUMBER,
-                              reinterpret_cast<unsigned long>(apiWindow));
-    } else if (api == Api::Wayland) {
-        SDL_SetPointerProperty(createProps, SDL_PROP_WINDOW_CREATE_WAYLAND_WL_SURFACE_POINTER, apiWindow);
+                              reinterpret_cast<unsigned long>(win.ptr));
+    } else if (win.api == Api::Wayland) {
+        SDL_SetPointerProperty(createProps, SDL_PROP_WINDOW_CREATE_WAYLAND_WL_SURFACE_POINTER, win.ptr);
     }
     SDL_Window* wrappedWindow = SDL_CreateWindowWithProperties(createProps);
     SDL_DestroyProperties(createProps);
     return wrappedWindow;
 }
+}  // namespace sdl
 
 void onCreateWindow(Api api, SDL_Window* sdlWindow) {
     if (api == Api::Wayland) {

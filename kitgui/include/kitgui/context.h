@@ -3,7 +3,6 @@
 #include <Magnum/Magnum.h>
 #include <Magnum/Math/Color.h>
 #include <Magnum/Platform/GLContext.h>
-#include <SDL3/SDL_events.h>
 #include <SDL3/SDL_video.h>
 #include <cstdint>
 #include <functional>
@@ -28,8 +27,10 @@ struct SizeConfig {
 class Context {
    public:
     using AppFactory = std::function<std::unique_ptr<BaseApp>(Context& ctx)>;
-    Context(AppFactory createAppFn);
+    explicit Context(AppFactory createAppFn);
     ~Context() = default;
+    static void init();
+    static void deinit();
 
     // host events: (matches clap API)
     bool Create(platform::Api api, bool isFloating);
@@ -39,8 +40,8 @@ class Context {
     void SetSizeConfig(const SizeConfig& cfg);
     bool GetSize(uint32_t& widthOut, uint32_t& heightOut) const;
     bool SetSizeDirectly(uint32_t width, uint32_t height);
-    bool SetParent(SDL_Window* handle);
-    bool SetTransient(SDL_Window* handle);
+    bool SetParent(const platform::WindowRef& handle);
+    bool SetTransient(const platform::WindowRef& handle);
     void SuggestTitle(std::string_view title);
     bool Show();
     bool Hide();
@@ -49,7 +50,6 @@ class Context {
     void MakeCurrent();
 
     static bool GetPreferredApi(platform::Api& apiOut, bool& isFloatingOut);
-    static Context* FindContextForWindow(SDL_WindowID window);
 
     // use if we can monopolize the main thread
     static void RunLoop();
@@ -74,6 +74,7 @@ class Context {
 
     static void AddActiveInstance(Context* instance);
     static void RemoveActiveInstance(Context* instance);
+    static Context* FindContextForWindow(SDL_Window* win);
     static std::vector<Context*> sActiveInstances;
 };
 

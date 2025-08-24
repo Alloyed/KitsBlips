@@ -69,7 +69,7 @@ int main() {
     // Containers::ArrayView<const char> data = rs.getRaw("duck.glb");
     // importer->openData(data);
 
-    kitgui::init();
+    kitgui::Context::init();
 
     {
         kitgui::Context ctx1([](kitgui::Context& ctx) { return std::make_unique<MyApp2>(ctx); });
@@ -84,5 +84,5 @@ int main() {
         kitgui::Context::RunLoop();
     }
 
-    kitgui::deinit();
+    kitgui::Context::deinit();
 }

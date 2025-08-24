@@ -6,8 +6,8 @@
 #include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_video.h>
 #include <windows.h>
-#include <unordered_map>
 #include <functional>
+#include <unordered_map>
 #include "log.h"
 
 namespace {
@@ -35,18 +35,21 @@ bool kitgui_MessageHook(void* userdata, MSG* msg) {
 namespace kitgui {
 
 namespace platform {
-SDL_Window* wrapWindow([[maybe_unused]] Api api, void* apiWindow) {
+namespace sdl {
+
+SDL_Window* wrapWindow(const Window& win) {
     SDL_PropertiesID createProps = SDL_CreateProperties();
     if (createProps == 0) {
         LOG_SDL_ERROR();
         return nullptr;
     }
 
-    SDL_SetPointerProperty(createProps, SDL_PROP_WINDOW_CREATE_WIN32_HWND_POINTER, apiWindow);
+    SDL_SetPointerProperty(createProps, SDL_PROP_WINDOW_CREATE_WIN32_HWND_POINTER, win.ptr);
     SDL_Window* wrappedWindow = SDL_CreateWindowWithProperties(createProps);
     SDL_DestroyProperties(createProps);
     return wrappedWindow;
 }
+}  // namespace sdl
 
 void onCreateWindow(Api api, SDL_Window* sdlWindow) {
     // do nothing

@@ -10,15 +10,35 @@
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl3.h>
 #include <algorithm>
+#include <utility>
 #include "imguiHelpers/misc.h"
+#include "kitgui/kitgui.h"
 #include "log.h"
 #include "platform/platform.h"
 
 using namespace Magnum;
 
 namespace kitgui {
+void Context::init() {
+    if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) {
+        LOG_SDL_ERROR();
+        return;
+    }
 
-Context::Context(Context::AppFactory fn) : mCreateAppFn(fn) {}
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+}
+
+void Context::deinit() {
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
+}
+
+Context::Context(Context::AppFactory fn) : mCreateAppFn(std::move(fn)) {}
 
 bool Context::Create(platform::Api api, bool isFloating) {
     mApi = api;
@@ -135,8 +155,7 @@ void Context::SetSizeConfig(const SizeConfig& cfg) {
     mSizeConfig = cfg;
 }
 bool Context::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
-    int32_t w;
-    int32_t h;
+    int32_t w{}, h{};
     bool success = SDL_GetWindowSize(mWindow, &w, &h);
     widthOut = static_cast<uint32_t>(w);
     heightOut = static_cast<uint32_t>(h);
@@ -145,10 +164,12 @@ bool Context::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
 bool Context::SetSizeDirectly(uint32_t width, uint32_t height) {
     return SDL_SetWindowSize(mWindow, width, height);
 }
-bool Context::SetParent(SDL_Window* handle) {
+bool Context::SetParent(const platform::WindowRef& window) {
+    SDL_Window* handle = platform::sdl::wrapWindow(window);
     return platform::setParent(mApi, mWindow, handle);
 }
-bool Context::SetTransient(SDL_Window* handle) {
+bool Context::SetTransient(const platform::WindowRef& window) {
+    SDL_Window* handle = platform::sdl::wrapWindow(window);
     return platform::setTransient(mApi, mWindow, handle);
 }
 void Context::SuggestTitle(std::string_view title) {
@@ -218,7 +239,7 @@ void Context::RunLoop() {
 }
 
 void Context::RunSingleFrame() {
-    for (int32_t idx = sActiveInstances.size() - 1; idx >= 0; idx--) {
+    for (int32_t idx = static_cast<int32_t>(sActiveInstances.size()) - 1; idx >= 0; idx--) {
         auto& instance = sActiveInstances[idx];
         if (instance->mDestroy) {
             instance->Destroy();
@@ -231,7 +252,7 @@ void Context::RunSingleFrame() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         SDL_Window* window = SDL_GetWindowFromEvent(&event);
-        Context* instance = window ? FindContextForWindow(SDL_GetWindowID(window)) : nullptr;
+        Context* instance = window ? FindContextForWindow(window) : nullptr;
         switch (event.type) {
             case SDL_EVENT_WINDOW_DESTROYED: {
                 goto skip_event;
@@ -271,7 +292,7 @@ void Context::RunSingleFrame() {
         }
 
         // draw
-        uint32_t width, height;
+        uint32_t width = 0, height = 0;
         instance->GetSize(width, height);
         GL::defaultFramebuffer.setViewport({{}, {static_cast<int>(width), static_cast<int>(height)}});
         GL::defaultFramebuffer.clearColor(instance->mClearColor);
@@ -306,9 +327,9 @@ bool Context::GetPreferredApi(platform::Api& apiOut, bool& isFloatingOut) {
 #endif
 }
 
-Context* Context::FindContextForWindow(SDL_WindowID window) {
+Context* Context::FindContextForWindow(SDL_Window* win) {
     for (Context* instance : sActiveInstances) {
-        if (SDL_GetWindowID(instance->mWindow) == window) {
+        if (instance->mWindow == win) {
             return instance;
         }
     }

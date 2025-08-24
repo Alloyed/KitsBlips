@@ -29,7 +29,6 @@ target_include_directories(kitgui PUBLIC include)
 target_include_directories(kitgui PRIVATE src)
 
 target_link_libraries(kitgui PUBLIC
-    SDL3::SDL3
     imgui
     Corrade::Main
     Magnum::GL
@@ -37,6 +36,7 @@ target_link_libraries(kitgui PUBLIC
     Magnum::SceneGraph
 )
 target_link_libraries(kitgui PRIVATE
+    SDL3::SDL3
     imgui_opengl_sdl3
     ${MAGNUM_PLATFORMGL}
     Magnum::MeshTools
