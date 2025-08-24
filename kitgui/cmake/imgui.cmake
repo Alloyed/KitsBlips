@@ -1,5 +1,4 @@
 find_package(OpenGL REQUIRED)
-FetchContent_MakeAvailable(SDL3)
 
 add_library(imgui STATIC EXCLUDE_FROM_ALL
 	${IMGUI_DIR}/imgui.cpp
@@ -10,16 +9,18 @@ add_library(imgui STATIC EXCLUDE_FROM_ALL
 )
 target_include_directories(imgui INTERFACE ${IMGUI_DIR})
 
-add_library(imgui_opengl_sdl3 STATIC EXCLUDE_FROM_ALL
-	${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
-	${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
-)
-target_include_directories(imgui_opengl_sdl3 INTERFACE ${IMGUI_DIR}/backends)
-target_link_libraries(imgui_opengl_sdl3 PUBLIC imgui SDL3::SDL3 OpenGL::GL)
-
-add_library(imgui_opengl_win32 STATIC EXCLUDE_FROM_ALL
-	${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
-	${IMGUI_DIR}/backends/imgui_impl_win32.cpp
-)
-target_include_directories(imgui_opengl_win32 INTERFACE ${IMGUI_DIR}/backends)
-target_link_libraries(imgui_opengl_win32 PUBLIC imgui OpenGL::GL)
+if(KITGUI_USE_SDL)
+	add_library(imgui_opengl_sdl3 STATIC EXCLUDE_FROM_ALL
+		${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+		${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
+	)
+	target_include_directories(imgui_opengl_sdl3 INTERFACE ${IMGUI_DIR}/backends)
+	target_link_libraries(imgui_opengl_sdl3 PUBLIC imgui SDL3::SDL3 OpenGL::GL)
+elseif(KITGUI_USE_WIN32)
+	add_library(imgui_opengl_win32 STATIC EXCLUDE_FROM_ALL
+		${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+		${IMGUI_DIR}/backends/imgui_impl_win32.cpp
+	)
+	target_include_directories(imgui_opengl_win32 INTERFACE ${IMGUI_DIR}/backends)
+	target_link_libraries(imgui_opengl_win32 PUBLIC imgui OpenGL::GL)
+endif()

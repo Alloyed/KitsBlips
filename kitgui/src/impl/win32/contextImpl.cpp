@@ -7,14 +7,6 @@
  * https://nakst.gitlab.io/tutorial/clap-part-3.html
  */
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include <windows.h>
-
 #include <GL/gl.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/Platform/GLContext.h>
@@ -48,6 +40,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 return 0;
             break;
         case WM_DESTROY:
+            // TODO: remove instance
             ::PostQuitMessage(0);
             return 0;
     }
@@ -100,13 +93,24 @@ bool ContextImpl::Create(kitgui::WindowApi api, bool isFloating) {
     }
 
     SizeConfig cfg = mContext.GetSizeConfig();
+    DWORD windowStyle = 0;
+    if (isFloating) {
+        windowStyle |= WS_TILEDWINDOW;
+    } else {
+        windowStyle |= WS_CHILDWINDOW | WS_CLIPSIBLINGS;
+    }
+    if (cfg.resizable) {
+        // support resizing
+        windowStyle |= WS_THICKFRAME | WS_MAXIMIZEBOX;
+    }
+
     mWindow = ::CreateWindow(
         // class name
         kClassName,
         // window name (fill in later)
         "",
         // window style
-        WS_CHILDWINDOW | WS_CLIPSIBLINGS | (cfg.resizable ? WS_THICKFRAME | WS_MAXIMIZEBOX : 0),
+        windowStyle,
         // window position
         CW_USEDEFAULT, 0,
         // window size
@@ -119,10 +123,13 @@ bool ContextImpl::Create(kitgui::WindowApi api, bool isFloating) {
         NULL,
         // param
         NULL);
-    SetWindowLongPtr(mWindow, 0, reinterpret_cast<LONG_PTR>(this));
+    if (mWindow == nullptr) {
+        kitgui::log::error(GetLastWinError());
+        return false;
+    }
+    ::SetWindowLongPtr(mWindow, 0, reinterpret_cast<LONG_PTR>(this));
 
     if(!CreateWglContext()) {
-        kitgui::log::error("CreateWglContext failed");
         return false;
     }
 
@@ -247,9 +254,21 @@ void ContextImpl::RemoveActiveInstance(ContextImpl* instance) {
 }
 
 void ContextImpl::RunLoop() {
-    while (!sActiveInstances.empty()) {
+    bool quitLoop = false;
+    while (!quitLoop && !sActiveInstances.empty()) {
+        // Poll and handle messages (inputs, window resize, etc.)
+        // See the WndProc() function below for our to dispatch events to the Win32 backend.
+        MSG msg;
+        while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
+            ::TranslateMessage(&msg);
+            ::DispatchMessage(&msg);
+            if (msg.message == WM_QUIT)
+            {
+                quitLoop = true;
+            }
+        }
         ContextImpl::RunSingleFrame();
-        //SDL_Delay(16);
+        ::Sleep(16);
     }
 }
 
