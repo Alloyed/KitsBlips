@@ -96,6 +96,8 @@ bool getPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
 
 using namespace Magnum;
 
+#define LOG_SDL_ERROR() kitgui::log::error(SDL_GetError())
+
 namespace kitgui::sdl {
 void ContextImpl::init() {
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) {

@@ -1,6 +1,5 @@
 #pragma once
 #include <Corrade/Containers/String.h>
-#include <SDL3/SDL.h>
 #include <format>
 #include <iostream>
 #include <source_location>
@@ -22,7 +21,6 @@ inline void verbose(std::string_view message, std::source_location loc = std::so
 }
 }  // namespace kitgui::log
 
-#define LOG_SDL_ERROR() kitgui::log::error(SDL_GetError())
 
 template <>
 struct std::formatter<Corrade::Containers::String> : std::formatter<std::string_view> {

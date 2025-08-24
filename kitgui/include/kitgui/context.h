@@ -16,6 +16,10 @@ namespace kitgui::sdl {
 class ContextImpl;
 }
 
+namespace kitgui::win32 {
+class ContextImpl;
+}
+
 namespace kitgui {
 class BaseApp;
 
@@ -69,9 +73,13 @@ class Context {
     void OnDraw();
 
    private:
-    // TODO: swap out
+#if KITGUI_USE_SDL
     using Impl = sdl::ContextImpl;
     friend class sdl::ContextImpl;
+#elif KITGUI_USE_WIN32
+    using Impl = win32::ContextImpl;
+    friend class win32::ContextImpl;
+#endif
 
     AppFactory mCreateAppFn;
     SizeConfig mSizeConfig{};

@@ -8,6 +8,18 @@ include(../content.cmake)
 include(imgui)
 FetchContent_MakeAvailable(SDL3 corrade magnum magnum-plugins)
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(KITGUI_USE_WIN32 true)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    FetchContent_MakeAvailable(SDL3)
+    set(KITGUI_USE_SDL true)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(X11)
+    FetchContent_MakeAvailable(SDL3)
+    set(KITGUI_USE_SDL true)
+
+endif()
+
 add_library(kitgui STATIC)
 set_property(TARGET kitgui PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
 target_enable_warnings(kitgui)
@@ -22,7 +34,6 @@ target_sources(kitgui PRIVATE
     src/gfx/meshes.cpp
     src/imguiHelpers/knob.cpp
     src/imguiHelpers/domWrappers.cpp
-    src/kitgui.cpp
 )
 
 target_include_directories(kitgui PUBLIC include)
@@ -43,12 +54,8 @@ target_link_libraries(kitgui PRIVATE
     MagnumPlugins::GltfImporter
 )
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    target_sources(kitgui PRIVATE)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    target_sources(kitgui PRIVATE)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    find_package(X11)
+if(KITGUI_USE_SDL)
+    target_compile_definitions(kitgui PUBLIC KITGUI_USE_SDL)
     target_sources(kitgui PRIVATE
         src/impl/sdl/contextImpl.cpp
     )
@@ -57,6 +64,14 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         X11::Xutil
         SDL3::SDL3
         imgui_opengl_sdl3
+    )
+elseif(KITGUI_USE_WIN32)
+    target_compile_definitions(kitgui PUBLIC KITGUI_USE_WIN32)
+    target_sources(kitgui PRIVATE
+        src/impl/win32/contextImpl.cpp
+    )
+    target_link_libraries(kitgui PRIVATE
+        imgui_opengl_win32
     )
 endif()
 

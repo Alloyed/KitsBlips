@@ -6,8 +6,11 @@
 #include <utility>
 #include "kitgui/kitgui.h"
 
-// TODO: swap out
-#include "impl/sdl/contextImpl.h"
+#if KITGUI_USE_SDL
+    #include "impl/sdl/contextImpl.h"
+#elif KITGUI_USE_WIN32
+    #include "impl/win32/contextImpl.h"
+#endif
 
 using namespace Magnum;
 
