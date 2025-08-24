@@ -53,6 +53,22 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     }
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }
+
+std::string GetLastWinError() {
+    // Retrieve the system error message for the last-error code
+
+    char* lpMsgBuf;
+    DWORD dw = GetLastError();
+    size_t messageSize =
+        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                      dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL);
+
+    std::string out(lpMsgBuf, messageSize);
+    out.insert(0, std::format("Windows error({}): ", dw));
+
+    LocalFree(lpMsgBuf);
+    return out;
+}
 }  // namespace
 
 using namespace Magnum;
@@ -78,12 +94,12 @@ void ContextImpl::deinit() {
 ContextImpl::ContextImpl(kitgui::Context& ctx) : mContext(ctx) {}
 
 bool ContextImpl::Create(kitgui::WindowApi api, bool isFloating) {
+    if (api != kitgui::WindowApi::Any && api != kitgui::WindowApi::Win32) {
+        kitgui::log::error("API not supported");
+        return false;
+    }
 
     SizeConfig cfg = mContext.GetSizeConfig();
-    //SDL_SetBooleanProperty(createProps, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
-    //SDL_SetBooleanProperty(createProps, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, true);
-    //SDL_SetBooleanProperty(createProps, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, cfg.resizable);
-    //mWindow = SDL_CreateWindowWithProperties(createProps);
     mWindow = ::CreateWindow(
         // class name
         kClassName,
@@ -105,9 +121,8 @@ bool ContextImpl::Create(kitgui::WindowApi api, bool isFloating) {
         NULL);
     SetWindowLongPtr(mWindow, 0, reinterpret_cast<LONG_PTR>(this));
 
-    //onCreateWindow(mApi, mWindow);
-
     if(!CreateWglContext()) {
+        kitgui::log::error("CreateWglContext failed");
         return false;
     }
 
@@ -180,6 +195,7 @@ bool ContextImpl::SetParent(const kitgui::WindowRef& parentWindowRef) {
 bool ContextImpl::SetTransient([[maybe_unused]] const kitgui::WindowRef& transientWindowRef) {
     // TODO
     //return setTransient(mApi, mWindow, transientWindowRef);
+    kitgui::log::error("SetTransient NYI");
     return false;
 }
 void ContextImpl::SuggestTitle(std::string_view title) {
@@ -204,9 +220,7 @@ bool ContextImpl::Close() {
 }
 
 void ContextImpl::MakeCurrent() {
-    //if (mSdlGl) {
-    //    SDL_GL_MakeCurrent(mWindow, mSdlGl);
-    //}
+    wglMakeCurrent(mDeviceContext, mWglContext);
     if (mImgui) {
         ImGui::SetCurrentContext(mImgui);
     }
@@ -325,6 +339,11 @@ bool ContextImpl::GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut
 
 bool ContextImpl::CreateWglContext() {
     mDeviceContext = ::GetDC(mWindow);
+    if(mDeviceContext == nullptr)
+    {
+        kitgui::log::error(GetLastWinError());
+        return false;
+    }
     PIXELFORMATDESCRIPTOR pfd = {0};
     pfd.nSize = sizeof(pfd);
     pfd.nVersion = 1;
@@ -333,14 +352,13 @@ bool ContextImpl::CreateWglContext() {
     pfd.cColorBits = 32;
 
     const int pf = ::ChoosePixelFormat(mDeviceContext, &pfd);
-    if (pf == 0)
+    if (pf == 0 || ::SetPixelFormat(mDeviceContext, pf, &pfd) == false)
+    {
+        kitgui::log::error(GetLastWinError());
         return false;
-    if (::SetPixelFormat(mDeviceContext, pf, &pfd) == false)
-        return false;
-    ::ReleaseDC(mWindow, mDeviceContext);
+    }
 
-    if (!mWglContext)
-        mWglContext = wglCreateContext(mDeviceContext);
+    mWglContext = wglCreateContext(mDeviceContext);
     return true;
 }
 
