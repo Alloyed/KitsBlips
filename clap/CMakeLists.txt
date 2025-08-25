@@ -49,7 +49,6 @@ if(KITSBLIPS_ENABLE_GUI)
 
     target_compile_definitions(KitsBlips-lib PUBLIC KITSBLIPS_ENABLE_GUI=1)
     target_link_libraries(KitsBlips-lib PUBLIC kitgui)
-    target_disable_warnings(kitgui)
 endif()
 
 make_clapfirst_plugins(
