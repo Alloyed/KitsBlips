@@ -7,9 +7,9 @@
 #include "kitgui/kitgui.h"
 
 #if KITGUI_USE_SDL
-    #include "impl/sdl/contextImpl.h"
+#include "impl/sdl/contextImpl.h"
 #elif KITGUI_USE_WIN32
-    #include "impl/win32/contextImpl.h"
+#include "impl/win32/contextImpl.h"
 #endif
 
 using namespace Magnum;
@@ -90,6 +90,10 @@ void Context::RunLoop() {
 
 void Context::RunSingleFrame() {
     Impl::RunSingleFrame();
+}
+
+bool Context::IsApiSupported(kitgui::WindowApi api, bool isFloating) {
+    return Impl::IsApiSupported(api, isFloating);
 }
 
 bool Context::GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {

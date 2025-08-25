@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 // so long as C++11 is a valid target, we'll need to hide uses of more modern features behind macros.
 
 #define KITDSP_HAS_CPP14 (__cplusplus > 201103L)
@@ -35,3 +37,22 @@
 #else
 #define KITDSP_DLLEXPORT
 #endif
+
+#if defined(__clang__)
+#define KITDSP_SUPPRESS(x) [[gsl::suppress(#x)]]
+#else
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && !defined(__NVCC__)
+#define KITDSP_SUPPRESS(x) [[gsl::suppress(x)]]
+#else
+#define KITDSP_SUPPRESS(x)
+#endif  // _MSC_VER
+#endif  // __clang__
+
+// narrow_cast(): a searchable way to do narrowing casts of values
+template <class T, class U>
+// clang-format off
+KITDSP_SUPPRESS(type.1) // NO-FORMAT: attribute
+                         // clang-format on
+    constexpr T narrow_cast(U&& u) noexcept {
+    return static_cast<T>(std::forward<U>(u));
+}

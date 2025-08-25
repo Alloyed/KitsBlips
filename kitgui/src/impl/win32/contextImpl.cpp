@@ -56,8 +56,8 @@ std::string GetLastWinError() {
     char* lpMsgBuf;
     DWORD dw = ::GetLastError();
     size_t messageSize =
-        ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
-                      dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, nullptr);
+        ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                         nullptr, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, nullptr);
 
     std::string out(lpMsgBuf, messageSize);
     out.insert(0, std::format("Windows error({}): ", dw));
@@ -73,12 +73,13 @@ std::string utf16_to_utf8(std::wstring_view wstr) {
     int32_t size =
         ::WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int32_t>(wstr.size()), nullptr, 0, nullptr, nullptr);
     std::string result(size, '\0');
-    ::WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int32_t>(wstr.size()), result.data(), size, nullptr, nullptr);
+    ::WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int32_t>(wstr.size()), result.data(), size, nullptr,
+                          nullptr);
     return result;
 }
 
 std::wstring utf8_to_utf16(std::string_view str) {
-    if (str.empty()){
+    if (str.empty()) {
         return {};
     }
     int32_t size = ::MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int32_t>(str.size()), nullptr, 0);
@@ -92,7 +93,7 @@ std::wstring utf8_to_utf16(std::string_view str) {
 using namespace Magnum;
 
 namespace kitgui::win32 {
-static constexpr wchar_t kClassName [] = L"BLEHHH\0";  // TODO: runtime selectable
+static constexpr wchar_t kClassName[] = L"BLEHHH\0";  // TODO: runtime selectable
 
 void ContextImpl::init() {
     ImGui_ImplWin32_EnableDpiAwareness();
@@ -155,7 +156,7 @@ bool ContextImpl::Create(kitgui::WindowApi api, bool isFloating) {
     ::SetWindowLongPtr(mWindow, 0, reinterpret_cast<LONG_PTR>(this));
     ::SetTimer(mWindow, 1, 30, nullptr);
 
-    if(!CreateWglContext()) {
+    if (!CreateWglContext()) {
         return false;
     }
 
@@ -214,21 +215,22 @@ bool ContextImpl::SetScale(double scale) {
     return true;
 }
 bool ContextImpl::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
-    RECT rect; 
+    RECT rect;
     ::GetWindowRect(mWindow, &rect);
     widthOut = rect.right - rect.left;
     heightOut = rect.bottom - rect.top;
     return true;
 }
 bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height) {
-    return ::SetWindowPos(mWindow, nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
+    return ::SetWindowPos(mWindow, nullptr, 0, 0, width, height,
+                          SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
 }
 bool ContextImpl::SetParent(const kitgui::WindowRef& parentWindowRef) {
     return ::SetParent(mWindow, static_cast<HWND>(parentWindowRef.ptr));
 }
 bool ContextImpl::SetTransient([[maybe_unused]] const kitgui::WindowRef& transientWindowRef) {
     // TODO
-    //return setTransient(mApi, mWindow, transientWindowRef);
+    // return setTransient(mApi, mWindow, transientWindowRef);
     kitgui::log::error("SetTransient NYI");
     return false;
 }
@@ -289,13 +291,12 @@ void ContextImpl::RunLoop() {
         while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
             ::TranslateMessage(&msg);
             ::DispatchMessage(&msg);
-            if (msg.message == WM_QUIT)
-            {
+            if (msg.message == WM_QUIT) {
                 quitLoop = true;
             }
         }
-        //ContextImpl::RunSingleFrame();
-        // DwmFlush() waits for the desktop compositor to present whatever it is we've presented (AKA.... vsync!)
+        // ContextImpl::RunSingleFrame();
+        //  DwmFlush() waits for the desktop compositor to present whatever it is we've presented (AKA.... vsync!)
         //::DwmFlush();
         // fixed length sleep
         ::Sleep(10);
@@ -313,36 +314,36 @@ void ContextImpl::RunSingleFrame() {
         }
     }
 
-    //SDL_Event event;
-    //while (SDL_PollEvent(&event)) {
-    //    SDL_Window* window = SDL_GetWindowFromEvent(&event);
-    //    ContextImpl* instance = window ? FindContextImplForWindow(window) : nullptr;
-    //    switch (event.type) {
-    //        case SDL_EVENT_WINDOW_DESTROYED: {
-    //            goto skip_event;
-    //        }
-    //        case SDL_EVENT_QUIT: {
-    //            for (auto instanceIter : sActiveInstances) {
-    //                instanceIter->Close();
-    //            }
-    //            break;
-    //        }
-    //        case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
-    //            if (instance) {
-    //                instance->Close();
-    //            }
-    //            break;
-    //        }
-    //    }
+    // SDL_Event event;
+    // while (SDL_PollEvent(&event)) {
+    //     SDL_Window* window = SDL_GetWindowFromEvent(&event);
+    //     ContextImpl* instance = window ? FindContextImplForWindow(window) : nullptr;
+    //     switch (event.type) {
+    //         case SDL_EVENT_WINDOW_DESTROYED: {
+    //             goto skip_event;
+    //         }
+    //         case SDL_EVENT_QUIT: {
+    //             for (auto instanceIter : sActiveInstances) {
+    //                 instanceIter->Close();
+    //             }
+    //             break;
+    //         }
+    //         case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
+    //             if (instance) {
+    //                 instance->Close();
+    //             }
+    //             break;
+    //         }
+    //     }
 
     //    if (instance) {
     //        instance->MakeCurrent();
     //        ImGui_ImplSDL3_ProcessEvent(&event);
     //    }
 
-    //skip_event:
-    //    continue;
-    //}
+    // skip_event:
+    //     continue;
+    // }
 
     for (auto instance : sActiveInstances) {
         instance->MakeCurrent();
@@ -371,7 +372,10 @@ void ContextImpl::RunSingleFrame() {
     }
 }
 
-LRESULT ContextImpl::OnWindowsEvent(HWND hWnd, UINT msg, [[maybe_unused]] WPARAM wParam, [[maybe_unused]] LPARAM lParam) {
+LRESULT ContextImpl::OnWindowsEvent(HWND hWnd,
+                                    UINT msg,
+                                    [[maybe_unused]] WPARAM wParam,
+                                    [[maybe_unused]] LPARAM lParam) {
     switch (msg) {
         case WM_TIMER: {
             kitgui::win32::ContextImpl::RunSingleFrame();
@@ -379,7 +383,7 @@ LRESULT ContextImpl::OnWindowsEvent(HWND hWnd, UINT msg, [[maybe_unused]] WPARAM
         }
         case WM_DESTROY: {
             ContextImpl* instance = FindContextImplForWindow(hWnd);
-            if(instance) {
+            if (instance) {
                 instance->Close();
             }
             return 0;
@@ -388,6 +392,12 @@ LRESULT ContextImpl::OnWindowsEvent(HWND hWnd, UINT msg, [[maybe_unused]] WPARAM
     return 0;
 }
 
+bool ContextImpl::IsApiSupported(kitgui::WindowApi api, bool isFloating) {
+    if (api == kitgui::WindowApi::Any) {
+        api = kitgui::WindowApi::Win32;
+    }
+    return api == kitgui::WindowApi::Win32 && isFloating == false;
+}
 bool ContextImpl::GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
     apiOut = kitgui::WindowApi::Win32;
     isFloatingOut = false;
@@ -405,8 +415,7 @@ ContextImpl* ContextImpl::FindContextImplForWindow(HWND win) {
 
 bool ContextImpl::CreateWglContext() {
     mDeviceContext = ::GetDC(mWindow);
-    if(mDeviceContext == nullptr)
-    {
+    if (mDeviceContext == nullptr) {
         kitgui::log::error(GetLastWinError());
         return false;
     }
@@ -418,8 +427,7 @@ bool ContextImpl::CreateWglContext() {
     pfd.cColorBits = 32;
 
     const int pf = ::ChoosePixelFormat(mDeviceContext, &pfd);
-    if (pf == 0 || ::SetPixelFormat(mDeviceContext, pf, &pfd) == false)
-    {
+    if (pf == 0 || ::SetPixelFormat(mDeviceContext, pf, &pfd) == false) {
         kitgui::log::error(GetLastWinError());
         return false;
     }
@@ -434,4 +442,4 @@ void ContextImpl::DestroyWglContext() {
     mWglContext = nullptr;
     mDeviceContext = nullptr;
 }
-}  // namespace kitgui::sdl
+}  // namespace kitgui::win32

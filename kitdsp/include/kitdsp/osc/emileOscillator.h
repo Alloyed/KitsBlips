@@ -94,7 +94,7 @@ class Oscillator {
             float this_sample = next_sample;
             next_sample = 0.0f;
 
-            float pw = (shape == OSCILLATOR_SHAPE_SQUARE_TRIANGLE || shape == OSCILLATOR_SHAPE_TRIANGLE) ? 0.5f : 0.5f;
+            float pw = 0.5f;
             if (has_external_fm) {
                 pw = clamp(pw, fabsf(frequency) * 2.0f, 1.0f - 2.0f * fabsf(frequency));
             }

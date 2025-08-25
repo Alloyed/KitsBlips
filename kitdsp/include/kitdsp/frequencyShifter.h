@@ -15,6 +15,5 @@ class FrequencyShifter {
    private:
     HilbertTransformMonoFloat mHilbert;
     Phasor mPhasor;
-    float mSampleRate;
 };
 }  // namespace kitdsp

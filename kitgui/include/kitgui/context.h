@@ -55,6 +55,7 @@ class Context {
 
     void MakeCurrent();
 
+    static bool IsApiSupported(kitgui::WindowApi api, bool isFloating);
     static bool GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut);
 
     // use if we can monopolize the main thread

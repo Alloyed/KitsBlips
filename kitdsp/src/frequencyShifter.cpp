@@ -5,7 +5,7 @@
 #define cos_(x) sin2pif_lut((x) + 0.25f)
 
 namespace kitdsp {
-FrequencyShifter::FrequencyShifter(float sampleRate) : mSampleRate(sampleRate) {
+FrequencyShifter::FrequencyShifter(float sampleRate) {
     mHilbert.setSampleRate(sampleRate);
 }
 void FrequencyShifter::Reset() {

@@ -2,7 +2,6 @@
 
 #include "kitdsp/control/lfo.h"
 #include "kitdsp/delayLine.h"
-#include "kitdsp/math/interpolate.h"
 #include "kitdsp/math/vector.h"
 
 namespace kitdsp {

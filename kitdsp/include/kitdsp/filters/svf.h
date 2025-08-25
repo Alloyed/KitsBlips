@@ -41,7 +41,7 @@ class EmileSvf {
 
     template <SvfFilterMode mode>
     inline float Process(float in) {
-        float hp, bp, lp;
+        float hp{}, bp{}, lp{};
         ProcessAll(in, hp, bp, lp);
 
         switch (mode) {
@@ -55,9 +55,7 @@ class EmileSvf {
     }
 
     inline float Process(float in, SvfFilterMode mode) {
-        float hp{};
-        float bp{};
-        float lp{};
+        float hp{}, bp{}, lp{};
         ProcessAll(in, hp, bp, lp);
 
         switch (mode) {

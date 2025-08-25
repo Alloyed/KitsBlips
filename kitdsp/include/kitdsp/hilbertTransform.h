@@ -37,9 +37,11 @@
  * mono-float form and in stereo-SSE form).
  */
 
-#include <utility>
-#include <complex>
+#include <math.h>
+
 #include <cassert>
+#include <complex>
+#include <utility>
 #include "kitdsp/math/util.h"
 
 namespace kitdsp {
@@ -59,11 +61,11 @@ struct HilbertTransformMonoFloat {
         }
 
         inline float step(float input) {
-            double op;
+            double op{};
 
             op = input * b0 + reg0;
-            reg0 = input * b1 - a1 * op + reg1;
-            reg1 = input * b2 - a2 * op;
+            reg0 = static_cast<float>(input * b1 - a1 * op + reg1);
+            reg1 = static_cast<float>(input * b2 - a2 * op);
 
             return (float)op;
         }
@@ -78,7 +80,7 @@ struct HilbertTransformMonoFloat {
     float hilbertCoefs[12];
     void setHilbertCoefs() {
         assert(sampleRate);
-        float a1, a2, b0, b1, b2;
+        float a1{}, a2{}, b0{}, b1{}, b2{};
 
         // phase difference network normalized pole frequencies
         // first six numbers are for real, the rest for imaginary

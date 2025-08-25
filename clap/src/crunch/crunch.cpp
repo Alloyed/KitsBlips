@@ -173,7 +173,6 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
-        printf("Update!!\n");
         ImGui::Text("Helooooo");
         /*mParams.DebugImGui();*/
     }

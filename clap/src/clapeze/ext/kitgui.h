@@ -32,8 +32,6 @@ class KitguiFeature : public clapeze::GuiFeature {
    private:
     kitgui::Context mCtx;
     static int32_t sInitCount;
-
-    static kitgui::WindowApi ToPlatformApi(ClapWindowApi api);
 };
 }  // namespace clapeze
 #endif

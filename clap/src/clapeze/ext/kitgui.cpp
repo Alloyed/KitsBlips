@@ -7,6 +7,55 @@
 
 #include <utility>
 
+namespace {
+clapeze::ClapWindowApi toClapeze(kitgui::WindowApi api) {
+    switch (api) {
+        case kitgui::WindowApi::Any: {
+            kitgui::WindowApi guiApi{};
+            bool unused{};
+            kitgui::Context::GetPreferredApi(guiApi, unused);
+            return toClapeze(guiApi);
+        }
+        case kitgui::WindowApi::Win32: {
+            return clapeze::ClapWindowApi::Win32;
+        }
+        case kitgui::WindowApi::Cocoa: {
+            return clapeze::ClapWindowApi::Cocoa;
+        }
+        case kitgui::WindowApi::X11: {
+            return clapeze::ClapWindowApi::X11;
+        }
+        case kitgui::WindowApi::Wayland: {
+            return clapeze::ClapWindowApi::Wayland;
+        }
+    }
+    assert(false);
+    return clapeze::ClapWindowApi::None;
+}
+
+kitgui::WindowApi toKitGui(clapeze::ClapWindowApi api) {
+    switch (api) {
+        case clapeze::ClapWindowApi::None: {
+            return kitgui::WindowApi::Any;
+        }
+        case clapeze::ClapWindowApi::Win32: {
+            return kitgui::WindowApi::Win32;
+        }
+        case clapeze::ClapWindowApi::Cocoa: {
+            return kitgui::WindowApi::Cocoa;
+        }
+        case clapeze::ClapWindowApi::X11: {
+            return kitgui::WindowApi::X11;
+        }
+        case clapeze::ClapWindowApi::Wayland: {
+            return kitgui::WindowApi::Wayland;
+        }
+    }
+    assert(false);
+    return kitgui::WindowApi::Any;
+}
+}  // namespace
+
 namespace clapeze {
 
 int32_t KitguiFeature::sInitCount = 0;
@@ -14,52 +63,13 @@ int32_t KitguiFeature::sInitCount = 0;
 KitguiFeature::KitguiFeature(kitgui::Context::AppFactory createAppFn) : mCtx(std::move(createAppFn)) {}
 
 bool KitguiFeature::IsApiSupported(ClapWindowApi api, bool isFloating) {
-    // TODO: lots of apis to support out there
-    if (isFloating) {
-        // we can get away with using all native SDL
-        return true;
-    }
-
-    // embedding requires API-specific code, still a work in progress
-    switch (api) {
-        case None:
-        case Wayland:
-        case Cocoa: {
-            return false;
-        }
-        case Win32:
-        case X11: {
-            return true;
-        }
-    }
-    return false;
+    return kitgui::Context::IsApiSupported(toKitGui(api), isFloating);
 }
 
 bool KitguiFeature::GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) {
     kitgui::WindowApi guiApi{};
     kitgui::Context::GetPreferredApi(guiApi, isFloatingOut);
-    switch (guiApi) {
-        case kitgui::WindowApi::Any: {
-            apiOut = ClapWindowApi::None;
-            break;
-        }
-        case kitgui::WindowApi::Win32: {
-            apiOut = ClapWindowApi::Win32;
-            break;
-        }
-        case kitgui::WindowApi::Cocoa: {
-            apiOut = ClapWindowApi::Cocoa;
-            break;
-        }
-        case kitgui::WindowApi::X11: {
-            apiOut = ClapWindowApi::X11;
-            break;
-        }
-        case kitgui::WindowApi::Wayland: {
-            apiOut = ClapWindowApi::Wayland;
-            break;
-        }
-    }
+    apiOut = toClapeze(guiApi);
     return true;
 }
 
@@ -69,12 +79,10 @@ bool KitguiFeature::Create(ClapWindowApi api, bool isFloating) {
         kitgui::Context::init();
     }
 
-    printf("CREATE!\n");
-    return mCtx.Create(ToPlatformApi(api), isFloating);
+    return mCtx.Create(toKitGui(api), isFloating);
 }
 
 void KitguiFeature::Destroy() {
-    printf("DESTROY!\n");
     mCtx.Destroy();
     sInitCount--;
     if (sInitCount == 1) {
@@ -117,12 +125,12 @@ bool KitguiFeature::SetSize(uint32_t width, uint32_t height) {
 }
 
 bool KitguiFeature::SetParent(WindowHandle handle) {
-    kitgui::WindowRef desiredParent = kitgui::wrapWindow(ToPlatformApi(handle.api), handle.ptr);
+    kitgui::WindowRef desiredParent = kitgui::wrapWindow(toKitGui(handle.api), handle.ptr);
     return mCtx.SetParent(desiredParent);
 }
 
 bool KitguiFeature::SetTransient(WindowHandle handle) {
-    kitgui::WindowRef desiredTransient = kitgui::wrapWindow(ToPlatformApi(handle.api), handle.ptr);
+    kitgui::WindowRef desiredTransient = kitgui::wrapWindow(toKitGui(handle.api), handle.ptr);
     return mCtx.SetTransient(desiredTransient);
 }
 
@@ -131,34 +139,11 @@ void KitguiFeature::SuggestTitle(std::string_view title) {
 }
 
 bool KitguiFeature::Show() {
-    printf("SHOWWWW!\n");
     return mCtx.Show();
 }
 
 bool KitguiFeature::Hide() {
     return mCtx.Hide();
-}
-
-kitgui::WindowApi KitguiFeature::ToPlatformApi(ClapWindowApi api) {
-    switch (api) {
-        case clapeze::ClapWindowApi::None: {
-            return kitgui::WindowApi::Any;
-        }
-        case clapeze::ClapWindowApi::Win32: {
-            return kitgui::WindowApi::Win32;
-        }
-        case clapeze::ClapWindowApi::Cocoa: {
-            return kitgui::WindowApi::Cocoa;
-        }
-        case clapeze::ClapWindowApi::X11: {
-            return kitgui::WindowApi::X11;
-        }
-        case clapeze::ClapWindowApi::Wayland: {
-            return kitgui::WindowApi::Wayland;
-        }
-    }
-    assert(false);
-    return kitgui::WindowApi::Any;
 }
 
 }  // namespace clapeze

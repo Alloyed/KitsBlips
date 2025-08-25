@@ -30,13 +30,6 @@ class BaseApp;
 struct SizeConfig;
 }  // namespace kitgui
 
-#ifndef _WINDEF_
-class HINSTANCE__; // Forward or never
-typedef HINSTANCE__* HINSTANCE;
-class HWND__; // Forward or never
-typedef HWND__* HWND;
-#endif
-
 namespace kitgui::win32 {
 class ContextImpl {
    public:
@@ -60,6 +53,7 @@ class ContextImpl {
 
     void MakeCurrent();
 
+    static bool IsApiSupported(kitgui::WindowApi api, bool isFloating);
     static bool GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut);
 
     // use if we can monopolize the main thread
@@ -93,4 +87,4 @@ class ContextImpl {
     static std::vector<ContextImpl*> sActiveInstances;
 };
 
-}  // namespace kitgui::sdl
+}  // namespace kitgui::win32

@@ -20,7 +20,7 @@ float Harmonizer::Process(float in) {
     using namespace kitdsp::interpolate;
 
     float phase1 = mGrainPhasor.Process();
-    float phase2 = lfo::Phasor::WrapPhase(phase1 + 0.5);
+    float phase2 = lfo::Phasor::WrapPhase(phase1 + 0.5f);
 
     float grain1Delay = ((slowing ? phase1 : 1.0f - phase1) * grainSizeSamples);
     float grain2Delay = ((slowing ? phase2 : 1.0f - phase2) * grainSizeSamples);

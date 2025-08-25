@@ -87,6 +87,18 @@ bool setTransient(kitgui::WindowApi api, SDL_Window* sdlWindow, const kitgui::Wi
 
     return true;
 }
+bool isApiSupported(kitgui::WindowApi api, bool isFloating) {
+    if (api == kitgui::WindowApi::Any) {
+        api = kitgui::WindowApi::X11;
+    }
+
+    if (api == kitgui::WindowApi::X11) {
+        return true;
+    } else if (api == kitgui::WindowApi::Wayland) {
+        return isFloating;
+    }
+    return false;
+}
 bool getPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
     apiOut = kitgui::WindowApi::X11;
     isFloatingOut = false;
@@ -371,6 +383,9 @@ void ContextImpl::RunSingleFrame() {
     }
 }
 
+bool ContextImpl::IsApiSupported(kitgui::WindowApi api, bool isFloating) {
+    return isApiSupported(api, isFloating);
+}
 bool ContextImpl::GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
     return getPreferredApi(apiOut, isFloatingOut);
 }

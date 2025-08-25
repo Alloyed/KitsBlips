@@ -133,7 +133,7 @@ float SNES::Echo::Process(float input) {
     size_t delayIndex = mEchoBufferSize ? (mBufferIndex + delayModSamples) % mEchoBufferSize : 0;
 
     // shift echo buffer from 15-bit -> 16-bit
-    int16_t delayedSample = mEchoBuffer[delayIndex] << 1;
+    int16_t delayedSample = narrow_cast<int16_t>(mEchoBuffer[delayIndex] << 1);
     int16_t filteredSample = ProcessFIR(delayedSample);
     int16_t filterMixedSample = lerpf(delayedSample, filteredSample, filterMix);
 
@@ -142,7 +142,7 @@ float SNES::Echo::Process(float input) {
     if (!freeze) {
         // store current state in echo buffer /w feedback
         // echo buffer is 15-bit, so we remove one bit at the end to emulate that
-        mEchoBuffer[mBufferIndex] = (inputNorm + (filterMixedSample * feedbackInt / 128)) >> 1;
+        mEchoBuffer[mBufferIndex] = narrow_cast<int16_t>((inputNorm + (filterMixedSample * feedbackInt / 128)) >> 1);
     }
 
     float echoFloat = static_cast<float>(filterMixedSample) / INT16_MAX;
@@ -159,6 +159,6 @@ size_t SNES::Echo::GetDelaySamples(float delay) const {
 }
 
 size_t SNES::Echo::GetDelayModSamples(float delayMod) const {
-    return static_cast<size_t>(delayMod * cfg.echoBufferIncrementSamples);
+    return narrow_cast<size_t>(delayMod * narrow_cast<float>(cfg.echoBufferIncrementSamples));
 }
 }  // namespace kitdsp
