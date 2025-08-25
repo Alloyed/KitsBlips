@@ -70,6 +70,8 @@ class ContextImpl {
     bool IsCreated() const;
     void SetClearColor(Magnum::Color4 color) { mClearColor = color; }
 
+    static LRESULT OnWindowsEvent(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
    private:
     bool CreateWglContext();
     void DestroyWglContext();
@@ -87,7 +89,7 @@ class ContextImpl {
 
     static void AddActiveInstance(ContextImpl* instance);
     static void RemoveActiveInstance(ContextImpl* instance);
-    //static ContextImpl* FindContextImplForWindow(SDL_Window* win);
+    static ContextImpl* FindContextImplForWindow(HWND wnd);
     static std::vector<ContextImpl*> sActiveInstances;
 };
 

@@ -13,6 +13,7 @@
 
 #if KITSBLIPS_ENABLE_GUI
 #include <clapeze/ext/kitgui.h>
+#include <imgui.h>
 #include <kitgui/app.h>
 #include <kitgui/context.h>
 #endif
@@ -171,7 +172,11 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
 class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
-    void OnUpdate() override { /*mParams.DebugImGui();*/ }
+    void OnUpdate() override {
+        printf("Update!!\n");
+        ImGui::Text("Helooooo");
+        /*mParams.DebugImGui();*/
+    }
 
    private:
     ParamsFeature& mParams;
@@ -202,7 +207,7 @@ class Plugin : public EffectPlugin {
     }
 };
 
-const PluginEntry Entry{AudioEffectDescriptor("kitsblips.crunch", "Crunch", "A SNES-inspired mono delay effect"),
+const PluginEntry Entry{AudioEffectDescriptor("kitsblips.crunch", "Crunch 2!", "Waveshaping-based distortion"),
                         [](PluginHost& host) -> BasePlugin* { return new Plugin(host); }};
 
 }  // namespace crunch

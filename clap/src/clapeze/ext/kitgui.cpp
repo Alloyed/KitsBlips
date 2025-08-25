@@ -24,10 +24,10 @@ bool KitguiFeature::IsApiSupported(ClapWindowApi api, bool isFloating) {
     switch (api) {
         case None:
         case Wayland:
-        case Win32:
         case Cocoa: {
             return false;
         }
+        case Win32:
         case X11: {
             return true;
         }
@@ -69,10 +69,12 @@ bool KitguiFeature::Create(ClapWindowApi api, bool isFloating) {
         kitgui::Context::init();
     }
 
+    printf("CREATE!\n");
     return mCtx.Create(ToPlatformApi(api), isFloating);
 }
 
 void KitguiFeature::Destroy() {
+    printf("DESTROY!\n");
     mCtx.Destroy();
     sInitCount--;
     if (sInitCount == 1) {
@@ -129,6 +131,7 @@ void KitguiFeature::SuggestTitle(std::string_view title) {
 }
 
 bool KitguiFeature::Show() {
+    printf("SHOWWWW!\n");
     return mCtx.Show();
 }
 

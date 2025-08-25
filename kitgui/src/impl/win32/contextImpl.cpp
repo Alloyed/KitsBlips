@@ -36,14 +36,16 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         return true;
 
     switch (msg) {
-        case WM_SYSCOMMAND:
+        case WM_SYSCOMMAND: {
             if ((wParam & 0xfff0) == SC_KEYMENU)  // Disable ALT application menu
                 return 0;
             break;
-        case WM_DESTROY:
-            // TODO: remove instance
-            ::PostQuitMessage(0);
-            return 0;
+        }
+    }
+
+    auto innerResult = kitgui::win32::ContextImpl::OnWindowsEvent(hWnd, msg, wParam, lParam);
+    if (innerResult) {
+        return innerResult;
     }
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }
@@ -151,6 +153,7 @@ bool ContextImpl::Create(kitgui::WindowApi api, bool isFloating) {
         return false;
     }
     ::SetWindowLongPtr(mWindow, 0, reinterpret_cast<LONG_PTR>(this));
+    ::SetTimer(mWindow, 1, 30, nullptr);
 
     if(!CreateWglContext()) {
         return false;
@@ -184,6 +187,7 @@ bool ContextImpl::Destroy() {
         RemoveActiveInstance(this);
         mGl.reset();
         DestroyWglContext();
+        ::KillTimer(mWindow, 1);
         ::DestroyWindow(mWindow);
         mWindow = nullptr;
 
@@ -290,11 +294,11 @@ void ContextImpl::RunLoop() {
                 quitLoop = true;
             }
         }
-        ContextImpl::RunSingleFrame();
+        //ContextImpl::RunSingleFrame();
         // DwmFlush() waits for the desktop compositor to present whatever it is we've presented (AKA.... vsync!)
-        ::DwmFlush();
+        //::DwmFlush();
         // fixed length sleep
-        //::Sleep(10);
+        ::Sleep(10);
     }
 }
 
@@ -367,20 +371,37 @@ void ContextImpl::RunSingleFrame() {
     }
 }
 
+LRESULT ContextImpl::OnWindowsEvent(HWND hWnd, UINT msg, [[maybe_unused]] WPARAM wParam, [[maybe_unused]] LPARAM lParam) {
+    switch (msg) {
+        case WM_TIMER: {
+            kitgui::win32::ContextImpl::RunSingleFrame();
+            return 0;
+        }
+        case WM_DESTROY: {
+            ContextImpl* instance = FindContextImplForWindow(hWnd);
+            if(instance) {
+                instance->Close();
+            }
+            return 0;
+        }
+    }
+    return 0;
+}
+
 bool ContextImpl::GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
     apiOut = kitgui::WindowApi::Win32;
     isFloatingOut = false;
     return true;
 }
 
-//ContextImpl* ContextImpl::FindContextImplForWindow(SDL_Window* win) {
-//    for (ContextImpl* instance : sActiveInstances) {
-//        if (instance->mWindow == win) {
-//            return instance;
-//        }
-//    }
-//    return nullptr;
-//}
+ContextImpl* ContextImpl::FindContextImplForWindow(HWND win) {
+    for (ContextImpl* instance : sActiveInstances) {
+        if (instance->mWindow == win) {
+            return instance;
+        }
+    }
+    return nullptr;
+}
 
 bool ContextImpl::CreateWglContext() {
     mDeviceContext = ::GetDC(mWindow);
@@ -403,7 +424,7 @@ bool ContextImpl::CreateWglContext() {
         return false;
     }
 
-    mWglContext = wglCreateContext(mDeviceContext);
+    mWglContext = ::wglCreateContext(mDeviceContext);
     return true;
 }
 
