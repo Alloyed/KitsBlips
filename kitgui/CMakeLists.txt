@@ -3,6 +3,10 @@ cmake_policy(SET CMP0048 NEW)
 
 project(kitgui VERSION 0.0.0)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(../content.cmake)
+FetchContent_MakeAvailable(corrade magnum magnum-plugins)
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(KITGUI_USE_WIN32 true)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
@@ -13,11 +17,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     FetchContent_MakeAvailable(SDL3)
     set(KITGUI_USE_SDL true)
 endif()
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include(../content.cmake)
 include(imgui)
-FetchContent_MakeAvailable(corrade magnum magnum-plugins)
 
 add_library(kitgui STATIC)
 set_property(TARGET kitgui PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
