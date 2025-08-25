@@ -19,6 +19,11 @@ function(target_enable_warnings target_name)
     endif()
 endfunction()
 
+function(target_disable_warnings target_name)
+    get_target_property(include_dirs ${target_name} INTERFACE_INCLUDE_DIRECTORIES)
+    set_target_properties(${target_NAME} PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${include_dirs}")
+endfunction()
+
 function(enable_ccache)
     find_program(CCACHE_PROGRAM ccache)
     if(CCACHE_PROGRAM)

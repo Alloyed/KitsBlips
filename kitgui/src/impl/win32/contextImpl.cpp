@@ -10,6 +10,7 @@
 #include <GL/gl.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/Platform/GLContext.h>
+#include <dwmapi.h>
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_win32.h>
@@ -51,37 +52,59 @@ std::string GetLastWinError() {
     // Retrieve the system error message for the last-error code
 
     char* lpMsgBuf;
-    DWORD dw = GetLastError();
+    DWORD dw = ::GetLastError();
     size_t messageSize =
-        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                      dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL);
+        ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
+                      dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, nullptr);
 
     std::string out(lpMsgBuf, messageSize);
     out.insert(0, std::format("Windows error({}): ", dw));
 
-    LocalFree(lpMsgBuf);
+    ::LocalFree(lpMsgBuf);
     return out;
 }
+
+std::string utf16_to_utf8(std::wstring_view wstr) {
+    if (wstr.empty()) {
+        return {};
+    }
+    int32_t size =
+        ::WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int32_t>(wstr.size()), nullptr, 0, nullptr, nullptr);
+    std::string result(size, '\0');
+    ::WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int32_t>(wstr.size()), result.data(), size, nullptr, nullptr);
+    return result;
+}
+
+std::wstring utf8_to_utf16(std::string_view str) {
+    if (str.empty()){
+        return {};
+    }
+    int32_t size = ::MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int32_t>(str.size()), nullptr, 0);
+    std::wstring result(size, L'\0');
+    ::MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int32_t>(str.size()), result.data(), size);
+    return result;
+}
+
 }  // namespace
 
 using namespace Magnum;
 
 namespace kitgui::win32 {
-static constexpr char kClassName [] = "BLEHHH";  // TODO: runtime selectable
+static constexpr wchar_t kClassName [] = L"BLEHHH\0";  // TODO: runtime selectable
 
 void ContextImpl::init() {
     ImGui_ImplWin32_EnableDpiAwareness();
-    WNDCLASS windowClass = {};
+    WNDCLASSW windowClass = {};
     windowClass.lpfnWndProc = WndProc;
     windowClass.cbWndExtra = sizeof(ContextImpl*);
     windowClass.lpszClassName = kClassName;
-    windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+    windowClass.hCursor = ::LoadCursor(nullptr, IDC_ARROW);
     windowClass.style = CS_DBLCLKS;
-    RegisterClass(&windowClass);
+    ::RegisterClassW(&windowClass);
 }
 
 void ContextImpl::deinit() {
-    UnregisterClass(kClassName, NULL);
+    ::UnregisterClassW(kClassName, nullptr);
 }
 
 ContextImpl::ContextImpl(kitgui::Context& ctx) : mContext(ctx) {}
@@ -104,11 +127,11 @@ bool ContextImpl::Create(kitgui::WindowApi api, bool isFloating) {
         windowStyle |= WS_THICKFRAME | WS_MAXIMIZEBOX;
     }
 
-    mWindow = ::CreateWindow(
+    mWindow = ::CreateWindowW(
         // class name
         kClassName,
         // window name (fill in later)
-        "",
+        L"",
         // window style
         windowStyle,
         // window position
@@ -118,11 +141,11 @@ bool ContextImpl::Create(kitgui::WindowApi api, bool isFloating) {
         // parent
         GetDesktopWindow(),
         // menu
-        NULL,
+        nullptr,
         // instance
-        NULL,
+        nullptr,
         // param
-        NULL);
+        nullptr);
     if (mWindow == nullptr) {
         kitgui::log::error(GetLastWinError());
         return false;
@@ -133,7 +156,7 @@ bool ContextImpl::Create(kitgui::WindowApi api, bool isFloating) {
         return false;
     }
 
-    wglMakeCurrent(mDeviceContext, mWglContext);
+    ::wglMakeCurrent(mDeviceContext, mWglContext);
     Magnum::Platform::GLContext::makeCurrent(nullptr);
     mGl = std::make_unique<Magnum::Platform::GLContext>();
     Magnum::Platform::GLContext::makeCurrent(mGl.get());
@@ -194,7 +217,7 @@ bool ContextImpl::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     return true;
 }
 bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height) {
-    return ::SetWindowPos(mWindow, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
+    return ::SetWindowPos(mWindow, nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
 }
 bool ContextImpl::SetParent(const kitgui::WindowRef& parentWindowRef) {
     return ::SetParent(mWindow, static_cast<HWND>(parentWindowRef.ptr));
@@ -206,8 +229,8 @@ bool ContextImpl::SetTransient([[maybe_unused]] const kitgui::WindowRef& transie
     return false;
 }
 void ContextImpl::SuggestTitle(std::string_view title) {
-    std::string titleTemp(title);
-    ::SetWindowText(mWindow, titleTemp.c_str());
+    std::wstring wideTitle = utf8_to_utf16(title);
+    ::SetWindowTextW(mWindow, wideTitle.c_str());
 }
 
 bool ContextImpl::Show() {
@@ -227,7 +250,7 @@ bool ContextImpl::Close() {
 }
 
 void ContextImpl::MakeCurrent() {
-    wglMakeCurrent(mDeviceContext, mWglContext);
+    ::wglMakeCurrent(mDeviceContext, mWglContext);
     if (mImgui) {
         ImGui::SetCurrentContext(mImgui);
     }
@@ -268,7 +291,10 @@ void ContextImpl::RunLoop() {
             }
         }
         ContextImpl::RunSingleFrame();
-        ::Sleep(16);
+        // DwmFlush() waits for the desktop compositor to present whatever it is we've presented (AKA.... vsync!)
+        ::DwmFlush();
+        // fixed length sleep
+        //::Sleep(10);
     }
 }
 
@@ -382,7 +408,7 @@ bool ContextImpl::CreateWglContext() {
 }
 
 void ContextImpl::DestroyWglContext() {
-    wglMakeCurrent(nullptr, nullptr);
+    ::wglMakeCurrent(nullptr, nullptr);
     ::ReleaseDC(mWindow, mDeviceContext);
     mWglContext = nullptr;
     mDeviceContext = nullptr;

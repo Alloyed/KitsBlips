@@ -19,7 +19,6 @@ include(../content.cmake)
 include(imgui)
 FetchContent_MakeAvailable(corrade magnum magnum-plugins)
 
-
 add_library(kitgui STATIC)
 set_property(TARGET kitgui PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
 target_enable_warnings(kitgui)
@@ -53,6 +52,7 @@ target_link_libraries(kitgui PRIVATE
     MagnumPlugins::StbImageImporter
     MagnumPlugins::GltfImporter
 )
+target_disable_warnings(Magnum::Magnum)
 
 if(KITGUI_USE_SDL)
     target_compile_definitions(kitgui PUBLIC KITGUI_USE_SDL)
