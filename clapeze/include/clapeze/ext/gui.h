@@ -76,7 +76,7 @@ class GuiFeature : public BaseFeature {
         return static_cast<const void*>(&value);
     }
 
-    bool Validate(const BasePlugin& plugin) const override {
+    bool Validate([[maybe_unused]] const BasePlugin& plugin) const override {
 #ifdef __linux
         if (plugin.TryGetFeature(CLAP_EXT_TIMER_SUPPORT) == nullptr) {
             plugin.GetHost().Log(LogSeverity::Fatal, "Gui on linux requires CLAP_EXT_TIMER_SUPPORT");

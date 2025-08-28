@@ -13,7 +13,7 @@ class BaseFeature {
     virtual ~BaseFeature() = default;
     virtual const char* Name() const = 0;
     virtual const void* Extension() const = 0;
-    virtual bool Validate(const BasePlugin& plugin) const { return true; }
+    virtual bool Validate([[maybe_unused]] const BasePlugin& plugin) const { return true; }
 
     template <typename TFeature = BaseFeature>
     static TFeature& GetFromPlugin(BasePlugin& plugin);

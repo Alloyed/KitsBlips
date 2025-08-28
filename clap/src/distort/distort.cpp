@@ -1,4 +1,4 @@
-#include "crunch/crunch.h"
+#include "distort/distort.h"
 
 #include <clapeze/effectPlugin.h>
 #include <clapeze/ext/parameterConfigs.h>
@@ -60,11 +60,11 @@ struct clapeze::ParamTraits<Params::Mix> : public clapeze::PercentParam {
 
 using namespace clapeze;
 
-namespace crunch {
+namespace distort {
 
 namespace {
 
-float crunch(Algorithm algorithm, float in) {
+float distort(Algorithm algorithm, float in) {
     switch (algorithm) {
         case Algorithm::HardClip: {
             return kitdsp::clamp(in, -1.0f, 1.0f);
@@ -127,13 +127,13 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
             float rightPre = tonePreRight.Process(right, preTone);
 
             // TODO: different gain curves for different algorithms?
-            float crunchedLeft = crunch(algorithm, leftPre * gain);
-            float crunchedRight = crunch(algorithm, rightPre * gain);
+            float distortedLeft = distort(algorithm, leftPre * gain);
+            float distortedRight = distort(algorithm, rightPre * gain);
 
             // weak post tone
             float postTone = kitdsp::lerpf(0.4f, 0.6f, tonef);
-            float processedLeft = dcLeft.Process(tonePostLeft.Process(crunchedLeft, postTone)) * makeup;
-            float processedRight = dcRight.Process(tonePostRight.Process(crunchedRight, postTone)) * makeup;
+            float processedLeft = dcLeft.Process(tonePostLeft.Process(distortedLeft, postTone)) * makeup;
+            float processedRight = dcRight.Process(tonePostRight.Process(distortedRight, postTone)) * makeup;
 
             // outputs
             out.left[idx] = kitdsp::lerpf(left, processedLeft, mixf);
@@ -151,6 +151,8 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
     }
 
     void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) override {
+        (void)minBlockSize;
+        (void)maxBlockSize;
         float sampleRatef = static_cast<float>(sampleRate);
         tonePreLeft = ToneFilter(sampleRatef);
         tonePreRight = ToneFilter(sampleRatef);
@@ -206,7 +208,7 @@ class Plugin : public EffectPlugin {
     }
 };
 
-const PluginEntry Entry{AudioEffectDescriptor("kitsblips.crunch", "Crunch 2!", "Waveshaping-based distortion"),
+const PluginEntry Entry{AudioEffectDescriptor("kitsblips.distort", "distort 2!", "Waveshaping-based distortion"),
                         [](PluginHost& host) -> BasePlugin* { return new Plugin(host); }};
 
-}  // namespace crunch
+}  // namespace distort

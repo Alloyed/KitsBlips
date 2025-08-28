@@ -5,15 +5,22 @@
 
 #include "clapeze/basePlugin.h"
 
-#include "crunch/crunch.h"
+#include "distort/distort.h"
 #include "snecho/snecho.h"
+#include "chorus/chorus.h"
+#include "freqshift/freqshift.h"
+#include "harmonizer/harmonizer.h"
 
 using namespace clapeze;
 
 namespace PluginFactory {
 
 const std::vector<PluginEntry> plugins{
-    snecho::Entry, crunch::Entry,
+    distort::Entry,
+    snecho::Entry,
+    chorus::Entry,
+    freqshift::Entry,
+    harmonizer::Entry,
     // Add your plugin here!
     // Some hosts seem to store the plugin index alongside the id, so make sure
     // you only ever add to the end of the list.

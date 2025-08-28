@@ -2,6 +2,6 @@
 
 #include "clapeze/basePlugin.h"
 
-namespace crunch {
+namespace distort {
 extern const clapeze::PluginEntry Entry;
 }

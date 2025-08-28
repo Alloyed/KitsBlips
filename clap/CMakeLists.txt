@@ -32,8 +32,11 @@ target_enable_warnings(KitsBlips-lib)
 
 target_sources(KitsBlips-lib PRIVATE
     src/entry.cpp
-    src/crunch/crunch.cpp
+    src/distort/distort.cpp
     src/snecho/snecho.cpp
+    src/chorus/chorus.cpp
+    src/freqshift/freqshift.cpp
+    src/harmonizer/harmonizer.cpp
     src/clapeze/ext/kitgui.cpp
 )
 

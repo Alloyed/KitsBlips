@@ -20,7 +20,7 @@ class BaseProcessor {
      *
      * [main-thread & !active]
      */
-    virtual void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) {};
+    virtual void Activate([[maybe_unused]] double sampleRate, [[maybe_unused]] size_t minBlockSize, [[maybe_unused]] size_t maxBlockSize) {};
     /**
      * Called when the plugin is deactivated.
      *

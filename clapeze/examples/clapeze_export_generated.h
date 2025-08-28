@@ -9,20 +9,20 @@
 #  ifndef CLAPEZE_EXPORT
 #    ifdef clapeze_examples_EXPORTS
         /* We are building this library */
-#      define CLAPEZE_EXPORT __attribute__((visibility("default")))
+#      define CLAPEZE_EXPORT __declspec(dllexport)
 #    else
         /* We are using this library */
-#      define CLAPEZE_EXPORT __attribute__((visibility("default")))
+#      define CLAPEZE_EXPORT __declspec(dllimport)
 #    endif
 #  endif
 
 #  ifndef CLAPEZE_NO_EXPORT
-#    define CLAPEZE_NO_EXPORT __attribute__((visibility("hidden")))
+#    define CLAPEZE_NO_EXPORT 
 #  endif
 #endif
 
 #ifndef CLAPEZE_DEPRECATED
-#  define CLAPEZE_DEPRECATED __attribute__ ((__deprecated__))
+#  define CLAPEZE_DEPRECATED __declspec(deprecated)
 #endif
 
 #ifndef CLAPEZE_DEPRECATED_EXPORT

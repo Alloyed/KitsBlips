@@ -23,7 +23,7 @@ class NotePortsFeature : public BaseFeature {
     }
 
    private:
-    static uint32_t _count(const clap_plugin_t* plugin, bool isInput) {
+    static uint32_t _count([[maybe_unused]] const clap_plugin_t* plugin, bool isInput) {
         if (isInput) {
             return NUM_INPUTS;
         } else {
@@ -31,7 +31,7 @@ class NotePortsFeature : public BaseFeature {
         }
     }
 
-    static bool _get(const clap_plugin_t* plugin, uint32_t index, bool isInput, clap_note_port_info_t* info) {
+    static bool _get([[maybe_unused]] const clap_plugin_t* plugin, uint32_t index, bool isInput, clap_note_port_info_t* info) {
         if (isInput && index < NUM_INPUTS) {
             // input
             info->id = index;

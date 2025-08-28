@@ -40,7 +40,7 @@ bool NumericParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
 
 bool NumericParam::FromText(std::string_view text, double& outRawValue) const {
     double in = std::strtod(text.data(), nullptr);
-    return FromValue(in, outRawValue);
+    return FromValue(static_cast<float>(in), outRawValue);
 }
 
 bool NumericParam::ToValue(double rawValue, float& out) const {
@@ -55,14 +55,14 @@ bool NumericParam::FromValue(float in, double& outRaw) const {
 }
 
 bool PercentParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
-    float displayValue = rawValue * 100.0f;
+    float displayValue = static_cast<float>(rawValue * 100.0f);
     snprintf(outTextBuf.data(), outTextBuf.size(), "%.2f%%", displayValue);
     return true;
 }
 
 bool PercentParam::FromText(std::string_view text, double& outRawValue) const {
     double in = std::strtod(text.data(), nullptr);
-    return FromValue(in / 100.0f, outRawValue);
+    return FromValue(static_cast<float>(in) / 100.0f, outRawValue);
 }
 
 bool IntegerParam::FillInformation(clap_id id, clap_param_info_t* information) const {
@@ -87,6 +87,7 @@ bool IntegerParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
     if (!ToValue(rawValue, value)) {
         return false;
     }
+
     if (!mUnit.empty()) {
         std::string_view unit = mUnit;
         if (rawValue == 1.0 && !mUnitSingular.empty()) {
@@ -94,11 +95,10 @@ bool IntegerParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
         }
         snprintf(outTextBuf.data(), outTextBuf.size(), "%d %s", value, unit.data());
         return true;
-    } else {
-        snprintf(outTextBuf.data(), outTextBuf.size(), "%d", value);
-        return true;
     }
-    return false;
+
+    snprintf(outTextBuf.data(), outTextBuf.size(), "%d", value);
+    return true;
 }
 
 bool IntegerParam::FromText(std::string_view text, double& outRawValue) const {
