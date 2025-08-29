@@ -4,6 +4,8 @@
 #include <clapeze/ext/parameterConfigs.h>
 #include <clapeze/ext/parameters.h>
 #include <kitdsp/math/util.h>
+#include <kitdsp/math/units.h>
+#include <kitdsp/harmonizer.h>
 
 #include "descriptor.h"
 
@@ -15,9 +17,42 @@
 #endif
 
 namespace {
-enum class Params : clap_id { Mix, Count };
+enum class Params : clap_id {
+    Transpose,
+    Finetune,
+    BaseDelay,
+    GrainSize,
+    Feedback,
+    Mix,
+    Count
+};
 using ParamsFeature = clapeze::ParametersFeature<Params>;
 }  // namespace
+
+template <>
+struct clapeze::ParamTraits<Params::Transpose> : public clapeze::IntegerParam {
+    ParamTraits() : clapeze::IntegerParam("Transpose", -12, 12, 12, "semis") {}
+};
+
+template <>
+struct clapeze::ParamTraits<Params::Finetune> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("Fine Tune", -100, 100, 0, "cents") {}
+};
+
+template <>
+struct clapeze::ParamTraits<Params::BaseDelay> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("Base Delay", 0.0f, 1000.0f, 0.0f, "ms") {}
+};
+
+template <>
+struct clapeze::ParamTraits<Params::GrainSize> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("Grain Size", 10, 100, 30, "ms") {}
+};
+
+template <>
+struct clapeze::ParamTraits<Params::Feedback> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("Feedback", 0.0f, 0.95f, 0.0f) {}
+};
 
 template <>
 struct clapeze::ParamTraits<Params::Mix> : public clapeze::PercentParam {
@@ -35,32 +70,57 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
     ~Processor() = default;
 
     void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
+        float transpose = static_cast<float>(mParams.Get<Params::Transpose>());
+        float fine = mParams.Get<Params::Finetune>();
+        float delayMs = mParams.Get<Params::BaseDelay>();
+        float grainSizeMs = mParams.Get<Params::GrainSize>();
+        float feedback = mParams.Get<Params::Feedback>();
         float mixf = mParams.Get<Params::Mix>();
 
+        float shiftRatio = kitdsp::midiToRatio(transpose + (fine * 0.01f));
+
+        mLeft->SetParams(shiftRatio, grainSizeMs, delayMs, feedback);
+        mRight->SetParams(shiftRatio, grainSizeMs, delayMs, feedback);
+
         for (size_t idx = 0; idx < in.left.size(); ++idx) {
-            // in
             float left = in.left[idx];
-            float right = in.right[idx];
-
-            float processedLeft = 0.0f;
-            float processedRight = 0.0f;
-
-            // outputs
+            float processedLeft = mLeft->Process(left);
             out.left[idx] = kitdsp::lerpf(left, processedLeft, mixf);
+        }
+
+        for (size_t idx = 0; idx < in.right.size(); ++idx) {
+            float right = in.right[idx];
+            float processedRight = mRight->Process(right);
             out.right[idx] = kitdsp::lerpf(right, processedRight, mixf);
         }
     }
 
     void ProcessReset() override {
+        mLeft->Reset();
+        mRight->Reset();
     }
 
     void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) override {
         (void)sampleRate;
         (void)minBlockSize;
         (void)maxBlockSize;
+        float sampleRatef = static_cast<float>(sampleRate);
+        constexpr float maxSizeSeconds = 1.0f;
+
+        mBufLen = static_cast<size_t>(sampleRatef * maxSizeSeconds);
+        mBufLeft.reset(new float[mBufLen]);
+        mLeft = std::make_unique<kitdsp::Harmonizer>(etl::span(mBufLeft.get(), mBufLen), sampleRatef);
+        mBufRight.reset(new float[mBufLen]);
+        mRight = std::make_unique<kitdsp::Harmonizer>(etl::span(mBufRight.get(), mBufLen), sampleRatef);
     }
 
    private:
+   // TODO: create resizable span class that doesn't re-alloc in between
+   std::unique_ptr<float[]> mBufLeft;
+   std::unique_ptr<float[]> mBufRight;
+   size_t mBufLen;
+   std::unique_ptr<kitdsp::Harmonizer> mLeft;
+   std::unique_ptr<kitdsp::Harmonizer> mRight;
 };
 
 #if KITSBLIPS_ENABLE_GUI
@@ -88,6 +148,11 @@ class Plugin : public EffectPlugin {
         EffectPlugin::Config();
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
+                                    .Parameter<Params::Transpose>()
+                                    .Parameter<Params::Finetune>()
+                                    .Parameter<Params::BaseDelay>()
+                                    .Parameter<Params::GrainSize>()
+                                    .Parameter<Params::Feedback>()
                                     .Parameter<Params::Mix>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
@@ -97,7 +162,7 @@ class Plugin : public EffectPlugin {
     }
 };
 
-const PluginEntry Entry{AudioEffectDescriptor("kitsblips.harmonizer", "harmonizer", "Plugin description"),
+const PluginEntry Entry{AudioEffectDescriptor("kitsblips.harmonizer", "KitHarmony", "Eventide H910-inspired Harmonizer effect"),
                         [](PluginHost& host) -> BasePlugin* { return new Plugin(host); }};
 
 }  // namespace harmonizer

@@ -51,6 +51,7 @@ class PercentParam : public NumericParam {
    public:
     using _valuetype = float;
     PercentParam(std::string_view mName, float mDefaultValue) : NumericParam(mName, 0.0f, 1.0f, mDefaultValue) {}
+    PercentParam(std::string_view mName, float minValue, float maxValue, float mDefaultValue) : NumericParam(mName, minValue, maxValue, mDefaultValue) {}
 
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override;
     bool FromText(std::string_view text, double& outRawValue) const override;

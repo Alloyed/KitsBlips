@@ -55,7 +55,12 @@ bool NumericParam::FromValue(float in, double& outRaw) const {
 }
 
 bool PercentParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
-    float displayValue = static_cast<float>(rawValue * 100.0f);
+    float displayValue = 0.0f;
+    if (!ToValue(rawValue, displayValue)) {
+        return false;
+    }
+    displayValue *= 100.0f;
+
     snprintf(outTextBuf.data(), outTextBuf.size(), "%.2f%%", displayValue);
     return true;
 }

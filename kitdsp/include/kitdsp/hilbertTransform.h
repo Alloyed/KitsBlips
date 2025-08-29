@@ -130,8 +130,8 @@ struct HilbertTransformMonoFloat {
     }
 
     std::complex<float> stepComplex(float in) {
-        auto [r, i] = stepPair(in);
-        return {r, i};
+        auto pair = stepPair(in);
+        return {pair.first, pair.second};
     }
 };
 }  // namespace kitdsp

@@ -16,7 +16,7 @@ class Chorus {
         /// [0.0f, GetMaxDelay()] delay amount. will be clamped if delayBase + mod goes over a limit.
         float delayModMs = 2.0f;
 
-        /// [0, 1] feedback level. 1 = 100%
+        /// [-1, 1] feedback level. 1 = 100%
         float feedback = 0.0f;
         /// [0, 1] dry/wet mix
         float mix = 0.5f;

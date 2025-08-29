@@ -20,6 +20,7 @@ float_2 Chorus::Process(float_2 in) {
 
     float_2 out{};
 
+    // TODO: moving delayModMs or delayBaseMs results in ugly clicking. probably avoid somehow (slew?)
     float lfoMs = (mLfo.Process() * cfg.delayModMs);
     auto toSamples = [&](float offsetMs) {
         return clamp<float>((cfg.delayBaseMs + offsetMs) * mSampleRate / 1000.0f, 0.0f,

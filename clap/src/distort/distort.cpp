@@ -208,7 +208,7 @@ class Plugin : public EffectPlugin {
     }
 };
 
-const PluginEntry Entry{AudioEffectDescriptor("kitsblips.distort", "distort 2!", "Waveshaping-based distortion"),
+const PluginEntry Entry{AudioEffectDescriptor("kitsblips.distort", "KitsDist", "Waveshaper-based distortion"),
                         [](PluginHost& host) -> BasePlugin* { return new Plugin(host); }};
 
 }  // namespace distort

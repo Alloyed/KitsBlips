@@ -12,7 +12,7 @@ class Harmonizer {
     Harmonizer(etl::span<float> buffer, float sampleRate);
     void Reset();
 
-    void SetParams(float transpose, size_t grainSize);
+    void SetParams(float pitchRatio, float grainSizeMs = 30.0f, float baseDelayMs = 0.0f, float feedback = 0.0f);
 
     float Process(float in);
 
@@ -24,6 +24,10 @@ class Harmonizer {
     DelayLine<float> mDelayLine;
     lfo::Phasor mGrainPhasor;
     float mSampleRate;
+    float mGrainSizeSamples;
+    float mBaseDelaySamples;
+    bool mSlowing;
+    float mFeedback;
     rbj::BiquadFilter<rbj::BiquadFilterMode::LowPass> mFilterOut;
 };
 }  // namespace kitdsp

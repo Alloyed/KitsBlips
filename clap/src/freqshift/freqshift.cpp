@@ -3,10 +3,7 @@
 #include <clapeze/effectPlugin.h>
 #include <clapeze/ext/parameterConfigs.h>
 #include <clapeze/ext/parameters.h>
-#include <kitdsp/dbMeter.h>
-#include <kitdsp/filters/dcBlocker.h>
-#include <kitdsp/filters/onePole.h>
-#include <kitdsp/math/approx.h>
+#include <kitdsp/frequencyShifter.h>
 #include <kitdsp/math/util.h>
 
 #include "descriptor.h"
@@ -19,9 +16,14 @@
 #endif
 
 namespace {
-enum class Params : clap_id { Mix, Count };
+enum class Params : clap_id { Shift, Mix, Count };
 using ParamsFeature = clapeze::ParametersFeature<Params>;
 }  // namespace
+
+template <>
+struct clapeze::ParamTraits<Params::Shift> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("Shift", -1000, 1000, 0, "hz") {}
+};
 
 template <>
 struct clapeze::ParamTraits<Params::Mix> : public clapeze::PercentParam {
@@ -38,32 +40,42 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
     ~Processor() = default;
 
     void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
+        float shift = mParams.Get<Params::Shift>();
         float mixf = mParams.Get<Params::Mix>();
 
+        mLeft->SetFrequencyOffset(shift, mSampleRate);
+        mRight->SetFrequencyOffset(shift, mSampleRate);
+
         for (size_t idx = 0; idx < in.left.size(); ++idx) {
-            // in
             float left = in.left[idx];
-            float right = in.right[idx];
-
-            float processedLeft = 0.0f;
-            float processedRight = 0.0f;
-
-            // outputs
+            float processedLeft = mLeft->Process(left);
             out.left[idx] = kitdsp::lerpf(left, processedLeft, mixf);
+        }
+
+        for (size_t idx = 0; idx < in.right.size(); ++idx) {
+            float right = in.right[idx];
+            float processedRight = mRight->Process(right);
             out.right[idx] = kitdsp::lerpf(right, processedRight, mixf);
         }
     }
 
     void ProcessReset() override {
+        mLeft->Reset();
+        mRight->Reset();
     }
 
     void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) override {
-        (void)sampleRate;
         (void)minBlockSize;
         (void)maxBlockSize;
+        mSampleRate = static_cast<float>(sampleRate);
+        mLeft = std::make_unique<kitdsp::FrequencyShifter>(mSampleRate);
+        mRight = std::make_unique<kitdsp::FrequencyShifter>(mSampleRate);
     }
 
    private:
+   float mSampleRate;
+   std::unique_ptr<kitdsp::FrequencyShifter> mLeft;
+   std::unique_ptr<kitdsp::FrequencyShifter> mRight;
 };
 
 #if KITSBLIPS_ENABLE_GUI
@@ -91,6 +103,7 @@ class Plugin : public EffectPlugin {
         EffectPlugin::Config();
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
+                                    .Parameter<Params::Shift>()
                                     .Parameter<Params::Mix>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
@@ -100,7 +113,7 @@ class Plugin : public EffectPlugin {
     }
 };
 
-const PluginEntry Entry{AudioEffectDescriptor("kitsblips.freqshift", "freqshift 2!", "Waveshaping-based distortion"),
+const PluginEntry Entry{AudioEffectDescriptor("kitsblips.freqshift", "KitFreqsOut", "Bode-style frequency shifter. More useful for sound effects than for pitched instruments."),
                         [](PluginHost& host) -> BasePlugin* { return new Plugin(host); }};
 
 }  // namespace freqshift

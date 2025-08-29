@@ -45,6 +45,7 @@ class Resampler {
                 return cubic(mOutput[0], mOutput[1], mOutput[2], mOutput[3], t);
             };
         }
+        return mOutput[3];
     }
 
    private:

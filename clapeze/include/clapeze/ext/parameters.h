@@ -218,6 +218,7 @@ class ParametersFeature : public BaseFeature {
         }
 
         void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) {
+            (void) processor;
             // Send events queued from us to the host
             // Since these all happened on an independent thread, they do not have sample-accurate timing; we'll just
             // send them at the front of the queue.
@@ -230,8 +231,9 @@ class ParametersFeature : public BaseFeature {
                         event.header.size = sizeof(event);
                         event.header.time = 0;
                         event.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
-                        event.header.type = change.type == ChangeType::StartGesture ? CLAP_EVENT_PARAM_GESTURE_BEGIN
-                                                                                    : CLAP_EVENT_PARAM_GESTURE_END;
+                        event.header.type = static_cast<uint16_t>(change.type == ChangeType::StartGesture
+                                                                      ? CLAP_EVENT_PARAM_GESTURE_BEGIN
+                                                                      : CLAP_EVENT_PARAM_GESTURE_END);
                         event.header.flags = 0;
                         event.param_id = static_cast<clap_id>(change.id);
                         out->try_push(out, &event.header);
@@ -245,7 +247,7 @@ class ParametersFeature : public BaseFeature {
                         event.header.size = sizeof(event);
                         event.header.time = 0;
                         event.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
-                        event.header.type = CLAP_EVENT_PARAM_VALUE;
+                        event.header.type = static_cast<uint16_t>(CLAP_EVENT_PARAM_VALUE);
                         event.header.flags = 0;
                         event.param_id = index;
                         event.cookie = nullptr;
@@ -285,7 +287,7 @@ class ParametersFeature : public BaseFeature {
    private:
     static uint32_t _count(const clap_plugin_t* plugin) {
         ParametersFeature& self = ParametersFeature::GetFromPluginObject<ParametersFeature>(plugin);
-        return self.mNumParams;
+        return static_cast<uint32_t>(self.mNumParams);
     }
     static bool _get_info(const clap_plugin_t* plugin, uint32_t index, clap_param_info_t* information) {
         ParametersFeature& self = ParametersFeature::GetFromPluginObject<ParametersFeature>(plugin);
