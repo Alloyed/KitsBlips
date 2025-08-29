@@ -22,9 +22,19 @@ enum class BiquadFilterMode {
 
 template <BiquadFilterMode MODE>
 class BiquadFilter {
-    public:
+   public:
+    BiquadFilter() {
+        SetFrequency(1200.0f, 44100.0f);
+        SetShelf(0.5f, -6.0f);
+    }
+    inline void Reset() {
+        x[0] = {};
+        x[1] = {};
+        y[0] = {};
+        y[1] = {};
+    }
     /**
-     * Set frequency + resonance.
+     * Set frequency
      * @param frequencyHz in hertz
      * @param sampleRate should be the rate Process() is called at
      */
@@ -35,6 +45,7 @@ class BiquadFilter {
         CalculateCoefficients();
     }
 
+    /* Set Q Factor of the filter. */
     inline void SetQ(float Q_) {
         Q = Q_;
         CalculateCoefficients();
