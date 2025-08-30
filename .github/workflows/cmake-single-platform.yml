@@ -15,7 +15,7 @@ concurrency:
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
-  KITSBLIPS_ENABLE_GUI: OFF
+  KITSBLIPS_ENABLE_GUI: ON
 
 defaults:
   run:
@@ -134,7 +134,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: KitsBlips-VCVRack-${{ matrix.name }}
-          path: "${{github.workspace}}/build/dist" 
+          path: "${{github.workspace}}/build/dist"
 
   build-daisy:
     name: daisy ${{ matrix.name }}
@@ -168,4 +168,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: KitsBlips-Daisy
-          path: "${{github.workspace}}/build/dist" 
+          path: "${{github.workspace}}/build/dist"

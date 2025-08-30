@@ -3,29 +3,22 @@
 #include <clapeze/effectPlugin.h>
 #include <clapeze/ext/parameterConfigs.h>
 #include <clapeze/ext/parameters.h>
-#include <kitdsp/math/util.h>
-#include <kitdsp/math/units.h>
 #include <kitdsp/harmonizer.h>
+#include <kitdsp/math/units.h>
+#include <kitdsp/math/util.h>
 
 #include "descriptor.h"
+#include "gui/debugui.h"
 
 #if KITSBLIPS_ENABLE_GUI
-#include <clapeze/ext/kitgui.h>
+#include <gui/feature.h>
 #include <imgui.h>
 #include <kitgui/app.h>
 #include <kitgui/context.h>
 #endif
 
 namespace {
-enum class Params : clap_id {
-    Transpose,
-    Finetune,
-    BaseDelay,
-    GrainSize,
-    Feedback,
-    Mix,
-    Count
-};
+enum class Params : clap_id { Transpose, Finetune, BaseDelay, GrainSize, Feedback, Mix, Count };
 using ParamsFeature = clapeze::ParametersFeature<Params>;
 }  // namespace
 
@@ -62,7 +55,6 @@ struct clapeze::ParamTraits<Params::Mix> : public clapeze::PercentParam {
 using namespace clapeze;
 
 namespace harmonizer {
-
 
 class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
    public:
@@ -115,12 +107,12 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
     }
 
    private:
-   // TODO: create resizable span class that doesn't re-alloc in between
-   std::unique_ptr<float[]> mBufLeft;
-   std::unique_ptr<float[]> mBufRight;
-   size_t mBufLen;
-   std::unique_ptr<kitdsp::Harmonizer> mLeft;
-   std::unique_ptr<kitdsp::Harmonizer> mRight;
+    // TODO: create resizable span class that doesn't re-alloc in between
+    std::unique_ptr<float[]> mBufLeft;
+    std::unique_ptr<float[]> mBufRight;
+    size_t mBufLen;
+    std::unique_ptr<kitdsp::Harmonizer> mLeft;
+    std::unique_ptr<kitdsp::Harmonizer> mRight;
 };
 
 #if KITSBLIPS_ENABLE_GUI
@@ -128,8 +120,15 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
-        ImGui::Text("UI harmonizer (TODO)");
-        /*mParams.DebugImGui();*/
+        ImGui::Text(
+            "This is a pitch shift effect inspired by the EvenTide H910, the very first realtime pitch shift hardware "
+            "module. This, of course, means the way it achieves this effect is kind of nasty, and not very "
+            "transparent. it's fun when layered with the original signal, or used as a creative effect, though!");
+        kitgui::DebugParam<ParamsFeature, Params::Transpose>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::Finetune>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::BaseDelay>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::GrainSize>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::Feedback>(mParams);
     }
 
    private:
@@ -162,7 +161,8 @@ class Plugin : public EffectPlugin {
     }
 };
 
-const PluginEntry Entry{AudioEffectDescriptor("kitsblips.harmonizer", "KitHarmony", "Eventide H910-inspired Harmonizer effect"),
-                        [](PluginHost& host) -> BasePlugin* { return new Plugin(host); }};
+const PluginEntry Entry{
+    AudioEffectDescriptor("kitsblips.harmonizer", "KitHarmony", "Eventide H910-inspired Harmonizer effect"),
+    [](PluginHost& host) -> BasePlugin* { return new Plugin(host); }};
 
 }  // namespace harmonizer

@@ -4,16 +4,18 @@
 #include "clapeze/ext/parameterConfigs.h"
 #include "clapeze/ext/parameters.h"
 #include "descriptor.h"
+#include "gui/debugui.h"
+#include "imgui.h"
 
-#include <kitdsp/dbMeter.h>
-#include <kitdsp/samplerate/resampler.h>
 #include <kitdsp/apps/snesEcho.h>
 #include <kitdsp/apps/snesEchoFilterPresets.h>
+#include <kitdsp/dbMeter.h>
+#include <kitdsp/samplerate/resampler.h>
 
 #if KITSBLIPS_ENABLE_GUI
 #include <kitgui/app.h>
 #include <kitgui/context.h>
-#include "clapeze/ext/kitgui.h"
+#include "gui/feature.h"
 #endif
 
 namespace {
@@ -30,7 +32,7 @@ enum class Params : clap_id {
     ClearBuffer,
     Count
 };
-using ParamsExt = clapeze::ParametersFeature<Params>;
+using ParamsFeature = clapeze::ParametersFeature<Params>;
 }  // namespace
 
 template <>
@@ -87,9 +89,9 @@ using namespace kitdsp;
 using namespace clapeze;
 
 namespace snecho {
-class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
+class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
    public:
-    explicit Processor(ParamsExt::ProcessParameters& params) : EffectProcessor(params) {}
+    explicit Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
     void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
@@ -157,11 +159,31 @@ class Processor : public EffectProcessor<ParamsExt::ProcessParameters> {
 #if KITSBLIPS_ENABLE_GUI
 class GuiApp : public kitgui::BaseApp {
    public:
-    GuiApp(kitgui::Context& ctx, ParamsExt& params) : kitgui::BaseApp(ctx), mParams(params) {}
-    void OnUpdate() override { /*mParams.DebugImGui();*/ }
+    GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
+    void OnUpdate() override {
+        ImGui::Text(
+            "Snecho is an emulation of the echo effect found in the SPC700 chip, used in the SNES/Super Famicom "
+            "consoles."
+            "It's a pretty normal, if crunchy, delay, but weird effects can be achieved by automating the 'Size' "
+            "Parameter");
+
+        kitgui::DebugParam<ParamsFeature, Params::Mix>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::Size>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::Feedback>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::FilterPreset>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::FreezeEcho>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::ResetHead>(mParams);
+
+        // extensions
+        ImGui::Text("The following parameters would not be available on a real SNES. Consider them bonuses!");
+        kitgui::DebugParam<ParamsFeature, Params::SizeRange>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::EchoDelayMod>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::FilterMix>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::ClearBuffer>(mParams);
+    }
 
    private:
-    ParamsExt& mParams;
+    ParamsFeature& mParams;
 };
 #endif
 
@@ -175,19 +197,19 @@ class Plugin : public EffectPlugin {
     void Config() override {
         EffectPlugin::Config();
 
-        ParamsExt& params = ConfigFeature<ParamsExt>(GetHost(), Params::Count)
-                                .Module("Original")
-                                .Parameter<Params::Mix>()
-                                .Parameter<Params::Size>()
-                                .Parameter<Params::Feedback>()
-                                .Parameter<Params::FilterPreset>()
-                                .Parameter<Params::FreezeEcho>()
-                                .Parameter<Params::ResetHead>()
-                                .Module("Extensions")
-                                .Parameter<Params::SizeRange>()
-                                .Parameter<Params::EchoDelayMod>()
-                                .Parameter<Params::FilterMix>()
-                                .Parameter<Params::ClearBuffer>();
+        ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
+                                    .Module("Original")
+                                    .Parameter<Params::Mix>()
+                                    .Parameter<Params::Size>()
+                                    .Parameter<Params::Feedback>()
+                                    .Parameter<Params::FilterPreset>()
+                                    .Parameter<Params::FreezeEcho>()
+                                    .Parameter<Params::ResetHead>()
+                                    .Module("Extensions")
+                                    .Parameter<Params::SizeRange>()
+                                    .Parameter<Params::EchoDelayMod>()
+                                    .Parameter<Params::FilterMix>()
+                                    .Parameter<Params::ClearBuffer>();
 
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });

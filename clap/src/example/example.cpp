@@ -8,7 +8,7 @@
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI
-#include <clapeze/ext/kitgui.h>
+#include <gui/feature.h>
 #include <imgui.h>
 #include <kitgui/app.h>
 #include <kitgui/context.h>
@@ -50,8 +50,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
         }
     }
 
-    void ProcessReset() override {
-    }
+    void ProcessReset() override {}
 
     void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) override {
         (void)sampleRate;
@@ -86,8 +85,7 @@ class Plugin : public EffectPlugin {
     void Config() override {
         EffectPlugin::Config();
 
-        ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
-                                    .Parameter<Params::Mix>();
+        ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count).Parameter<Params::Mix>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif

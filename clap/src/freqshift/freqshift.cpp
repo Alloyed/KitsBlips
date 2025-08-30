@@ -7,9 +7,10 @@
 #include <kitdsp/math/util.h>
 
 #include "descriptor.h"
+#include "gui/debugui.h"
 
 #if KITSBLIPS_ENABLE_GUI
-#include <clapeze/ext/kitgui.h>
+#include <gui/feature.h>
 #include <imgui.h>
 #include <kitgui/app.h>
 #include <kitgui/context.h>
@@ -73,9 +74,9 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
     }
 
    private:
-   float mSampleRate;
-   std::unique_ptr<kitdsp::FrequencyShifter> mLeft;
-   std::unique_ptr<kitdsp::FrequencyShifter> mRight;
+    float mSampleRate;
+    std::unique_ptr<kitdsp::FrequencyShifter> mLeft;
+    std::unique_ptr<kitdsp::FrequencyShifter> mRight;
 };
 
 #if KITSBLIPS_ENABLE_GUI
@@ -83,8 +84,12 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
-        ImGui::Text("Helooooo");
-        /*mParams.DebugImGui();*/
+        ImGui::Text(
+            "KitFreqsOut shifts the frequencies of the input sound by a fixed hz amount. this is most useful for "
+            "inharmonic sounds; aka sound effects, percussion, etc. Use it on a voice clip to get alien sounds, or "
+            "combine with delays and delay feedback for wacky results!");
+        kitgui::DebugParam<ParamsFeature, Params::Shift>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::Mix>(mParams);
     }
 
    private:
@@ -102,9 +107,8 @@ class Plugin : public EffectPlugin {
     void Config() override {
         EffectPlugin::Config();
 
-        ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
-                                    .Parameter<Params::Shift>()
-                                    .Parameter<Params::Mix>();
+        ParamsFeature& params =
+            ConfigFeature<ParamsFeature>(GetHost(), Params::Count).Parameter<Params::Shift>().Parameter<Params::Mix>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif
@@ -113,7 +117,10 @@ class Plugin : public EffectPlugin {
     }
 };
 
-const PluginEntry Entry{AudioEffectDescriptor("kitsblips.freqshift", "KitFreqsOut", "Bode-style frequency shifter. More useful for sound effects than for pitched instruments."),
-                        [](PluginHost& host) -> BasePlugin* { return new Plugin(host); }};
+const PluginEntry Entry{
+    AudioEffectDescriptor("kitsblips.freqshift",
+                          "KitFreqsOut",
+                          "Bode-style frequency shifter. More useful for sound effects than for pitched instruments."),
+    [](PluginHost& host) -> BasePlugin* { return new Plugin(host); }};
 
 }  // namespace freqshift

@@ -37,7 +37,7 @@ target_sources(KitsBlips-lib PRIVATE
     src/chorus/chorus.cpp
     src/freqshift/freqshift.cpp
     src/harmonizer/harmonizer.cpp
-    src/clapeze/ext/kitgui.cpp
+    src/gui/feature.cpp
 )
 
 target_include_directories(KitsBlips-lib PUBLIC src)

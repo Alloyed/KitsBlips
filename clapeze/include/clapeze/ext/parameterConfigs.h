@@ -27,7 +27,7 @@ namespace clapeze {
  * Represents a numeric value. these are always mapped 0-1 on the DAW side so we can adjust the response curve to the
  * user's taste.
  */
-class NumericParam : public BaseParam {
+struct NumericParam : public BaseParam {
    public:
     using _valuetype = float;
     NumericParam(std::string_view mName, float mMin, float mMax, float mDefaultValue, std::string_view mUnit = "")
@@ -39,7 +39,6 @@ class NumericParam : public BaseParam {
     bool ToValue(double rawValue, float& out) const;
     bool FromValue(float in, double& outRaw) const;
 
-   private:
     const std::string_view mName;
     const float mMin;
     const float mMax;
@@ -47,17 +46,18 @@ class NumericParam : public BaseParam {
     const std::string_view mUnit;
 };
 
-class PercentParam : public NumericParam {
+struct PercentParam : public NumericParam {
    public:
     using _valuetype = float;
     PercentParam(std::string_view mName, float mDefaultValue) : NumericParam(mName, 0.0f, 1.0f, mDefaultValue) {}
-    PercentParam(std::string_view mName, float minValue, float maxValue, float mDefaultValue) : NumericParam(mName, minValue, maxValue, mDefaultValue) {}
+    PercentParam(std::string_view mName, float minValue, float maxValue, float mDefaultValue)
+        : NumericParam(mName, minValue, maxValue, mDefaultValue) {}
 
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override;
     bool FromText(std::string_view text, double& outRawValue) const override;
 };
 
-class DbParam : public NumericParam {
+struct DbParam : public NumericParam {
    public:
     DbParam(std::string_view name, float minValue, float maxValue, float mDefaultValue)
         : NumericParam(name, minValue, maxValue, mDefaultValue, "db") {}
@@ -66,7 +66,7 @@ class DbParam : public NumericParam {
 /**
  * Represents an integer value. handy for managing the counts of things (eg. number of voices)
  */
-class IntegerParam : public BaseParam {
+struct IntegerParam : public BaseParam {
    public:
     using _valuetype = int32_t;
     IntegerParam(std::string_view mName,
@@ -89,7 +89,6 @@ class IntegerParam : public BaseParam {
     bool ToValue(double rawValue, int32_t& out) const;
     bool FromValue(int32_t in, double& outRaw) const;
 
-   private:
     const std::string_view mName;
     const int32_t mMin;
     const int32_t mMax;
@@ -102,7 +101,7 @@ class IntegerParam : public BaseParam {
  * Represents a selection from a fixed set of options. A handy way to represent these is with dropdown values.
  */
 template <typename TEnum>
-class EnumParam : public BaseParam {
+struct EnumParam : public BaseParam {
    public:
     using _valuetype = TEnum;
     EnumParam(std::string_view mName, std::vector<std::string_view> mLabels, TEnum mDefaultValue)
@@ -152,7 +151,6 @@ class EnumParam : public BaseParam {
         return true;
     }
 
-   private:
     const std::string_view mName;
     const std::vector<std::string_view> mLabels;
     const TEnum mDefaultValue;
@@ -162,7 +160,7 @@ enum class OnOff : uint8_t { Off, On };
 /**
  * Represents a boolean on/off selection
  */
-class OnOffParam : public EnumParam<OnOff> {
+struct OnOffParam : public EnumParam<OnOff> {
    public:
     OnOffParam(std::string_view name, OnOff defaultValue) : EnumParam(name, {"Off", "On"}, defaultValue) {}
 };

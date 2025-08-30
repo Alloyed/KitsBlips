@@ -18,7 +18,7 @@
 
 namespace clapeze {
 
-class BaseParam {
+struct BaseParam {
    public:
     virtual ~BaseParam() = default;
     virtual bool FillInformation(clap_id id, clap_param_info_t* information) const = 0;
@@ -28,8 +28,6 @@ class BaseParam {
 
     const std::string& GetModule() const { return mModule; }
     void SetModule(std::string_view module) { mModule = module; }
-
-   private:
     std::string mModule;
 };
 
@@ -106,13 +104,13 @@ class ParametersFeature : public BaseFeature {
     }
 
     template <Id id>
-    const typename ParamTraits<id>::_paramtype* GetSpecificParam() const {
-        using ParamType = typename ParamTraits<id>::_paramtype;
+    const ParamTraits<id>* GetSpecificParam() const {
+        using TParam = ParamTraits<id>;
         clap_id index = static_cast<clap_id>(id);
         if (index >= mState.size()) {
             return nullptr;
         }
-        return static_cast<const ParamType*>(mParams[index].get());
+        return static_cast<const TParam*>(mParams[index].get());
     }
 
     double GetRaw(Id id) const {
@@ -218,7 +216,7 @@ class ParametersFeature : public BaseFeature {
         }
 
         void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) {
-            (void) processor;
+            (void)processor;
             // Send events queued from us to the host
             // Since these all happened on an independent thread, they do not have sample-accurate timing; we'll just
             // send them at the front of the queue.

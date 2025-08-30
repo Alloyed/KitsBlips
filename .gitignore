@@ -7,3 +7,4 @@ build
 .DS_Store
 imgui.ini
 CMakePresets.json
+clapeze/examples/clapeze_export_generated.h

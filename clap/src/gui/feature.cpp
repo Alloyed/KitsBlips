@@ -1,5 +1,5 @@
 #if KITSBLIPS_ENABLE_GUI
-#include "clapeze/ext/kitgui.h"
+#include "gui/feature.h"
 
 #include "clapeze/ext/gui.h"
 #include "kitgui/context.h"

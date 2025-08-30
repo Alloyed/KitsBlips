@@ -10,9 +10,10 @@
 #include <kitdsp/math/util.h>
 
 #include "descriptor.h"
+#include "gui/debugui.h"
 
 #if KITSBLIPS_ENABLE_GUI
-#include <clapeze/ext/kitgui.h>
+#include <gui/feature.h>
 #include <imgui.h>
 #include <kitgui/app.h>
 #include <kitgui/context.h>
@@ -175,8 +176,11 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
-        ImGui::Text("Helooooo");
-        /*mParams.DebugImGui();*/
+        kitgui::DebugParam<ParamsFeature, Params::Algorithm>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::Gain>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::Tone>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::Makeup>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::Mix>(mParams);
     }
 
    private:

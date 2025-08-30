@@ -3,28 +3,22 @@
 #include <clapeze/effectPlugin.h>
 #include <clapeze/ext/parameterConfigs.h>
 #include <clapeze/ext/parameters.h>
+#include <kitdsp/apps/chorus.h>
 #include <kitdsp/math/approx.h>
 #include <kitdsp/math/util.h>
-#include <kitdsp/apps/chorus.h>
 
 #include "descriptor.h"
+#include "gui/debugui.h"
 
 #if KITSBLIPS_ENABLE_GUI
-#include <clapeze/ext/kitgui.h>
+#include <gui/feature.h>
 #include <imgui.h>
 #include <kitgui/app.h>
 #include <kitgui/context.h>
 #endif
 
 namespace {
-enum class Params : clap_id {
-    Rate,
-    Depth,
-    Delay,
-    Feedback,
-    Mix,
-    Count
-};
+enum class Params : clap_id { Rate, Depth, Delay, Feedback, Mix, Count };
 using ParamsFeature = clapeze::ParametersFeature<Params>;
 }  // namespace
 
@@ -78,9 +72,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
         }
     }
 
-    void ProcessReset() override {
-        mChorus->Reset();
-    }
+    void ProcessReset() override { mChorus->Reset(); }
 
     void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) override {
         (void)minBlockSize;
@@ -94,9 +86,9 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
     }
 
    private:
-   std::unique_ptr<float[]> mBuf;
-   size_t mBufLen;
-   std::unique_ptr<kitdsp::Chorus> mChorus;
+    std::unique_ptr<float[]> mBuf;
+    size_t mBufLen;
+    std::unique_ptr<kitdsp::Chorus> mChorus;
 };
 
 #if KITSBLIPS_ENABLE_GUI
@@ -104,8 +96,12 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
-        ImGui::Text("Example");
-        /*mParams.DebugImGui();*/
+        ImGui::Text("KitsChorus is currently based on the Juno-60 chorus algorithm. More algorithms Soon(tm), maybe?");
+        kitgui::DebugParam<ParamsFeature, Params::Rate>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::Depth>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::Delay>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::Feedback>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::Mix>(mParams);
     }
 
    private:
