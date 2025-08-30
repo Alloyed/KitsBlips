@@ -120,7 +120,7 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
-        ImGui::Text(
+        ImGui::TextWrapped(
             "This is a pitch shift effect inspired by the EvenTide H910, the very first realtime pitch shift hardware "
             "module. This, of course, means the way it achieves this effect is kind of nasty, and not very "
             "transparent. it's fun when layered with the original signal, or used as a creative effect, though!");
@@ -162,7 +162,7 @@ class Plugin : public EffectPlugin {
 };
 
 const PluginEntry Entry{
-    AudioEffectDescriptor("kitsblips.harmonizer", "KitHarmony", "Eventide H910-inspired Harmonizer effect"),
+    AudioEffectDescriptor("kitsblips.harmonizer", "KitsHarmony", "Eventide H910-inspired Harmonizer effect"),
     [](PluginHost& host) -> BasePlugin* { return new Plugin(host); }};
 
 }  // namespace harmonizer

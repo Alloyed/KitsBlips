@@ -96,7 +96,8 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
-        ImGui::Text("KitsChorus is currently based on the Juno-60 chorus algorithm. More algorithms Soon(tm), maybe?");
+        ImGui::TextWrapped(
+            "KitsChorus is currently based on the Juno-60 chorus algorithm. More algorithms Soon(tm), maybe?");
         kitgui::DebugParam<ParamsFeature, Params::Rate>(mParams);
         kitgui::DebugParam<ParamsFeature, Params::Depth>(mParams);
         kitgui::DebugParam<ParamsFeature, Params::Delay>(mParams);
@@ -133,7 +134,7 @@ class Plugin : public EffectPlugin {
     }
 };
 
-const PluginEntry Entry{AudioEffectDescriptor("kitsblips.chorus", "KitChorus", "2-voice Chorus effect."),
+const PluginEntry Entry{AudioEffectDescriptor("kitsblips.chorus", "KitsChorus", "2-voice Chorus effect."),
                         [](PluginHost& host) -> BasePlugin* { return new Plugin(host); }};
 
 }  // namespace chorus

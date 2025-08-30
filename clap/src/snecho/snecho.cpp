@@ -7,6 +7,7 @@
 #include "gui/debugui.h"
 #include "imgui.h"
 
+#include <etl/memory.h>
 #include <kitdsp/apps/snesEcho.h>
 #include <kitdsp/apps/snesEchoFilterPresets.h>
 #include <kitdsp/dbMeter.h>
@@ -30,6 +31,8 @@ enum class Params : clap_id {
     EchoDelayMod,
     FilterMix,
     ClearBuffer,
+    Bypass,
+    StereoMode,
     Count
 };
 using ParamsFeature = clapeze::ParametersFeature<Params>;
@@ -38,6 +41,11 @@ using ParamsFeature = clapeze::ParametersFeature<Params>;
 template <>
 struct clapeze::ParamTraits<Params::Mix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Mix", 0.5f) {}
+};
+
+template <>
+struct clapeze::ParamTraits<Params::Bypass> : public clapeze::OnOffParam {
+    ParamTraits() : clapeze::OnOffParam("Bypass", OnOff::Off) {}
 };
 
 template <>
@@ -85,6 +93,11 @@ struct clapeze::ParamTraits<Params::ClearBuffer> : public clapeze::OnOffParam {
     ParamTraits() : clapeze::OnOffParam("Clear Buffer", OnOff::Off) {}
 };
 
+template <>
+struct clapeze::ParamTraits<Params::StereoMode> : public clapeze::OnOffParam {
+    ParamTraits() : clapeze::OnOffParam("Stereo Mode", OnOff::Off) {}
+};
+
 using namespace kitdsp;
 using namespace clapeze;
 
@@ -95,65 +108,96 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
     ~Processor() = default;
 
     void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
-        // inputs
-        // core
-        snes1.cfg.echoBufferSize = mParams.Get<Params::Size>();
-
-        snes1.cfg.echoFeedback = mParams.Get<Params::Feedback>();
-
-        size_t filterPreset = mParams.Get<Params::FilterPreset>();
-        if (filterPreset != mLastFilterPreset) {
-            mLastFilterPreset = filterPreset;
-            memcpy(snes1.cfg.filterCoefficients, SNES::kFilterPresets[filterPreset].data, SNES::kFIRTaps);
-            // snes1.cfg.filterGain = dbToRatio(-SNES::kFilterPresets[filterPreset].maxGainDb);
-        }
-
-        int32_t range = mParams.Get<Params::SizeRange>();
-        if (range == 0) {
-            snes1.cfg.echoBufferRangeMaxSamples = SNES::kOriginalMaxEchoSamples;
-        } else if (range == 1) {
-            snes1.cfg.echoBufferRangeMaxSamples = SNES::kExtremeMaxEchoSamples;
+        bool bypass = mParams.Get<Params::Bypass>() == OnOff::On;
+        bool stereoMode = mParams.Get<Params::StereoMode>() == OnOff::On;
+        if (bypass) {
+            etl::mem_copy(in.left.begin(), in.left.end(), out.left.data());
+            etl::mem_copy(in.right.begin(), in.right.end(), out.right.data());
+        } else if (stereoMode) {
+            mLeft.ProcessAudio(mParams, in.left, out.left);
+            mRight.ProcessAudio(mParams, in.right, out.right);
         } else {
-            snes1.cfg.echoBufferRangeMaxSamples = SNES::MsToSamples(10000.0f);
-        }
-
-        float wetDryMix = mParams.Get<Params::Mix>();
-
-        snes1.cfg.freezeEcho = mParams.Get<Params::FreezeEcho>() == OnOff::On;
-
-        // extension
-        snes1.cfg.echoDelayMod = mParams.Get<Params::EchoDelayMod>();
-
-        snes1.cfg.filterMix = mParams.Get<Params::FilterMix>();
-
-        snes1.mod.clearBuffer = mParams.Get<Params::ClearBuffer>() == OnOff::On;
-        snes1.mod.resetHead = mParams.Get<Params::ResetHead>() == OnOff::On;
-        snes1.cfg.echoBufferIncrementSamples = SNES::kOriginalEchoIncrementSamples;
-
-        // processing
-        for (size_t idx = 0; idx < in.left.size(); ++idx) {
-            float drySignal = in.left[idx];
-            float wetSignal = snesSampler.Process<kitdsp::interpolate::InterpolationStrategy::None>(
-                drySignal, [this](float in, float& out) { out = snes1.Process(in * 0.5f) * 2.0f; });
-
-            // outputs
-            out.left[idx] = lerpf(drySignal, wetSignal, wetDryMix);
-            out.right[idx] = lerpf(drySignal, wetSignal, wetDryMix);
+            mLeft.ProcessAudio(mParams, in.left, out.left);
+            etl::mem_copy(out.left.begin(), out.left.end(), out.right.data());
         }
     }
 
-    void ProcessReset() override { snes1.Reset(); }
+    void ProcessReset() override {
+        mLeft.ProcessReset();
+        mRight.ProcessReset();
+    }
 
     void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) override {
-        snesSampler = {SNES::kOriginalSampleRate, static_cast<float>(sampleRate)};
+        (void)minBlockSize;
+        (void)maxBlockSize;
+        mLeft.Activate(sampleRate);
+        mRight.Activate(sampleRate);
     }
 
    private:
-    static constexpr size_t snesBufferSize = 7680UL * 10000;
-    int16_t snesBuffer1[snesBufferSize];
-    size_t mLastFilterPreset;
-    kitdsp::SNES::Echo snes1{snesBuffer1, snesBufferSize};
-    kitdsp::Resampler<float> snesSampler{kitdsp::SNES::kOriginalSampleRate, 41000};
+    struct Channel {
+        void ProcessAudio(ParamsFeature::ProcessParameters& mParams,
+                          const etl::span<float>& in,
+                          etl::span<float>& out) {
+            // inputs
+            // core
+            snes1.cfg.echoBufferSize = mParams.Get<Params::Size>();
+
+            snes1.cfg.echoFeedback = mParams.Get<Params::Feedback>();
+
+            size_t filterPreset = mParams.Get<Params::FilterPreset>();
+            if (filterPreset != mLastFilterPreset) {
+                mLastFilterPreset = filterPreset;
+                memcpy(snes1.cfg.filterCoefficients, SNES::kFilterPresets[filterPreset].data, SNES::kFIRTaps);
+                // snes1.cfg.filterGain = dbToRatio(-SNES::kFilterPresets[filterPreset].maxGainDb);
+            }
+
+            int32_t range = mParams.Get<Params::SizeRange>();
+            if (range == 0) {
+                snes1.cfg.echoBufferRangeMaxSamples = SNES::kOriginalMaxEchoSamples;
+            } else if (range == 1) {
+                snes1.cfg.echoBufferRangeMaxSamples = SNES::kExtremeMaxEchoSamples;
+            } else {
+                snes1.cfg.echoBufferRangeMaxSamples = SNES::MsToSamples(10000.0f);
+            }
+
+            float wetDryMix = mParams.Get<Params::Mix>();
+
+            snes1.cfg.freezeEcho = mParams.Get<Params::FreezeEcho>() == OnOff::On;
+
+            // extension
+            snes1.cfg.echoDelayMod = mParams.Get<Params::EchoDelayMod>();
+
+            snes1.cfg.filterMix = mParams.Get<Params::FilterMix>();
+
+            snes1.mod.clearBuffer = mParams.Get<Params::ClearBuffer>() == OnOff::On;
+            snes1.mod.resetHead = mParams.Get<Params::ResetHead>() == OnOff::On;
+            snes1.cfg.echoBufferIncrementSamples = SNES::kOriginalEchoIncrementSamples;
+
+            // processing
+            for (size_t idx = 0; idx < in.size(); ++idx) {
+                float drySignal = in[idx];
+                float wetSignal = snesSampler.Process<kitdsp::interpolate::InterpolationStrategy::None>(
+                    drySignal, [this](float in, float& out) { out = snes1.Process(in * 0.5f) * 2.0f; });
+
+                // outputs
+                out[idx] = lerpf(drySignal, wetSignal, wetDryMix);
+            }
+        }
+
+        void ProcessReset() { snes1.Reset(); }
+
+        void Activate(double sampleRate) { snesSampler = {SNES::kOriginalSampleRate, static_cast<float>(sampleRate)}; }
+
+        static constexpr size_t snesBufferSize = 7680UL * 10000;
+        int16_t snesBuffer1[snesBufferSize];
+        kitdsp::SNES::Echo snes1{snesBuffer1, snesBufferSize};
+        kitdsp::Resampler<float> snesSampler{kitdsp::SNES::kOriginalSampleRate, 41000};
+        size_t mLastFilterPreset;
+    };
+
+    Channel mLeft;
+    Channel mRight;
 };
 
 #if KITSBLIPS_ENABLE_GUI
@@ -161,11 +205,11 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
-        ImGui::Text(
-            "Snecho is an emulation of the echo effect found in the SPC700 chip, used in the SNES/Super Famicom "
-            "consoles."
+        ImGui::TextWrapped(
+            "With Snecho, I have created an emulation of the echo effect found in the SPC700 chip, used in the "
+            "SNES/Super Famicom consoles."
             "It's a pretty normal, if crunchy, delay, but weird effects can be achieved by automating the 'Size' "
-            "Parameter");
+            "Parameter.");
 
         kitgui::DebugParam<ParamsFeature, Params::Mix>(mParams);
         kitgui::DebugParam<ParamsFeature, Params::Size>(mParams);
@@ -175,7 +219,8 @@ class GuiApp : public kitgui::BaseApp {
         kitgui::DebugParam<ParamsFeature, Params::ResetHead>(mParams);
 
         // extensions
-        ImGui::Text("The following parameters would not be available on a real SNES. Consider them bonuses!");
+        ImGui::TextWrapped("The following parameters would not be available on a real SNES. Consider them bonuses!");
+        kitgui::DebugParam<ParamsFeature, Params::Bypass>(mParams);
         kitgui::DebugParam<ParamsFeature, Params::SizeRange>(mParams);
         kitgui::DebugParam<ParamsFeature, Params::EchoDelayMod>(mParams);
         kitgui::DebugParam<ParamsFeature, Params::FilterMix>(mParams);
@@ -206,6 +251,8 @@ class Plugin : public EffectPlugin {
                                     .Parameter<Params::FreezeEcho>()
                                     .Parameter<Params::ResetHead>()
                                     .Module("Extensions")
+                                    .Parameter<Params::Bypass>()
+                                    .Parameter<Params::StereoMode>()
                                     .Parameter<Params::SizeRange>()
                                     .Parameter<Params::EchoDelayMod>()
                                     .Parameter<Params::FilterMix>()

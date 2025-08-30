@@ -50,6 +50,12 @@ void DebugParam(TParamsFeature& feature) {
     if (DebugParam(*(feature.template GetSpecificParam<id>()), raw)) {
         feature.SetRaw(id, raw);
     }
+    if (ImGui::IsItemActivated()) {
+        feature.StartGesture(id);
+    }
+    if (ImGui::IsItemDeactivated()) {
+        feature.StopGesture(id);
+    }
 }
 }  // namespace kitgui
 

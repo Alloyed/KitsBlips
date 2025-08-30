@@ -66,7 +66,7 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
-        ImGui::Text("UI example (TODO)");
+        ImGui::TextWrapped("UI example (TODO)");
         /*mParams.DebugImGui();*/
     }
 
