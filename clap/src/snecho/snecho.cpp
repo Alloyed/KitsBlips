@@ -4,8 +4,6 @@
 #include "clapeze/ext/parameterConfigs.h"
 #include "clapeze/ext/parameters.h"
 #include "descriptor.h"
-#include "gui/debugui.h"
-#include "imgui.h"
 
 #include <etl/memory.h>
 #include <kitdsp/apps/snesEcho.h>
@@ -14,8 +12,10 @@
 #include <kitdsp/samplerate/resampler.h>
 
 #if KITSBLIPS_ENABLE_GUI
+#include <imgui.h>
 #include <kitgui/app.h>
 #include <kitgui/context.h>
+#include "gui/debugui.h"
 #include "gui/feature.h"
 #endif
 

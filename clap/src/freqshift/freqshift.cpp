@@ -7,13 +7,13 @@
 #include <kitdsp/math/util.h>
 
 #include "descriptor.h"
-#include "gui/debugui.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <gui/feature.h>
 #include <imgui.h>
 #include <kitgui/app.h>
 #include <kitgui/context.h>
+#include "gui/debugui.h"
 #endif
 
 namespace {

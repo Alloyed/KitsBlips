@@ -100,7 +100,7 @@ class InstrumentPlugin : public BasePlugin {
         ConfigFeature<NotePortsFeature<1, 0>>();
         ConfigFeature<StereoAudioPortsFeature<0, 1>>();
         ConfigFeature<StateFeature>();
-        TryConfigFeature<TimerSupportFeature>(GetHost());
+        // TryConfigFeature<TimerSupportFeature>(GetHost());
     }
 };
 }  // namespace clapeze

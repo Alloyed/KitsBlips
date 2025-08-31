@@ -61,7 +61,7 @@ class EffectPlugin : public BasePlugin {
     void Config() override {
         ConfigFeature<StereoAudioPortsFeature<1, 1>>();
         ConfigFeature<StateFeature>();
-        TryConfigFeature<TimerSupportFeature>(GetHost());
+        // TryConfigFeature<TimerSupportFeature>(GetHost());
     }
 };
 }  // namespace clapeze

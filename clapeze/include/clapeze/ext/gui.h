@@ -78,10 +78,10 @@ class GuiFeature : public BaseFeature {
 
     bool Validate([[maybe_unused]] const BasePlugin& plugin) const override {
 #ifdef __linux
-        if (plugin.TryGetFeature(CLAP_EXT_TIMER_SUPPORT) == nullptr) {
-            plugin.GetHost().Log(LogSeverity::Fatal, "Gui on linux requires CLAP_EXT_TIMER_SUPPORT");
-            return false;
-        }
+        // if (plugin.TryGetFeature(CLAP_EXT_TIMER_SUPPORT) == nullptr) {
+        //     plugin.GetHost().Log(LogSeverity::Fatal, "Gui on linux requires CLAP_EXT_TIMER_SUPPORT");
+        //     return false;
+        // }
 #endif
         return true;
     }
