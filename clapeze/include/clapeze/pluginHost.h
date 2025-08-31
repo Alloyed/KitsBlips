@@ -43,6 +43,12 @@ class PluginHost {
     /** Add a message to the host's log */
     void Log(LogSeverity severity, const std::string& message) const;
 
+    /** requests that the host restarts the plugin next chance it gets. */
+    void RequestRestart() const;
+
+    /** requests that the host activates the processing thread the next chance it gets. */
+    void RequestProcess() const;
+
     /** requests that the host calls Plugin.OnMainThread() next chance it gets. */
     void RequestCallback() const;
 

@@ -24,7 +24,8 @@ void Context::deinit() {
     Impl::deinit();
 }
 
-Context::Context(Context::AppFactory fn) : mCreateAppFn(std::move(fn)), mImpl(std::make_unique<Impl>(*this)) {}
+Context::Context(Context::AppFactory fn)
+    : mCreateAppFn(std::move(fn)), mApp(nullptr), mImpl(std::make_unique<Impl>(*this)) {}
 
 bool Context::Create(kitgui::WindowApi api, bool isFloating) {
     if (!mImpl->Create(api, isFloating)) {

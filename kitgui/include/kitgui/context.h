@@ -84,8 +84,8 @@ class Context {
 
     AppFactory mCreateAppFn;
     SizeConfig mSizeConfig{};
-    std::unique_ptr<BaseApp> mApp = nullptr;
-    std::unique_ptr<Impl> mImpl = nullptr;
+    std::unique_ptr<BaseApp> mApp;
+    std::unique_ptr<Impl> mImpl;
 };
 
 }  // namespace kitgui

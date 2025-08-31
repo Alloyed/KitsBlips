@@ -4,6 +4,7 @@
 #include "clapeze/common.h"
 #include "clapeze/ext/audioPorts.h"
 #include "clapeze/ext/state.h"
+#include "clapeze/ext/timerSupport.h"
 
 namespace clapeze {
 
@@ -57,9 +58,10 @@ class EffectPlugin : public BasePlugin {
     ~EffectPlugin() = default;
 
    protected:
-    virtual void Config() override {
+    void Config() override {
         ConfigFeature<StereoAudioPortsFeature<1, 1>>();
         ConfigFeature<StateFeature>();
+        TryConfigFeature<TimerSupportFeature>(GetHost());
     }
 };
 }  // namespace clapeze

@@ -106,13 +106,21 @@ void PluginHost::LogSupportMatrix() const {
     printf("%s\n", ss.str().c_str());
 }
 
+void PluginHost::RequestRestart() const {
+    mHost->request_restart(mHost);
+}
+
+void PluginHost::RequestProcess() const {
+    mHost->request_process(mHost);
+}
+
 void PluginHost::RequestCallback() const {
     mHost->request_callback(mHost);
 }
 
 PluginHost::TimerId PluginHost::AddTimer(uint32_t periodMs, PluginHost::TimerFn fn) {
     if (mTimer) {
-        TimerId id;
+        TimerId id{};
         mTimer->register_timer(mHost, periodMs, &id);
         mActiveTimers.emplace(id, fn);
         return id;
