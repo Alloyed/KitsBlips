@@ -60,11 +60,15 @@ if(KITGUI_USE_SDL)
         src/impl/sdl/contextImpl.cpp
     )
     target_link_libraries(kitgui PRIVATE
-        X11::X11
-        X11::Xutil
         SDL3::SDL3
         imgui_opengl_sdl3
     )
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_link_libraries(kitgui PRIVATE
+            X11::X11
+            X11::Xutil
+        )
+    endif()
 elseif(KITGUI_USE_WIN32)
     target_compile_definitions(kitgui PUBLIC KITGUI_USE_WIN32)
     target_sources(kitgui PRIVATE
