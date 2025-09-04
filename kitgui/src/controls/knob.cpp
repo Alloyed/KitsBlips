@@ -1,4 +1,4 @@
-#include "imguiHelpers/knob.h"
+#include "controls/knob.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -95,4 +95,4 @@ bool knob(const char* id, const KnobConfig& knobConfig, double& rawValueInOut) {
     return value_changed;
 }
 
-}  // namespace kitgui
+}  // namespace kitgui::ImGuiHelpers

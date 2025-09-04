@@ -1,8 +1,6 @@
 #pragma once
 
 #include <Magnum/Magnum.h>
-#include <Magnum/Math/Color.h>
-#include <Magnum/Platform/GLContext.h>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -12,13 +10,15 @@
 
 struct ImGuiContext;
 
+#if KITGUI_USE_SDL
 namespace kitgui::sdl {
 class ContextImpl;
 }
-
+#elif KITGUI_USE_WIN32
 namespace kitgui::win32 {
 class ContextImpl;
 }
+#endif
 
 namespace kitgui {
 class BaseApp;

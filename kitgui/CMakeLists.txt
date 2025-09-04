@@ -31,8 +31,9 @@ target_sources(kitgui PRIVATE
     src/gfx/lights.cpp
     src/gfx/materials.cpp
     src/gfx/meshes.cpp
-    src/imguiHelpers/knob.cpp
-    src/imguiHelpers/domWrappers.cpp
+    src/controls/knob.cpp
+    src/dom/domWrappers.cpp
+    src/immediateMode/immediateMode.cpp
 )
 
 target_include_directories(kitgui PUBLIC include)

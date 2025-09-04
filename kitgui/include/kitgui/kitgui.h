@@ -1,8 +1,6 @@
 #pragma once
 
 namespace kitgui {
-void init();
-void deinit();
 enum class WindowApi { Any, Win32, Cocoa, X11, Wayland };
 struct WindowRef {
     WindowApi api;

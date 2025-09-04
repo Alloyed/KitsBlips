@@ -1,7 +1,7 @@
 #include "kitgui/dom.h"
 
 #include <imgui.h>
-#include "imguiHelpers/knob.h"
+#include "controls/knob.h"
 
 namespace kitgui {
 std::shared_ptr<DomKnob> DomKnob::Create() {

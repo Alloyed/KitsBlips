@@ -13,7 +13,7 @@
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl3.h>
 #include <algorithm>
-#include "imguiHelpers/misc.h"
+#include "immediateMode/misc.h"
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
 #include "log.h"

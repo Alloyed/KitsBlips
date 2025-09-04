@@ -8,7 +8,7 @@
 namespace kitgui::log {
 inline void rawlog(std::string_view message, std::source_location loc = std::source_location::current()) {
     std::cout << "[KITGUI](" << loc.file_name() << ":" << loc.line() << " " << loc.function_name() << "): " << message
-              << std::endl;
+              << '\n';
 }
 inline void info(std::string_view message, std::source_location loc = std::source_location::current()) {
     rawlog(message, loc);
@@ -20,7 +20,6 @@ inline void verbose(std::string_view message, std::source_location loc = std::so
     rawlog(message, loc);
 }
 }  // namespace kitgui::log
-
 
 template <>
 struct std::formatter<Corrade::Containers::String> : std::formatter<std::string_view> {

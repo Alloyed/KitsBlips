@@ -4,7 +4,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <string_view>
 
 namespace kitgui {
 using Vector2 = Magnum::Vector2;  // TODO: replace?
@@ -69,7 +68,7 @@ class DomScene : public DomNode {
         std::string scenePath{};
     };
     static std::shared_ptr<DomScene> Create();
-    ~DomScene();
+    ~DomScene() override;
 
     const Props& GetProps() const;
     void SetProps(const Props& props);
@@ -91,7 +90,7 @@ class DomKnob : public DomNode {
         std::string sceneAnchor{};
     };
     static std::shared_ptr<DomKnob> Create();
-    ~DomKnob();
+    ~DomKnob() override;
     const Props& GetProps() const;
     void SetProps(const Props& props);
     void Update() override;

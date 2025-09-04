@@ -1,8 +1,8 @@
 #include "kitgui/context.h"
 
-#include <Magnum/GL/DefaultFramebuffer.h>
-#include <Magnum/Platform/GLContext.h>
+#include <cstdint>
 #include <memory>
+#include <string_view>
 #include <utility>
 #include "kitgui/kitgui.h"
 
