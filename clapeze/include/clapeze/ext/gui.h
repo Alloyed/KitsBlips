@@ -67,13 +67,13 @@ class GuiFeature : public BaseFeature {
     static constexpr auto NAME = CLAP_EXT_GUI;
     const char* Name() const override { return NAME; }
 
-    const void* Extension() const override {
+    void Configure(BasePlugin& self) override {
         static const clap_plugin_gui_t value = {
             &_is_api_supported, &_get_preferred_api, &_create,           &_destroy,     &_set_scale,
             &_get_size,         &_can_resize,        &_get_resize_hints, &_adjust_size, &_set_size,
             &_set_parent,       &_set_transient,     &_suggest_title,    &_show,        &_hide,
         };
-        return static_cast<const void*>(&value);
+        self.RegisterExtension(NAME, static_cast<const void*>(&value));
     }
 
     bool Validate([[maybe_unused]] const BasePlugin& plugin) const override {

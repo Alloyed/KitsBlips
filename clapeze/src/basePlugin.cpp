@@ -20,6 +20,21 @@ const BaseFeature* BasePlugin::TryGetFeature(const char* name) const {
         return nullptr;
     }
 }
+bool BasePlugin::RegisterExtension(const char* name, const void* ptr) {
+    if (mExtensions.contains(name)) {
+        // no system for stacking extensions
+        return false;
+    }
+    mExtensions.emplace(name, ptr);
+    return true;
+}
+const void* BasePlugin::TryGetExtension(const char* name) {
+    if (auto search = mExtensions.find(name); search != mExtensions.end()) {
+        return search->second;
+    } else {
+        return nullptr;
+    }
+}
 
 PluginHost& BasePlugin::GetHost() {
     return mHost;
@@ -39,8 +54,8 @@ bool BasePlugin::ValidateConfig() {
                   "mProcessor is null. did you forget to call ConfigProcessor() in your Config method?");
         return false;
     }
-    for (const auto& [_, extension] : mFeatures) {
-        if (!extension->Validate(*this)) {
+    for (const auto& [_, feature] : mFeatures) {
+        if (!feature->Validate(*this)) {
             return false;
         }
     }
@@ -144,8 +159,7 @@ clap_process_status BasePlugin::_process(const clap_plugin* plugin, const clap_p
 
 const void* BasePlugin::_get_extension(const clap_plugin* plugin, const char* name) {
     BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
-    const BaseFeature* extension = self.TryGetFeature(name);
-    return extension != nullptr ? extension->Extension() : nullptr;
+    return self.TryGetExtension(name);
 }
 
 void BasePlugin::_on_main_thread(const clap_plugin* plugin) {

@@ -64,11 +64,11 @@ class ParametersFeature : public BaseFeature {
     static constexpr auto NAME = CLAP_EXT_PARAMS;
     const char* Name() const override { return NAME; }
 
-    const void* Extension() const override {
+    void Configure(BasePlugin& self) override {
         static const clap_plugin_params_t value = {
             &_count, &_get_info, &_get_value, &_value_to_text, &_text_to_value, &_flush,
         };
-        return static_cast<const void*>(&value);
+        self.RegisterExtension(NAME, static_cast<const void*>(&value));
     }
 
     ParametersFeature(PluginHost& host, Id numParams)

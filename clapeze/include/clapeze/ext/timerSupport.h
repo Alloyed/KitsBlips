@@ -12,12 +12,11 @@ class TimerSupportFeature : public BaseFeature {
     explicit TimerSupportFeature(PluginHost& host) : BaseFeature() {}
     static constexpr auto NAME = CLAP_EXT_TIMER_SUPPORT;
     const char* Name() const override { return NAME; }
-
-    const void* Extension() const override {
+    void Configure(BasePlugin& self) override {
         static const clap_plugin_timer_support_t value = {
             &_on_timer,
         };
-        return static_cast<const void*>(&value);
+        self.RegisterExtension(NAME, static_cast<const void*>(&value));
     }
 
    private:

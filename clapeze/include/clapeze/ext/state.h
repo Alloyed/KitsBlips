@@ -15,13 +15,12 @@ class StateFeature : public BaseFeature {
    public:
     static constexpr auto NAME = CLAP_EXT_STATE;
     const char* Name() const override { return NAME; }
-
-    const void* Extension() const override {
+    void Configure(BasePlugin& self) override {
         static const clap_plugin_state_t value = {
             &_save,
             &_load,
         };
-        return static_cast<const void*>(&value);
+        self.RegisterExtension(NAME, static_cast<const void*>(&value));
     }
 
     bool Validate(const BasePlugin& plugin) const override {

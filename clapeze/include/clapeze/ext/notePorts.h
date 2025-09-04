@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstdio>
 
+#include "clapeze/basePlugin.h"
 #include "clapeze/ext/baseFeature.h"
 
 namespace clapeze {
@@ -14,12 +15,12 @@ class NotePortsFeature : public BaseFeature {
     static constexpr auto NAME = CLAP_EXT_NOTE_PORTS;
     const char* Name() const override { return NAME; }
 
-    const void* Extension() const override {
+    void Configure(BasePlugin& self) override {
         static const clap_plugin_note_ports_t value = {
             &_count,
             &_get,
         };
-        return static_cast<const void*>(&value);
+        self.RegisterExtension(NAME, static_cast<const void*>(&value));
     }
 
    private:
@@ -31,7 +32,10 @@ class NotePortsFeature : public BaseFeature {
         }
     }
 
-    static bool _get([[maybe_unused]] const clap_plugin_t* plugin, uint32_t index, bool isInput, clap_note_port_info_t* info) {
+    static bool _get([[maybe_unused]] const clap_plugin_t* plugin,
+                     uint32_t index,
+                     bool isInput,
+                     clap_note_port_info_t* info) {
         if (isInput && index < NUM_INPUTS) {
             // input
             info->id = index;

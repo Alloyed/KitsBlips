@@ -60,6 +60,10 @@ class BasePlugin {
 
     BaseFeature* TryGetFeature(const char* name);
     const BaseFeature* TryGetFeature(const char* name) const;
+
+    bool RegisterExtension(const char* name, const void* ptr);
+    const void* TryGetExtension(const char* name);
+
     BaseProcessor& GetProcessor() const;
     PluginHost& GetHost();
     const PluginHost& GetHost() const;
@@ -68,6 +72,7 @@ class BasePlugin {
    private:
     std::unique_ptr<clap_plugin_t> mPlugin;
     std::unordered_map<std::string, std::unique_ptr<BaseFeature>> mFeatures;
+    std::unordered_map<std::string, const void*> mExtensions;
     PluginHost& mHost;
     std::unique_ptr<BaseProcessor> mProcessor;
 
@@ -93,12 +98,13 @@ TFeature& BasePlugin::ConfigFeature(TArgs&&... args) {
     const char* name = ptr->Name();
     TFeature* out = ptr.get();
     mFeatures.emplace(name, std::move(ptr));
+    out->Configure(*this);
     return *out;
 }
 
 template <typename TFeature, typename... TArgs>
 TFeature* BasePlugin::TryConfigFeature(TArgs&&... args) {
-    if (GetHost().SupportsExtension(TFeature::NAME)) {
+    if (GetHost().HostSupportsExtension(TFeature::NAME)) {
         return &ConfigFeature<TFeature>(std::forward<TArgs>(args)...);
     }
     return nullptr;

@@ -31,7 +31,7 @@ class PluginHost {
 
     template <typename TFeature>
     bool TryGetFeature(const char* extensionName, const clap_host_t*& hostOut, const TFeature*& extOut) const;
-    bool SupportsExtension(const char* extensionName) const;
+    bool HostSupportsExtension(const char* extensionName) const;
 
     void LogSupportMatrix() const;
 

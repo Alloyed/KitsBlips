@@ -14,7 +14,7 @@ PluginHost::PluginHost(const clap_host_t* host)
       mTimer(static_cast<const clap_host_timer_support_t*>(host->get_extension(host, CLAP_EXT_TIMER_SUPPORT))),
       mGui(static_cast<const clap_host_gui_t*>(host->get_extension(host, CLAP_EXT_GUI))) {}
 
-bool PluginHost::SupportsExtension(const char* extensionName) const {
+bool PluginHost::HostSupportsExtension(const char* extensionName) const {
     const void* ext = mHost->get_extension(mHost, extensionName);
     return ext != nullptr;
 }
@@ -88,10 +88,10 @@ void PluginHost::LogSupportMatrix() const {
     ss << "Name,Status,Host\n";
     // data
     for (const auto& x : cStandardExtensions) {
-        ss << x << "," << (SupportsExtension(x) ? "Supported" : "Not Supported") << "," << hostString << "\n";
+        ss << x << "," << (HostSupportsExtension(x) ? "Supported" : "Not Supported") << "," << hostString << "\n";
     }
     for (const auto& x : cDraftExtensions) {
-        ss << x << "," << (SupportsExtension(x) ? "Supported" : "Not Supported") << "," << hostString << "\n";
+        ss << x << "," << (HostSupportsExtension(x) ? "Supported" : "Not Supported") << "," << hostString << "\n";
     }
 
     /*
