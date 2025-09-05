@@ -32,6 +32,7 @@ class PluginHost {
     template <typename TFeature>
     bool TryGetFeature(const char* extensionName, const clap_host_t*& hostOut, const TFeature*& extOut) const;
     bool HostSupportsExtension(const char* extensionName) const;
+    static const void* TryGetExtension(const char* name);
 
     void LogSupportMatrix() const;
 
@@ -60,6 +61,7 @@ class PluginHost {
 
    private:
     void OnTimer(TimerId id) const;
+    static void _on_timer(const clap_plugin_t* plugin, clap_id timerId);
     const clap_host_t* mHost;
     const clap_host_thread_check_t* mThreadCheck;
     const clap_host_log_t* mLog;

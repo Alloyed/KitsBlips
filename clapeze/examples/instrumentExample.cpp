@@ -1,6 +1,5 @@
-#include "sines/sines.h"
-
 #include <clapeze/common.h>
+#include <clapeze/entryPoint.h>
 #include <clapeze/ext/parameterConfigs.h>
 #include <clapeze/ext/parameters.h>
 #include <clapeze/instrumentPlugin.h>
@@ -8,6 +7,7 @@
 
 #include <cmath>
 #include <numbers>
+#include "clapeze/basePlugin.h"
 #include "descriptor.h"
 
 namespace {
@@ -113,9 +113,11 @@ class Plugin : public clapeze::InstrumentPlugin {
                                     .Parameter<Params::Polyphony>();
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }
+
+   private:
+    static clapeze::RegisterPlugin p;
 };
-
-const clapeze::PluginEntry Entry{AudioInstrumentDescriptor("kitsblips.sines", "Sines", "a simple sine wave synth"),
-                                 [](clapeze::PluginHost& host) -> clapeze::BasePlugin* { return new Plugin(host); }};
-
+clapeze::RegisterPlugin Plugin::p(clapeze::PluginEntry{
+    AudioInstrumentDescriptor("kitsblips.sines", "Sines", "a simple sine wave synth"),
+    [](clapeze::PluginHost& host) -> clapeze::BasePlugin* { return new Plugin(host); }});
 }  // namespace sines

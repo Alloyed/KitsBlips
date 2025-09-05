@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstdio>
 #include <sstream>
+#include "clapeze/basePlugin.h"
 namespace clapeze {
 
 PluginHost::PluginHost(const clap_host_t* host)
@@ -139,6 +140,22 @@ void PluginHost::CancelTimer(PluginHost::TimerId id) {
         mActiveTimers.erase(id);
         mTimer->unregister_timer(mHost, id);
     }
+}
+
+const void* PluginHost::TryGetExtension(const char* name) {
+    if (std::string_view(name) == CLAP_EXT_TIMER_SUPPORT) {
+        static const clap_plugin_timer_support_t value = {
+            &_on_timer,
+        };
+        return static_cast<const void*>(&value);
+    } else {
+        return nullptr;
+    }
+}
+
+void PluginHost::_on_timer(const clap_plugin_t* plugin, clap_id timerId) {
+    BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
+    self.GetHost().OnTimer(timerId);
 }
 
 }  // namespace clapeze

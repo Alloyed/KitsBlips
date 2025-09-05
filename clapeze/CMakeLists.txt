@@ -13,6 +13,7 @@ target_enable_warnings(clapeze)
 target_sources(clapeze PRIVATE
     src/basePlugin.cpp
     src/pluginHost.cpp
+    src/entryPoint.cpp
     src/ext/parameterConfigs.cpp
 )
 
@@ -39,8 +40,8 @@ if(PROJECT_IS_TOP_LEVEL)
 
     target_sources(clapeze-examples PRIVATE
         examples/entry.cpp
-        examples/sines/sines.cpp
-        examples/crunch/crunch.cpp
+        examples/instrumentExample.cpp
+        examples/effectExample.cpp
     )
 
     target_include_directories(clapeze-examples PRIVATE examples)

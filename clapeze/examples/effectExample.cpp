@@ -1,6 +1,5 @@
-#include "crunch/crunch.h"
-
 #include <clapeze/effectPlugin.h>
+#include <clapeze/entryPoint.h>
 #include <clapeze/ext/parameterConfigs.h>
 #include <clapeze/ext/parameters.h>
 #include "descriptor.h"
@@ -81,8 +80,8 @@ class Plugin : public clapeze::EffectPlugin {
     }
 };
 
-const clapeze::PluginEntry Entry{
-    AudioEffectDescriptor("kitsblips.crunch", "Crunch", "A SNES-inspired mono delay effect"),
-    [](clapeze::PluginHost& host) -> clapeze::BasePlugin* { return new Plugin(host); }};
+const clapeze::RegisterPlugin p(
+    {AudioEffectDescriptor("kitsblips.crunch", "Crunch", "A SNES-inspired mono delay effect"),
+     [](clapeze::PluginHost& host) -> clapeze::BasePlugin* { return new Plugin(host); }});
 
 }  // namespace crunch

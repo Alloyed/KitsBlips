@@ -8,7 +8,6 @@
 #include "clapeze/ext/audioPorts.h"
 #include "clapeze/ext/notePorts.h"
 #include "clapeze/ext/state.h"
-#include "clapeze/ext/timerSupport.h"
 
 namespace clapeze {
 
@@ -96,11 +95,10 @@ class InstrumentPlugin : public BasePlugin {
 
    protected:
     // impl
-    virtual void Config() override {
+    void Config() override {
         ConfigFeature<NotePortsFeature<1, 0>>();
         ConfigFeature<StereoAudioPortsFeature<0, 1>>();
         ConfigFeature<StateFeature>();
-        // TryConfigFeature<TimerSupportFeature>(GetHost());
     }
 };
 }  // namespace clapeze
