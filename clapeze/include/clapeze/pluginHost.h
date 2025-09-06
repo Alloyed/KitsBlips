@@ -29,10 +29,10 @@ class PluginHost {
 
     explicit PluginHost(const clap_host_t* host);
 
-    template <typename TFeature>
-    bool TryGetFeature(const char* extensionName, const clap_host_t*& hostOut, const TFeature*& extOut) const;
+    template <typename TExtension>
+    bool TryGetExtension(const char* extensionName, const clap_host_t*& hostOut, const TExtension*& extOut) const;
     bool HostSupportsExtension(const char* extensionName) const;
-    static const void* TryGetExtension(const char* name);
+    static const void* TryGetPluginExtension(const char* name);
 
     void LogSupportMatrix() const;
 
@@ -66,12 +66,13 @@ class PluginHost {
     const clap_host_thread_check_t* mThreadCheck;
     const clap_host_log_t* mLog;
     const clap_host_timer_support_t* mTimer;
-    const clap_host_gui_t* mGui;
     std::unordered_map<TimerId, TimerFn> mActiveTimers;
 };
 
 template <typename TFeature>
-bool PluginHost::TryGetFeature(const char* extensionName, const clap_host_t*& hostOut, const TFeature*& extOut) const {
+bool PluginHost::TryGetExtension(const char* extensionName,
+                                 const clap_host_t*& hostOut,
+                                 const TFeature*& extOut) const {
     extOut = static_cast<const TFeature*>(mHost->get_extension(mHost, extensionName));
     if (extOut) {
         hostOut = mHost;

@@ -12,8 +12,7 @@ PluginHost::PluginHost(const clap_host_t* host)
     : mHost(host),
       mThreadCheck(static_cast<const clap_host_thread_check_t*>(host->get_extension(host, CLAP_EXT_THREAD_CHECK))),
       mLog(static_cast<const clap_host_log_t*>(host->get_extension(host, CLAP_EXT_LOG))),
-      mTimer(static_cast<const clap_host_timer_support_t*>(host->get_extension(host, CLAP_EXT_TIMER_SUPPORT))),
-      mGui(static_cast<const clap_host_gui_t*>(host->get_extension(host, CLAP_EXT_GUI))) {}
+      mTimer(static_cast<const clap_host_timer_support_t*>(host->get_extension(host, CLAP_EXT_TIMER_SUPPORT))) {}
 
 bool PluginHost::HostSupportsExtension(const char* extensionName) const {
     const void* ext = mHost->get_extension(mHost, extensionName);
@@ -142,7 +141,7 @@ void PluginHost::CancelTimer(PluginHost::TimerId id) {
     }
 }
 
-const void* PluginHost::TryGetExtension(const char* name) {
+const void* PluginHost::TryGetPluginExtension(const char* name) {
     if (std::string_view(name) == CLAP_EXT_TIMER_SUPPORT) {
         static const clap_plugin_timer_support_t value = {
             &_on_timer,

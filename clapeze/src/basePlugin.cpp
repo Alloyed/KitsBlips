@@ -32,7 +32,7 @@ const void* BasePlugin::TryGetExtension(const char* name) {
     if (auto search = mExtensions.find(name); search != mExtensions.end()) {
         return search->second;
     } else {
-        return PluginHost::TryGetExtension(name);
+        return PluginHost::TryGetPluginExtension(name);
     }
 }
 

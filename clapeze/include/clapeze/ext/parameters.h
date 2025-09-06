@@ -136,7 +136,7 @@ class ParametersFeature : public BaseFeature {
     void RequestClear(Id id, clap_param_clear_flags flags = CLAP_PARAM_CLEAR_ALL) {
         const clap_host_t* rawHost = nullptr;
         const clap_host_params_t* rawHostParams = nullptr;
-        if (mHost.TryGetFeature(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
+        if (mHost.TryGetExtension(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
             clap_id index = static_cast<clap_id>(id);
             rawHostParams->clear(rawHost, index, flags);
         }
@@ -145,7 +145,7 @@ class ParametersFeature : public BaseFeature {
     void RequestRescan(clap_param_rescan_flags flags = CLAP_PARAM_RESCAN_ALL) {
         const clap_host_t* rawHost = nullptr;
         const clap_host_params_t* rawHostParams = nullptr;
-        if (mHost.TryGetFeature(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
+        if (mHost.TryGetExtension(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
             rawHostParams->rescan(rawHost, flags);
         }
     }
@@ -161,7 +161,7 @@ class ParametersFeature : public BaseFeature {
     void RequestFlushIfNotProcessing() {
         const clap_host_t* rawHost{};
         const clap_host_params_t* rawHostParams{};
-        if (mHost.TryGetFeature(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
+        if (mHost.TryGetExtension(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
             rawHostParams->request_flush(rawHost);
         }
     }

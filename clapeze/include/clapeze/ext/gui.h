@@ -68,7 +68,8 @@ class GuiFeature : public BaseFeature {
     const char* Name() const override { return NAME; }
 
     void Configure(BasePlugin& self) override {
-        static const clap_plugin_gui_t value = {
+        self.GetHost().TryGetFeature(const char* extensionName, const clap_host_t*& hostOut,
+                                     const TFeature*& extOut) static const clap_plugin_gui_t value = {
             &_is_api_supported, &_get_preferred_api, &_create,           &_destroy,     &_set_scale,
             &_get_size,         &_can_resize,        &_get_resize_hints, &_adjust_size, &_set_size,
             &_set_parent,       &_set_transient,     &_suggest_title,    &_show,        &_hide,
