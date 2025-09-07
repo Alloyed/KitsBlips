@@ -12,7 +12,6 @@ class BaseFeature {
    public:
     virtual ~BaseFeature() = default;
     virtual const char* Name() const = 0;
-    // virtual const void* Extension() const = 0;
     virtual void Configure(BasePlugin& self) = 0;
     virtual bool Validate([[maybe_unused]] const BasePlugin& plugin) const { return true; }
 

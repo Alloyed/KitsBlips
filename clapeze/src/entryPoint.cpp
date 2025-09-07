@@ -3,6 +3,7 @@
 #include <cstring>
 #include "clap/factory/preset-discovery.h"
 #include "clapeze/ext/presets.h"
+#include "physfs.h"
 
 namespace clapeze {
 
@@ -70,6 +71,9 @@ const clap_preset_discovery_factory_t value = {_count, _get_descriptor, _create}
 
 namespace EntryPoint {
 bool _init(const char* path) {
+    PHYSFS_init(path);
+    // add dll to mount path
+    PHYSFS_mount(path, nullptr, 0);
     auto& plugins = RegisterPlugin::sPlugins;
     // TODO: is this really necessary? plugins will be loaded on dll-init in an arbitrary order, but does anything
     // downstream actually care about plugin order?
@@ -77,7 +81,9 @@ bool _init(const char* path) {
               [](const auto& left, const auto& right) { return std::strcmp(left.meta.id, right.meta.id) < 0; });
     return true;
 }
-void _deinit() {}
+void _deinit() {
+    PHYSFS_deinit();
+}
 const void* _get_factory(const char* factoryId) {
     if (std::string_view(CLAP_PLUGIN_FACTORY_ID) == factoryId) {
         return &PluginFactory::value;

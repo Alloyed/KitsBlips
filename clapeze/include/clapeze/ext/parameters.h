@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <format>
 #include <memory>
 #include <string_view>
 #include <type_traits>
@@ -69,6 +70,16 @@ class ParametersFeature : public BaseFeature {
             &_count, &_get_info, &_get_value, &_value_to_text, &_text_to_value, &_flush,
         };
         self.RegisterExtension(NAME, static_cast<const void*>(&value));
+    }
+
+    bool Validate(const BasePlugin& self) const override {
+        for (size_t index = 0; index < mNumParams; index++) {
+            if (mParams[index].get() == nullptr) {
+                self.GetHost().Log(LogSeverity::Fatal, std::format("Missing configuration for parameter {}", index));
+                return false;
+            }
+        }
+        return true;
     }
 
     ParametersFeature(PluginHost& host, Id numParams)
