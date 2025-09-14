@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="12.022666666666666mm" height="12.022666666666666mm" viewBox="0 0 142 142" version="1.1" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <defs>
+        <linearGradient id="_Linear1" x1="0" y1="0" x2="1" y2="0" gradientUnits="userSpaceOnUse" gradientTransform="matrix(8.6786e-15,141.726,-141.732,8.67821e-15,70.8664,1.43221e-11)"><stop offset="0" style="stop-color:rgb(73,141,52);stop-opacity:1" /><stop offset="1" style="stop-color:rgb(39,95,19);stop-opacity:1" /></linearGradient>
+        <linearGradient id="_Linear2" x1="0" y1="0" x2="1" y2="0" gradientUnits="userSpaceOnUse" gradientTransform="matrix(2.51645e-15,41.0949,-41.0968,2.51634e-15,70.5683,16.9768)"><stop offset="0" style="stop-color:rgb(253,253,255);stop-opacity:0.8" /><stop offset="1" style="stop-color:rgb(252,254,255);stop-opacity:0" /></linearGradient>
+    </defs>
+<ellipse cx="70.866" cy="70.863" rx="70.866" ry="70.863" style="fill:url(#_Linear1);" />
+    <ellipse cx="70.568" cy="37.527" rx="32.957" ry="20.548" style="fill:url(#_Linear2);" />
+    </svg>

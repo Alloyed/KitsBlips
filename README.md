@@ -32,7 +32,7 @@ $ cmake --build .
 $ cmake --install . --prefix dist
 $ cp -r dist/* ~/.local/share/Rack2/plugins/lin-x64/
 # or
-$ cp -r dist/* $LOCALAPPDATA/Rack2/plugins/win-x64/
+$ cp -r dist/* $LOCALAPPDATA/Rack2/plugins-win-x64/
 ```
 
 ### CLAP

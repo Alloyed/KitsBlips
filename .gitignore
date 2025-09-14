@@ -8,3 +8,4 @@ build
 imgui.ini
 CMakePresets.json
 clapeze/examples/clapeze_export_generated.h
+*~lock~

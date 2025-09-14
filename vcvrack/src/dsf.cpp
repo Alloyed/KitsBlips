@@ -21,6 +21,20 @@ struct NKK2 : app::SvgSwitch {
     }
 };
 
+struct Davies1900hForestKnob : Davies1900hKnob {
+	Davies1900hForestKnob() {
+		setSvg(Svg::load(asset::plugin(pluginInstance,"res/Davies1900hForest.svg")));
+		bg->setSvg(Svg::load(asset::plugin(pluginInstance,"res/Davies1900hForest_bg.svg")));
+	}
+};
+
+struct Davies1900hChocoKnob : Davies1900hKnob {
+	Davies1900hChocoKnob() {
+		setSvg(Svg::load(asset::plugin(pluginInstance,"res/Davies1900hChoco.svg")));
+		bg->setSvg(Svg::load(asset::plugin(pluginInstance,"res/Davies1900hChoco_bg.svg")));
+	}
+};
+
 // we need one secret -1 and +1 ratio for the fine tune knob
 static constexpr float cModulatorRatios[] = {0.0f, 0.25f, 0.5f, 1.f, 2.f, 3.f, 4.f, 5.f, 10.0f};
 static constexpr float cNumRatios = sizeof(cModulatorRatios) - 2.0f;
@@ -194,7 +208,7 @@ struct Dsf : Module {
 struct DsfWidget : ModuleWidget {
     DsfWidget(Dsf* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/dsf.svg")));
+        setPanel(createPanel(asset::plugin(pluginInstance, "res/DSF_Oscillator.svg")));
 
         addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
         addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
@@ -202,11 +216,11 @@ struct DsfWidget : ModuleWidget {
         addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
         addParam(createParamCentered<NKK2>(mm2px(Vec(55.239, 29.905)), module, Dsf::MOD_MODE_PARAM));
-        addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(35.414, 31.587)), module, Dsf::MOD_COARSE_PARAM));
-        addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(13.026, 31.956)), module, Dsf::COARSE_PARAM));
-        addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(35.613, 51.719)), module, Dsf::MOD_FINE_PARAM));
-        addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(55.873, 51.719)), module, Dsf::LEVEL_PARAM));
-        addParam(createParamCentered<Davies1900hBlackKnob>(mm2px(Vec(11.775, 52.419)), module, Dsf::FINE_PARAM));
+        addParam(createParamCentered<Davies1900hChocoKnob>(mm2px(Vec(35.414, 31.587)), module, Dsf::MOD_COARSE_PARAM));
+        addParam(createParamCentered<Davies1900hForestKnob>(mm2px(Vec(13.026, 31.956)), module, Dsf::COARSE_PARAM));
+        addParam(createParamCentered<Davies1900hChocoKnob>(mm2px(Vec(35.613, 51.719)), module, Dsf::MOD_FINE_PARAM));
+        addParam(createParamCentered<Davies1900hChocoKnob>(mm2px(Vec(55.873, 51.719)), module, Dsf::LEVEL_PARAM));
+        addParam(createParamCentered<Davies1900hForestKnob>(mm2px(Vec(11.775, 52.419)), module, Dsf::FINE_PARAM));
         addParam(createParamCentered<Trimpot>(mm2px(Vec(11.777, 72.881)), module, Dsf::FM_PARAM));
         addParam(createParamCentered<Trimpot>(mm2px(Vec(35.667, 72.881)), module, Dsf::MOD_FM_PARAM));
         addParam(createParamCentered<Trimpot>(mm2px(Vec(56.075, 72.881)), module, Dsf::LEVEL_CV_PARAM));
