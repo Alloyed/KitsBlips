@@ -82,85 +82,7 @@ class BiquadFilter {
     }
 
    private:
-    inline void CalculateCoefficients() {
-        if constexpr (MODE == kitdsp::rbj::BiquadFilterMode::LowPass) {
-            // H(s) = 1 / (s^2 + s/Q + 1)
-            float alpha = sin_w0 / (2.0f * Q);
-            float a0 = 1.0f + alpha;
-
-            b0 = ((1.0f - cos_w0) / 2.0f) / a0;
-            b1 = (1.0f - cos_w0) / a0;
-            b2 = ((1.0f - cos_w0) / 2.0f) / a0;
-            a1 = (-2.0f * cos_w0) / a0;
-            a2 = (1.0f - alpha) / a0;
-
-        } else if constexpr (MODE == kitdsp::rbj::BiquadFilterMode::Highpass) {
-            // H(s) = s^2 / (s^2 + s/Q + 1)
-            float alpha = sin_w0 / (2.0f * Q);
-            float a0 = 1.0f + alpha;
-
-            b0 = ((1.0f + cos_w0) / 2.0f) / a0;
-            b1 = -(1.0f + cos_w0) / a0;
-            b2 = ((1.0f + cos_w0) / 2.0f) / a0;
-            a1 = (-2.0f * cos_w0) / a0;
-            a2 = (1.0f - alpha) / a0;
-
-        } else if constexpr (MODE == kitdsp::rbj::BiquadFilterMode::BandPass) {
-            // H(s) = s / (s^2 + s/Q + 1)  (constant skirt gain, peak gain = Q)
-            float alpha = sin_w0 / (2.0f * Q);
-            float a0 = 1 + alpha;
-
-            b0 = (sin_w0 / 2.0f) / a0;
-            b1 = 0.0f;
-            b2 = (-sin_w0 / 2.0f) / a0;
-            a1 = (-2.0f * cos_w0) / a0;
-            a2 = (1.0f - alpha) / a0;
-
-        } else if constexpr (MODE == kitdsp::rbj::BiquadFilterMode::Notch) {
-            // H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
-            float alpha = sin_w0 / (2.0f * Q);
-            float a0 = 1.0f + alpha;
-
-            b0 = 1.0f / a0;
-            b1 = (-2.0f * cos_w0) / a0;
-            b2 = b0;
-            a1 = b1;
-            a2 = (1.0f - alpha) / a0;
-
-        } else if constexpr (MODE == kitdsp::rbj::BiquadFilterMode::AllPass) {
-            // H(s) = (s^2 - s/Q + 1) / (s^2 + s/Q + 1)
-            float alpha = sin_w0 / (2.0f * Q);
-            float a0 = 1 + alpha;
-
-            b0 = (1.0f - alpha) / a0;
-            b1 = (-2.0f * cos_w0) / a0;
-            b2 = 1.0f;  // (1+alpha) / a0
-            a1 = b1;
-            a2 = b0;
-        } else if constexpr (MODE == kitdsp::rbj::BiquadFilterMode::LowShelf) {
-            // H(s) = A * (s^2 + (sqrt(A)/Q)*s + A)/(A*s^2 + (sqrt(A)/Q)*s + 1)
-            float alpha = sin_w0 / (2.0f * Q);
-            float twoSqrtAAlpha = 2.0f * std::sqrt(A) * alpha;
-            float a0 = A_p_1 + A_m_1 * cos_w0 + twoSqrtAAlpha;
-
-            b0 = A * (A_p_1 - A_m_1 * cos_w0 + twoSqrtAAlpha) / a0;
-            b1 = 2.0f * A * (A_m_1 - A_p_1 * cos_w0) / a0;
-            b2 = A * (A_p_1 - A_m_1 * cos_w0 - twoSqrtAAlpha) / a0;
-            a1 = -2.0f * (A_m_1 + A_p_1 * cos_w0) / a0;
-            a2 = (A_p_1 + A_m_1 * cos_w0 - twoSqrtAAlpha) / a0;
-        } else if constexpr (MODE == kitdsp::rbj::BiquadFilterMode::HighShelf) {
-            // H(s) = A * (A*s^2 + (sqrt(A)/Q)*s + 1)/(s^2 + (sqrt(A)/Q)*s + A)
-            float alpha = sin_w0 / (2.0f * Q);
-            float twoSqrtAAlpha = 2.0f * std::sqrt(A) * alpha;
-            float a0 = A_p_1 - A_m_1 * cos_w0 + twoSqrtAAlpha;
-
-            b0 = A * (A_p_1 + A_m_1 * cos_w0 + twoSqrtAAlpha) / a0;
-            b1 = -2.0f * A * (A_m_1 + A_p_1 * cos_w0) / a0;
-            b2 = A * (A_p_1 + A_m_1 * cos_w0 - twoSqrtAAlpha) / a0;
-            a1 = 2.0f * (A_m_1 - A_p_1 * cos_w0) / a0;
-            a2 = (A_p_1 - A_m_1 * cos_w0 - twoSqrtAAlpha) / a0;
-        }
-    }
+    void CalculateCoefficients();
 
     // inputs
     float cos_w0;
@@ -181,5 +103,93 @@ class BiquadFilter {
     float x[2];
     float y[2];
 };
+
+template <>
+inline void BiquadFilter<BiquadFilterMode::LowPass>::CalculateCoefficients() {
+    // H(s) = 1 / (s^2 + s/Q + 1)
+    float alpha = sin_w0 / (2.0f * Q);
+    float a0 = 1.0f + alpha;
+
+    b0 = ((1.0f - cos_w0) / 2.0f) / a0;
+    b1 = (1.0f - cos_w0) / a0;
+    b2 = ((1.0f - cos_w0) / 2.0f) / a0;
+    a1 = (-2.0f * cos_w0) / a0;
+    a2 = (1.0f - alpha) / a0;
+}
+
+template <>
+inline void BiquadFilter<BiquadFilterMode::Highpass>::CalculateCoefficients() {
+    // H(s) = s^2 / (s^2 + s/Q + 1)
+    float alpha = sin_w0 / (2.0f * Q);
+    float a0 = 1.0f + alpha;
+
+    b0 = ((1.0f + cos_w0) / 2.0f) / a0;
+    b1 = -(1.0f + cos_w0) / a0;
+    b2 = ((1.0f + cos_w0) / 2.0f) / a0;
+    a1 = (-2.0f * cos_w0) / a0;
+    a2 = (1.0f - alpha) / a0;
+}
+template <>
+inline void BiquadFilter<BiquadFilterMode::BandPass>::CalculateCoefficients() {
+    // H(s) = s / (s^2 + s/Q + 1)  (constant skirt gain, peak gain = Q)
+    float alpha = sin_w0 / (2.0f * Q);
+    float a0 = 1 + alpha;
+
+    b0 = (sin_w0 / 2.0f) / a0;
+    b1 = 0.0f;
+    b2 = (-sin_w0 / 2.0f) / a0;
+    a1 = (-2.0f * cos_w0) / a0;
+    a2 = (1.0f - alpha) / a0;
+}
+template <>
+inline void BiquadFilter<BiquadFilterMode::Notch>::CalculateCoefficients() {
+    // H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
+    float alpha = sin_w0 / (2.0f * Q);
+    float a0 = 1.0f + alpha;
+
+    b0 = 1.0f / a0;
+    b1 = (-2.0f * cos_w0) / a0;
+    b2 = b0;
+    a1 = b1;
+    a2 = (1.0f - alpha) / a0;
+}
+template <>
+inline void BiquadFilter<BiquadFilterMode::AllPass>::CalculateCoefficients() {
+    // H(s) = (s^2 - s/Q + 1) / (s^2 + s/Q + 1)
+    float alpha = sin_w0 / (2.0f * Q);
+    float a0 = 1 + alpha;
+
+    b0 = (1.0f - alpha) / a0;
+    b1 = (-2.0f * cos_w0) / a0;
+    b2 = 1.0f;  // (1+alpha) / a0
+    a1 = b1;
+    a2 = b0;
+}
+template <>
+inline void BiquadFilter<BiquadFilterMode::LowShelf>::CalculateCoefficients() {
+    // H(s) = A * (s^2 + (sqrt(A)/Q)*s + A)/(A*s^2 + (sqrt(A)/Q)*s + 1)
+    float alpha = sin_w0 / (2.0f * Q);
+    float twoSqrtAAlpha = 2.0f * std::sqrt(A) * alpha;
+    float a0 = A_p_1 + A_m_1 * cos_w0 + twoSqrtAAlpha;
+
+    b0 = A * (A_p_1 - A_m_1 * cos_w0 + twoSqrtAAlpha) / a0;
+    b1 = 2.0f * A * (A_m_1 - A_p_1 * cos_w0) / a0;
+    b2 = A * (A_p_1 - A_m_1 * cos_w0 - twoSqrtAAlpha) / a0;
+    a1 = -2.0f * (A_m_1 + A_p_1 * cos_w0) / a0;
+    a2 = (A_p_1 + A_m_1 * cos_w0 - twoSqrtAAlpha) / a0;
+}
+template <>
+inline void BiquadFilter<BiquadFilterMode::HighShelf>::CalculateCoefficients() {
+    // H(s) = A * (A*s^2 + (sqrt(A)/Q)*s + 1)/(s^2 + (sqrt(A)/Q)*s + A)
+    float alpha = sin_w0 / (2.0f * Q);
+    float twoSqrtAAlpha = 2.0f * std::sqrt(A) * alpha;
+    float a0 = A_p_1 - A_m_1 * cos_w0 + twoSqrtAAlpha;
+
+    b0 = A * (A_p_1 + A_m_1 * cos_w0 + twoSqrtAAlpha) / a0;
+    b1 = -2.0f * A * (A_m_1 + A_p_1 * cos_w0) / a0;
+    b2 = A * (A_p_1 + A_m_1 * cos_w0 - twoSqrtAAlpha) / a0;
+    a1 = 2.0f * (A_m_1 - A_p_1 * cos_w0) / a0;
+    a2 = (A_p_1 - A_m_1 * cos_w0 - twoSqrtAAlpha) / a0;
+}
 }  // namespace rbj
 }  // namespace kitdsp

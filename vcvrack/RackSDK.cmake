@@ -95,7 +95,7 @@ endif ()
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   target_compile_definitions(RackSDK INTERFACE ARCH_LIN)
   # This prevents static variables in the DSO (dynamic shared object) from being preserved after dlclose().
-  if (${CMAKE_CXX_COMPILER_FRONTEND_VARIANT} STREQUAL "GNU")
+  if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     target_compile_options(RackSDK INTERFACE -fno-gnu-unique)
   endif ()
   # When Rack loads a plugin, it symlinks /tmp/Rack2 to its system dir, so the plugin can link to libRack.
