@@ -10,3 +10,15 @@ TODO:
 - when libdaisy cmake is merged, this will be merged with https://github.com/Alloyed/KitsBlips
 - I really want to make a patch.init() variant with a screen and encoder.
 - track algorithm quality/stability status better
+
+# Building
+
+you can skip specifying compiler if your intended compiler is part of your `$PATH`.
+
+```bash
+$ mkdir -p daisy/build && cd daisy/build
+$ cmake .. -DCMAKE_C_COMPILER="<path to arm-non-eabi-gcc>" -DCMAKE_BUILD_TYPE="MinSizeRel"
+$ cmake --build .
+```
+
+scripts for convenient flashing todo

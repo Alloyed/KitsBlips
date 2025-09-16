@@ -11,6 +11,8 @@
 import xml.etree.ElementTree as ET
 import os
 import argparse
+import subprocess
+import sys
 
 # basic config
 SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
@@ -22,11 +24,32 @@ def fix_svg(filename):
     tree = ET.parse(filename)
     root = tree.getroot()
     modified = False
+    
+    # convert any text elements to paths using inkscape
+    text_tag = '{' + SVG_NAMESPACE + '}text'
+    if root.find(text_tag) is not None:
+        try:
+            args = ['inkscape', filename, '--export-text-to-path', '--export-filename=' + filename]
+            print('$ ' + ' '.join(args))
+            subprocess.run(
+                args,
+                check=True,
+                stdout=sys.stderr,
+                stderr=sys.stderr
+            )
+            # file changed, re-parse
+            tree = ET.parse(filename)
+            root = tree.getroot()
+            modified = True
+        except FileNotFoundError:
+            print('warning: inkscape not found; skipping text-to-path for ' + filename)
+        except subprocess.CalledProcessError:
+            print('warning: inkscape failed on ' + filename)
 
     # reorder defs to be the first child of root. needed for Reasons(tm)
     defs_tag = '{' + SVG_NAMESPACE + '}defs'
     defs = root.find(defs_tag)
-    if defs and root[0] != defs:
+    if defs is not None and root[0] != defs:
         root.remove(defs)
         root.insert(0, defs)
         modified = True

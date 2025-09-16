@@ -8,6 +8,17 @@ My collection of DSP algorithms and applications. Lots and lots of this code is 
 
 Thank you!!!
 
+## Building
+
+KitDSP can be built independently for unit testing purposes.
+
+```bash
+$ mkdir build && cd build
+$ cmake ..
+$ cmake --build .
+$ ctest
+```
+
 ## goals
 
 - modular-first: avoid large buffers/non-real-time effects where possible

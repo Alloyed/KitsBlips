@@ -8,62 +8,46 @@ For technical reasons, this project is ordered by toolset and not by module. thi
 
 unless otherwise listed, all code is MIT licensed. All hardware designs and graphics (kicad, svg etc) are CC-BY-SA 4.0.
 
-## Building
+## Building/Installing
 
-### Daisy
-you can skip specifying compiler if your intended compiler is part of your `$PATH`.
-
-```bash
-$ mkdir -p daisy/build && cd daisy/build
-$ cmake .. -DCMAKE_C_COMPILER="<path to arm-non-eabi-gcc>" -DCMAKE_BUILD_TYPE="MinSizeRel"
-$ cmake --build .
-```
-
-scripts for convenient flashing todo
-
-### VCV Rack
-Building on windows requires mingw-64, see [official docs](https://vcvrack.com/manual/Building#Windows) for details. you will need to run cmake from a mingw shell.
-
-```bash
-$ mkdir -p vcvrack/build && cd vcvrack/build
-$ cmake ..
-$ cmake --build .
-
-$ cmake --install . --prefix dist
-$ cp -r dist/* ~/.local/share/Rack2/plugins/lin-x64/
-# or
-$ cp -r dist/* $LOCALAPPDATA/Rack2/plugins-win-x64/
-```
-
-### CLAP
-To create VSTs, instead of using an existing mega-library I'm trying out writing directly to the CLAP plugin api and taking advantage of `clap-wrapper`, which is an upstream package to turn clap plugins into VSTs. We'll see how that goes!
-
-```bash
-$ mkdir -p clap/build && cd clap/build
-$ cmake ..
-$ cmake --build .
-```
-
-### KitDSP
-KitDSP can be used independently for unit testing purposes.
-
-```bash
-$ mkdir -p kitdsp/build && cd kitdsp/build
-$ cmake ..
-$ cmake --build .
-
-$ ctest
-```
-
-
-## This project structure is cool, how can I use it?
-
-!!!This template needs to be updated!!! ping me first, and I can update it for you.
-
-create your own new repo, then
+Each project/folder has a specific readme that includes extra steps if necessary, but in general, builds are managed using cmake.
 
 ```
-    $ git push https://github.com/accountname/new_repo.git +template:main
+$ mkdir -p <folder>/build && cd <folder>/build
+$ cmake .. -DCMAKE_BUILD_TYPE=<build type: Debug, MinSizeRel, RelWithDebInfo>
+$ cmake --build . --config=<the build type>
+$ cmake --install . --prefix <location> # if the target supports installation
+$ ctest # if the target has unit tests
 ```
 
-<3
+## Projects
+
+For Hardware:
+
+- [/daisy](daisy/README.md)
+  - DSP code for hardware modules
+- [/kicad](kicad/README.md)
+  - Hardware design files
+
+For VCV Rack:
+
+- [/vcvrack](daisy/README.md)
+  - Modules for VCV Rack
+
+For DAWS:
+
+- [/clap](clap/README.md)
+  - Modules for DAWS (VST3/CLAP plugins)
+- [/clapeze](clapeze/README.md)
+  - Microframework for writing clap plugins
+- [/kitgui](kitgui/README.md)
+  - UI library for clap plugins
+
+Shared:
+
+- [/panels](panels/README.md)
+  - Art/Panel designs.
+- [/kitdsp](kitdsp/README.md)
+  - Shared DSP code, runs on all platforms
+- [/kitdsp-gpl](kitdsp-gpl/README.md)
+  - DSP code with GPL algorithms. This is the only folder that comes with extra license restrictions!
