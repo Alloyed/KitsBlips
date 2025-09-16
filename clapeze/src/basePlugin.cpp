@@ -2,6 +2,8 @@
 
 #include <cassert>
 #include <memory>
+#include "clap/ext/latency.h"
+#include "clapeze/ext/latency.h"
 #include "clapeze/pluginHost.h"
 
 namespace clapeze {
@@ -67,6 +69,12 @@ bool BasePlugin::Activate(double sampleRate, uint32_t minBlockSize, uint32_t max
     mProcessor->mMinBlockSize = minBlockSize;
     mProcessor->mMaxBlockSize = maxBlockSize;
     mProcessor->Activate(sampleRate, minBlockSize, maxBlockSize);
+
+    LatencyFeature* latency = static_cast<LatencyFeature*>(TryGetFeature(CLAP_EXT_LATENCY));
+    if (latency) {
+        latency->OnActivated();
+    }
+
     return true;
 }
 void BasePlugin::Deactivate() {

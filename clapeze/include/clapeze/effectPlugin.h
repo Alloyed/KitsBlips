@@ -20,6 +20,23 @@ class EffectProcessor : public BaseProcessor {
     }
 
     virtual void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) = 0;
+
+    /* call to copy the input, unmodified, to the output */
+    void Bypass(const StereoAudioBuffer& in, StereoAudioBuffer& out) {
+        if (in.isLeftConstant) {
+            out.isLeftConstant = true;
+            out.left[0] = in.left[0];
+        } else {
+            std::copy(in.left.begin(), in.left.end(), out.left.begin());
+        }
+        if (in.isRightConstant) {
+            out.isRightConstant = true;
+            out.right[0] = in.right[0];
+        } else {
+            std::copy(in.right.begin(), in.right.end(), out.right.begin());
+        }
+    }
+
     // impl
     void ProcessFlush(const clap_process_t& process) final { mParams.FlushEventsFromMain(*this, process.out_events); }
     void ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) final {

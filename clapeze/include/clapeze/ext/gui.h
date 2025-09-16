@@ -1,10 +1,11 @@
 #pragma once
 
 #include <clap/clap.h>
+#include <clap/ext/gui.h>
 #include <cstdint>
 
-#include "clap/ext/timer-support.h"
 #include "clapeze/basePlugin.h"
+
 namespace clapeze {
 
 enum ClapWindowApi { None = 0, X11, Wayland, Win32, Cocoa };
@@ -42,10 +43,11 @@ struct WindowHandle {
     };
 };
 
-/* Unlike all other extensions, BaseGuiFeature is an abstract class. Implement it with your preferred gui library! */
+/* Unlike all other features, BaseGuiFeature is an abstract class. Implement it with your preferred gui library! */
 class GuiFeature : public BaseFeature {
    public:
     ~GuiFeature() = default;
+    // implementation methods. (maybe we should move these into a BaseGuiImpl inner class?)
     virtual bool IsApiSupported(ClapWindowApi api, bool isFloating) = 0;
     virtual bool GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) = 0;
     virtual bool Create(ClapWindowApi api, bool isFloating) = 0;
@@ -62,14 +64,22 @@ class GuiFeature : public BaseFeature {
     virtual bool Show() = 0;
     virtual bool Hide() = 0;
 
+    // host methods, can be called by anyone on the gui thread
+    void OnResizeHintsChanged() { mRawHostGui->resize_hints_changed(mRawHost); }
+    void OnClosed(bool destroyed) { mRawHostGui->closed(mRawHost, destroyed); }
+    bool RequestResize(uint32_t width, uint32_t height) { return mRawHostGui->request_resize(mRawHost, width, height); }
+    bool RequestShow() { return mRawHostGui->request_show(mRawHost); }
+    bool RequestHide() { return mRawHostGui->request_hide(mRawHost); }
+
     // implementation
    public:
     static constexpr auto NAME = CLAP_EXT_GUI;
     const char* Name() const override { return NAME; }
 
     void Configure(BasePlugin& self) override {
-        self.GetHost().TryGetFeature(const char* extensionName, const clap_host_t*& hostOut,
-                                     const TFeature*& extOut) static const clap_plugin_gui_t value = {
+        self.GetHost().TryGetExtension(NAME, mRawHost, mRawHostGui);
+
+        static const clap_plugin_gui_t value = {
             &_is_api_supported, &_get_preferred_api, &_create,           &_destroy,     &_set_scale,
             &_get_size,         &_can_resize,        &_get_resize_hints, &_adjust_size, &_set_size,
             &_set_parent,       &_set_transient,     &_suggest_title,    &_show,        &_hide,
@@ -77,17 +87,17 @@ class GuiFeature : public BaseFeature {
         self.RegisterExtension(NAME, static_cast<const void*>(&value));
     }
 
-    bool Validate([[maybe_unused]] const BasePlugin& plugin) const override {
-#ifdef __linux
-        // if (plugin.TryGetFeature(CLAP_EXT_TIMER_SUPPORT) == nullptr) {
-        //     plugin.GetHost().Log(LogSeverity::Fatal, "Gui on linux requires CLAP_EXT_TIMER_SUPPORT");
-        //     return false;
-        // }
-#endif
+    bool Validate(const BasePlugin& plugin) const override {
+        if (mRawHost == nullptr || mRawHostGui == nullptr) {
+            plugin.GetHost().Log(LogSeverity::Fatal, "Missing implementation of CLAP_EXT_GUI from host");
+            return false;
+        }
         return true;
     }
 
    private:
+    const clap_host_t* mRawHost = nullptr;
+    const clap_host_gui_t* mRawHostGui = nullptr;
     static bool _is_api_supported(const clap_plugin_t* plugin, const char* api, bool isFloating) {
         GuiFeature& self = GuiFeature::GetFromPluginObject<GuiFeature>(plugin);
         return self.IsApiSupported(toApiEnum(api), isFloating);
