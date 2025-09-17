@@ -28,9 +28,9 @@
 #include <Magnum/Trade/PhongMaterialData.h>
 #include <Magnum/Trade/SceneData.h>
 
+#include <fmt/format.h>
 #include <cassert>
 #include <chrono>
-#include <format>
 #include <memory>
 #include <optional>
 #include <string>
@@ -110,7 +110,7 @@ void DomSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_v
         objectInfo.object = new Object3D{};
         objectInfo.debugName = importer.objectName(objectId);
         if (objectInfo.debugName.empty()) {
-            objectInfo.debugName = std::format("object {}", objectId);
+            objectInfo.debugName = fmt::format("object {}", objectId);
         }
     }
 
@@ -221,7 +221,7 @@ void DomSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_v
     for (uint32_t i = 0; i != importer.animationCount(); ++i) {
         auto animation = importer.animation(i);
         if (!animation) {
-            kitgui::log::error(std::format("cannot load animation {} {}", i, importer.animationName(i)));
+            kitgui::log::error(fmt::format("cannot load animation {} {}", i, importer.animationName(i)));
             continue;
         }
 

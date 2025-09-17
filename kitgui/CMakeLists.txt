@@ -5,7 +5,7 @@ project(kitgui VERSION 0.0.0)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(../content.cmake)
-FetchContent_MakeAvailable(corrade magnum magnum-plugins)
+FetchContent_MakeAvailable(corrade magnum magnum-plugins fmt)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(KITGUI_USE_WIN32 true)
@@ -41,6 +41,7 @@ target_include_directories(kitgui PRIVATE src)
 
 target_link_libraries(kitgui PUBLIC
     imgui
+    fmt::fmt
     Magnum::GL
     Magnum::Magnum
     Magnum::SceneGraph

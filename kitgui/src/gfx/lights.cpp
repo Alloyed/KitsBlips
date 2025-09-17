@@ -11,7 +11,7 @@
 #include <Magnum/Trade/LightData.h>
 #include <Magnum/Trade/SceneData.h>
 
-#include <format>
+#include <fmt/format.h>
 #include <optional>
 #include <string>
 
@@ -95,12 +95,12 @@ void LightCache::LoadLights(Trade::AbstractImporter& importer) {
         LightInfo lightInfo;
         lightInfo.debugName = importer.lightName(i);
         if (lightInfo.debugName.empty()) {
-            lightInfo.debugName = std::format("{}", i);
+            lightInfo.debugName = fmt::format("{}", i);
         }
 
         auto light = std::optional<Trade::LightData>{importer.light(i)};
         if (!light) {
-            kitgui::log::error(std::format("Cannot load light {} {}", i, importer.lightName(i)));
+            kitgui::log::error(fmt::format("Cannot load light {} {}", i, importer.lightName(i)));
             continue;
         }
         mLights.push_back(std::move(lightInfo));

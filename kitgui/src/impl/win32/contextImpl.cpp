@@ -60,7 +60,7 @@ std::string GetLastWinError() {
                          nullptr, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, nullptr);
 
     std::string out(lpMsgBuf, messageSize);
-    out.insert(0, std::format("Windows error({}): ", dw));
+    out.insert(0, fmt::format("Windows error({}): ", dw));
 
     ::LocalFree(lpMsgBuf);
     return out;

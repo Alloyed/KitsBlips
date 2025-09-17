@@ -75,6 +75,12 @@ set(IMGUI_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/imgui)
 
 # remote
 FetchContent_Declare(
+    fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt
+    GIT_TAG        11.2.0
+    EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
     etl
     GIT_REPOSITORY https://github.com/ETLCPP/etl
     GIT_TAG        20.42.2

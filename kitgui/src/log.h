@@ -1,6 +1,6 @@
 #pragma once
 #include <Corrade/Containers/String.h>
-#include <format>
+#include <fmt/format.h>
 #include <iostream>
 #include <source_location>
 #include <string_view>
@@ -22,8 +22,8 @@ inline void verbose(std::string_view message, std::source_location loc = std::so
 }  // namespace kitgui::log
 
 template <>
-struct std::formatter<Corrade::Containers::String> : std::formatter<std::string_view> {
-    auto format(const Corrade::Containers::String& obj, std::format_context& ctx) const {
-        return std::formatter<std::string_view>::format({obj.data(), obj.size()}, ctx);
+struct fmt::formatter<Corrade::Containers::String> : fmt::formatter<std::string_view> {
+    auto format(const Corrade::Containers::String& obj, fmt::format_context& ctx) const {
+        return fmt::formatter<std::string_view>::format({obj.data(), obj.size()}, ctx);
     }
 };

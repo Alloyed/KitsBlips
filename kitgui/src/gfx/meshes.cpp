@@ -17,9 +17,9 @@
 #include <Magnum/Trade/MeshData.h>
 #include <Magnum/Trade/PhongMaterialData.h>
 #include <Magnum/Trade/SceneData.h>
+#include <fmt/format.h>
 #include <algorithm>
 #include <cassert>
-#include <format>
 #include <optional>
 #include <string>
 #include <vector>
@@ -32,7 +32,7 @@ void MeshCache::LoadMeshes(Magnum::Trade::AbstractImporter& importer) {
     /* Load all meshes. Meshes that fail to load will be NullOpt. Remember
        which have vertex colors, so in case there's no material we can use that
        instead. */
-    kitgui::log::info(std::format("Loading {} meshes...", importer.meshCount()));
+    kitgui::log::info(fmt::format("Loading {} meshes...", importer.meshCount()));
     mMeshes.clear();
     mMeshes.reserve(importer.meshCount());
     for (uint32_t i = 0; i != importer.meshCount(); ++i) {
@@ -40,13 +40,13 @@ void MeshCache::LoadMeshes(Magnum::Trade::AbstractImporter& importer) {
         MeshInfo& mesh = mMeshes.back();
         auto meshData = std::optional<Trade::MeshData>(importer.mesh(i));
         if (!meshData) {
-            log::error(std::format("cannot load mesh {}: {} ", i, importer.meshName(i)));
+            log::error(fmt::format("cannot load mesh {}: {} ", i, importer.meshName(i)));
             continue;
         }
 
         std::string meshName = importer.meshName(i);
         if (meshName.empty()) {
-            meshName = std::format("{}", i);
+            meshName = fmt::format("{}", i);
         }
 
         /* Disable warnings on custom attributes, as we printed them with
@@ -68,12 +68,12 @@ void MeshCache::LoadMeshes(Magnum::Trade::AbstractImporter& importer) {
             if (meshData->primitive() == MeshPrimitive::TriangleStrip ||
                 meshData->primitive() == MeshPrimitive::TriangleFan) {
                 if (meshData->isIndexed()) {
-                    log::info(std::format(
+                    log::info(fmt::format(
                         "Mesh {} doesn't have normals, generating smooth ones using information from the index buffer.",
                         meshName));
                     flags |= MeshTools::CompileFlag::GenerateSmoothNormals;
                 } else {
-                    log::info(std::format("Mesh {} doesn't have normals, generating flat ones.", meshName));
+                    log::info(fmt::format("Mesh {} doesn't have normals, generating flat ones.", meshName));
                     flags |= MeshTools::CompileFlag::GenerateFlatNormals;
                 }
 
@@ -82,12 +82,12 @@ void MeshCache::LoadMeshes(Magnum::Trade::AbstractImporter& importer) {
                 /* Otherwise prefer smooth normals, if we have an index buffer
                    telling us neighboring faces */
             } else if (meshData->isIndexed()) {
-                log::info(std::format(
+                log::info(fmt::format(
                     "Mesh {} doesn't have normals, generating smooth ones using information from the index buffer.",
                     meshName));
                 flags |= MeshTools::CompileFlag::GenerateSmoothNormals;
             } else {
-                log::info(std::format("Mesh {} doesn't have normals, generating flat ones.", meshName));
+                log::info(fmt::format("Mesh {} doesn't have normals, generating flat ones.", meshName));
                 flags |= MeshTools::CompileFlag::GenerateFlatNormals;
             }
         }
@@ -97,9 +97,9 @@ void MeshCache::LoadMeshes(Magnum::Trade::AbstractImporter& importer) {
             const Trade::MeshAttribute attribute = meshData->attributeName(j);
             if (Trade::isMeshAttributeCustom(attribute)) {
                 if (const std::string stringName = importer.meshAttributeName(attribute); !stringName.empty()) {
-                    log::info(std::format("Mesh {} has a custom mesh attribute {}, ignoring", meshName, stringName));
+                    log::info(fmt::format("Mesh {} has a custom mesh attribute {}, ignoring", meshName, stringName));
                 } else {
-                    log::info(std::format("Mesh {} has a custom mesh attribute {}, ignoring", meshName, j));
+                    log::info(fmt::format("Mesh {} has a custom mesh attribute {}, ignoring", meshName, j));
                 }
                 continue;
             }
@@ -107,10 +107,10 @@ void MeshCache::LoadMeshes(Magnum::Trade::AbstractImporter& importer) {
             const VertexFormat format = meshData->attributeFormat(j);
             if (isVertexFormatImplementationSpecific(format)) {
                 if (const std::string attributeName = importer.meshAttributeName(attribute); !attributeName.empty()) {
-                    log::info(std::format("Mesh attribute {}.{} has a custom mesh format {}, ignoring", meshName,
+                    log::info(fmt::format("Mesh attribute {}.{} has a custom mesh format {}, ignoring", meshName,
                                           attributeName, static_cast<uint32_t>(format)));
                 } else {
-                    log::info(std::format("Mesh attribute {}.{} has a custom mesh format {}, ignoring", meshName, j,
+                    log::info(fmt::format("Mesh attribute {}.{} has a custom mesh format {}, ignoring", meshName, j,
                                           static_cast<uint32_t>(format)));
                 }
                 continue;
@@ -119,7 +119,7 @@ void MeshCache::LoadMeshes(Magnum::Trade::AbstractImporter& importer) {
         const uint32_t meshLevels = importer.meshLevelCount(i);
         if (meshLevels > 1) {
             log::info(
-                std::format("Mesh attribute {} has {} additional mesh levels, ignoring", meshName, meshLevels - 1));
+                fmt::format("Mesh attribute {} has {} additional mesh levels, ignoring", meshName, meshLevels - 1));
         }
 
         /* Save metadata, compile the mesh */
