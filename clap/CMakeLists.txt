@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 cmake_policy(SET CMP0048 NEW)
 
-project(KitsBlips VERSION 0.0.0)
-set(PRODUCT_NAME "KitsBlips")
-set(PRODUCT_ID "me.alloyed.KitsBlips")
-option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
-
 # TODO: needed for clap-wrapper, who should really be doing this for us
 if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15")
@@ -14,6 +9,12 @@ endif()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 #end globals
+
+project(KitsBlips VERSION 0.0.0)
+set(PRODUCT_NAME "KitsBlips")
+set(PRODUCT_ID "me.alloyed.KitsBlips")
+option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
+
 
 set(CMAKE_CXX_STANDARD 20)
 
