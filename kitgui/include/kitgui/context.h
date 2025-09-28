@@ -18,6 +18,10 @@ class ContextImpl;
 namespace kitgui::win32 {
 class ContextImpl;
 }
+#elif KITGUI_USE_COCOA
+namespace kitgui::cocoa {
+class ContextImpl;
+}
 #endif
 
 namespace kitgui {
@@ -80,6 +84,9 @@ class Context {
 #elif KITGUI_USE_WIN32
     using Impl = win32::ContextImpl;
     friend class win32::ContextImpl;
+#elif KITGUI_USE_COCOA
+    using Impl = cocoa::ContextImpl;
+    friend class cocoa::ContextImpl;
 #endif
 
     AppFactory mCreateAppFn;

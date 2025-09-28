@@ -23,4 +23,11 @@ elseif(KITGUI_USE_WIN32)
 	)
 	target_include_directories(imgui_opengl_win32 INTERFACE ${IMGUI_DIR}/backends)
 	target_link_libraries(imgui_opengl_win32 PUBLIC imgui OpenGL::GL)
+elseif(KITGUI_USE_COCOA)
+	add_library(imgui_opengl_cocoa STATIC EXCLUDE_FROM_ALL
+		${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+		${IMGUI_DIR}/backends/imgui_impl_osx.mm
+	)
+	target_include_directories(imgui_opengl_cocoa INTERFACE ${IMGUI_DIR}/backends)
+	target_link_libraries(imgui_opengl_cocoa PUBLIC imgui OpenGL::GL)
 endif()

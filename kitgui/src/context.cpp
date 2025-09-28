@@ -10,6 +10,8 @@
 #include "impl/sdl/contextImpl.h"
 #elif KITGUI_USE_WIN32
 #include "impl/win32/contextImpl.h"
+#elif KITGUI_USE_COCOA
+#include "impl/cocoa/contextImpl.h"
 #endif
 
 using namespace Magnum;
@@ -45,6 +47,10 @@ bool Context::Destroy() {
 
 bool Context::IsCreated() const {
     return mImpl->IsCreated();
+}
+
+void Context::SetClearColor(Magnum::Color4 color) {
+    return mImpl->SetClearColor(color);
 }
 
 bool Context::SetScale(double scale) {

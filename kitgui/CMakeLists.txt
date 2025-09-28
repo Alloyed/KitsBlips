@@ -10,8 +10,7 @@ FetchContent_MakeAvailable(corrade magnum magnum-plugins fmt)
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(KITGUI_USE_WIN32 true)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    FetchContent_MakeAvailable(SDL3)
-    set(KITGUI_USE_SDL true)
+    set(KITGUI_USE_COCOA true)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(X11)
     FetchContent_MakeAvailable(SDL3)
@@ -78,6 +77,14 @@ elseif(KITGUI_USE_WIN32)
     )
     target_link_libraries(kitgui PRIVATE
         imgui_opengl_win32
+    )
+elseif(KITGUI_USE_COCOA)
+    target_compile_definitions(kitgui PUBLIC KITGUI_USE_COCOA)
+    target_sources(kitgui PRIVATE
+        src/impl/cocoa/contextImpl.cpp
+    )
+    target_link_libraries(kitgui PRIVATE
+        imgui_opengl_cocoa
     )
 endif()
 

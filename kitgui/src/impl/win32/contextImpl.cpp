@@ -209,6 +209,10 @@ bool ContextImpl::IsCreated() const {
     return mImgui != nullptr;
 }
 
+void ContextImpl::SetClearColor(Magnum::Color4 color) {
+    mClearColor = color;
+}
+
 bool ContextImpl::SetScale(double scale) {
     // TODO: scale font
     ImGui::GetStyle().ScaleAllSizes(static_cast<float>(scale));

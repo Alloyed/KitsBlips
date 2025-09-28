@@ -62,7 +62,7 @@ class ContextImpl {
     static void RunSingleFrame();
 
     bool IsCreated() const;
-    void SetClearColor(Magnum::Color4 color) { mClearColor = color; }
+    void SetClearColor(Magnum::Color4 color);
 
     static LRESULT OnWindowsEvent(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 

@@ -1,13 +1,12 @@
 #pragma once
 
-#ifndef KITGUI_USE_SDL
-#error "SDL is not enabled, including this file should be guarded by KITGUI_USE_SDL"
+#ifndef KITGUI_USE_COCOA
+#error "COCOA is not enabled, including this file should be guarded by KITGUI_USE_COCOA"
 #endif
 
 #include <Magnum/Magnum.h>
 #include <Magnum/Math/Color.h>
 #include <Magnum/Platform/GLContext.h>
-#include <SDL3/SDL_video.h>
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -23,7 +22,7 @@ class BaseApp;
 struct SizeConfig;
 }  // namespace kitgui
 
-namespace kitgui::sdl {
+namespace kitgui::cocoa {
 class ContextImpl {
    public:
     explicit ContextImpl(kitgui::Context& ctx);
@@ -60,8 +59,8 @@ class ContextImpl {
    private:
     kitgui::Context& mContext;
     kitgui::WindowApi mApi;
-    SDL_Window* mWindow = nullptr;
-    SDL_GLContext mSdlGl;
+    // COCOA_Window* mWindow = nullptr;
+    // COCOA_GLContext mSdlGl;
     std::unique_ptr<Magnum::Platform::GLContext> mGl = nullptr;
     ImGuiContext* mImgui = nullptr;
     bool mActive = false;
@@ -70,8 +69,8 @@ class ContextImpl {
 
     static void AddActiveInstance(ContextImpl* instance);
     static void RemoveActiveInstance(ContextImpl* instance);
-    static ContextImpl* FindContextImplForWindow(SDL_Window* win);
+    // static ContextImpl* FindContextImplForWindow(COCOA_Window* win);
     static std::vector<ContextImpl*> sActiveInstances;
 };
 
-}  // namespace kitgui::sdl
+}  // namespace kitgui::cocoa
