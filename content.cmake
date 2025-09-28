@@ -101,7 +101,7 @@ FetchContent_Declare(
 FetchContent_Declare(
     clap-wrapper
     GIT_REPOSITORY https://github.com/alloyed/clap-wrapper.git
-    GIT_TAG alloyed
+    GIT_TAG 19f18f2c1b4f0aee13112d75695d48d6b2487d68
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
