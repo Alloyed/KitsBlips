@@ -1,6 +1,7 @@
 #include "freqshift/freqshift.h"
 
 #include <clapeze/effectPlugin.h>
+#include <clapeze/entryPoint.h>
 #include <clapeze/ext/parameterConfigs.h>
 #include <clapeze/ext/parameters.h>
 #include <kitdsp/frequencyShifter.h>
@@ -117,10 +118,10 @@ class Plugin : public EffectPlugin {
     }
 };
 
-const PluginEntry Entry{
-    AudioEffectDescriptor("kitsblips.freqshift",
-                          "KitFreqsOut",
-                          "Bode-style frequency shifter. More useful for sound effects than for pitched instruments."),
-    [](PluginHost& host) -> BasePlugin* { return new Plugin(host); }};
+const clapeze::RegisterPlugin p(
+    {AudioEffectDescriptor("kitsblips.freqshift",
+                           "KitFreqsOut",
+                           "Bode-style frequency shifter. More useful for sound effects than for pitched instruments."),
+     [](clapeze::PluginHost& host) -> clapeze::BasePlugin* { return new Plugin(host); }});
 
 }  // namespace freqshift

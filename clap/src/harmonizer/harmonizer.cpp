@@ -1,6 +1,7 @@
 #include "harmonizer/harmonizer.h"
 
 #include <clapeze/effectPlugin.h>
+#include <clapeze/entryPoint.h>
 #include <clapeze/ext/parameterConfigs.h>
 #include <clapeze/ext/parameters.h>
 #include <kitdsp/harmonizer.h>
@@ -161,8 +162,7 @@ class Plugin : public EffectPlugin {
     }
 };
 
-const PluginEntry Entry{
-    AudioEffectDescriptor("kitsblips.harmonizer", "KitsHarmony", "Eventide H910-inspired Harmonizer effect"),
-    [](PluginHost& host) -> BasePlugin* { return new Plugin(host); }};
-
+const clapeze::RegisterPlugin p(
+    {AudioEffectDescriptor("kitsblips.harmonizer", "KitsHarmony", "Eventide H910-inspired Harmonizer effect"),
+     [](clapeze::PluginHost& host) -> clapeze::BasePlugin* { return new Plugin(host); }});
 }  // namespace harmonizer

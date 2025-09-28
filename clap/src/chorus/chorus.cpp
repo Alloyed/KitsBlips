@@ -1,6 +1,7 @@
 #include "chorus/chorus.h"
 
 #include <clapeze/effectPlugin.h>
+#include <clapeze/entryPoint.h>
 #include <clapeze/ext/parameterConfigs.h>
 #include <clapeze/ext/parameters.h>
 #include <kitdsp/apps/chorus.h>
@@ -134,7 +135,6 @@ class Plugin : public EffectPlugin {
     }
 };
 
-const PluginEntry Entry{AudioEffectDescriptor("kitsblips.chorus", "KitsChorus", "2-voice Chorus effect."),
-                        [](PluginHost& host) -> BasePlugin* { return new Plugin(host); }};
-
+const clapeze::RegisterPlugin p({AudioEffectDescriptor("kitsblips.chorus", "KitsChorus", "2-voice Chorus effect."),
+                                 [](clapeze::PluginHost& host) -> clapeze::BasePlugin* { return new Plugin(host); }});
 }  // namespace chorus
