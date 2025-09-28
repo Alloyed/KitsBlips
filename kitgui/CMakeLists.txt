@@ -44,6 +44,7 @@ target_link_libraries(kitgui PUBLIC
     Magnum::GL
     Magnum::Magnum
     Magnum::SceneGraph
+    fmt::fmt
 )
 target_link_libraries(kitgui PRIVATE
     ${MAGNUM_PLATFORMGL}
@@ -52,7 +53,6 @@ target_link_libraries(kitgui PRIVATE
     Magnum::Trade
     MagnumPlugins::StbImageImporter
     MagnumPlugins::GltfImporter
-    fmt::fmt
 )
 target_disable_warnings(Magnum::Magnum)
 

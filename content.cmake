@@ -100,8 +100,8 @@ FetchContent_Declare(
 )
 FetchContent_Declare(
     clap-wrapper
-    GIT_REPOSITORY https://github.com/free-audio/clap-wrapper.git
-    GIT_TAG main
+    GIT_REPOSITORY https://github.com/alloyed/clap-wrapper.git
+    GIT_TAG alloyed
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
