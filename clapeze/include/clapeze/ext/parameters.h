@@ -3,11 +3,11 @@
 #include <clap/clap.h>
 #include <etl/queue_spsc_atomic.h>
 #include <etl/span.h>
+#include <fmt/format.h>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <format>
 #include <memory>
 #include <string_view>
 #include <type_traits>
@@ -75,7 +75,7 @@ class ParametersFeature : public BaseFeature {
     bool Validate(const BasePlugin& self) const override {
         for (size_t index = 0; index < mNumParams; index++) {
             if (mParams[index].get() == nullptr) {
-                self.GetHost().Log(LogSeverity::Fatal, std::format("Missing configuration for parameter {}", index));
+                self.GetHost().Log(LogSeverity::Fatal, fmt::format("Missing configuration for parameter {}", index));
                 return false;
             }
         }
