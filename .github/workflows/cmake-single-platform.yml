@@ -46,15 +46,15 @@ jobs:
           packages: libsdl2-dev
           version: 1.0
 
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
       - uses: actions/cache@v3
         with:
           path: ${{github.workspace}}/cache
           key: ${{ runner.os }}.deps.${{ hashFiles('**/*.cmake','**/CMakeLists.txt') }}
           restore-keys: ${{ runner.os }}.deps.
-
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Configure CMake
         run: cmake -B "${{github.workspace}}/build" -DFETCHCONTENT_BASE_DIR="${{github.workspace}}/cache" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DKITSBLIPS_ENABLE_GUI=${{env.KITSBLIPS_ENABLE_GUI}} "${{github.workspace}}/clap" ${{matrix.extra-flags}}
