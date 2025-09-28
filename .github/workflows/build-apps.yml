@@ -1,6 +1,5 @@
-# This starter workflow is for a CMake project running on a single platform. There is a different starter workflow if you need cross-platform coverage.
-# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-multi-platform.yml
-name: CMake
+# This workflow covers building output applications and associated artifacts.
+name: build-all
 
 on:
   workflow_dispatch: # lets you run a build from the UI
@@ -15,7 +14,6 @@ concurrency:
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
-  KITSBLIPS_ENABLE_GUI: ON
 
 defaults:
   run:
@@ -31,12 +29,14 @@ jobs:
         include:
           - name: Linux
             os: ubuntu-24.04
+            extra-flags: -DKITSBLIPS_ENABLE_GUI="ON"
           - name: macOS
             os: macos-14
             extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
           - name: Windows
             # https://github.com/actions/runner-images/issues/10980
             os: windows-2025
+            extra-flags: -DKITSBLIPS_ENABLE_GUI="ON"
 
     steps:
       - name: Set up Linux deps
@@ -50,41 +50,17 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: actions/cache@v3
+      - uses: ./.github/actions/cmake
         with:
-          path: ${{github.workspace}}/cache
-          key: ${{ runner.os }}.deps.${{ hashFiles('**/*.cmake','**/CMakeLists.txt') }}
-          restore-keys: ${{ runner.os }}.deps.
-
-      - name: Configure CMake
-        run: cmake -B "${{github.workspace}}/build" -DFETCHCONTENT_BASE_DIR="${{github.workspace}}/cache" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DKITSBLIPS_ENABLE_GUI=${{env.KITSBLIPS_ENABLE_GUI}} "${{github.workspace}}/clap" ${{matrix.extra-flags}}
-
-      - name: Build
-        run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
+          source: ${{github.workspace}}/clap
+          build: ${{github.workspace}}/build
+          extra-flags: ${{matrix.extra-flags}}
 
       - name: Package
         uses: actions/upload-artifact@v4
         with:
           name: KitsBlips-DAW-${{ matrix.name }}
-          path: "${{github.workspace}}/build/dist"
-
-  #modify-plugin-version:
-  #  name: Modify plugin version
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - uses: actions/checkout@v4
-  #    - uses: actions/cache@v4
-  #      id: plugin-version-cache
-  #      with:
-  #        path: plugin.json
-  #        key: ${{ github.sha }}-${{ github.run_id }}
-  #    - run: |
-  #        gitrev=`git rev-parse --short HEAD`
-  #        pluginversion=`jq -r '.version' plugin.json`
-  #        echo "Set plugin version from $pluginversion to $pluginversion-$gitrev"
-  #        cat <<< `jq --arg VERSION "$pluginversion-$gitrev" '.version=$VERSION' plugin.json` > plugin.json
-  #      # only modify plugin version if no tag was created
-  #      if: "! startsWith(github.ref, 'refs/tags/v')"
+          path: ${{github.workspace}}/build/dist
 
   build-vcvrack:
     name: vcvrack ${{ matrix.name }}
@@ -95,18 +71,16 @@ jobs:
         include:
           - name: Linux
             os: ubuntu-22.04
-            generator: Unix Makefiles
+            extra-flags: -G "Unix Makefiles"
           - name: macOS x86_64
             os: macos-14
-            extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64"
-            generator: Unix Makefiles
+            extra-flags: -G "Unix Makefiles" -DCMAKE_OSX_ARCHITECTURES="x86_64"
           - name: macOS arm64
             os: macos-14
-            extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64"
-            generator: Unix Makefiles
+            extra-flags: -G "Unix Makefiles" -DCMAKE_OSX_ARCHITECTURES="arm64"
           - name: Windows
             os: windows-latest
-            generator: MinGW Makefiles
+            extra-flags: -G "MinGW Makefiles"
     steps:
       - name: Set up MinGW
         if: runner.os == 'Windows'
@@ -127,20 +101,17 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Configure CMake
-        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G "${{matrix.generator}}" "${{github.workspace}}/vcvrack" ${{matrix.extra-flags}}
-
-      - name: Build
-        run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
-
-      - name: install
-        run: cmake --install "${{github.workspace}}/build" --prefix "${{github.workspace}}/build/dist"
+      - uses: ./.github/actions/cmake
+        with:
+          source: ${{github.workspace}}/vcvrack
+          install: ${{github.workspace}}/dist
+          extra-flags: ${{matrix.extra-flags}}
 
       - name: Package
         uses: actions/upload-artifact@v4
         with:
           name: KitsBlips-VCVRack-${{ matrix.name }}
-          path: "${{github.workspace}}/build/dist"
+          path: ${{github.workspace}}/dist
 
   build-daisy:
     name: daisy ${{ matrix.name }}
@@ -161,17 +132,13 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Configure CMake
-        run: cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} "${{github.workspace}}/daisy"
-
-      - name: Build
-        run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
-
-      - name: install
-        run: cmake --install "${{github.workspace}}/build" --prefix "${{github.workspace}}/build/dist"
+      - uses: ./.github/actions/cmake
+        with:
+          source: ${{github.workspace}}/daisy
+          install: ${{github.workspace}}/dist
 
       - name: Package
         uses: actions/upload-artifact@v4
         with:
           name: KitsBlips-Daisy
-          path: "${{github.workspace}}/build/dist"
+          path: ${{github.workspace}}/dist

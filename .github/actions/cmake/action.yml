@@ -1,0 +1,38 @@
+name: "Run CMake"
+description: "Runs all the steps to have a full cmake build targeting a folder."
+inputs:
+  source:
+    description: "source folder"
+    required: true
+  build:
+    description: "temporary build folder"
+    required: true
+    default: ${{github.workspace}}/build
+  cache:
+    description: "temporary cache folder"
+    required: true
+    default: ${{github.workspace}}/cache
+  extra-flags:
+    description: "flags to pass to cmake configure"
+runs:
+  using: "composite"
+  steps:
+    - name: Cache
+      uses: actions/cache@v3
+      with:
+        path: ${{inputs.cache}}
+        key: deps.${{runner.os}}.${{ hashFiles('**/*.cmake','**/CMakeLists.txt') }}
+        restore-keys: deps.${{runner.os}}.
+
+    - name: Configure
+      run: cmake -S "${{inputs.source}}" -B "${{inputs.build}}" -DFETCHCONTENT_BASE_DIR="${{inputs.cache}}" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{inputs.extra-flags}}
+      shell: bash
+
+    - name: Build
+      run: cmake --build "${{inputs.build}}" --config ${{env.BUILD_TYPE}}
+      shell: bash
+
+    - name: install
+      if: ${{inputs.install}}
+      run: cmake --install "${{inputs.build}}" --prefix "${{inputs.install}}"
+      shell: bash

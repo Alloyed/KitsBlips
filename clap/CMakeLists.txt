@@ -15,7 +15,6 @@ set(PRODUCT_NAME "KitsBlips")
 set(PRODUCT_ID "me.alloyed.KitsBlips")
 option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
 
-
 set(CMAKE_CXX_STANDARD 20)
 
 # shared libs
@@ -71,6 +70,7 @@ make_clapfirst_plugins(
 
     PLUGIN_FORMATS CLAP VST3 # AUV2 WCLAP
 
+    # bleh. ideally this would be part of the install step instead
     ASSET_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
 
     # You can set up the AUv2 for a single plugin here, or you can
