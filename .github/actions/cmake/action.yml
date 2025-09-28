@@ -14,6 +14,8 @@ inputs:
     default: ${{github.workspace}}/cache
   install:
     description: "folder to install to. if unspecified, installation is skipped"
+  test:
+    description: "set to non-null to enable ctest integration on this target"
   extra-flags:
     description: "flags to pass to cmake configure"
 runs:
@@ -34,7 +36,12 @@ runs:
       run: cmake --build "${{inputs.build}}" --config ${{env.BUILD_TYPE}}
       shell: bash
 
-    - name: install
+    - name: Install
       if: ${{inputs.install}}
-      run: cmake --install "${{inputs.build}}" --prefix "${{inputs.install}}"
+      run: cmake --install "${{inputs.build}}" --prefix "${{inputs.install}}" --config ${{env.BUILD_TYPE}}
+      shell: bash
+
+    - name: Test
+      if: ${{inputs.test}}
+      run: ctest --test-dir "${{inputs.build}}" --output-on-failure --no-tests=error -C ${{env.BUILD_TYPE}}
       shell: bash

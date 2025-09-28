@@ -79,7 +79,7 @@ jobs:
             os: macos-14
             extra-flags: -G "Unix Makefiles" -DCMAKE_OSX_ARCHITECTURES="arm64"
           - name: Windows
-            os: windows-latest
+            os: windows-2025
             extra-flags: -G "MinGW Makefiles"
     steps:
       - name: Set up MinGW
