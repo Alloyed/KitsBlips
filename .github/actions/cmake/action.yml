@@ -7,11 +7,13 @@ inputs:
   build:
     description: "temporary build folder"
     required: true
-    default: ${{github.workspace}}/build
+    default: ${{runner.temp}}/build
   cache:
     description: "temporary cache folder"
     required: true
     default: ${{github.workspace}}/cache
+  install:
+    description: "folder to install to. if unspecified, installation is skipped"
   extra-flags:
     description: "flags to pass to cmake configure"
 runs:
@@ -21,8 +23,8 @@ runs:
       uses: actions/cache@v3
       with:
         path: ${{inputs.cache}}
-        key: deps.${{runner.os}}.${{ hashFiles('**/*.cmake','**/CMakeLists.txt') }}
-        restore-keys: deps.${{runner.os}}.
+        key: deps.${{inputs.source}}.${{runner.os}}.${{ hashFiles('**/*.cmake','**/CMakeLists.txt') }}
+        restore-keys: deps.${{inputs.source}}.${{runner.os}}.
 
     - name: Configure
       run: cmake -S "${{inputs.source}}" -B "${{inputs.build}}" -DFETCHCONTENT_BASE_DIR="${{inputs.cache}}" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{inputs.extra-flags}}
