@@ -19,13 +19,25 @@ SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
 
 ET.register_namespace('', SVG_NAMESPACE)
 
-def fix_svg(filename):
-    """Applies fixes to the given SVG file in place. Returns True if file was modified."""
-    tree = ET.parse(filename)
-    root = tree.getroot()
-    modified = False
-    
-    # convert any text elements to paths using inkscape
+def run_usvg_cleanup(filename, root):
+    """Applies multiple optimizations/simplifications using usvg"""
+    try:
+        args = ['usvg', "--dpi", "{:.0f}".format(DPI), filename, filename]
+        print('$ ' + ' '.join(args))
+        subprocess.run(
+            args,
+            check=True,
+            stdout=sys.stderr,
+            stderr=sys.stderr
+        )
+        return True
+    except FileNotFoundError:
+        print('warning: usvg not found; skipping text-to-path for ' + filename)
+    except subprocess.CalledProcessError:
+        print('warning: usvg failed on ' + filename)
+
+def run_inkscape_cleanup(filename, root):
+    """Convert any text elements to paths using inkscape"""
     text_tag = '{' + SVG_NAMESPACE + '}text'
     if root.find(text_tag) is not None:
         try:
@@ -37,14 +49,26 @@ def fix_svg(filename):
                 stdout=sys.stderr,
                 stderr=sys.stderr
             )
-            # file changed, re-parse
-            tree = ET.parse(filename)
-            root = tree.getroot()
-            modified = True
+            return True
         except FileNotFoundError:
             print('warning: inkscape not found; skipping text-to-path for ' + filename)
         except subprocess.CalledProcessError:
             print('warning: inkscape failed on ' + filename)
+    return False
+
+def fix_svg(filename):
+    """Applies fixes to the given SVG file in place. Returns True if file was modified."""
+    tree = ET.parse(filename)
+    root = tree.getroot()
+    modified = False
+    
+    # simplify step, can either be inkscape or usvg
+    #if run_inkscape_cleanup(filename, root):
+    if run_usvg_cleanup(filename, root):
+        # file changed, re-parse
+        tree = ET.parse(filename)
+        root = tree.getroot()
+        modified = True
 
     # reorder defs to be the first child of root. needed for Reasons(tm)
     defs_tag = '{' + SVG_NAMESPACE + '}defs'

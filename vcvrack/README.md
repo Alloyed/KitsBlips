@@ -14,3 +14,9 @@ $ cp -r dist/* ~/.local/share/Rack2/plugins/lin-x64/
 # or
 $ cp -r dist/* $LOCALAPPDATA/Rack2/plugins-win-x64/
 ```
+
+## SVGs
+to prep, do:
+```
+cp -r ../panels/*.svg res/ && ./exportsvgs.py res
+```

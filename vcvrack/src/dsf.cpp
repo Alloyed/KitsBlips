@@ -1,6 +1,7 @@
 #include "kitdsp/math/util.h"
 #include "kitdsp/osc/dsfOscillator.h"
 #include "plugin.hpp"
+#include "SvgHelper.hpp"
 
 using namespace kitdsp;
 using float4 = simd::float_4;
@@ -205,7 +206,7 @@ struct Dsf : Module {
     int32_t mLastChannels{};
 };
 
-struct DsfWidget : ModuleWidget {
+struct DsfWidget : ModuleWidget, SvgHelper<DsfWidget> {
     DsfWidget(Dsf* module) {
         setModule(module);
         setPanel(createPanel(asset::plugin(pluginInstance, "res/DSF_Oscillator.svg")));
@@ -215,24 +216,24 @@ struct DsfWidget : ModuleWidget {
         addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
         addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-        addParam(createParamCentered<NKK2>(mm2px(Vec(55.239, 29.905)), module, Dsf::MOD_MODE_PARAM));
-        addParam(createParamCentered<Davies1900hChocoKnob>(mm2px(Vec(35.414, 31.587)), module, Dsf::MOD_COARSE_PARAM));
-        addParam(createParamCentered<Davies1900hForestKnob>(mm2px(Vec(13.026, 31.956)), module, Dsf::COARSE_PARAM));
-        addParam(createParamCentered<Davies1900hChocoKnob>(mm2px(Vec(35.613, 51.719)), module, Dsf::MOD_FINE_PARAM));
-        addParam(createParamCentered<Davies1900hChocoKnob>(mm2px(Vec(55.873, 51.719)), module, Dsf::LEVEL_PARAM));
-        addParam(createParamCentered<Davies1900hForestKnob>(mm2px(Vec(11.775, 52.419)), module, Dsf::FINE_PARAM));
-        addParam(createParamCentered<Trimpot>(mm2px(Vec(11.777, 72.881)), module, Dsf::FM_PARAM));
-        addParam(createParamCentered<Trimpot>(mm2px(Vec(35.667, 72.881)), module, Dsf::MOD_FM_PARAM));
-        addParam(createParamCentered<Trimpot>(mm2px(Vec(56.075, 72.881)), module, Dsf::LEVEL_CV_PARAM));
+        bindParam<NKK2>("switch-modmode", Dsf::MOD_MODE_PARAM);
+        bindParam<Davies1900hChocoKnob>("knob-modcoarse",Dsf::MOD_COARSE_PARAM);
+        bindParam<Davies1900hForestKnob>("knob-coarse",Dsf::COARSE_PARAM);
+        bindParam<Davies1900hChocoKnob>("knob-modfine",Dsf::MOD_FINE_PARAM);
+        bindParam<Davies1900hChocoKnob>("knob-modlevel",Dsf::LEVEL_PARAM);
+        bindParam<Davies1900hForestKnob>("knob-fine",Dsf::FINE_PARAM);
+        bindParam<Trimpot>("trimpot-fm",Dsf::FM_PARAM);
+        bindParam<Trimpot>("trimpot-modfm",Dsf::MOD_FM_PARAM);
+        bindParam<Trimpot>("trimpot-modlevel",Dsf::LEVEL_CV_PARAM);
 
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(11.773, 90.193)), module, Dsf::FM_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(35.663, 90.193)), module, Dsf::MOD_FM_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(55.92, 90.193)), module, Dsf::LEVEL_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(18.013, 112.103)), module, Dsf::PITCH_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(30.258, 112.103)), module, Dsf::MOD_PITCH_INPUT));
+        bindInput<PJ301MPort>("in-fm",Dsf::FM_INPUT);
+        bindInput<PJ301MPort>("in-modfm",Dsf::MOD_FM_INPUT);
+        bindInput<PJ301MPort>("in-modlevel",Dsf::LEVEL_INPUT);
+        bindInput<PJ301MPort>("in-pitch",Dsf::PITCH_INPUT);
+        bindInput<PJ301MPort>("in-modpitch",Dsf::MOD_PITCH_INPUT);
 
-        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(45.424, 112.103)), module, Dsf::OUT_MAIN_OUTPUT));
-        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(57.366, 112.103)), module, Dsf::OUT_AUX_OUTPUT));
+        bindOutput<PJ301MPort>("out-main",Dsf::OUT_MAIN_OUTPUT);
+        bindOutput<PJ301MPort>("out-aux",Dsf::OUT_AUX_OUTPUT);
     }
 };
 
