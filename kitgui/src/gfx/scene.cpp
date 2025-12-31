@@ -16,6 +16,7 @@
 #include <Magnum/Trade/SceneData.h>
 
 #include <fmt/format.h>
+#include <unistd.h>
 #include <cassert>
 #include <optional>
 #include <string>

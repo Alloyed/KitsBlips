@@ -47,14 +47,16 @@ target_link_libraries(kitgui PUBLIC
     Magnum::Magnum
     Magnum::SceneGraph
     fmt::fmt
+
+    Magnum::AnyImageImporter
+    MagnumPlugins::GltfImporter
+    MagnumPlugins::StbImageImporter
 )
 target_link_libraries(kitgui PRIVATE
     ${MAGNUM_PLATFORMGL}
     Magnum::MeshTools
     Magnum::Shaders
     Magnum::Trade
-    MagnumPlugins::StbImageImporter
-    MagnumPlugins::GltfImporter
 )
 target_disable_warnings(Magnum::Magnum)
 

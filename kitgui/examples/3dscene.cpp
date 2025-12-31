@@ -12,7 +12,7 @@ class MyApp : public kitgui::BaseApp {
         mContext.SetClearColor({0.3f, 0.7f, 0.3f, 1.0f});
 
         auto props = mScene->GetProps();
-        props.scenePath = "assets/duck.glb";
+        props.scenePath = "../assets/duck.glb";
         mScene->SetProps(props);
     }
     ~MyApp() = default;

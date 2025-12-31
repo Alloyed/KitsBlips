@@ -189,18 +189,18 @@ endif()
 FetchContent_Declare(
     corrade
     GIT_REPOSITORY https://github.com/mosra/corrade.git
-    GIT_TAG        8b3c02277020d9c609f54200d050ff665c4431e1
+    GIT_TAG        b65bcc0d08c8ef4b47a19ac37cdffb267e7c9994
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     magnum
     GIT_REPOSITORY https://github.com/mosra/magnum.git
-    GIT_TAG        be38d5e2bbd03cab4f31707d8a012a4ce119fc40
+    GIT_TAG        bd52eb9be27f647cbec5475a920b79ce61953c8b
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     magnum-plugins
     GIT_REPOSITORY https://github.com/mosra/magnum-plugins.git
-    GIT_TAG        9f31cf5a0a6a44a63e320924141513d473586760
+    GIT_TAG        420a0e27b8a3a006a1b4db9c200139473a047b84
     EXCLUDE_FROM_ALL
 )
