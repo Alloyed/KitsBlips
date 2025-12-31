@@ -5,7 +5,8 @@
 #include <memory>
 #include "kitgui/app.h"
 #include "kitgui/context.h"
-#include "kitgui/dom.h"
+#include "kitgui/domKnob.h"
+#include "kitgui/domScene.h"
 #include "kitgui/kitgui.h"
 
 using namespace Magnum;

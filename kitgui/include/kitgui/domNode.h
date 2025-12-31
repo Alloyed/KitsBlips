@@ -2,12 +2,9 @@
 
 #include <Magnum/Math/Vector2.h>
 #include <memory>
-#include <optional>
-#include <string>
 
 namespace kitgui {
 using Vector2 = Magnum::Vector2;  // TODO: replace?
-class Context;
 
 /**
  * A pared down "dom node" like interface. implements parent-child relationships using an intrusive linked list.
@@ -62,44 +59,5 @@ bool DomNode::Visit(FN visitor) {
     return true;
 }
 
-struct DomSceneImpl;
-class DomScene : public DomNode {
-   public:
-    struct Props {
-        std::string scenePath{};
-    };
-    static std::shared_ptr<DomScene> Create(kitgui::Context& mContext);
-    ~DomScene() override;
-
-    const Props& GetProps() const;
-    void SetProps(const Props& props);
-    void Load();
-    void Update() override;
-    void Draw() override;
-
-   private:
-    DomScene(kitgui::Context& mContext);
-    Props mProps{};
-    std::unique_ptr<DomSceneImpl> mImpl;
-};
-
-class DomKnob : public DomNode {
-   public:
-    struct Props {
-        std::optional<Magnum::Vector2> position;
-        std::string id{};
-        std::string sceneAnchor{};
-    };
-    static std::shared_ptr<DomKnob> Create();
-    ~DomKnob() override;
-    const Props& GetProps() const;
-    void SetProps(const Props& props);
-    void Update() override;
-    void Draw() override {};
-
-   private:
-    DomKnob();
-    Props mProps{};
-};
-
 }  // namespace kitgui
+

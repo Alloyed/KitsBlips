@@ -26,14 +26,15 @@ target_sources(kitgui PRIVATE
     src/app.cpp
     src/context.cpp
     src/dom/domNode.cpp
+    src/dom/domKnob.cpp
+    src/dom/domScene.cpp
     src/fileContext.cpp
     src/gfx/drawables.cpp
-    src/gfx/domScene.cpp
+    src/gfx/scene.cpp
     src/gfx/lights.cpp
     src/gfx/materials.cpp
     src/gfx/meshes.cpp
     src/controls/knob.cpp
-    src/dom/domWrappers.cpp
     src/immediateMode/immediateMode.cpp
 )
 

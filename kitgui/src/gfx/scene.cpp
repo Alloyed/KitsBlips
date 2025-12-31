@@ -1,4 +1,4 @@
-#include "kitgui/dom.h"
+#include "gfx/scene.h"
 
 // enable conversion to stl
 #include <Corrade/Containers/OptionalStl.h>
@@ -41,7 +41,6 @@
 #include "gfx/meshes.h"
 #include "gfx/sceneGraph.h"
 #include "kitgui/context.h"
-#include "kitgui/dom.h"
 #include "fileContext.h"
 #include "log.h"
 
@@ -54,41 +53,6 @@ namespace {
 }
 
 namespace kitgui {
-struct DomSceneImpl {
-    DomSceneImpl(kitgui::Context& mContext) : mContext(mContext) {}
-    void Load(std::string_view path);
-    void LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
-    void Update();
-    void Draw();
-
-    kitgui::Context& mContext;
-
-    MeshCache mMeshCache;
-    Magnum::SceneGraph::DrawableGroup3D mLightDrawables;
-
-    MaterialCache mMaterialCache;
-    LightCache mLightCache;
-    DrawableCache mDrawableCache;
-
-    Scene3D mScene;
-    std::vector<ObjectInfo> mSceneObjects;
-    Object3D* mCameraObject{};
-    SceneGraph::Camera3D* mCamera;
-
-    Animation::Player<std::chrono::nanoseconds, float> mPlayer;
-};
-
-DomScene::DomScene(kitgui::Context& mContext) : mImpl(std::make_unique<DomSceneImpl>(mContext)) {}
-DomScene::~DomScene() = default;
-
-std::shared_ptr<DomScene> DomScene::Create(kitgui::Context& mContext) {
-    return std::shared_ptr<DomScene>(new DomScene(mContext));
-}
-
-void DomScene::Load() {
-    // TODO: we gotta reload if the scenePath changes (or, maybe, if we're fancy, inotify....)
-    mImpl->Load(mProps.scenePath);
-}
 
 void DomSceneImpl::Load(std::string_view path) {
     Corrade::Containers::Pointer<Magnum::Trade::AbstractImporter> importer = sImporterManager.loadAndInstantiate("GltfImporter");
@@ -298,27 +262,6 @@ void DomSceneImpl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::stri
         /* Load only the first animation at the moment */
         break;
     }
-}
-
-const DomScene::Props& DomScene::GetProps() const {
-    return mProps;
-}
-
-void DomScene::SetProps(const DomScene::Props& props) {
-    // TODO: dirty flagging
-    mProps = props;
-}
-
-void DomScene::Update() {
-    mImpl->Update();
-}
-
-void DomSceneImpl::Update() {
-    mPlayer.advance(std::chrono::system_clock::now().time_since_epoch());
-}
-
-void DomScene::Draw() {
-    mImpl->Draw();
 }
 
 void DomSceneImpl::Draw() {
