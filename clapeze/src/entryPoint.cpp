@@ -6,6 +6,7 @@
 #include "physfs.h"
 
 namespace clapeze {
+std::vector<PluginEntry> RegisterPlugin::sPlugins{};
 
 namespace {
 namespace PluginFactory {

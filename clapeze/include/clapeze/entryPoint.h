@@ -12,18 +12,17 @@ struct RegisterPlugin {
     static std::vector<PluginEntry> sPlugins;
 };
 
-}  // namespace clapeze
-
 namespace EntryPoint {
 bool _init(const char* path);
 void _deinit();
 const void* _get_factory(const char* factoryId);
 }  // namespace EntryPoint
+}  // namespace clapeze
 
-#define CLAPEZE_CREATE_ENTRY_POINT() \
-    (clap_plugin_entry_t{            \
-        CLAP_VERSION_INIT,           \
-        EntryPoint::_init,           \
-        EntryPoint::_deinit,         \
-        EntryPoint::_get_factory,    \
+#define CLAPEZE_CREATE_ENTRY_POINT()       \
+    (clap_plugin_entry_t{                  \
+        CLAP_VERSION_INIT,                 \
+        clapeze::EntryPoint::_init,        \
+        clapeze::EntryPoint::_deinit,      \
+        clapeze::EntryPoint::_get_factory, \
     })
