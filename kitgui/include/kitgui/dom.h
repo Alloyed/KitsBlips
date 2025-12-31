@@ -7,6 +7,7 @@
 
 namespace kitgui {
 using Vector2 = Magnum::Vector2;  // TODO: replace?
+class Context;
 
 /**
  * A pared down "dom node" like interface. implements parent-child relationships using an intrusive linked list.
@@ -67,7 +68,7 @@ class DomScene : public DomNode {
     struct Props {
         std::string scenePath{};
     };
-    static std::shared_ptr<DomScene> Create();
+    static std::shared_ptr<DomScene> Create(kitgui::Context& mContext);
     ~DomScene() override;
 
     const Props& GetProps() const;
@@ -77,7 +78,7 @@ class DomScene : public DomNode {
     void Draw() override;
 
    private:
-    DomScene();
+    DomScene(kitgui::Context& mContext);
     Props mProps{};
     std::unique_ptr<DomSceneImpl> mImpl;
 };

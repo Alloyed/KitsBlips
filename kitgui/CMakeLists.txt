@@ -23,8 +23,10 @@ set_property(TARGET kitgui PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
 target_enable_warnings(kitgui)
 
 target_sources(kitgui PRIVATE
+    src/app.cpp
     src/context.cpp
     src/dom/domNode.cpp
+    src/fileContext.cpp
     src/gfx/drawables.cpp
     src/gfx/domScene.cpp
     src/gfx/lights.cpp
@@ -91,7 +93,6 @@ endif()
 if (PROJECT_IS_TOP_LEVEL)
     # add example exes
     set(CMAKE_CXX_STANDARD 20)
-    corrade_add_resource(embeddedAssets assets/embedded.conf)
-    add_executable(multiwindow examples/multiwindow.cpp ${embeddedAssets})
+    add_executable(multiwindow examples/multiwindow.cpp)
     target_link_libraries(multiwindow kitgui Corrade::Utility Corrade::Main)
 endif()

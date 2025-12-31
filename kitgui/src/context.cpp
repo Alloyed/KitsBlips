@@ -5,6 +5,7 @@
 #include <string_view>
 #include <utility>
 #include "kitgui/kitgui.h"
+#include "fileContext.h"
 
 #if KITGUI_USE_SDL
 #include "impl/sdl/contextImpl.h"
@@ -27,7 +28,7 @@ void Context::deinit() {
 }
 
 Context::Context(Context::AppFactory fn)
-    : mCreateAppFn(std::move(fn)), mApp(nullptr), mImpl(std::make_unique<Impl>(*this)) {}
+    : mCreateAppFn(std::move(fn)), mFileContext(std::make_unique<FileContext>(*this)), mImpl(std::make_unique<Impl>(*this)), mApp(nullptr) {}
 
 bool Context::Create(kitgui::WindowApi api, bool isFloating) {
     if (!mImpl->Create(api, isFloating)) {
@@ -51,6 +52,10 @@ bool Context::IsCreated() const {
 
 void Context::SetClearColor(Magnum::Color4 color) {
     return mImpl->SetClearColor(color);
+}
+
+FileContext* Context::GetFileContext() const {
+    return mFileContext.get();
 }
 
 bool Context::SetScale(double scale) {

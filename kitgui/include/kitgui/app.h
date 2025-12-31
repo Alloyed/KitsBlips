@@ -1,7 +1,12 @@
 #pragma once
 
+#include <optional>
+#include <string>
+#include <string_view>
+
 namespace kitgui {
 class Context;
+class FileContext;
 /**
  * Apps are all the configuration points associated with a single window/context. One process can have multiple apps, as
  * well as multiple of the same app. All openGL resources must be unique to a given App, and only can be created/used
@@ -9,6 +14,7 @@ class Context;
  */
 class BaseApp {
     friend class Context;
+    friend class FileContext;
 
    public:
     explicit BaseApp(Context& mContext) : mContext(mContext) {}
@@ -33,6 +39,11 @@ class BaseApp {
      * Triggers on a regular basis. use gl to manipulate the visual state.
      */
     virtual void OnDraw() {}
+    /**
+     * Called when a file needs to be loaded. Override to provide custom file loading behavior.
+     * Default implementation uses C stdio to read the file.
+     */
+    virtual std::optional<std::string> OnFileLoadRequest(std::string_view path);
 
     Context& GetContext() { return mContext; }
 

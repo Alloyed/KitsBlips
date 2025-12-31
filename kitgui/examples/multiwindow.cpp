@@ -26,7 +26,7 @@ class MyApp2 : public kitgui::BaseApp {
 
 class MyApp : public kitgui::BaseApp {
    public:
-    explicit MyApp(kitgui::Context& mContext) : kitgui::BaseApp(mContext), mScene(kitgui::DomScene::Create()) {
+    explicit MyApp(kitgui::Context& mContext) : kitgui::BaseApp(mContext), mScene(kitgui::DomScene::Create(mContext)) {
         mContext.SetSizeConfig({400, 400});
         mContext.SetClearColor({0.3f, 0.7f, 0.3f, 1.0f});
 
@@ -62,14 +62,6 @@ class MyApp : public kitgui::BaseApp {
 };
 
 int main() {
-    // CORRADE_RESOURCE_INITIALIZE(embeddedAssets);
-    // Corrade::PluginManager::Manager<Magnum::Trade::AbstractImporter> manager;
-    // Corrade::Containers::Pointer<Magnum::Trade::AbstractImporter> importer =
-    // manager.loadAndInstantiate("GltfImporter"); Magnum::Trade::AbstractImporter* raw = importer.get();
-    // Utility::Resource rs{"embeddedAssets"};
-    // Containers::ArrayView<const char> data = rs.getRaw("duck.glb");
-    // importer->openData(data);
-
     kitgui::Context::init();
 
     {

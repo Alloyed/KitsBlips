@@ -40,18 +40,28 @@
 #include "gfx/materials.h"
 #include "gfx/meshes.h"
 #include "gfx/sceneGraph.h"
+#include "kitgui/context.h"
 #include "kitgui/dom.h"
+#include "fileContext.h"
 #include "log.h"
 
 using namespace Magnum;
 using namespace Magnum::Math::Literals;
 using namespace Magnum::Math::Literals::ColorLiterals;
 
+namespace {
+    PluginManager::Manager<Trade::AbstractImporter> sImporterManager;
+}
+
 namespace kitgui {
 struct DomSceneImpl {
-    void Load(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
+    DomSceneImpl(kitgui::Context& mContext) : mContext(mContext) {}
+    void Load(std::string_view path);
+    void LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
     void Update();
     void Draw();
+
+    kitgui::Context& mContext;
 
     MeshCache mMeshCache;
     Magnum::SceneGraph::DrawableGroup3D mLightDrawables;
@@ -68,19 +78,36 @@ struct DomSceneImpl {
     Animation::Player<std::chrono::nanoseconds, float> mPlayer;
 };
 
-DomScene::DomScene() : mImpl(std::make_unique<DomSceneImpl>()) {}
+DomScene::DomScene(kitgui::Context& mContext) : mImpl(std::make_unique<DomSceneImpl>(mContext)) {}
 DomScene::~DomScene() = default;
 
-std::shared_ptr<DomScene> DomScene::Create() {
-    return std::shared_ptr<DomScene>(new DomScene());
+std::shared_ptr<DomScene> DomScene::Create(kitgui::Context& mContext) {
+    return std::shared_ptr<DomScene>(new DomScene(mContext));
 }
 
 void DomScene::Load() {
-    // TODO: abstractImporter
-    // mImpl->Load(importer, debugName);
+    // TODO: we gotta reload if the scenePath changes (or, maybe, if we're fancy, inotify....)
+    mImpl->Load(mProps.scenePath);
 }
 
-void DomSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_view debugName) {
+void DomSceneImpl::Load(std::string_view path) {
+    Corrade::Containers::Pointer<Magnum::Trade::AbstractImporter> importer = sImporterManager.loadAndInstantiate("GltfImporter");
+
+    const auto fileCallback = [](const std::string& filename, Magnum::InputFileCallbackPolicy policy, void* ctx) -> Containers::Optional<Containers::ArrayView<const char>> {
+        std::string* fileData = ((kitgui::FileContext*)ctx)->getOrLoadFileByName(filename, policy);
+        if (fileData == nullptr) {
+            return {};
+        }
+        return Containers::ArrayView<const char>(fileData->data(), fileData->size());
+    };
+    
+    importer->setFileCallback(fileCallback, (void*)mContext.GetFileContext());
+    importer->openFile(path.data());
+
+    LoadImpl(*(importer.get()), path);
+}
+
+void DomSceneImpl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName) {
     mMaterialCache.LoadTextures(importer);
     mMaterialCache.LoadMaterials(importer);
     mLightCache.LoadLights(importer);
@@ -89,7 +116,7 @@ void DomSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_v
     /* Load the scene. Save the object pointers in an array for easier mapping
        of animations later. */
     uint32_t id = importer.defaultScene() == -1 ? 0 : importer.defaultScene();
-    Debug{} << "Loading scene" << id << importer.sceneName(id);
+    Debug{} << "Loading " << debugName.data() << "scene:" << id << importer.sceneName(id);
 
     auto scene = std::optional<Trade::SceneData>(importer.scene(id));
     if (!scene || !scene->is3D() || !scene->hasField(Trade::SceneField::Parent)) {
@@ -110,7 +137,7 @@ void DomSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_v
         objectInfo.object = new Object3D{};
         objectInfo.debugName = importer.objectName(objectId);
         if (objectInfo.debugName.empty()) {
-            objectInfo.debugName = fmt::format("object {}", objectId);
+            objectInfo.debugName = fmt::format("{}/object:{}", debugName, objectId);
         }
     }
 
@@ -190,7 +217,7 @@ void DomSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_v
             const uint32_t meshId = meshMaterial.second().first();
             const int32_t materialId = meshMaterial.second().second();
             mDrawableCache.CreateDrawableFromMesh(mMaterialCache, mMeshCache.mMeshes[meshId], mSceneObjects[objectId],
-                                                  materialId, mLightCache.mLightCount, mLightCache.mShadeless);
+                                                  materialId, static_cast<uint32_t>(mLightCache.mLightCount), mLightCache.mShadeless);
         }
     }
 
@@ -221,7 +248,7 @@ void DomSceneImpl::Load(Magnum::Trade::AbstractImporter& importer, std::string_v
     for (uint32_t i = 0; i != importer.animationCount(); ++i) {
         auto animation = importer.animation(i);
         if (!animation) {
-            kitgui::log::error(fmt::format("cannot load animation {} {}", i, importer.animationName(i)));
+            kitgui::log::error(fmt::format("cannot load: {}/animation:{}:{}", debugName, i, importer.animationName(i)));
             continue;
         }
 

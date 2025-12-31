@@ -26,6 +26,7 @@ class ContextImpl;
 
 namespace kitgui {
 class BaseApp;
+class FileContext;
 
 struct SizeConfig {
     uint32_t startingWidth{400};
@@ -69,6 +70,7 @@ class Context {
 
     bool IsCreated() const;
     void SetClearColor(Magnum::Color4 color);
+    FileContext* GetFileContext() const;
 
     // app events. forwards otherwise hidden events to impl
    protected:
@@ -91,8 +93,11 @@ class Context {
 
     AppFactory mCreateAppFn;
     SizeConfig mSizeConfig{};
+    std::unique_ptr<FileContext> mFileContext;
     std::unique_ptr<BaseApp> mApp;
     std::unique_ptr<Impl> mImpl;
+    
+    friend class FileContext;
 };
 
 }  // namespace kitgui
