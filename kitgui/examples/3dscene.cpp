@@ -2,11 +2,8 @@
 #include <imgui.h>
 #include "kitgui/app.h"
 #include "kitgui/context.h"
-#include "kitgui/domKnob.h"
 #include "kitgui/domScene.h"
 #include "kitgui/kitgui.h"
-
-using namespace Magnum;
 
 class MyApp : public kitgui::BaseApp {
    public:
@@ -17,9 +14,6 @@ class MyApp : public kitgui::BaseApp {
         auto props = mScene->GetProps();
         props.scenePath = "assets/duck.glb";
         mScene->SetProps(props);
-
-        auto knob = kitgui::DomKnob::Create();
-        mScene->Insert(knob.get(), nullptr);
     }
     ~MyApp() = default;
 
@@ -45,32 +39,13 @@ class MyApp : public kitgui::BaseApp {
     std::shared_ptr<kitgui::DomScene> mScene;
 };
 
-class MyApp2 : public kitgui::BaseApp {
-   public:
-    explicit MyApp2(kitgui::Context& mContext) : kitgui::BaseApp(mContext) {}
-    ~MyApp2() = default;
-
-   protected:
-    void OnActivate() override {}
-    void OnUpdate() override { ImGui::Text("Window.... 2!!!"); }
-
-    void OnDraw() override {}
-
-   private:
-};
-
 int main() {
     kitgui::Context::init();
 
     {
-        kitgui::Context ctx1([](kitgui::Context& ctx) { return std::make_unique<MyApp2>(ctx); });
+        kitgui::Context ctx1([](kitgui::Context& ctx) { return std::make_unique<MyApp>(ctx); });
         ctx1.Create(kitgui::WindowApi::Any, true);
-
-        kitgui::Context ctx2([](kitgui::Context& ctx) { return std::make_unique<MyApp2>(ctx); });
-        ctx2.Create(kitgui::WindowApi::Any, true);
-
         ctx1.Show();
-        ctx2.Show();
 
         kitgui::Context::RunLoop();
     }

@@ -94,6 +94,13 @@ endif()
 if (PROJECT_IS_TOP_LEVEL)
     # add example exes
     set(CMAKE_CXX_STANDARD 20)
+
     add_executable(multiwindow examples/multiwindow.cpp)
     target_link_libraries(multiwindow kitgui Corrade::Utility Corrade::Main)
+
+    add_executable(3dscene examples/3dscene.cpp)
+    target_link_libraries(3dscene kitgui Corrade::Utility Corrade::Main)
+
+    add_executable(immediatemode examples/immediatemode.cpp)
+    target_link_libraries(immediatemode kitgui Corrade::Utility Corrade::Main)
 endif()

@@ -252,6 +252,8 @@ void DomSceneImpl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::stri
     }
 }
 
+void DomSceneImpl::Update() {}
+
 void DomSceneImpl::Draw() {
     /* Another FB could be bound from a depth / object ID read (moreover with
        color output disabled), set it back to the default framebuffer */
