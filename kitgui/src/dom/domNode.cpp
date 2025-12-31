@@ -30,7 +30,7 @@ void DomNode::Insert(DomNode* newChild, DomNode* childAfter) {
             childAfter->mPreviousSibling = newChild->shared_from_this();
         }
 
-    } else {
+    } else if (!this->mLastChild.expired()) {
         // append to end
         std::shared_ptr<DomNode> childBefore = mLastChild.lock();
         childBefore->mNextSibling = newChild->shared_from_this();

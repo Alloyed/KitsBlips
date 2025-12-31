@@ -10,20 +10,6 @@
 
 using namespace Magnum;
 
-class MyApp2 : public kitgui::BaseApp {
-   public:
-    explicit MyApp2(kitgui::Context& mContext) : kitgui::BaseApp(mContext) {}
-    ~MyApp2() = default;
-
-   protected:
-    void OnActivate() override {}
-    void OnUpdate() override { ImGui::Text("Window.... 2!!!"); }
-
-    void OnDraw() override {}
-
-   private:
-};
-
 class MyApp : public kitgui::BaseApp {
    public:
     explicit MyApp(kitgui::Context& mContext) : kitgui::BaseApp(mContext), mScene(kitgui::DomScene::Create(mContext)) {
@@ -59,6 +45,20 @@ class MyApp : public kitgui::BaseApp {
    private:
     double mKnob = 0.0;
     std::shared_ptr<kitgui::DomScene> mScene;
+};
+
+class MyApp2 : public kitgui::BaseApp {
+   public:
+    explicit MyApp2(kitgui::Context& mContext) : kitgui::BaseApp(mContext) {}
+    ~MyApp2() = default;
+
+   protected:
+    void OnActivate() override {}
+    void OnUpdate() override { ImGui::Text("Window.... 2!!!"); }
+
+    void OnDraw() override {}
+
+   private:
 };
 
 int main() {

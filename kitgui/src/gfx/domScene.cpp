@@ -50,7 +50,7 @@ using namespace Magnum::Math::Literals;
 using namespace Magnum::Math::Literals::ColorLiterals;
 
 namespace {
-    PluginManager::Manager<Trade::AbstractImporter> sImporterManager;
+    PluginManager::Manager<Trade::AbstractImporter> sImporterManager {};
 }
 
 namespace kitgui {
@@ -92,6 +92,7 @@ void DomScene::Load() {
 
 void DomSceneImpl::Load(std::string_view path) {
     Corrade::Containers::Pointer<Magnum::Trade::AbstractImporter> importer = sImporterManager.loadAndInstantiate("GltfImporter");
+    assert(!!importer); // FIXME: this is null right now, investigate
 
     const auto fileCallback = [](const std::string& filename, Magnum::InputFileCallbackPolicy policy, void* ctx) -> Containers::Optional<Containers::ArrayView<const char>> {
         std::string* fileData = ((kitgui::FileContext*)ctx)->getOrLoadFileByName(filename, policy);

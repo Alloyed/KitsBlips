@@ -27,8 +27,8 @@ class DomNode : public std::enable_shared_from_this<DomNode> {
     template <typename FN>
     bool Visit(FN visitor);
 
-    virtual void Update();
-    virtual void Draw();
+    virtual void Update() {};
+    virtual void Draw() {};
 
    protected:
     virtual void OnAttached() {};
@@ -95,7 +95,7 @@ class DomKnob : public DomNode {
     const Props& GetProps() const;
     void SetProps(const Props& props);
     void Update() override;
-    void Draw() override;
+    void Draw() override {};
 
    private:
     DomKnob();
