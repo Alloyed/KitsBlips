@@ -1,6 +1,5 @@
 #include "fileContext.h"
 
-#include <Corrade/Containers/ArrayView.h>
 #include <optional>
 #include "kitgui/context.h"
 
@@ -17,13 +16,13 @@ std::string* FileContext::getOrLoadFileByName(const std::string& filename, Magnu
         }
         return nullptr;
     }
-    
+
     // if this file is cached, return that
     auto found = mFiles.find(filename);
     if (found != mFiles.end()) {
         return found->second.get();
     }
-    
+
     // load file
     if (!mContext.mApp) {
         return nullptr;
@@ -32,7 +31,7 @@ std::string* FileContext::getOrLoadFileByName(const std::string& filename, Magnu
     if (!fileData) {
         return nullptr;
     }
-    
+
     if (policy == Magnum::InputFileCallbackPolicy::LoadTemporary) {
         // TODO: we should mark this file for later garbage collection
     }
@@ -42,4 +41,3 @@ std::string* FileContext::getOrLoadFileByName(const std::string& filename, Magnu
 }
 
 }  // namespace kitgui
-

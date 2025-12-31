@@ -13,7 +13,6 @@
 #include <Magnum/Shaders/MeshVisualizerGL.h>
 #include <Magnum/Shaders/PhongGL.h>
 
-#include <optional>
 #include <span>
 #include <vector>
 

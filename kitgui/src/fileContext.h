@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Corrade/Containers/ArrayView.h>
-#include <Corrade/Containers/Optional.h>
 #include <Magnum/FileCallback.h>
 #include <memory>
 #include <string>
@@ -14,9 +12,8 @@ class Context;
 class FileContext {
    public:
     explicit FileContext(Context& context);
-    
-    std::string* getOrLoadFileByName(
-        const std::string& filename, Magnum::InputFileCallbackPolicy policy);
+
+    std::string* getOrLoadFileByName(const std::string& filename, Magnum::InputFileCallbackPolicy policy);
 
    private:
     Context& mContext;

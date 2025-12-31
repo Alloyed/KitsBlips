@@ -1,47 +1,32 @@
 #include "gfx/scene.h"
 
-// enable conversion to stl
-#include <Corrade/Containers/OptionalStl.h>
-#include <Corrade/Containers/PairStl.h>
-#include <Corrade/Containers/StringStl.h>
-// done
-
-// Corrade is magnum's internal "base layer". where possible replace with stl and etl
 #include <Corrade/Containers/Array.h>
 #include <Corrade/Containers/BitArray.h>
 #include <Corrade/Containers/Pair.h>
 #include <Corrade/Containers/StridedArrayView.h>
 #include <Corrade/Containers/Triple.h>
-#include <Corrade/Utility/Algorithms.h>
 
 #include <Magnum/Animation/Player.h>
-#include <Magnum/Animation/Track.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/GL/Renderer.h>
-#include <Magnum/Math/CubicHermite.h>
-#include <Magnum/Math/Quaternion.h>
 #include <Magnum/SceneGraph/Camera.h>
 #include <Magnum/Trade/AbstractImporter.h>
 #include <Magnum/Trade/AnimationData.h>
 #include <Magnum/Trade/CameraData.h>
-#include <Magnum/Trade/MeshData.h>
-#include <Magnum/Trade/PhongMaterialData.h>
 #include <Magnum/Trade/SceneData.h>
 
 #include <fmt/format.h>
 #include <cassert>
-#include <chrono>
-#include <memory>
 #include <optional>
 #include <string>
 
+#include "fileContext.h"
 #include "gfx/drawables.h"
 #include "gfx/lights.h"
 #include "gfx/materials.h"
 #include "gfx/meshes.h"
 #include "gfx/sceneGraph.h"
 #include "kitgui/context.h"
-#include "fileContext.h"
 #include "log.h"
 
 using namespace Magnum;
@@ -49,23 +34,25 @@ using namespace Magnum::Math::Literals;
 using namespace Magnum::Math::Literals::ColorLiterals;
 
 namespace {
-    PluginManager::Manager<Trade::AbstractImporter> sImporterManager {};
+PluginManager::Manager<Trade::AbstractImporter> sImporterManager{};
 }
 
 namespace kitgui {
 
 void DomSceneImpl::Load(std::string_view path) {
-    Corrade::Containers::Pointer<Magnum::Trade::AbstractImporter> importer = sImporterManager.loadAndInstantiate("GltfImporter");
-    assert(!!importer); // FIXME: this is null right now, investigate
+    Corrade::Containers::Pointer<Magnum::Trade::AbstractImporter> importer =
+        sImporterManager.loadAndInstantiate("GltfImporter");
+    assert(!!importer);  // FIXME: this is null right now, investigate
 
-    const auto fileCallback = [](const std::string& filename, Magnum::InputFileCallbackPolicy policy, void* ctx) -> Containers::Optional<Containers::ArrayView<const char>> {
+    const auto fileCallback = [](const std::string& filename, Magnum::InputFileCallbackPolicy policy,
+                                 void* ctx) -> Containers::Optional<Containers::ArrayView<const char>> {
         std::string* fileData = ((kitgui::FileContext*)ctx)->getOrLoadFileByName(filename, policy);
         if (fileData == nullptr) {
             return {};
         }
         return Containers::ArrayView<const char>(fileData->data(), fileData->size());
     };
-    
+
     importer->setFileCallback(fileCallback, (void*)mContext.GetFileContext());
     importer->openFile(path.data());
 
@@ -182,7 +169,8 @@ void DomSceneImpl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::stri
             const uint32_t meshId = meshMaterial.second().first();
             const int32_t materialId = meshMaterial.second().second();
             mDrawableCache.CreateDrawableFromMesh(mMaterialCache, mMeshCache.mMeshes[meshId], mSceneObjects[objectId],
-                                                  materialId, static_cast<uint32_t>(mLightCache.mLightCount), mLightCache.mShadeless);
+                                                  materialId, static_cast<uint32_t>(mLightCache.mLightCount),
+                                                  mLightCache.mShadeless);
         }
     }
 

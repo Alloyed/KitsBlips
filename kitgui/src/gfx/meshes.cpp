@@ -1,25 +1,12 @@
 #include "gfx/meshes.h"
 
 #include <Corrade/Containers/OptionalStl.h>
-#include <Corrade/Containers/StringStl.h>
-
-#include <Corrade/Containers/BitArray.h>
-#include <Corrade/Containers/Pair.h>
-#include <Corrade/Containers/StridedArrayView.h>
-#include <Corrade/Containers/Triple.h>
-#include <Corrade/Utility/Algorithms.h>
 #include <Magnum/GL/Mesh.h>
 #include <Magnum/MeshTools/Compile.h>
 #include <Magnum/MeshTools/GenerateIndices.h>
 #include <Magnum/Trade/AbstractImporter.h>
-#include <Magnum/Trade/AnimationData.h>
-#include <Magnum/Trade/CameraData.h>
 #include <Magnum/Trade/MeshData.h>
-#include <Magnum/Trade/PhongMaterialData.h>
-#include <Magnum/Trade/SceneData.h>
 #include <fmt/format.h>
-#include <algorithm>
-#include <cassert>
 #include <optional>
 #include <string>
 #include <vector>

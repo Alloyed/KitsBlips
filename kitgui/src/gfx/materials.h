@@ -3,7 +3,6 @@
 #include <Magnum/GL/Texture.h>
 #include <Magnum/Trade/MaterialData.h>
 #include <optional>
-#include <string>
 #include <vector>
 
 namespace Magnum {

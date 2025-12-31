@@ -1,16 +1,14 @@
 #pragma once
 
-#include <memory>
-#include <string>
 #include <Magnum/Trade/AbstractImporter.h>
 
-#include <Corrade/Containers/OptionalStl.h>
-#include <Corrade/Containers/PairStl.h>
-#include <Corrade/Containers/StringStl.h>
 #include <Corrade/Containers/Array.h>
 #include <Corrade/Containers/BitArray.h>
+#include <Corrade/Containers/OptionalStl.h>
 #include <Corrade/Containers/Pair.h>
+#include <Corrade/Containers/PairStl.h>
 #include <Corrade/Containers/StridedArrayView.h>
+#include <Corrade/Containers/StringStl.h>
 #include <Corrade/Containers/Triple.h>
 #include <Corrade/Utility/Algorithms.h>
 
@@ -31,24 +29,19 @@
 #include <fmt/format.h>
 #include <cassert>
 #include <chrono>
-#include <memory>
-#include <optional>
-#include <string>
 
-#include "gfx/scene.h"
+#include "fileContext.h"
 #include "gfx/drawables.h"
 #include "gfx/lights.h"
 #include "gfx/materials.h"
 #include "gfx/meshes.h"
 #include "gfx/sceneGraph.h"
 #include "kitgui/context.h"
-#include "fileContext.h"
-#include "log.h"
 
 namespace kitgui {
-    class Context;
+class Context;
 struct DomSceneImpl {
-    DomSceneImpl(kitgui::Context& mContext) : mContext(mContext) {}
+    explicit DomSceneImpl(kitgui::Context& mContext) : mContext(mContext) {}
     void Load(std::string_view path);
     void LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
     void Update();
@@ -71,4 +64,3 @@ struct DomSceneImpl {
     Magnum::Animation::Player<std::chrono::nanoseconds, float> mPlayer;
 };
 }  // namespace kitgui
-

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "kitgui/domNode.h"
 #include <memory>
 #include <string>
+#include "kitgui/domNode.h"
 
 namespace kitgui {
 class Context;
@@ -23,10 +23,9 @@ class DomScene : public DomNode {
     void Draw() override;
 
    private:
-    DomScene(kitgui::Context& mContext);
+    explicit DomScene(kitgui::Context& mContext);
     Props mProps{};
     std::unique_ptr<DomSceneImpl> mImpl;
 };
 
 }  // namespace kitgui
-

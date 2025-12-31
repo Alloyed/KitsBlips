@@ -1,5 +1,3 @@
-#include <Corrade/PluginManager/Manager.h>
-#include <Corrade/Utility/Resource.h>
 #include <Magnum/Math/Color.h>
 #include <imgui.h>
 #include <memory>

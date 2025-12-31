@@ -5,7 +5,6 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_hints.h>
 #include <SDL3/SDL_init.h>
-#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
@@ -21,8 +20,6 @@
 // linux-specific platform details
 #ifdef __linux__
 #include <X11/Xlib.h>
-#include <X11/Xos.h>
-#include <X11/Xutil.h>
 namespace {
 using X11Window = Window;
 using X11Display = Display;

@@ -4,7 +4,6 @@
 #include <memory>
 #include <string_view>
 #include <utility>
-#include "kitgui/kitgui.h"
 #include "fileContext.h"
 
 #if KITGUI_USE_SDL
@@ -14,8 +13,6 @@
 #elif KITGUI_USE_COCOA
 #include "impl/cocoa/contextImpl.h"
 #endif
-
-using namespace Magnum;
 
 namespace kitgui {
 Context::~Context() = default;
@@ -28,7 +25,10 @@ void Context::deinit() {
 }
 
 Context::Context(Context::AppFactory fn)
-    : mCreateAppFn(std::move(fn)), mFileContext(std::make_unique<FileContext>(*this)), mImpl(std::make_unique<Impl>(*this)), mApp(nullptr) {}
+    : mCreateAppFn(std::move(fn)),
+      mFileContext(std::make_unique<FileContext>(*this)),
+      mImpl(std::make_unique<Impl>(*this)),
+      mApp(nullptr) {}
 
 bool Context::Create(kitgui::WindowApi api, bool isFloating) {
     if (!mImpl->Create(api, isFloating)) {

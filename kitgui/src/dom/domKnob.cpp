@@ -15,7 +15,7 @@ void DomKnob::Update() {
     if (mProps.position) {
         ImGui::SetCursorScreenPos({mProps.position->x(), mProps.position->y()});
     }
-    double rawInOut;
+    double rawInOut{};
     ImGuiHelpers::KnobConfig cfg;
     ImGuiHelpers::knob(mProps.id.c_str(), cfg, rawInOut);
 

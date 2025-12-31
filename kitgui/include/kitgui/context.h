@@ -8,8 +8,6 @@
 #include "kitgui/app.h"
 #include "kitgui/kitgui.h"
 
-struct ImGuiContext;
-
 #if KITGUI_USE_SDL
 namespace kitgui::sdl {
 class ContextImpl;
@@ -94,9 +92,9 @@ class Context {
     AppFactory mCreateAppFn;
     SizeConfig mSizeConfig{};
     std::unique_ptr<FileContext> mFileContext;
-    std::unique_ptr<BaseApp> mApp;
     std::unique_ptr<Impl> mImpl;
-    
+    std::unique_ptr<BaseApp> mApp;
+
     friend class FileContext;
 };
 
