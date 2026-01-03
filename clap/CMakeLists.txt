@@ -38,6 +38,7 @@ target_sources(KitsBlips-lib PRIVATE
     src/chorus/chorus.cpp
     src/freqshift/freqshift.cpp
     src/harmonizer/harmonizer.cpp
+    src/keysynth/keysynth.cpp
     src/gui/feature.cpp
 )
 

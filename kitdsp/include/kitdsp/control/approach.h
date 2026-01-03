@@ -16,10 +16,11 @@ class Approach {
         target = 0.0f;
         current = 0.0f;
     }
-    inline void SetHalfLife(float halfLifeMs, float sampleRate) {
+
+    static float CalculateHalfLife(float halfLifeMs, float sampleRate) {
         if (halfLifeMs == 0.0f || sampleRate == 0.0f) {
             // instant approach
-            mH = 0.0f;
+            return 0.0f;
         } else {
             // https://mastodon.social/@acegikmo/111931613710775864
 
@@ -27,15 +28,23 @@ class Approach {
             // float dt = 1 / sampleRate;
             // float h = halfLifeMs / 1000.0f;
             // mH = std::exp2(-dt / h);
-            mH = 1.0f - std::exp2(-1000.0f / (sampleRate * halfLifeMs));
+            return 1.0f - std::exp2(-1000.0f / (sampleRate * halfLifeMs));
         }
+    }
+    inline void SetHalfLife(float halfLifeMs, float sampleRate) { mH = CalculateHalfLife(halfLifeMs, sampleRate); }
+
+    static float CalculateHalfLifeFromSettleTime(float settleTimeMs,
+                                                 float sampleRate,
+                                                 float settlePrecision,
+                                                 float desiredChange) {
+        return CalculateHalfLife(-settleTimeMs / std::log2f(settlePrecision / desiredChange), sampleRate);
     }
     /**
      * Sets the approach factor by time until IsChanging() == false. For this to be precise, we need to know the initial
      * time, because the approach is always proportional to that.
      */
     inline void SetSettleTime(float settleTimeMs, float sampleRate, float desiredChange = 1.0f) {
-        return SetHalfLife(-settleTimeMs / std::log2f(cSettlePrecision / desiredChange), sampleRate);
+        mH = CalculateHalfLifeFromSettleTime(settleTimeMs, sampleRate, cSettlePrecision, desiredChange);
     }
     inline float Process() {
         current = lerpf(current, target, mH);

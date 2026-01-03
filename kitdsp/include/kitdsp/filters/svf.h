@@ -12,6 +12,7 @@ enum class SvfFilterMode { LowPass, BandPass, Highpass };
 
 /**
  * This is an adaptation of the svf class in stmlib, the most commonly used filter in mutable instruments modules.
+ * it is 2-pole, 12/octave
  */
 class EmileSvf {
    public:
