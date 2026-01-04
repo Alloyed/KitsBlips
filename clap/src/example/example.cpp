@@ -10,7 +10,6 @@
 #include <gui/feature.h>
 #include <imgui.h>
 #include <kitgui/app.h>
-#include <kitgui/context.h>
 #endif
 
 namespace {

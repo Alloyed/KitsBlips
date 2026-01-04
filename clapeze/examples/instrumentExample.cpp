@@ -7,7 +7,6 @@
 
 #include <cmath>
 #include <numbers>
-#include "clapeze/basePlugin.h"
 #include "descriptor.h"
 
 namespace {

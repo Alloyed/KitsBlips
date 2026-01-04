@@ -1,5 +1,4 @@
 #include "clapeze/ext/parameterConfigs.h"
-#include <cassert>
 #include <cstdio>
 #include <cstring>
 #include <string_view>

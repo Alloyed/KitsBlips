@@ -1,7 +1,8 @@
 #include "clapeze/entryPoint.h"
-#include "clap/factory/preset-discovery.h"
+
+#include <clap/factory/preset-discovery.h>
+#include <physfs.h>
 #include "clapeze/ext/presets.h"
-#include "physfs.h"
 
 namespace clapeze {
 

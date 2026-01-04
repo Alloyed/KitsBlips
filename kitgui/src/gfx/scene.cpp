@@ -16,7 +16,6 @@
 #include <Magnum/Trade/SceneData.h>
 
 #include <fmt/format.h>
-#include <unistd.h>
 #include <cassert>
 #include <optional>
 #include <string>
@@ -55,7 +54,7 @@ void DomSceneImpl::Load(std::string_view path) {
     };
 
     importer->setFileCallback(fileCallback, (void*)mContext.GetFileContext());
-    importer->openFile(path.data());
+    importer->openFile({path.data(), path.size()});
 
     LoadImpl(*(importer.get()), path);
 }

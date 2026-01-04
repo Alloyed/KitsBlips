@@ -2,19 +2,16 @@
 #include <clapeze/entryPoint.h>
 #include <clapeze/ext/parameterConfigs.h>
 #include <clapeze/ext/parameters.h>
-#include <kitdsp/dbMeter.h>
 #include <kitdsp/filters/dcBlocker.h>
 #include <kitdsp/filters/onePole.h>
-#include <kitdsp/math/approx.h>
+#include <kitdsp/math/units.h>
 #include <kitdsp/math/util.h>
 
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <gui/feature.h>
-#include <imgui.h>
 #include <kitgui/app.h>
-#include <kitgui/context.h>
 #include "gui/debugui.h"
 #endif
 

@@ -8,7 +8,6 @@
 #include "immediateMode/misc.h"
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
-#include "log.h"
 
 using namespace Magnum;
 

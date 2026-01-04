@@ -1,6 +1,5 @@
 #include "clapeze/basePlugin.h"
 
-#include <cassert>
 #include <memory>
 #include "clap/ext/latency.h"
 #include "clapeze/ext/latency.h"
