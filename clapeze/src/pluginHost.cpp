@@ -1,11 +1,15 @@
 #include "clapeze/pluginHost.h"
 
-#include <clap/all.h>
+#include <clap/ext/draft/mini-curve-display.h>
+#include <clap/ext/draft/resource-directory.h>
+#include <clap/ext/draft/scratch-memory.h>
+#include <clap/ext/draft/tuning.h>
+#include <clap/ext/draft/undo.h>
 #include <algorithm>
-#include <cassert>
 #include <cstdio>
 #include <sstream>
 #include "clapeze/basePlugin.h"
+
 namespace clapeze {
 
 PluginHost::PluginHost(const clap_host_t* host)
@@ -62,8 +66,8 @@ void PluginHost::LogSupportMatrix() const {
         CLAP_EXT_MINI_CURVE_DISPLAY,
         CLAP_EXT_RESOURCE_DIRECTORY,
         CLAP_EXT_SCRATCH_MEMORY,
-        CLAP_EXT_TRANSPORT_CONTROL,
-        CLAP_EXT_TRIGGERS,
+        CLAP_EXT_REMOTE_CONTROLS,
+        CLAP_EXT_RENDER,
         CLAP_EXT_TUNING,
         CLAP_EXT_UNDO,
     };

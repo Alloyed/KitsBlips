@@ -80,8 +80,7 @@ class Plugin : public clapeze::EffectPlugin {
     }
 };
 
-const clapeze::RegisterPlugin p(
-    {AudioEffectDescriptor("kitsblips.crunch", "Crunch", "A SNES-inspired mono delay effect"),
-     [](clapeze::PluginHost& host) -> clapeze::BasePlugin* { return new Plugin(host); }});
+CLAPEZE_REGISTER_PLUGIN(Plugin,
+                        AudioEffectDescriptor("kitsblips.crunch", "Crunch", "A SNES-inspired mono delay effect"));
 
 }  // namespace crunch

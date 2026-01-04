@@ -1,23 +1,26 @@
 #include "clapeze/entryPoint.h"
-#include <algorithm>
-#include <cstring>
 #include "clap/factory/preset-discovery.h"
 #include "clapeze/ext/presets.h"
 #include "physfs.h"
 
 namespace clapeze {
-std::vector<PluginEntry> RegisterPlugin::sPlugins{};
 
 namespace {
+
+std::vector<PluginEntry>& sPlugins() {
+    static std::vector<PluginEntry> inner;
+    return inner;
+};
+
 namespace PluginFactory {
 
 uint32_t get_plugin_count(const clap_plugin_factory* factory) {
-    return RegisterPlugin::sPlugins.size();
+    return sPlugins().size();
 }
 
 const clap_plugin_descriptor_t* get_plugin_descriptor(const clap_plugin_factory* factory, uint32_t index) {
-    if (index < RegisterPlugin::sPlugins.size()) {
-        const PluginEntry& entry = RegisterPlugin::sPlugins[index];
+    if (index < sPlugins().size()) {
+        const PluginEntry& entry = sPlugins()[index];
         return &entry.meta;
     }
     return nullptr;
@@ -30,7 +33,7 @@ const clap_plugin_t* create_plugin(const clap_plugin_factory* factory, const cla
 
     static PluginHost cppHost(host);
 
-    for (const auto& entry : RegisterPlugin::sPlugins) {
+    for (const auto& entry : sPlugins()) {
         if (std::string_view(entry.meta.id) == pluginId) {
             return entry.factory(cppHost)->GetOrCreatePluginObject(&entry.meta);
         }
@@ -70,16 +73,15 @@ const clap_preset_discovery_factory_t value = {_count, _get_descriptor, _create}
 
 }  // namespace
 
+void registerPlugin(PluginEntry plugin) {
+    sPlugins().push_back(plugin);
+}
+
 namespace EntryPoint {
 bool _init(const char* path) {
     PHYSFS_init(path);
     // add dll to mount path
     PHYSFS_mount(path, nullptr, 0);
-    auto& plugins = RegisterPlugin::sPlugins;
-    // TODO: is this really necessary? plugins will be loaded on dll-init in an arbitrary order, but does anything
-    // downstream actually care about plugin order?
-    std::sort(plugins.begin(), plugins.end(),
-              [](const auto& left, const auto& right) { return std::strcmp(left.meta.id, right.meta.id) < 0; });
     return true;
 }
 void _deinit() {

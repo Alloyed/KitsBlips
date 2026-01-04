@@ -113,11 +113,7 @@ class Plugin : public clapeze::InstrumentPlugin {
                                     .Parameter<Params::Polyphony>();
         ConfigProcessor<Processor>(params.GetStateForAudioThread());
     }
-
-   private:
-    static clapeze::RegisterPlugin p;
 };
-clapeze::RegisterPlugin Plugin::p(clapeze::PluginEntry{
-    AudioInstrumentDescriptor("kitsblips.sines", "Sines", "a simple sine wave synth"),
-    [](clapeze::PluginHost& host) -> clapeze::BasePlugin* { return new Plugin(host); }});
+
+CLAPEZE_REGISTER_PLUGIN(Plugin, AudioInstrumentDescriptor("kitsblips.sines", "Sines", "a simple sine wave synth"));
 }  // namespace sines

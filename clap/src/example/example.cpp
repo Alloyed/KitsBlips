@@ -1,5 +1,3 @@
-#include "example/example.h"
-
 #include <clapeze/effectPlugin.h>
 #include <clapeze/entryPoint.h>
 #include <clapeze/ext/parameterConfigs.h>
@@ -95,7 +93,6 @@ class Plugin : public EffectPlugin {
     }
 };
 
-const clapeze::RegisterPlugin p({AudioEffectDescriptor("kitsblips.example", "example", "Plugin description"),
-                                 [](clapeze::PluginHost& host) -> clapeze::BasePlugin* { return new Plugin(host); }});
+CLAPEZE_REGISTER_PLUGIN(Plugin, AudioEffectDescriptor("kitsblips.example", "example", "Plugin description"));
 
 }  // namespace example

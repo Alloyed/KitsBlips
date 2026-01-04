@@ -23,7 +23,7 @@ set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
 FetchContent_MakeAvailable(clap fmt clapeze KitDSP physfs)
 FetchContent_MakeAvailable(clap-wrapper)
 
-add_library(KitsBlips-lib STATIC)
+add_library(KitsBlips-lib SHARED)
 target_compile_definitions(KitsBlips-lib PUBLIC
     PRODUCT_NAME="${PRODUCT_NAME}"
     PRODUCT_ID="${PRODUCT_ID}"

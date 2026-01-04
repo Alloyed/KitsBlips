@@ -1,5 +1,3 @@
-#include "keysynth/keysynth.h"
-
 #include <clapeze/entryPoint.h>
 #include <clapeze/ext/parameterConfigs.h>
 #include <clapeze/ext/parameters.h>
@@ -324,8 +322,8 @@ class Plugin : public InstrumentPlugin {
     }
 };
 
-const clapeze::RegisterPlugin p(
-    {AudioInstrumentDescriptor("kitsblips.kitskeys", "KitsKeys", "Small Polysynth with a keys/chord focus"),
-     [](clapeze::PluginHost& host) -> clapeze::BasePlugin* { return new Plugin(host); }});
-
+CLAPEZE_REGISTER_PLUGIN(Plugin,
+                        AudioInstrumentDescriptor("kitsblips.kitskeys",
+                                                  "KitsKeys",
+                                                  "Small Polysynth with a keys/chord focus"));
 }  // namespace keysynth
