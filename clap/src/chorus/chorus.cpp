@@ -24,27 +24,27 @@ using ParamsFeature = clapeze::ParametersFeature<Params>;
 }  // namespace
 
 template <>
-struct clapeze::ParamTraits<Params::Rate> : public clapeze::NumericParam {
+struct clapeze::ParamTraits<Params, Params::Rate> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Rate", 0.0f, 5.0f, 1.0f, "hz") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::Depth> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::Depth> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Depth", 0.2f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::Delay> : public clapeze::NumericParam {
+struct clapeze::ParamTraits<Params, Params::Delay> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Delay", 2.0f, 20.0f, 8.0f, "ms") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::Feedback> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::Feedback> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Feedback", -0.95f, 0.95f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::Mix> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Mix", 0.5f) {}
 };
 

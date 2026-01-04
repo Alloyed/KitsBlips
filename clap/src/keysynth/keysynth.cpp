@@ -60,94 +60,93 @@ using ParamsFeature = clapeze::ParametersFeature<Params>;
 }  // namespace
 
 template <>
-struct clapeze::ParamTraits<Params::OscOctave> : public clapeze::IntegerParam {
+struct clapeze::ParamTraits<Params, Params::OscOctave> : public clapeze::IntegerParam {
     ParamTraits() : clapeze::IntegerParam("Octave", -2, 2, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::OscTune> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Octave", -12, 12, 0.0f) {}
+struct clapeze::ParamTraits<Params, Params::OscTune> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("Tune", -12, 12, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::OscModMix> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::OscModMix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("ModMix (LFO <-> EG)", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::FilterCutoff> : public clapeze::PercentParam {
-    // TODO: report cutoff in hz?
+struct clapeze::ParamTraits<Params, Params::OscModAmount> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("Mod Amount", -1.0f, 1.0f, 0.0f) {}
+};
+
+template <>
+struct clapeze::ParamTraits<Params, Params::FilterCutoff> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Cutoff", 1.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::FilterResonance> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::FilterResonance> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Resonance", 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::OscModAmount> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Mod Amount", 0.5f) {}
-};
-
-template <>
-struct clapeze::ParamTraits<Params::FilterModMix> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::FilterModMix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("ModMix (LFO <-> EG)", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::FilterModAmount> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Mod Amount", 0.5f) {}
+struct clapeze::ParamTraits<Params, Params::FilterModAmount> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("Mod Amount", -1.0f, 1.0f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::LfoRate> : public clapeze::NumericParam {
+struct clapeze::ParamTraits<Params, Params::LfoRate> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Rate", 0.001f, 20.0f, 0.2f, "hz") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::LfoInput> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::LfoInput> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("(secret)LFO Override", 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::EnvAttack> : public clapeze::NumericParam {
+struct clapeze::ParamTraits<Params, Params::EnvAttack> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Attack", 0.001f, 1000.0f, 1.0f, "ms") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::EnvDecay> : public clapeze::NumericParam {
+struct clapeze::ParamTraits<Params, Params::EnvDecay> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Decay", 0.001f, 1000.0f, 1.0f, "ms") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::EnvSustain> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::EnvSustain> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Sustain", 1.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::EnvRelease> : public clapeze::NumericParam {
+struct clapeze::ParamTraits<Params, Params::EnvRelease> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Release", 0.001f, 1000.0f, 1.0f, "ms") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::VcaLfoAmount> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("VCA LFO amount", 0.0f) {}
+struct clapeze::ParamTraits<Params, Params::VcaLfoAmount> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("VCA LFO Amount", -1.0f, 1.0f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::PolyMode> : public clapeze::EnumParam<PolyMode> {
+struct clapeze::ParamTraits<Params, Params::PolyMode> : public clapeze::EnumParam<PolyMode> {
     ParamTraits()
         : clapeze::EnumParam<PolyMode>("Voice Mode", {"Poly", "Para", "Mono", "Chord"}, PolyMode::Polyphonic) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::PolyCount> : public clapeze::IntegerParam {
+struct clapeze::ParamTraits<Params, Params::PolyCount> : public clapeze::IntegerParam {
     ParamTraits() : clapeze::IntegerParam("Voice Count", 1, 32, 4) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::PolyChordType> : public clapeze::EnumParam<PolyChordType> {
+struct clapeze::ParamTraits<Params, Params::PolyChordType> : public clapeze::EnumParam<PolyChordType> {
     ParamTraits()
         : clapeze::EnumParam<PolyChordType>("Chord",
                                             {"Octave", "5th", "Major", "Minor", "Major 7th", "Minor 7th"},
@@ -163,7 +162,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
        public:
         explicit Voice(Processor& p) : mProcessor(p) {}
         void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
-            mNoteFrequency = kitdsp::midiToFrequency(note.key);
+            mNote = note.key;
             mEnv.TriggerOpen();
         }
         void ProcessNoteOff() { mEnv.TriggerClose(); }
@@ -174,19 +173,23 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
             mEnv.SetParams(params.Get<Params::EnvAttack>(), params.Get<Params::EnvDecay>(),
                            params.Get<Params::EnvSustain>(), params.Get<Params::EnvRelease>(), sampleRate);
 
+            // range from 8hz to 12.5khz
+            float filterNote = kitdsp::lerpf(0.0f, 127.0f, params.Get<Params::FilterCutoff>());
+
             for (uint32_t index = 0; index < out.left.size(); index++) {
                 // modulation
-                float lfo = mLfo.Process();
-                float env = mEnv.Process();
+                float lfo = mLfo.Process();  // [-1, 1]
+                float env = mEnv.Process();  // [0, 1]
 
                 float oscMod =
                     kitdsp::lerpf(env, lfo, params.Get<Params::OscModMix>()) * params.Get<Params::OscModAmount>();
                 float filterMod =
                     kitdsp::lerpf(env, lfo, params.Get<Params::FilterModMix>()) * params.Get<Params::FilterModAmount>();
                 float vcaMod = env * (1.0f - (lfo * params.Get<Params::VcaLfoAmount>()));
+                vcaMod *= vcaMod;  // approximate db curve (not really but yknow)
 
-                mOsc.SetFrequency(mNoteFrequency + oscMod, sampleRate);
-                mFilter.SetFrequency(params.Get<Params::FilterCutoff>() + filterMod, sampleRate,
+                mOsc.SetFrequency(kitdsp::midiToFrequency(mNote + (oscMod * 12.0f)), sampleRate);
+                mFilter.SetFrequency(kitdsp::midiToFrequency(filterNote + (filterMod * 12.0f)), sampleRate,
                                      params.Get<Params::FilterResonance>());
 
                 // audio
@@ -204,7 +207,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
 
        private:
         Processor& mProcessor;
-        float mNoteFrequency;
+        float mNote;
         kitdsp::blep::RampUpOscillator mOsc{};
         kitdsp::EmileSvf mFilter{};
         kitdsp::lfo::TriangleOscillator mLfo{};

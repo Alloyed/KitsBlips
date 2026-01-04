@@ -33,7 +33,7 @@ struct BaseParam {
 };
 
 /** specialize by inheriting from baseparam */
-template <auto id>
+template <class TParamId, auto id>
     requires std::is_same_v<std::underlying_type_t<decltype(id)>, clap_id>
 struct ParamTraits;
 
@@ -93,7 +93,7 @@ class ParametersFeature : public BaseFeature {
 
     template <Id id>
     ParametersFeature& Parameter() {
-        using ParamType = ParamTraits<id>;
+        using ParamType = ParamTraits<TParamId, id>;
         clap_id index = static_cast<clap_id>(id);
         mParams[index].reset(new ParamType());
         mParams[index]->SetModule(mNextModule);
@@ -115,8 +115,8 @@ class ParametersFeature : public BaseFeature {
     }
 
     template <Id id>
-    const ParamTraits<id>* GetSpecificParam() const {
-        using TParam = ParamTraits<id>;
+    const ParamTraits<TParamId, id>* GetSpecificParam() const {
+        using TParam = ParamTraits<TParamId, id>;
         clap_id index = static_cast<clap_id>(id);
         if (index >= mState.size()) {
             return nullptr;
@@ -183,8 +183,8 @@ class ParametersFeature : public BaseFeature {
             : mParamsRef(paramConfigs), mState(numParams, 0.0f), mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {}
 
         template <Id id>
-        typename ParamTraits<id>::_valuetype Get() const {
-            using ParamType = ParamTraits<id>;
+        typename ParamTraits<TParamId, id>::_valuetype Get() const {
+            using ParamType = ParamTraits<TParamId, id>;
             typename ParamType::_valuetype out{};
             clap_id index = static_cast<clap_id>(id);
             double raw = GetRaw(id);

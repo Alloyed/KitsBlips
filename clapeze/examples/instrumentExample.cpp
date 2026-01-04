@@ -16,12 +16,12 @@ using ParamsFeature = clapeze::ParametersFeature<Params>;
 }  // namespace
 
 template <>
-struct clapeze::ParamTraits<Params::Fall> : public clapeze::NumericParam {
+struct clapeze::ParamTraits<Params, Params::Fall> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Fall", 0.0001f, 1.f, .01f, "ms") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::Polyphony> : public clapeze::IntegerParam {
+struct clapeze::ParamTraits<Params, Params::Polyphony> : public clapeze::IntegerParam {
     ParamTraits() : clapeze::IntegerParam("Polyphony", 1, 16, 8, "voices", "voice") {}
 };
 

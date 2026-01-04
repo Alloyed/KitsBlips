@@ -35,28 +35,28 @@ using ParamsFeature = clapeze::ParametersFeature<Params>;
 }  // namespace
 
 template <>
-struct clapeze::ParamTraits<Params::Algorithm> : public clapeze::EnumParam<Algorithm> {
+struct clapeze::ParamTraits<Params, Params::Algorithm> : public clapeze::EnumParam<Algorithm> {
     ParamTraits()
         : clapeze::EnumParam<Algorithm>("Algorithm", {"Clip", "Saturate", "Fold", "Rectify"}, Algorithm::HardClip) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::Gain> : public clapeze::DbParam {
+struct clapeze::ParamTraits<Params, Params::Gain> : public clapeze::DbParam {
     ParamTraits() : clapeze::DbParam("Gain", 0.0f, 32.0f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::Tone> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::Tone> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Tone", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::Makeup> : public clapeze::DbParam {
+struct clapeze::ParamTraits<Params, Params::Makeup> : public clapeze::DbParam {
     ParamTraits() : clapeze::DbParam("Makeup", -9.0f, 9.0f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::Mix> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Mix", 1.0f) {}
 };
 

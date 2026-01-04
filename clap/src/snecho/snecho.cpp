@@ -9,13 +9,12 @@
 #include <etl/memory.h>
 #include <kitdsp/apps/snesEcho.h>
 #include <kitdsp/apps/snesEchoFilterPresets.h>
-#include <kitdsp/dbMeter.h>
+#include <kitdsp/math/util.h>
 #include <kitdsp/samplerate/resampler.h>
 
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>
 #include <kitgui/app.h>
-#include <kitgui/context.h>
 #include "gui/debugui.h"
 #include "gui/feature.h"
 #endif
@@ -40,62 +39,62 @@ using ParamsFeature = clapeze::ParametersFeature<Params>;
 }  // namespace
 
 template <>
-struct clapeze::ParamTraits<Params::Mix> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Mix", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::Bypass> : public clapeze::OnOffParam {
+struct clapeze::ParamTraits<Params, Params::Bypass> : public clapeze::OnOffParam {
     ParamTraits() : clapeze::OnOffParam("Bypass", OnOff::Off) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::Size> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::Size> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Size", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::Feedback> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::Feedback> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Feedback", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::FilterPreset> : public clapeze::IntegerParam {
+struct clapeze::ParamTraits<Params, Params::FilterPreset> : public clapeze::IntegerParam {
     ParamTraits() : clapeze::IntegerParam("Filter Preset", 0, kitdsp::SNES::kNumFilterPresets, 0) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::FreezeEcho> : public clapeze::OnOffParam {
+struct clapeze::ParamTraits<Params, Params::FreezeEcho> : public clapeze::OnOffParam {
     ParamTraits() : clapeze::OnOffParam("Freeze Echo", OnOff::Off) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::ResetHead> : public clapeze::OnOffParam {
+struct clapeze::ParamTraits<Params, Params::ResetHead> : public clapeze::OnOffParam {
     ParamTraits() : clapeze::OnOffParam("Reset Playhead", OnOff::Off) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::SizeRange> : public clapeze::IntegerParam {
+struct clapeze::ParamTraits<Params, Params::SizeRange> : public clapeze::IntegerParam {
     ParamTraits() : clapeze::IntegerParam("Size Range", 0, 2, 0) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::EchoDelayMod> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::EchoDelayMod> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Echo Mod", 1.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::FilterMix> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::FilterMix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Filter Mix", 1.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::ClearBuffer> : public clapeze::OnOffParam {
+struct clapeze::ParamTraits<Params, Params::ClearBuffer> : public clapeze::OnOffParam {
     ParamTraits() : clapeze::OnOffParam("Clear Buffer", OnOff::Off) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::StereoMode> : public clapeze::OnOffParam {
+struct clapeze::ParamTraits<Params, Params::StereoMode> : public clapeze::OnOffParam {
     ParamTraits() : clapeze::OnOffParam("Stereo Mode", OnOff::Off) {}
 };
 
@@ -182,7 +181,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
                     drySignal, [this](float in, float& out) { out = snes1.Process(in * 0.5f) * 2.0f; });
 
                 // outputs
-                out[idx] = lerpf(drySignal, wetSignal, wetDryMix);
+                out[idx] = kitdsp::lerpf(drySignal, wetSignal, wetDryMix);
             }
         }
 

@@ -23,12 +23,12 @@ using ParamsFeature = clapeze::ParametersFeature<Params>;
 }  // namespace
 
 template <>
-struct clapeze::ParamTraits<Params::Shift> : public clapeze::NumericParam {
+struct clapeze::ParamTraits<Params, Params::Shift> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Shift", -1000, 1000, 0, "hz") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params::Mix> : public clapeze::PercentParam {
+struct clapeze::ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Mix", 1.0f) {}
 };
 
