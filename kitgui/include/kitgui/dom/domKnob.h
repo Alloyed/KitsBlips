@@ -1,17 +1,17 @@
 #pragma once
 
-#include "kitgui/domNode.h"
-#include <Magnum/Math/Vector2.h>
 #include <memory>
 #include <optional>
 #include <string>
+#include "kitgui/dom/domNode.h"
+#include "kitgui/types.h"
 
 namespace kitgui {
 
 class DomKnob : public DomNode {
    public:
     struct Props {
-        std::optional<Magnum::Vector2> position;
+        std::optional<Vector2> position;
         std::string id{};
         std::string sceneAnchor{};
     };
@@ -28,4 +28,3 @@ class DomKnob : public DomNode {
 };
 
 }  // namespace kitgui
-

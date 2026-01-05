@@ -1,4 +1,4 @@
-#include "gfx/scene.h"
+#include "kitgui/gfx/scene.h"
 
 #include <Corrade/Containers/Array.h>
 #include <Corrade/Containers/BitArray.h>
@@ -29,6 +29,44 @@
 #include "kitgui/context.h"
 #include "log.h"
 
+#include <Magnum/Trade/AbstractImporter.h>
+
+#include <Corrade/Containers/Array.h>
+#include <Corrade/Containers/BitArray.h>
+#include <Corrade/Containers/OptionalStl.h>
+#include <Corrade/Containers/Pair.h>
+#include <Corrade/Containers/PairStl.h>
+#include <Corrade/Containers/StridedArrayView.h>
+#include <Corrade/Containers/StringStl.h>
+#include <Corrade/Containers/Triple.h>
+#include <Corrade/Utility/Algorithms.h>
+
+#include <Magnum/Animation/Player.h>
+#include <Magnum/Animation/Track.h>
+#include <Magnum/GL/DefaultFramebuffer.h>
+#include <Magnum/GL/Renderer.h>
+#include <Magnum/Math/CubicHermite.h>
+#include <Magnum/Math/Quaternion.h>
+#include <Magnum/SceneGraph/Camera.h>
+#include <Magnum/Trade/AbstractImporter.h>
+#include <Magnum/Trade/AnimationData.h>
+#include <Magnum/Trade/CameraData.h>
+#include <Magnum/Trade/MeshData.h>
+#include <Magnum/Trade/PhongMaterialData.h>
+#include <Magnum/Trade/SceneData.h>
+
+#include <fmt/format.h>
+#include <cassert>
+#include <chrono>
+
+#include "fileContext.h"
+#include "gfx/drawables.h"
+#include "gfx/lights.h"
+#include "gfx/materials.h"
+#include "gfx/meshes.h"
+#include "gfx/sceneGraph.h"
+#include "kitgui/context.h"
+
 using namespace Magnum;
 using namespace Magnum::Math::Literals;
 using namespace Magnum::Math::Literals::ColorLiterals;
@@ -39,7 +77,37 @@ PluginManager::Manager<Trade::AbstractImporter> sImporterManager{};
 
 namespace kitgui {
 
-void DomSceneImpl::Load(std::string_view path) {
+struct Scene::Impl {
+    explicit Impl(kitgui::Context& mContext) : mContext(mContext) {};
+    void Load(std::string_view path);
+    void LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
+    void Update();
+    void Draw();
+    kitgui::Context& mContext;
+
+    MeshCache mMeshCache;
+    Magnum::SceneGraph::DrawableGroup3D mLightDrawables;
+
+    MaterialCache mMaterialCache;
+    LightCache mLightCache;
+    DrawableCache mDrawableCache;
+
+    Scene3D mScene;
+    std::vector<ObjectInfo> mSceneObjects;
+    Object3D* mCameraObject{};
+    Magnum::SceneGraph::Camera3D* mCamera;
+
+    Magnum::Animation::Player<std::chrono::nanoseconds, float> mPlayer;
+};
+
+Scene::Scene(kitgui::Context& mContext) : mImpl(std::make_unique<Scene::Impl>(mContext)) {};
+Scene::~Scene() = default;
+
+void Scene::Load(std::string_view path) {
+    mImpl->Load(path);
+}
+
+void Scene::Impl::Load(std::string_view path) {
     Corrade::Containers::Pointer<Magnum::Trade::AbstractImporter> importer =
         sImporterManager.loadAndInstantiate("GltfImporter");
     assert(!!importer);  // FIXME: this is null right now, investigate
@@ -59,7 +127,7 @@ void DomSceneImpl::Load(std::string_view path) {
     LoadImpl(*(importer.get()), path);
 }
 
-void DomSceneImpl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName) {
+void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName) {
     mMaterialCache.LoadTextures(importer);
     mMaterialCache.LoadMaterials(importer);
     mLightCache.LoadLights(importer);
@@ -252,9 +320,15 @@ void DomSceneImpl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::stri
     }
 }
 
-void DomSceneImpl::Update() {}
+void Scene::Update() {
+    mImpl->Update();
+}
+void Scene::Impl::Update() {}
 
-void DomSceneImpl::Draw() {
+void Scene::Draw() {
+    mImpl->Draw();
+}
+void Scene::Impl::Draw() {
     /* Another FB could be bound from a depth / object ID read (moreover with
        color output disabled), set it back to the default framebuffer */
     GL::defaultFramebuffer.bind(); /** @todo mapForDraw() should bind implicitly */

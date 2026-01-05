@@ -1,4 +1,4 @@
-#include <kitgui/domScene.h>
+#include <kitgui/dom/domScene.h>
 #include <kitgui/immediateMode.h>
 
 #include <imgui.h>

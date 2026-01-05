@@ -1,4 +1,4 @@
-#include "kitgui/domNode.h"
+#include "kitgui/dom/domNode.h"
 
 #include <cassert>
 

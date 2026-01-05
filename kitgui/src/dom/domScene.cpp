@@ -1,9 +1,8 @@
-#include "kitgui/domScene.h"
-
-#include "gfx/scene.h"
+#include "kitgui/dom/domScene.h"
+#include "kitgui/gfx/scene.h"
 
 namespace kitgui {
-DomScene::DomScene(kitgui::Context& mContext) : mImpl(std::make_unique<DomSceneImpl>(mContext)) {}
+DomScene::DomScene(kitgui::Context& mContext) : mImpl(std::make_unique<Scene>(mContext)) {}
 DomScene::~DomScene() = default;
 
 std::shared_ptr<DomScene> DomScene::Create(kitgui::Context& mContext) {

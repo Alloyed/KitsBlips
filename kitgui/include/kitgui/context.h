@@ -1,12 +1,12 @@
 #pragma once
 
-#include <Magnum/Magnum.h>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <string_view>
 #include "kitgui/app.h"
 #include "kitgui/kitgui.h"
+#include "kitgui/types.h"
 
 #if KITGUI_USE_SDL
 namespace kitgui::sdl {
@@ -67,7 +67,7 @@ class Context {
     static void RunSingleFrame();
 
     bool IsCreated() const;
-    void SetClearColor(Magnum::Color4 color);
+    void SetClearColor(Color4 color);
     FileContext* GetFileContext() const;
 
     // app events. forwards otherwise hidden events to impl

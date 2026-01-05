@@ -2,8 +2,8 @@
 #include <imgui.h>
 #include "kitgui/app.h"
 #include "kitgui/context.h"
-#include "kitgui/domKnob.h"
-#include "kitgui/domScene.h"
+#include "kitgui/dom/domKnob.h"
+#include "kitgui/dom/domScene.h"
 #include "kitgui/kitgui.h"
 
 using namespace Magnum;
@@ -12,7 +12,7 @@ class MyApp : public kitgui::BaseApp {
    public:
     explicit MyApp(kitgui::Context& mContext) : kitgui::BaseApp(mContext), mScene(kitgui::DomScene::Create(mContext)) {
         mContext.SetSizeConfig({400, 400});
-        mContext.SetClearColor({0.3f, 0.7f, 0.3f, 1.0f});
+        mContext.SetClearColor(Magnum::Math::Color4(0.3f, 0.7f, 0.3f, 1.0f));
 
         auto props = mScene->GetProps();
         props.scenePath = "assets/duck.glb";

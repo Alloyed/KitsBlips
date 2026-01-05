@@ -1,4 +1,4 @@
-#include "kitgui/domKnob.h"
+#include "kitgui/dom/domKnob.h"
 
 #include <imgui.h>
 #include "controls/knob.h"

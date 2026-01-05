@@ -1,10 +1,8 @@
 #pragma once
 
-#include <Magnum/Math/Vector2.h>
 #include <memory>
 
 namespace kitgui {
-using Vector2 = Magnum::Vector2;  // TODO: replace?
 
 /**
  * A pared down "dom node" like interface. implements parent-child relationships using an intrusive linked list.
@@ -60,4 +58,3 @@ bool DomNode::Visit(FN visitor) {
 }
 
 }  // namespace kitgui
-

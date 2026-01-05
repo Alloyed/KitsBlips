@@ -2,12 +2,12 @@
 
 #include <memory>
 #include <string>
-#include "kitgui/domNode.h"
+#include "kitgui/dom/domNode.h"
 
 namespace kitgui {
 class Context;
 
-struct DomSceneImpl;
+struct Scene;
 class DomScene : public DomNode {
    public:
     struct Props {
@@ -25,7 +25,7 @@ class DomScene : public DomNode {
    private:
     explicit DomScene(kitgui::Context& mContext);
     Props mProps{};
-    std::unique_ptr<DomSceneImpl> mImpl;
+    std::unique_ptr<Scene> mImpl;
 };
 
 }  // namespace kitgui
