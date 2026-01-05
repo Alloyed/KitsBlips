@@ -58,7 +58,7 @@ target_link_libraries(kitgui PRIVATE
     Magnum::Shaders
     Magnum::Trade
 )
-target_disable_warnings(Magnum::Magnum)
+target_disable_warnings(Magnum::Magnum Magnum::GL Magnum::SceneGraph fmt::fmt Magnum::AnyImageImporter Magnum::GltfImporter MagnumPlugins::StdbImageImporter)
 
 if(KITGUI_USE_SDL)
     target_compile_definitions(kitgui PUBLIC KITGUI_USE_SDL)

@@ -14,7 +14,7 @@ include(FetchContent)
 
 function(target_enable_warnings target_name)
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        target_compile_options(${target_name} PRIVATE -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-missing-braces -Wno-nested-anon-types -Wno-gnu-anonymous-struct)
+        target_compile_options(${target_name} PRIVATE -Wall -Wextra -Wno-unused-parameter -Wno-missing-braces -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-c++98-compat -Wno-c++98-compat-pedantic)
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(${target_name} PRIVATE -Wall -Wextra -Wno-unused-parameter -Wno-missing-braces)
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")

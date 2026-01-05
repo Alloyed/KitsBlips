@@ -18,6 +18,7 @@
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
 #include "log.h"
+#include "immediateMode/misc.h"
 
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
