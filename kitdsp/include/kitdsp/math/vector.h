@@ -14,6 +14,15 @@ struct Vector<TYPE, 2> {
     using type = TYPE;
     static constexpr size_t size = 2;
 
+// We're using the nonstandard "anonymous union" extension, which is supported in all the compilers we care about anways (gcc, clang, msvc).
+// this lets us do intentional "field aliases", so v.data[0] is the same as v.left is the same as v.x, as if this were a GLSL vector type :)
+#ifdef __GNUC__
+    __extension__
+#endif
+#ifdef _MSC_VER
+#pragma warning( push )  
+#pragma warning( disable : 4201 )
+#endif
     union {
         TYPE data[2];
         struct {
@@ -29,6 +38,9 @@ struct Vector<TYPE, 2> {
             TYPE y;
         };
     };
+#ifdef _MSC_VER
+#pragma warning( pop )  
+#endif
 
     Vector(): left(0), right(0) { }
 
