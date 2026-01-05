@@ -1,46 +1,17 @@
 #include "kitgui/gfx/scene.h"
 
-#include <Corrade/Containers/Array.h>
-#include <Corrade/Containers/BitArray.h>
-#include <Corrade/Containers/Pair.h>
-#include <Corrade/Containers/StridedArrayView.h>
-#include <Corrade/Containers/Triple.h>
-
-#include <Magnum/Animation/Player.h>
-#include <Magnum/GL/DefaultFramebuffer.h>
-#include <Magnum/GL/Renderer.h>
-#include <Magnum/SceneGraph/Camera.h>
-#include <Magnum/Trade/AbstractImporter.h>
-#include <Magnum/Trade/AnimationData.h>
-#include <Magnum/Trade/CameraData.h>
-#include <Magnum/Trade/SceneData.h>
-
-#include <fmt/format.h>
-#include <cassert>
-#include <optional>
-#include <string>
-
-#include "fileContext.h"
-#include "gfx/drawables.h"
-#include "gfx/lights.h"
-#include "gfx/materials.h"
-#include "gfx/meshes.h"
-#include "gfx/sceneGraph.h"
-#include "kitgui/context.h"
-#include "log.h"
-
-#include <Magnum/Trade/AbstractImporter.h>
-
-#include <Corrade/Containers/Array.h>
-#include <Corrade/Containers/BitArray.h>
+// IWYU pragma: begin_keep
 #include <Corrade/Containers/OptionalStl.h>
-#include <Corrade/Containers/Pair.h>
 #include <Corrade/Containers/PairStl.h>
-#include <Corrade/Containers/StridedArrayView.h>
 #include <Corrade/Containers/StringStl.h>
+// IWYU pragma: end_keep
+
+#include <Corrade/Containers/Array.h>
+#include <Corrade/Containers/BitArray.h>
+#include <Corrade/Containers/Pair.h>
+#include <Corrade/Containers/StridedArrayView.h>
 #include <Corrade/Containers/Triple.h>
 #include <Corrade/Utility/Algorithms.h>
-
 #include <Magnum/Animation/Player.h>
 #include <Magnum/Animation/Track.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
@@ -54,11 +25,11 @@
 #include <Magnum/Trade/MeshData.h>
 #include <Magnum/Trade/PhongMaterialData.h>
 #include <Magnum/Trade/SceneData.h>
-
 #include <fmt/format.h>
 #include <cassert>
 #include <chrono>
-
+#include <optional>
+#include <string>
 #include "fileContext.h"
 #include "gfx/drawables.h"
 #include "gfx/lights.h"
@@ -66,6 +37,7 @@
 #include "gfx/meshes.h"
 #include "gfx/sceneGraph.h"
 #include "kitgui/context.h"
+#include "log.h"
 
 using namespace Magnum;
 using namespace Magnum::Math::Literals;
