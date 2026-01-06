@@ -96,6 +96,7 @@ namespace kitgui::win32 {
 static constexpr wchar_t kClassName[] = L"BLEHHH\0";  // TODO: runtime selectable
 
 void ContextImpl::init(kitgui::WindowApi api, bool isFloating) {
+    sIsFloating = isFloating;
     ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSW windowClass = {};
     windowClass.lpfnWndProc = WndProc;
@@ -112,11 +113,10 @@ void ContextImpl::deinit() {
 
 ContextImpl::ContextImpl(kitgui::Context& ctx) : mContext(ctx) {}
 
-bool ContextImpl::Create(kitgui::WindowApi api, bool isFloating) {
-    if (api != kitgui::WindowApi::Any && api != kitgui::WindowApi::Win32) {
-        kitgui::log::error("API not supported");
-        return false;
-    }
+bool ContextImpl::Create() {
+    kitgui::WindowApi api = kitgui::WindowApi::Win32;
+    bool isFloating = sIsFloating;
+    mApi = api;
 
     SizeConfig cfg = mContext.GetSizeConfig();
     DWORD windowStyle = 0;
@@ -268,6 +268,7 @@ void ContextImpl::MakeCurrent() {
 }
 
 std::vector<ContextImpl*> ContextImpl::sActiveInstances = {};
+bool ContextImpl::sIsFloating = false;
 
 void ContextImpl::AddActiveInstance(ContextImpl* instance) {
     if (std::find(sActiveInstances.begin(), sActiveInstances.end(), instance) == sActiveInstances.end()) {

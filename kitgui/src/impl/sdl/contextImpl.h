@@ -33,7 +33,7 @@ class ContextImpl {
     static void deinit();
 
     // host events: (matches clap API)
-    bool Create(kitgui::WindowApi api, bool isFloating);
+    bool Create();
     bool Destroy();
     bool SetScale(double scale);
     bool GetSize(uint32_t& widthOut, uint32_t& heightOut) const;
@@ -75,6 +75,8 @@ class ContextImpl {
     static void RemoveActiveInstance(ContextImpl* instance);
     static ContextImpl* FindContextImplForWindow(SDL_Window* win);
     static std::vector<ContextImpl*> sActiveInstances;
+    static kitgui::WindowApi sApi;
+    static bool sIsFloating;
 };
 
 }  // namespace kitgui::sdl

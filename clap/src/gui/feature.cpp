@@ -10,10 +10,6 @@
 
 namespace {
 
-/**
- * TODO: on linux/SDL we need to run mCtx.RunSingleFrame() on occasion. this can be achieved with
- * PluginHost::AddTimer().
- */
 clapeze::ClapWindowApi toClapeze(kitgui::WindowApi api) {
     switch (api) {
         case kitgui::WindowApi::Any: {
@@ -90,7 +86,7 @@ bool KitguiFeature::Create(ClapWindowApi api, bool isFloating) {
         }
     }
 
-    return mCtx.Create(toKitGui(api), isFloating);
+    return mCtx.Create();
 }
 
 void KitguiFeature::Destroy() {

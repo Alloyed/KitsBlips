@@ -44,7 +44,7 @@ int main() {
 
     {
         kitgui::Context ctx1([](kitgui::Context& ctx) { return std::make_unique<MyApp>(ctx); });
-        ctx1.Create(kitgui::WindowApi::Any, true);
+        ctx1.Create();
         ctx1.Show();
 
         kitgui::Context::RunLoop();

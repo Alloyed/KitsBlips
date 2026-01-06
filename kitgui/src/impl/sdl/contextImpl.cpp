@@ -113,9 +113,7 @@ void checkSupportedApis(bool& outHasX11, bool& outHasWayland) {
         kitgui::log::info(fmt::format("Checking supported video drivers. x11: {}, wayland: {}", hasX11, hasWayland));
         hasChecked = true;
     }
-    // TODO: temporarily lying until i find why x11 crashes
     outHasX11 = hasX11;
-    // outHasX11 = false;
     outHasWayland = hasWayland;
 }
 
@@ -159,6 +157,8 @@ using namespace Magnum;
 
 namespace kitgui::sdl {
 void ContextImpl::init(kitgui::WindowApi api, bool isFloating) {
+    sApi = api;
+    sIsFloating = isFloating;
     switch (api) {
         // only one API possible on these platforms
         case kitgui::WindowApi::Any:
@@ -198,10 +198,8 @@ void ContextImpl::deinit() {
 
 ContextImpl::ContextImpl(kitgui::Context& ctx) : mContext(ctx) {}
 
-bool ContextImpl::Create(kitgui::WindowApi api, bool isFloating) {
-    kitgui::log::info(fmt::format("Creating window. api: {}, floating: {}",
-                                  api == kitgui::WindowApi::X11 ? "x11" : "wayland", isFloating));
-    mApi = api;
+bool ContextImpl::Create() {
+    mApi = sApi;
     mWindowProps = SDL_CreateProperties();
     if (mWindowProps == 0) {
         LOG_SDL_ERROR();
@@ -353,6 +351,8 @@ void ContextImpl::MakeCurrent() {
 }
 
 std::vector<ContextImpl*> ContextImpl::sActiveInstances = {};
+kitgui::WindowApi ContextImpl::sApi = kitgui::WindowApi::Any;
+bool ContextImpl::sIsFloating = false;
 
 void ContextImpl::AddActiveInstance(ContextImpl* instance) {
     if (std::find(sActiveInstances.begin(), sActiveInstances.end(), instance) == sActiveInstances.end()) {
@@ -407,6 +407,9 @@ void ContextImpl::RunSingleFrame() {
                 if (instance) {
                     instance->Close();
                 }
+                break;
+            }
+            default: {
                 break;
             }
         }

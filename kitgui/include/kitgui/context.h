@@ -42,8 +42,7 @@ class Context {
     static void deinit();
 
     // host events: (matches clap API)
-    bool Create(kitgui::WindowApi api,
-                bool isFloating);  // TODO: remove parameters and access them if necessary from the static init() call
+    bool Create();
     bool Destroy();
     bool SetScale(double scale);
     const SizeConfig& GetSizeConfig() const;

@@ -30,8 +30,8 @@ Context::Context(Context::AppFactory fn)
       mImpl(std::make_unique<Impl>(*this)),
       mApp(nullptr) {}
 
-bool Context::Create(kitgui::WindowApi api, bool isFloating) {
-    if (!mImpl->Create(api, isFloating)) {
+bool Context::Create() {
+    if (!mImpl->Create()) {
         return false;
     }
     // Setup app

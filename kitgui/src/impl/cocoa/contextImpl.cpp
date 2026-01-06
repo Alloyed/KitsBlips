@@ -12,13 +12,17 @@
 using namespace Magnum;
 
 namespace kitgui::cocoa {
-void ContextImpl::init(kitgui::WindowApi api, bool isFloating) {}
+void ContextImpl::init(kitgui::WindowApi api, bool isFloating) {
+    sIsFloating = isFloating;
+}
 
 void ContextImpl::deinit() {}
 
 ContextImpl::ContextImpl(kitgui::Context& ctx) : mContext(ctx) {}
 
-bool ContextImpl::Create(kitgui::WindowApi api, bool isFloating) {
+bool ContextImpl::Create() {
+    kitgui::WindowApi api = kitgui::WindowApi::Cocoa;
+    bool isFloating = sIsFloating;
     mApi = api;
     SizeConfig cfg = mContext.GetSizeConfig();
 
@@ -147,6 +151,7 @@ void ContextImpl::MakeCurrent() {
 }
 
 std::vector<ContextImpl*> ContextImpl::sActiveInstances = {};
+bool ContextImpl::sIsFloating = false;
 
 void ContextImpl::AddActiveInstance(ContextImpl* instance) {
     if (std::find(sActiveInstances.begin(), sActiveInstances.end(), instance) == sActiveInstances.end()) {

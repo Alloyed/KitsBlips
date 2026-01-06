@@ -64,10 +64,10 @@ int main() {
 
     {
         kitgui::Context ctx1([](kitgui::Context& ctx) { return std::make_unique<MyApp2>(ctx); });
-        ctx1.Create(kitgui::WindowApi::Any, true);
+        ctx1.Create();
 
         kitgui::Context ctx2([](kitgui::Context& ctx) { return std::make_unique<MyApp2>(ctx); });
-        ctx2.Create(kitgui::WindowApi::Any, true);
+        ctx2.Create();
 
         ctx1.Show();
         ctx2.Show();

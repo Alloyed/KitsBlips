@@ -14,11 +14,13 @@ project(KitsBlips VERSION 0.0.0)
 set(PRODUCT_NAME "KitsBlips")
 set(PRODUCT_ID "me.alloyed.KitsBlips")
 option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
+option(KITSBLIPS_ENABLE_VST "build VSTs" OFF)
 
 set(CMAKE_CXX_STANDARD 20)
 
 # shared libs
 include(../content.cmake)
+include(cmake/add_bundle.cmake)
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
 FetchContent_MakeAvailable(clap fmt clapeze KitDSP physfs)
 FetchContent_MakeAvailable(clap-wrapper)
@@ -56,28 +58,36 @@ if(KITSBLIPS_ENABLE_GUI)
     target_link_libraries(KitsBlips-lib PUBLIC kitgui)
 endif()
 
-make_clapfirst_plugins(
-    TARGET_NAME KitsBlips
-    IMPL_TARGET KitsBlips-lib
 
-    OUTPUT_NAME "${PRODUCT_NAME}"
+if(KITSBLIPS_ENABLE_VST)
+    make_clapfirst_plugins(
+        TARGET_NAME KitsBlips-vst
+        IMPL_TARGET KitsBlips-lib
 
-    ENTRY_SOURCE src/entry.cpp
+        OUTPUT_NAME "${PRODUCT_NAME}"
 
-    BUNDLE_IDENTIFER "${PRODUCT_ID}"
-    BUNDLE_VERSION ${PROJECT_VERSION}
+        ENTRY_SOURCE src/entry.cpp
 
-    COPY_AFTER_BUILD FALSE
+        BUNDLE_IDENTIFER "${PRODUCT_ID}"
+        BUNDLE_VERSION ${PROJECT_VERSION}
 
-    PLUGIN_FORMATS CLAP VST3 # AUV2 WCLAP
+        COPY_AFTER_BUILD FALSE
 
-    # bleh. ideally this would be part of the install step instead
-    ASSET_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+        PLUGIN_FORMATS CLAP VST3 # AUV2 WCLAP
 
-    # You can set up the AUv2 for a single plugin here, or you can
-    # set it up with the auv2 extension in your clap
-    # AUV2_MANUFACTURER_NAME "Free Audio"
-    # AUV2_MANUFACTURER_CODE "FrAD"
-    # AUV2_SUBTYPE_CODE "BdDt"
-    # AUV2_INSTRUMENT_TYPE "aufx"
-)
+        # bleh. ideally this would be part of the install step instead
+        ASSET_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/dist
+
+        # You can set up the AUv2 for a single plugin here, or you can
+        # set it up with the auv2 extension in your clap
+        # AUV2_MANUFACTURER_NAME "Free Audio"
+        # AUV2_MANUFACTURER_CODE "FrAD"
+        # AUV2_SUBTYPE_CODE "BdDt"
+        # AUV2_INSTRUMENT_TYPE "aufx"
+    )
+else()
+    # as shrimple as that!
+    add_library(KitsBlips-clap MODULE)
+    target_link_libraries(KitsBlips-clap PUBLIC KitsBlips-lib)
+    add_bundle(KitsBlips-clap "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.clap" "${CMAKE_CURRENT_LIST_DIR}/assets")
+endif()
