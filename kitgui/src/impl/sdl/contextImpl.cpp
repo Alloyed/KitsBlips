@@ -17,6 +17,8 @@
 #include "kitgui/kitgui.h"
 #include "log.h"
 
+#define LOG_SDL_ERROR() kitgui::log::error(SDL_GetError())
+
 // linux-specific platform details
 #ifdef __linux__
 #include <X11/Xlib.h>
@@ -25,9 +27,17 @@ using X11Window = Window;
 using X11Display = Display;
 void getX11Handles(SDL_Window* sdlWindow, X11Window& xWindow, X11Display*& xDisplay) {
     SDL_PropertiesID windowProps = SDL_GetWindowProperties(sdlWindow);
+    if (windowProps == 0) {
+        LOG_SDL_ERROR();
+        return;
+    }
     xWindow = SDL_GetNumberProperty(windowProps, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
     xDisplay =
         static_cast<X11Display*>(SDL_GetPointerProperty(windowProps, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr));
+
+    kitgui::log::info(fmt::format("display: {}, window: {}", (void*)xDisplay, xWindow));
+    assert(xDisplay != nullptr);
+    assert(xWindow != 0);
 }
 X11Window getX11Window(const kitgui::WindowRef& ref) {
     if (ref.api == kitgui::WindowApi::X11) {
@@ -84,29 +94,67 @@ bool setTransient(kitgui::WindowApi api, SDL_Window* sdlWindow, const kitgui::Wi
 
     return true;
 }
-bool isApiSupported(kitgui::WindowApi api, bool isFloating) {
-    if (api == kitgui::WindowApi::Any) {
-        api = kitgui::WindowApi::X11;
-    }
 
-    if (api == kitgui::WindowApi::X11) {
-        return true;
-    } else if (api == kitgui::WindowApi::Wayland) {
-        return isFloating;
+void checkSupportedApis(bool& outHasX11, bool& outHasWayland) {
+    static bool hasX11{};
+    static bool hasWayland{};
+    static bool hasChecked{};
+    if (!hasChecked) {
+        int numVideoDrivers = SDL_GetNumVideoDrivers();
+        for (int i = 0; i < numVideoDrivers; i++) {
+            std::string_view driverName = SDL_GetVideoDriver(i);
+            if (driverName == "x11") {
+                hasX11 = true;
+            } else if (driverName == "wayland") {
+                hasWayland = true;
+            }
+        }
+        kitgui::log::info(fmt::format("Checking supported video drivers. x11: {}, wayland: {}", hasX11, hasWayland));
+        hasChecked = true;
     }
-    return false;
+    // TODO: temporarily lying until i find why x11 crashes
+    // outHasX11 = hasX11;
+    outHasX11 = false;
+    outHasWayland = hasWayland;
 }
+
+bool isApiSupported(kitgui::WindowApi api, bool isFloating) {
+    bool hasX11{};
+    bool hasWayland{};
+    checkSupportedApis(hasX11, hasWayland);
+
+    if (hasX11 && (api == kitgui::WindowApi::Any || api == kitgui::WindowApi::X11)) {
+        return true;
+    } else if (hasWayland && (api == kitgui::WindowApi::Any || api == kitgui::WindowApi::Wayland)) {
+        // wayland only supports floating windows
+        return isFloating;
+    } else {
+        return false;
+    }
+}
+
 bool getPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
-    apiOut = kitgui::WindowApi::X11;
-    isFloatingOut = false;
-    return true;
+    bool hasX11{};
+    bool hasWayland{};
+    checkSupportedApis(hasX11, hasWayland);
+
+    if (hasWayland) {
+        apiOut = kitgui::WindowApi::Wayland;
+        isFloatingOut = true;
+        return true;
+    } else if (hasX11) {
+        apiOut = kitgui::WindowApi::X11;
+        isFloatingOut = false;
+        return true;
+    } else {
+        // no video support at all
+        return false;
+    }
 }
 }  // namespace
 #endif
 
 using namespace Magnum;
-
-#define LOG_SDL_ERROR() kitgui::log::error(SDL_GetError())
 
 namespace kitgui::sdl {
 void ContextImpl::init() {
@@ -131,6 +179,8 @@ void ContextImpl::deinit() {
 ContextImpl::ContextImpl(kitgui::Context& ctx) : mContext(ctx) {}
 
 bool ContextImpl::Create(kitgui::WindowApi api, bool isFloating) {
+    kitgui::log::info(fmt::format("Creating window. api: {}, floating: {}",
+                                  api == kitgui::WindowApi::X11 ? "x11" : "wayland", isFloating));
     mApi = api;
     switch (mApi) {
         // only one API possible on these platforms
