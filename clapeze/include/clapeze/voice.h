@@ -81,9 +81,14 @@ class PolyphonicVoicePool {
         std::fill(out.right.begin(), out.right.end(), 0);
         for (VoiceIndex idx = 0; idx < mVoices.size(); idx++) {
             auto& data = mVoices[idx];
-            if (data.activeNote && !data.voice.ProcessAudio(out)) {
-                SendNoteEnd(*data.activeNote);
-                data.activeNote = std::nullopt;
+            if (data.activeNote) {
+                // TODO: this api forces voices to _add_ to the buffer, not replace it. this isn't super obvious from
+                // the signature, so maybe we should wrap the StereoAudioBufferType? StereoSummingAudioBuffer or so
+                bool playing = data.voice.ProcessAudio(out);
+                if (!playing) {
+                    SendNoteEnd(*data.activeNote);
+                    data.activeNote = std::nullopt;
+                }
             }
         }
     }
@@ -150,17 +155,20 @@ class MonophonicVoicePool {
         mPlaying = true;
     }
     void ProcessNoteOff(const NoteTuple& note) {
-        for (size_t idx = mActiveNotes.size() - 1; idx >= 0; idx--) {
-            if (mActiveNotes[idx].first.Match(note)) {
-                mActiveNotes.erase(mActiveNotes.begin() + idx);
-                if (idx == mActiveNotes.size() - 1) {
-                    // this is the current note, so let's stop it and retrigger the last note if necessary
-                    mVoice.ProcessNoteOff();
-                    if (!mActiveNotes.empty()) {
-                        const auto& [note, velocity] = mActiveNotes.back();
-                        mVoice.ProcessNoteOn(note, velocity);
-                    }
-                }
+        // if the top note is playing, we'll have to stop it later
+        bool isPlayingNote = !mActiveNotes.empty() && mActiveNotes.back().first.Match(note);
+
+        mActiveNotes.erase(std::remove_if(mActiveNotes.begin(), mActiveNotes.end(),
+                                          [&](const auto& activeNote) { return activeNote.first.Match(note); }),
+                           mActiveNotes.end());
+
+        if (isPlayingNote) {
+            mVoice.ProcessNoteOff();
+
+            // if any notes are left, then we should retrigger them
+            if (!mActiveNotes.empty()) {
+                const auto& [lastNote, velocity] = mActiveNotes.back();
+                mVoice.ProcessNoteOn(lastNote, velocity);
             }
         }
     }

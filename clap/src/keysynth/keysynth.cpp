@@ -164,39 +164,56 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
             mEnv.TriggerOpen();
         }
         void ProcessNoteOff() { mEnv.TriggerClose(); }
-        void ProcessChoke() { mEnv.Reset(); }
+        void ProcessChoke() { mEnv.TriggerChoke(); }
         bool ProcessAudio(clapeze::StereoAudioBuffer& out) {
-            const auto& params = mProcessor.mParams;
             const float sampleRate = static_cast<float>(mProcessor.GetSampleRate());
+
+            // collect params
+            const auto& params = mProcessor.mParams;
+
+            // osc
+            float oscNote =
+                mNote + (static_cast<float>(params.Get<Params::OscOctave>()) * 12.0f) + params.Get<Params::OscTune>();
+            float oscModMix = params.Get<Params::OscModMix>();
+            float oscModAmount = params.Get<Params::OscModAmount>() * 64.0f;
+
+            // filter
+            // range from 8hz to 12.5khz
+            float filterNote = kitdsp::lerpf(0.0f, 127.0f, params.Get<Params::FilterCutoff>());
+            float res = params.Get<Params::FilterResonance>();
+            float filterSteepness = 0.5f;  // steeper means "achieves self-oscillation quicker"
+            float filterQ = 0.5f * std::exp(filterSteepness * (res / (1 - res)));  // [0, 1] -> [0.5, inf]
+            float filterModMix = params.Get<Params::FilterModMix>();
+            float filterModAmount = params.Get<Params::FilterModAmount>() * 64.0f;
+
+            // env
             mEnv.SetParams(params.Get<Params::EnvAttack>(), params.Get<Params::EnvDecay>(),
                            params.Get<Params::EnvSustain>(), params.Get<Params::EnvRelease>(), sampleRate);
 
-            // range from 8hz to 12.5khz
-            float filterNote = kitdsp::lerpf(0.0f, 127.0f, params.Get<Params::FilterCutoff>());
+            // lfo
+            mLfo.SetFrequency(params.Get<Params::LfoRate>(), sampleRate);
+            float vcaModAmount = params.Get<Params::VcaLfoAmount>();
 
             for (uint32_t index = 0; index < out.left.size(); index++) {
                 // modulation
                 float lfo = mLfo.Process();  // [-1, 1]
                 float env = mEnv.Process();  // [0, 1]
 
-                float oscMod =
-                    kitdsp::lerpf(env, lfo, params.Get<Params::OscModMix>()) * params.Get<Params::OscModAmount>();
-                float filterMod =
-                    kitdsp::lerpf(env, lfo, params.Get<Params::FilterModMix>()) * params.Get<Params::FilterModAmount>();
-                float vcaMod = env * (1.0f - (lfo * params.Get<Params::VcaLfoAmount>()));
-                vcaMod *= vcaMod;  // approximate db curve (not really but yknow)
+                float oscMod = kitdsp::lerpf(lfo, env, oscModMix) * oscModAmount;
+                float filterMod = kitdsp::lerpf(lfo, env, filterModMix) * filterModAmount;
+                float vcaMod = env * (1.0f - (-lfo * vcaModAmount));
+                vcaMod = vcaMod * vcaMod * vcaMod;  // approximate db curve (not really but yknow)
 
-                mOsc.SetFrequency(kitdsp::midiToFrequency(mNote + (oscMod * 12.0f)), sampleRate);
-                mFilter.SetFrequency(kitdsp::midiToFrequency(filterNote + (filterMod * 12.0f)), sampleRate,
-                                     params.Get<Params::FilterResonance>());
+                mOsc.SetFrequency(kitdsp::midiToFrequency(oscNote + oscMod), sampleRate);
+                mFilter.SetFrequency(kitdsp::midiToFrequency(filterNote + filterMod), sampleRate, filterQ);
 
                 // audio
                 float oscOut = mOsc.Process();
                 float filterOut = mFilter.Process<kitdsp::SvfFilterMode::LowPass>(oscOut);
                 float vcaOut = filterOut * vcaMod;
 
-                out.left[index] = vcaOut;
-                out.right[index] = out.left[index];
+                out.left[index] += vcaOut;
+                out.right[index] += vcaOut;
             }
 
             // if no longer processing, time to sleep
@@ -233,6 +250,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
 
    private:
     clapeze::PolyphonicVoicePool<Processor, Voice, 16> mVoices;
+    // clapeze::MonophonicVoicePool<Processor, Voice> mVoices;
 };
 
 #if KITSBLIPS_ENABLE_GUI

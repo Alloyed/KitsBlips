@@ -6,12 +6,25 @@
 
 namespace kitdsp {
 /**
- * Implements an ADSR with the "traditional" capacitor discharge curve as used in analog applications. These are convex
- * going up, concave going down, and linear within a [0, 1] output range.
+ * Implements an ADSR with the "traditional" capacitor discharge curve as used in analog applications. The curve is
+ * convex going up, concave going down, and is on a linear scale within a [0, 1] output range.
  */
 class ApproachAdsr {
    public:
-    enum class State { Idle, Attack, Decay, Sustain, Release };
+    enum class State {
+        // the envelope is idle when it is at 0, waiting for a new trigger.
+        Idle,
+        // the envelope can be "choked", this just means to jump to idle in about a ms, independent of release time.
+        Choke,
+        // the envelope is opening up to 1.
+        Attack,
+        // the envelope has reached 1, and is decaying to the sustain level
+        Decay,
+        // the envelope is waiting for the close trigger at the current sustain level
+        Sustain,
+        // the envelope has been closed, and is decaying to to idle.
+        Release
+    };
     ApproachAdsr() {}
     ~ApproachAdsr() = default;
     inline void Reset() {
@@ -28,6 +41,9 @@ class ApproachAdsr {
         mSustain = sustainValue;
         // sustain -> 0
         mReleaseH = Approach::CalculateHalfLifeFromSettleTime(releaseMs, sampleRate, cSettlePrecision, sustainValue);
+        // any -> 0
+        // Chokes just need to end "pretty soon" to sound correct
+        mReleaseH = Approach::CalculateHalfLifeFromSettleTime(1.0f, sampleRate, cSettlePrecision, 1.0f);
         // TODO: mState not updated until after Process() called at least once
         Update(false);
     }
@@ -35,11 +51,11 @@ class ApproachAdsr {
     float GetValue() const { return mCurrent; }
 
     void TriggerOpen() {
-        // currently implements "retrigger" logic (unconditionally go to A state)
+        // currently implements "retrigger" logic (unconditionally go to `A` state)
         // alternatives include:
-        //  * Legato: if in ADS state don't do anything, otherwise go to A
-        //  * Reset: jump to 0 and go to A state, possibly with a tiny in-between state to avoid pops
-        //  * Oneshot: TriggerClose() immediately after
+        //  * Legato: if in `ADS` state don't do anything, otherwise go to `A`
+        //  * Reset: choke, then go to `A` state afterward
+        //  * Oneshot: complete `A` state, then skip `DS` and do `R` immediately after
         mState = State::Attack;
     }
 
@@ -52,12 +68,15 @@ class ApproachAdsr {
                 break;
             }
             case State::Release:
+            case State::Choke:
             case State::Idle: {
                 // do nothing
                 break;
             }
         }
     }
+
+    void TriggerChoke() { mState = State::Choke; }
 
     bool IsProcessing() { return mState != State::Idle; }
 
@@ -87,6 +106,11 @@ class ApproachAdsr {
                 targetH = mReleaseH;
                 break;
             }
+            case State::Choke: {
+                target = 0.0f;
+                targetH = mChokeH;
+                break;
+            }
         }
 
         if (isProcessing) {
@@ -104,6 +128,7 @@ class ApproachAdsr {
                     mState = State::Sustain;
                     break;
                 }
+                case State::Choke:
                 case State::Release: {
                     mState = State::Idle;
                     break;
@@ -124,5 +149,6 @@ class ApproachAdsr {
     float mDecayH = 0.0f;
     float mSustain = 0.0f;
     float mReleaseH = 0.0f;
+    float mChokeH = 0.0f;
 };
 }  // namespace kitdsp
