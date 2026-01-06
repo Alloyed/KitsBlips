@@ -15,10 +15,10 @@
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_win32.h>
 #include <algorithm>
+#include "immediateMode/misc.h"
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
 #include "log.h"
-#include "immediateMode/misc.h"
 
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -95,7 +95,7 @@ using namespace Magnum;
 namespace kitgui::win32 {
 static constexpr wchar_t kClassName[] = L"BLEHHH\0";  // TODO: runtime selectable
 
-void ContextImpl::init() {
+void ContextImpl::init(kitgui::WindowApi api, bool isFloating) {
     ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSW windowClass = {};
     windowClass.lpfnWndProc = WndProc;

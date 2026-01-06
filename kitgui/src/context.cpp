@@ -16,8 +16,8 @@
 
 namespace kitgui {
 Context::~Context() = default;
-void Context::init() {
-    Impl::init();
+void Context::init(kitgui::WindowApi api, bool isFloating) {
+    Impl::init(api, isFloating);
 }
 
 void Context::deinit() {
@@ -102,6 +102,10 @@ void Context::RunLoop() {
 
 void Context::RunSingleFrame() {
     Impl::RunSingleFrame();
+}
+
+bool Context::NeedsUpdateLoopIntegration() {
+    return Impl::NeedsUpdateLoopIntegration();
 }
 
 bool Context::IsApiSupported(kitgui::WindowApi api, bool isFloating) {

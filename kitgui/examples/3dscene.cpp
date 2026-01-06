@@ -40,7 +40,7 @@ class MyApp : public kitgui::BaseApp {
 };
 
 int main() {
-    kitgui::Context::init();
+    kitgui::Context::init(kitgui::WindowApi::Any, true);
 
     {
         kitgui::Context ctx1([](kitgui::Context& ctx) { return std::make_unique<MyApp>(ctx); });

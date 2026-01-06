@@ -12,6 +12,7 @@
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl3.h>
 #include <algorithm>
+#include <string_view>
 #include "immediateMode/misc.h"
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
@@ -113,8 +114,8 @@ void checkSupportedApis(bool& outHasX11, bool& outHasWayland) {
         hasChecked = true;
     }
     // TODO: temporarily lying until i find why x11 crashes
-    // outHasX11 = hasX11;
-    outHasX11 = false;
+    outHasX11 = hasX11;
+    // outHasX11 = false;
     outHasWayland = hasWayland;
 }
 
@@ -157,7 +158,26 @@ bool getPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
 using namespace Magnum;
 
 namespace kitgui::sdl {
-void ContextImpl::init() {
+void ContextImpl::init(kitgui::WindowApi api, bool isFloating) {
+    switch (api) {
+        // only one API possible on these platforms
+        case kitgui::WindowApi::Any:
+        case kitgui::WindowApi::Win32:
+        case kitgui::WindowApi::Cocoa: {
+            break;
+        }
+        case kitgui::WindowApi::X11: {
+            SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11");
+            break;
+        }
+        case kitgui::WindowApi::Wayland: {
+            SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "wayland");
+            break;
+        }
+    }
+
+    // uncomment to see verbose event logs
+    // SDL_SetHint(SDL_HINT_EVENT_LOGGING, "1");
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) {
         LOG_SDL_ERROR();
         return;
@@ -182,43 +202,35 @@ bool ContextImpl::Create(kitgui::WindowApi api, bool isFloating) {
     kitgui::log::info(fmt::format("Creating window. api: {}, floating: {}",
                                   api == kitgui::WindowApi::X11 ? "x11" : "wayland", isFloating));
     mApi = api;
-    switch (mApi) {
-        // only one API possible on these platforms
-        case kitgui::WindowApi::Any:
-        case kitgui::WindowApi::Win32:
-        case kitgui::WindowApi::Cocoa: {
-            break;
-        }
-        case kitgui::WindowApi::X11: {
-            SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11");
-            break;
-        }
-        case kitgui::WindowApi::Wayland: {
-            SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "wayland");
-            break;
-        }
-    }
-    // uncomment to see verbose event logs
-    // SDL_SetHint(SDL_HINT_EVENT_LOGGING, "1");
-
-    SDL_PropertiesID createProps = SDL_CreateProperties();
-    if (createProps == 0) {
+    mWindowProps = SDL_CreateProperties();
+    if (mWindowProps == 0) {
         LOG_SDL_ERROR();
         return false;
     }
 
     SizeConfig cfg = mContext.GetSizeConfig();
-    SDL_SetBooleanProperty(createProps, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
-    SDL_SetBooleanProperty(createProps, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, true);
-    SDL_SetBooleanProperty(createProps, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, cfg.resizable);
-    SDL_SetNumberProperty(createProps, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, cfg.startingWidth);
-    SDL_SetNumberProperty(createProps, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, cfg.startingHeight);
-    mWindow = SDL_CreateWindowWithProperties(createProps);
-    SDL_DestroyProperties(createProps);
+    SDL_SetBooleanProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
+    SDL_SetBooleanProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, true);
+    SDL_SetBooleanProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, cfg.resizable);
+    SDL_SetNumberProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, cfg.startingWidth);
+    SDL_SetNumberProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, cfg.startingHeight);
+    mWindow = SDL_CreateWindowWithProperties(mWindowProps);
 
     if (mWindow == nullptr) {
         LOG_SDL_ERROR();
         return false;
+    }
+
+    if (mApi == kitgui::WindowApi::Any) {
+        // figure out which api we actually are using
+        std::string_view driver = SDL_GetCurrentVideoDriver();
+        if (driver == "x11") {
+            mApi = kitgui::WindowApi::X11;
+        } else if (driver == "wayland") {
+            mApi = kitgui::WindowApi::Wayland;
+        } else {
+            assert(false);
+        }
     }
 
     onCreateWindow(mApi, mWindow);
@@ -257,6 +269,7 @@ bool ContextImpl::Destroy() {
         RemoveActiveInstance(this);
         mGl.reset();
         SDL_GL_DestroyContext(mSdlGl);
+        SDL_DestroyProperties(mWindowProps);
         SDL_DestroyWindow(mWindow);
         mWindow = nullptr;
         mSdlGl = nullptr;

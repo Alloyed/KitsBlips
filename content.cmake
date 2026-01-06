@@ -9,6 +9,7 @@ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 # needed for any dynamic libs on linux
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CXX_VISIBILITY_PRESET "hidden")
 
 include(FetchContent)
 
@@ -86,7 +87,7 @@ FetchContent_Declare(
 FetchContent_Declare(
     etl
     GIT_REPOSITORY https://github.com/ETLCPP/etl
-    GIT_TAG        20.42.2
+    GIT_TAG        20.44.2
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
@@ -98,13 +99,13 @@ FetchContent_Declare(
 FetchContent_Declare(
     clap
     GIT_REPOSITORY https://github.com/free-audio/clap.git
-    GIT_TAG        1.2.6
+    GIT_TAG        1.2.7
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     clap-wrapper
     GIT_REPOSITORY https://github.com/alloyed/clap-wrapper.git
-    GIT_TAG 19f18f2c1b4f0aee13112d75695d48d6b2487d68
+    GIT_TAG        19f18f2c1b4f0aee13112d75695d48d6b2487d68
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
@@ -130,7 +131,7 @@ endif()
 FetchContent_Declare(
     SDL3
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-    GIT_TAG release-3.2.14
+    GIT_TAG        release-3.4.0
     EXCLUDE_FROM_ALL
     FIND_PACKAGE_ARGS
 )
@@ -154,8 +155,8 @@ set(PHYSFS_DISABLE_INSTALL ON)
 set(PHYSFS_BUILD_DOCS OFF)
 FetchContent_Declare(
 	physfs
-	GIT_REPOSITORY	https://github.com/icculus/physfs.git
-	GIT_TAG 	adfdec6af14e4d12551446e7ad060415ca563950
+	GIT_REPOSITORY https://github.com/icculus/physfs.git
+	GIT_TAG        d70c3fcf06814f8608c8327d3e8136063ee0133d
     EXCLUDE_FROM_ALL
 )
 

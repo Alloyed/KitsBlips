@@ -12,7 +12,7 @@
 using namespace Magnum;
 
 namespace kitgui::cocoa {
-void ContextImpl::init() {}
+void ContextImpl::init(kitgui::WindowApi api, bool isFloating) {}
 
 void ContextImpl::deinit() {}
 

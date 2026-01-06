@@ -45,10 +45,10 @@ inline bool DebugParam(const clapeze::EnumParam<TEnum>& param, double& inOutRawV
 
 template <typename TParamsFeature, TParamsFeature::Id id>
 void DebugParam(TParamsFeature& feature) {
-    double raw = feature.GetRaw(id);
+    double raw = feature.GetRawValue(id);
 
     if (DebugParam(*(feature.template GetSpecificParam<id>()), raw)) {
-        feature.SetRaw(id, raw);
+        feature.SetRawValue(id, raw);
     }
     if (ImGui::IsItemActivated()) {
         feature.StartGesture(id);

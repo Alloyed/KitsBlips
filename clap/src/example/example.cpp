@@ -85,7 +85,8 @@ class Plugin : public EffectPlugin {
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count).Parameter<Params::Mix>();
 #if KITSBLIPS_ENABLE_GUI
-        ConfigFeature<KitguiFeature>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
+        ConfigFeature<KitguiFeature>(GetHost(),
+                                     [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif
 
         ConfigProcessor<Processor>(params.GetStateForAudioThread());

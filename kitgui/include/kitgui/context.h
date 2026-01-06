@@ -38,11 +38,12 @@ class Context {
     using AppFactory = std::function<std::unique_ptr<BaseApp>(Context& ctx)>;
     explicit Context(AppFactory createAppFn);
     ~Context();
-    static void init();
+    static void init(kitgui::WindowApi api, bool isFloating);
     static void deinit();
 
     // host events: (matches clap API)
-    bool Create(kitgui::WindowApi api, bool isFloating);
+    bool Create(kitgui::WindowApi api,
+                bool isFloating);  // TODO: remove parameters and access them if necessary from the static init() call
     bool Destroy();
     bool SetScale(double scale);
     const SizeConfig& GetSizeConfig() const;
@@ -65,6 +66,11 @@ class Context {
     static void RunLoop();
     // use if we can't. attach to an update loop (60hz or so)
     static void RunSingleFrame();
+    /*
+     * Some platforms (eg. windows) will attach themselves automagically to the existing gui loop. others, like, SDL,
+     * need manual taping up. you can do this by calling RunSingleFrame() in the parent loop.
+     */
+    static bool NeedsUpdateLoopIntegration();
 
     bool IsCreated() const;
     void SetClearColor(Color4 color);

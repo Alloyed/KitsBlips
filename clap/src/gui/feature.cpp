@@ -1,3 +1,4 @@
+#include "clapeze/pluginHost.h"
 #if KITSBLIPS_ENABLE_GUI
 #include "gui/feature.h"
 
@@ -8,6 +9,11 @@
 #include <utility>
 
 namespace {
+
+/**
+ * TODO: on linux/SDL we need to run mCtx.RunSingleFrame() on occasion. this can be achieved with
+ * PluginHost::AddTimer().
+ */
 clapeze::ClapWindowApi toClapeze(kitgui::WindowApi api) {
     switch (api) {
         case kitgui::WindowApi::Any: {
@@ -59,8 +65,10 @@ kitgui::WindowApi toKitGui(clapeze::ClapWindowApi api) {
 namespace clapeze {
 
 int32_t KitguiFeature::sInitCount = 0;
+PluginHost::TimerId KitguiFeature::sTimerId = 0;
 
-KitguiFeature::KitguiFeature(kitgui::Context::AppFactory createAppFn) : mCtx(std::move(createAppFn)) {}
+KitguiFeature::KitguiFeature(PluginHost& mPluginHost, kitgui::Context::AppFactory createAppFn)
+    : mHost(mPluginHost), mCtx(std::move(createAppFn)) {}
 
 bool KitguiFeature::IsApiSupported(ClapWindowApi api, bool isFloating) {
     return kitgui::Context::IsApiSupported(toKitGui(api), isFloating);
@@ -76,7 +84,10 @@ bool KitguiFeature::GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) 
 bool KitguiFeature::Create(ClapWindowApi api, bool isFloating) {
     sInitCount++;
     if (sInitCount == 1) {
-        kitgui::Context::init();
+        kitgui::Context::init(toKitGui(api), isFloating);
+        if (kitgui::Context::NeedsUpdateLoopIntegration()) {
+            sTimerId = mHost.AddTimer(32, []() { kitgui::Context::RunSingleFrame(); });
+        }
     }
 
     return mCtx.Create(toKitGui(api), isFloating);
@@ -85,8 +96,12 @@ bool KitguiFeature::Create(ClapWindowApi api, bool isFloating) {
 void KitguiFeature::Destroy() {
     mCtx.Destroy();
     sInitCount--;
-    if (sInitCount == 1) {
+    if (sInitCount == 0) {
         kitgui::Context::deinit();
+        if (sTimerId) {
+            mHost.CancelTimer(sTimerId);
+            sTimerId = {};
+        }
     }
 }
 

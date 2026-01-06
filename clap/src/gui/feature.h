@@ -10,9 +10,11 @@
 
 namespace clapeze {
 
+class PluginHost;
+
 class KitguiFeature : public clapeze::GuiFeature {
    public:
-    explicit KitguiFeature(kitgui::Context::AppFactory createAppFn);
+    explicit KitguiFeature(clapeze::PluginHost& host, kitgui::Context::AppFactory createAppFn);
     bool IsApiSupported(ClapWindowApi api, bool isFloating) override;
     bool GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) override;
     bool Create(ClapWindowApi api, bool isFloating) override;
@@ -30,8 +32,10 @@ class KitguiFeature : public clapeze::GuiFeature {
     bool Hide() override;
 
    private:
+    clapeze::PluginHost& mHost;
     kitgui::Context mCtx;
     static int32_t sInitCount;
+    static clapeze::PluginHost::TimerId sTimerId;
 };
 }  // namespace clapeze
 #endif

@@ -35,7 +35,7 @@ class ContextImpl {
    public:
     explicit ContextImpl(kitgui::Context& ctx);
     ~ContextImpl() = default;
-    static void init();
+    static void init(kitgui::WindowApi api, bool isFloating);
     static void deinit();
 
     // host events: (matches clap API)
@@ -60,6 +60,7 @@ class ContextImpl {
     static void RunLoop();
     // use if we can't. attach to an update loop (60hz or so)
     static void RunSingleFrame();
+    static bool NeedsUpdateLoopIntegration() { return false; }
 
     bool IsCreated() const;
     void SetClearColor(Magnum::Color4 color);
