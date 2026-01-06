@@ -53,7 +53,7 @@ class ParametersFeature : public BaseFeature {
     using Id = TParamId;
 
     using ParamConfigs = std::vector<std::unique_ptr<BaseParam>>;
-    enum class ChangeType : uint8_t { SetValue, StartGesture, StopGesture };
+    enum class ChangeType : uint8_t { SetValue, SetModulation, StartGesture, StopGesture };
     struct Change {
         ChangeType type;
         Id id;
@@ -86,7 +86,7 @@ class ParametersFeature : public BaseFeature {
         : mHost(host),
           mNumParams(static_cast<size_t>(numParams)),
           mParams(mNumParams),
-          mState(mNumParams, 0.0f),
+          mValues(mNumParams, 0.0f),
           mAudioToMain(),
           mMainToAudio(),
           mAudioState(mParams, mNumParams, mMainToAudio, mAudioToMain) {}
@@ -97,7 +97,7 @@ class ParametersFeature : public BaseFeature {
         clap_id index = static_cast<clap_id>(id);
         mParams[index].reset(new ParamType());
         mParams[index]->SetModule(mNextModule);
-        SetRaw(id, mParams[index]->GetRawDefault());
+        SetRawValue(id, mParams[index]->GetRawDefault());
         return *this;
     }
 
@@ -108,7 +108,7 @@ class ParametersFeature : public BaseFeature {
 
     const BaseParam* GetBaseParam(Id id) const {
         clap_id index = static_cast<clap_id>(id);
-        if (index >= mState.size()) {
+        if (index >= mValues.size()) {
             return nullptr;
         }
         return mParams[index].get();
@@ -118,24 +118,24 @@ class ParametersFeature : public BaseFeature {
     const ParamTraits<TParamId, id>* GetSpecificParam() const {
         using TParam = ParamTraits<TParamId, id>;
         clap_id index = static_cast<clap_id>(id);
-        if (index >= mState.size()) {
+        if (index >= mValues.size()) {
             return nullptr;
         }
         return static_cast<const TParam*>(mParams[index].get());
     }
 
-    double GetRaw(Id id) const {
+    double GetRawValue(Id id) const {
         clap_id index = static_cast<clap_id>(id);
-        if (index >= mState.size()) {
+        if (index >= mValues.size()) {
             return 0.0f;
         }
-        return mState[index];
+        return mValues[index];
     }
 
-    void SetRaw(Id id, double newValue) {
+    void SetRawValue(Id id, double newValue) {
         clap_id index = static_cast<clap_id>(id);
-        if (index < mState.size()) {
-            mState[index] = newValue;
+        if (index < mValues.size()) {
+            mValues[index] = newValue;
             mMainToAudio.push({ChangeType::SetValue, id, newValue});
         }
     }
@@ -165,7 +165,20 @@ class ParametersFeature : public BaseFeature {
         Change change;
         while (mAudioToMain.pop(change)) {
             clap_id index = static_cast<clap_id>(change.id);
-            mState[index] = change.value;
+            switch (change.type) {
+                case ChangeType::SetValue: {
+                    mValues[index] = change.value;
+                    break;
+                }
+                case ChangeType::SetModulation: {
+                    mModulations[index] = change.value;
+                    break;
+                }
+                case ChangeType::StartGesture:
+                case ChangeType::StopGesture: {
+                    break;
+                }
+            }
         }
     }
 
@@ -180,31 +193,50 @@ class ParametersFeature : public BaseFeature {
     class ProcessParameters {
        public:
         ProcessParameters(const ParamConfigs& paramConfigs, size_t numParams, Queue& mainToAudio, Queue& audioToMain)
-            : mParamsRef(paramConfigs), mState(numParams, 0.0f), mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {}
+            : mParamsRef(paramConfigs),
+              mValues(numParams, 0.0f),
+              mModulations(numParams, 0.0f),
+              mMainToAudio(mainToAudio),
+              mAudioToMain(audioToMain) {}
 
         template <Id id>
         typename ParamTraits<TParamId, id>::_valuetype Get() const {
             using ParamType = ParamTraits<TParamId, id>;
             typename ParamType::_valuetype out{};
             clap_id index = static_cast<clap_id>(id);
-            double raw = GetRaw(id);
-            if (index < mState.size()) {
-                static_cast<const ParamType*>(mParamsRef[index].get())->ToValue(raw, out);
+            if (index < mValues.size()) {
+                double raw = GetRawValue(id);
+                double mod = GetRawModulation(id);
+                static_cast<const ParamType*>(mParamsRef[index].get())->ToValue(raw + mod, out);
             }
             return out;
         }
-        double GetRaw(Id id) const {
+        double GetRawValue(Id id) const {
             clap_id index = static_cast<clap_id>(id);
-            if (index < mState.size()) {
-                return mState[index];
+            if (index < mValues.size()) {
+                return mValues[index];
             }
             return 0.0f;
         }
-        void SetRaw(Id id, double newValue) {
+        void SetRawValue(Id id, double newValue) {
             clap_id index = static_cast<clap_id>(id);
-            if (index < mState.size()) {
-                mState[index] = newValue;
+            if (index < mValues.size()) {
+                mValues[index] = newValue;
                 mAudioToMain.push({ChangeType::SetValue, id, newValue});
+            }
+        }
+        double GetRawModulation(Id id) const {
+            clap_id index = static_cast<clap_id>(id);
+            if (index < mModulations.size()) {
+                return mModulations[index];
+            }
+            return 0.0f;
+        }
+        void SetRawModulation(Id id, double newModulation) {
+            clap_id index = static_cast<clap_id>(id);
+            if (index < mModulations.size()) {
+                mModulations[index] = newModulation;
+                mAudioToMain.push({ChangeType::SetModulation, id, newModulation});
             }
         }
 
@@ -212,10 +244,15 @@ class ParametersFeature : public BaseFeature {
             if (event.space_id == CLAP_CORE_EVENT_SPACE_ID) {
                 switch (event.type) {
                     case CLAP_EVENT_PARAM_VALUE: {
-                        const clap_event_param_value_t& paramChange =
-                            reinterpret_cast<const clap_event_param_value_t&>(event);
+                        const auto& paramChange = reinterpret_cast<const clap_event_param_value_t&>(event);
                         const Id id = static_cast<Id>(paramChange.param_id);
-                        SetRaw(id, paramChange.value);
+                        SetRawValue(id, paramChange.value);
+                        return true;
+                    }
+                    case CLAP_EVENT_PARAM_MOD: {
+                        const auto& paramChange = reinterpret_cast<const clap_event_param_mod_t&>(event);
+                        const Id id = static_cast<Id>(paramChange.param_id);
+                        SetRawModulation(id, paramChange.amount);
                         return true;
                     }
                     default: {
@@ -250,7 +287,7 @@ class ParametersFeature : public BaseFeature {
                     }
                     case ChangeType::SetValue: {
                         clap_id index = static_cast<clap_id>(change.id);
-                        mState[index] = change.value;
+                        mValues[index] = change.value;
 
                         clap_event_param_value_t event = {};
                         event.header.size = sizeof(event);
@@ -269,12 +306,18 @@ class ParametersFeature : public BaseFeature {
                         out->try_push(out, &event.header);
                         break;
                     }
+                    case ChangeType::SetModulation: {
+                        // this is if the plugin sets the modulation, i don't think this happens??
+                        assert(false);
+                        break;
+                    }
                 }
             }
         }
 
         const ParamConfigs& mParamsRef;
-        std::vector<double> mState;
+        std::vector<double> mValues;
+        std::vector<double> mModulations;
         Queue& mMainToAudio;
         Queue& mAudioToMain;
     };
@@ -286,7 +329,8 @@ class ParametersFeature : public BaseFeature {
     PluginHost& mHost;
     const size_t mNumParams;
     ParamConfigs mParams;
-    std::vector<double> mState;
+    std::vector<double> mValues;
+    std::vector<double> mModulations;
     std::string_view mNextModule = "";
     Queue mAudioToMain;
     Queue mMainToAudio;
@@ -313,7 +357,7 @@ class ParametersFeature : public BaseFeature {
         // called from main thread
         if (id < self.mParams.size()) {
             self.FlushFromAudio();
-            *value = self.GetRaw(static_cast<Id>(id));
+            *value = self.GetRawValue(static_cast<Id>(id));
             return true;
         }
         return false;

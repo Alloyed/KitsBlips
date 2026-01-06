@@ -31,7 +31,6 @@ enum class Params : clap_id {
     FilterModAmount,
     LfoRate,
     LfoShape,
-    LfoSync,
     EnvAttack,
     EnvDecay,
     EnvSustain,
@@ -44,12 +43,6 @@ enum class Params : clap_id {
     PolyChordType,
     Count
 };
-enum class PolyMode {
-    Polyphonic,
-    Paraphonic,
-    Monophonic,
-    Chord,
-};
 enum class PolyChordType {
     Octave,
     Fifth,
@@ -58,6 +51,7 @@ enum class PolyChordType {
     Maj7,
     Min7,
 };
+constexpr size_t cMaxVoices = 16;
 using ParamsFeature = clapeze::ParametersFeature<Params>;
 }  // namespace
 
@@ -147,14 +141,16 @@ struct clapeze::ParamTraits<Params, Params::VcaLfoAmount> : public clapeze::Nume
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::PolyMode> : public clapeze::EnumParam<PolyMode> {
+struct clapeze::ParamTraits<Params, Params::PolyMode> : public clapeze::EnumParam<clapeze::VoiceStrategy> {
     ParamTraits()
-        : clapeze::EnumParam<PolyMode>("Voice Mode", {"Poly", "Para", "Mono", "Chord"}, PolyMode::Polyphonic) {}
+        : clapeze::EnumParam<clapeze::VoiceStrategy>("Voice Mode",
+                                                     {"Poly", "Mono (last)"},
+                                                     clapeze::VoiceStrategy::Poly) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params, Params::PolyCount> : public clapeze::IntegerParam {
-    ParamTraits() : clapeze::IntegerParam("Voice Count", 1, 32, 4) {}
+    ParamTraits() : clapeze::IntegerParam("Voice Count", 1, cMaxVoices, 4) {}
 };
 
 template <>
@@ -218,14 +214,14 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
             // vca
             float vcaGain = kitdsp::dbToRatio(params.Get<Params::VcaGain>());
             float vcaModAmount = params.Get<Params::VcaLfoAmount>();
-            float vcaEnvDisabled = params.Get<Params::VcaEnvDisabled>() == OnOff::On ? 1.0f: 0.0f; // TODO: xfade
+            float vcaEnvDisabled = params.Get<Params::VcaEnvDisabled>() == OnOff::On ? 1.0f : 0.0f;  // TODO: xfade
 
             for (uint32_t index = 0; index < out.left.size(); index++) {
                 // modulation
                 float lfoTri = mLfo.Process();  // [-1, 1]
                 float lfoSquare = lfoTri > 0.0 ? -1 : 1;
                 float lfo = kitdsp::lerpf(lfoTri, lfoSquare, lfoShape);
-                float env = mEnv.Process();  // [0, 1]
+                float env = mEnv.Process();          // [0, 1]
                 float gateEnv = mGateEnv.Process();  // [0, 1]
 
                 float oscMod = kitdsp::lerpf(lfo, env, oscModMix) * oscModAmount;
@@ -266,6 +262,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
 
     void ProcessAudio(clapeze::StereoAudioBuffer& out) override {
         mVoices.SetNumVoices(mParams.Get<Params::PolyCount>());
+        mVoices.SetStrategy(mParams.Get<Params::PolyMode>());
         mVoices.ProcessAudio(out);
     }
 
@@ -280,9 +277,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
     void ProcessReset() override { mVoices.StopAllVoices(); }
 
    private:
-    // TODO: store voice pool in unique ptr and allocate polymorphically
-    clapeze::PolyphonicVoicePool<Processor, Voice, 16> mVoices;
-    // clapeze::MonophonicVoicePool<Processor, Voice> mVoices;
+    clapeze::VoicePool<Processor, Voice, cMaxVoices> mVoices;
 };
 
 #if KITSBLIPS_ENABLE_GUI
@@ -346,6 +341,10 @@ class Plugin : public InstrumentPlugin {
         InstrumentPlugin::Config();
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
+                                    .Module("Voicing")
+                                    .Parameter<Params::PolyMode>()
+                                    .Parameter<Params::PolyCount>()
+                                    .Parameter<Params::PolyChordType>()
                                     .Module("Oscillator")
                                     .Parameter<Params::OscOctave>()
                                     .Parameter<Params::OscTune>()
@@ -358,17 +357,16 @@ class Plugin : public InstrumentPlugin {
                                     .Parameter<Params::FilterModMix>()
                                     .Module("LFO")
                                     .Parameter<Params::LfoRate>()
+                                    .Parameter<Params::LfoShape>()
                                     .Module("ADSR")
                                     .Parameter<Params::EnvAttack>()
                                     .Parameter<Params::EnvDecay>()
                                     .Parameter<Params::EnvSustain>()
                                     .Parameter<Params::EnvRelease>()
                                     .Module("VCA")
-                                    .Parameter<Params::VcaLfoAmount>()
-                                    .Module("Voicing")
-                                    .Parameter<Params::PolyMode>()
-                                    .Parameter<Params::PolyCount>()
-                                    .Parameter<Params::PolyChordType>();
+                                    .Parameter<Params::VcaGain>()
+                                    .Parameter<Params::VcaEnvDisabled>()
+                                    .Parameter<Params::VcaLfoAmount>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>([&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif

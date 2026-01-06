@@ -96,7 +96,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
     void ProcessReset() override { mVoices.StopAllVoices(); }
 
    private:
-    clapeze::PolyphonicVoicePool<Processor, Voice, 16> mVoices;
+    clapeze::VoicePool<Processor, Voice, 16> mVoices;
 };
 
 class Plugin : public clapeze::InstrumentPlugin {

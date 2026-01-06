@@ -40,7 +40,7 @@ class StateFeature : public BaseFeature {
 
         size_t numParams = params.GetNumParams();
         for (clap_id id = 0; id < numParams; ++id) {
-            double value = params.GetRaw(id);
+            double value = params.GetRawValue(id);
             if (out->write(out, &value, sizeof(double)) == -1) {
                 return false;
             }
@@ -65,7 +65,7 @@ class StateFeature : public BaseFeature {
                 // eof
                 break;
             }
-            params.SetRaw(id, value);
+            params.SetRawValue(id, value);
             id++;
         }
         return id == numParams;

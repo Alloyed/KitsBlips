@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string_view>
+#include "clap/ext/params.h"
 
 using namespace clapeze;
 using namespace clapeze_impl;
@@ -9,7 +10,7 @@ using namespace clapeze_impl;
 bool NumericParam::FillInformation(clap_id id, clap_param_info_t* information) const {
     memset(information, 0, sizeof(clap_param_info_t));
     information->id = id;
-    information->flags = CLAP_PARAM_IS_AUTOMATABLE;
+    information->flags = CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_MODULATABLE;
     information->min_value = 0.0;
     information->max_value = 1.0;
     information->default_value = GetRawDefault();
@@ -72,7 +73,7 @@ bool PercentParam::FromText(std::string_view text, double& outRawValue) const {
 bool IntegerParam::FillInformation(clap_id id, clap_param_info_t* information) const {
     memset(information, 0, sizeof(clap_param_info_t));
     information->id = id;
-    information->flags = CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_STEPPED;
+    information->flags = CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_MODULATABLE | CLAP_PARAM_IS_STEPPED;
     information->min_value = static_cast<double>(mMin);
     information->max_value = static_cast<double>(mMax);
     information->default_value = GetRawDefault();
