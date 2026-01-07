@@ -1,4 +1,5 @@
 #include "clapeze/ext/parameterConfigs.h"
+#include <charconv>
 #include <cstdio>
 #include <cstring>
 #include <string_view>
@@ -21,7 +22,7 @@ bool NumericParam::FillInformation(clap_id id, clap_param_info_t* information) c
 
 double NumericParam::GetRawDefault() const {
     double rawDefault{};
-    assert(FromValue(mDefaultValue, rawDefault));
+    FromValue(mDefaultValue, rawDefault);
     return rawDefault;
 }
 
@@ -39,8 +40,11 @@ bool NumericParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
 }
 
 bool NumericParam::FromText(std::string_view text, double& outRawValue) const {
-    double in = std::strtod(text.data(), nullptr);
-    return FromValue(static_cast<float>(in), outRawValue);
+    double in{};
+    if (std::from_chars(text.begin(), text.end(), in).ec == std::errc{}) {
+        return FromValue(static_cast<float>(in), outRawValue);
+    }
+    return false;
 }
 
 bool NumericParam::ToValue(double rawValue, float& out) const {
@@ -66,8 +70,11 @@ bool PercentParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
 }
 
 bool PercentParam::FromText(std::string_view text, double& outRawValue) const {
-    double in = std::strtod(text.data(), nullptr);
-    return FromValue(static_cast<float>(in) / 100.0f, outRawValue);
+    double in{};
+    if (std::from_chars(text.begin(), text.end(), in).ec == std::errc{}) {
+        return FromValue(static_cast<float>(in) / 100.0f, outRawValue);
+    }
+    return false;
 }
 
 bool IntegerParam::FillInformation(clap_id id, clap_param_info_t* information) const {
@@ -83,7 +90,7 @@ bool IntegerParam::FillInformation(clap_id id, clap_param_info_t* information) c
 
 double IntegerParam::GetRawDefault() const {
     double rawDefault{};
-    assert(FromValue(mDefaultValue, rawDefault));
+    FromValue(mDefaultValue, rawDefault);
     return rawDefault;
 }
 
@@ -107,8 +114,11 @@ bool IntegerParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
 }
 
 bool IntegerParam::FromText(std::string_view text, double& outRawValue) const {
-    int32_t parsed = static_cast<int32_t>(std::strtod(text.data(), nullptr));
-    return FromValue(parsed, outRawValue);
+    int32_t in{};
+    if (std::from_chars(text.begin(), text.end(), in).ec == std::errc{}) {
+        return FromValue(in, outRawValue);
+    }
+    return false;
 }
 
 bool IntegerParam::ToValue(double rawValue, int32_t& out) const {

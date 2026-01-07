@@ -39,11 +39,11 @@ struct NumericParam : public BaseParam {
     bool ToValue(double rawValue, float& out) const;
     bool FromValue(float in, double& outRaw) const;
 
-    const std::string_view mName;
+    const std::string mName;
     const float mMin;
     const float mMax;
     const float mDefaultValue;
-    const std::string_view mUnit;
+    const std::string mUnit;
 };
 
 struct PercentParam : public NumericParam {
@@ -89,12 +89,12 @@ struct IntegerParam : public BaseParam {
     bool ToValue(double rawValue, int32_t& out) const;
     bool FromValue(int32_t in, double& outRaw) const;
 
-    const std::string_view mName;
+    const std::string mName;
     const int32_t mMin;
     const int32_t mMax;
     const int32_t mDefaultValue;
-    const std::string_view mUnit;
-    const std::string_view mUnitSingular;
+    const std::string mUnit;
+    const std::string mUnitSingular;
 };
 
 /**
@@ -104,8 +104,8 @@ template <typename TEnum>
 struct EnumParam : public BaseParam {
    public:
     using _valuetype = TEnum;
-    EnumParam(std::string_view mName, std::vector<std::string_view> mLabels, TEnum mDefaultValue)
-        : mName(mName), mLabels(std::move(mLabels)), mDefaultValue(mDefaultValue) {}
+    EnumParam(std::string_view mName, const std::vector<std::string>& mLabels, TEnum mDefaultValue)
+        : mName(mName), mLabels(mLabels), mDefaultValue(mDefaultValue) {}
     bool FillInformation(clap_id id, clap_param_info_t* information) const override {
         memset(information, 0, sizeof(clap_param_info_t));
         information->id = id;
@@ -120,7 +120,7 @@ struct EnumParam : public BaseParam {
     }
     double GetRawDefault() const override {
         double rawDefault{};
-        assert(FromValue(mDefaultValue, rawDefault));
+        FromValue(mDefaultValue, rawDefault);
         return rawDefault;
     }
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
@@ -151,8 +151,8 @@ struct EnumParam : public BaseParam {
         return true;
     }
 
-    const std::string_view mName;
-    const std::vector<std::string_view> mLabels;
+    const std::string mName;
+    const std::vector<std::string> mLabels;
     const TEnum mDefaultValue;
 };
 

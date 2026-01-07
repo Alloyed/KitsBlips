@@ -136,8 +136,8 @@ class VoicePool {
     };
 
     TProcessor& mProcessor;
-    VoiceStrategy mStrategy;
     etl::vector<VoiceData, TMaxVoices> mVoices;
+    VoiceStrategy mStrategy{};
 
     struct PolyVoiceStrategy {
         void Clear() { mVoicesByLastUsed.clear(); }
@@ -177,7 +177,7 @@ class VoicePool {
             }
         }
         etl::circular_buffer<VoiceIndex, TMaxVoices> mVoicesByLastUsed{};
-    } mPolyVoiceStrategy;
+    } mPolyVoiceStrategy{};
 
     struct MonoLastVoiceStrategy {
         TVoice& Voice(VoicePool& pool) { return pool.mVoices[0].voice; }
@@ -218,6 +218,6 @@ class VoicePool {
         }
 
         etl::vector<std::pair<NoteTuple, float>, TMaxVoices> mActiveNotes{};
-    } mMonoLastVoiceStrategy;
+    } mMonoLastVoiceStrategy{};
 };
 }  // namespace clapeze

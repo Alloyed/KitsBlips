@@ -215,7 +215,9 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
             float lfoShape = params.Get<Params::LfoShape>();
 
             // vca
-            float vcaGain = kitdsp::dbToRatio(params.Get<Params::VcaGain>());
+            // We know this will usually be used polyphonically, so let's get some headroom
+            constexpr float cVcaBaseGainRatio = 0.2f;
+            float vcaGain = kitdsp::dbToRatio(params.Get<Params::VcaGain>()) * cVcaBaseGainRatio;
             float vcaModAmount = params.Get<Params::VcaLfoAmount>();
             float vcaEnvDisabled = params.Get<Params::VcaEnvDisabled>() == OnOff::On ? 1.0f : 0.0f;  // TODO: xfade
 

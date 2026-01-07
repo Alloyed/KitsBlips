@@ -87,6 +87,7 @@ class ParametersFeature : public BaseFeature {
           mNumParams(static_cast<size_t>(numParams)),
           mParams(mNumParams),
           mValues(mNumParams, 0.0f),
+          mModulations(mNumParams, 0.0f),
           mAudioToMain(),
           mMainToAudio(),
           mAudioState(mParams, mNumParams, mMainToAudio, mAudioToMain) {}
