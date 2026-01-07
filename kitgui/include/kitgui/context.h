@@ -4,6 +4,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string>
 #include <string_view>
 #include "kitgui/app.h"
 #include "kitgui/kitgui.h"
