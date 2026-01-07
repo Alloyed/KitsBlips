@@ -51,6 +51,7 @@ namespace kitgui {
 
 struct Scene::Impl {
     explicit Impl(kitgui::Context& mContext) : mContext(mContext) {};
+    ~Impl() = default;
     void Load(std::string_view path);
     void LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
     void Update();
@@ -82,7 +83,7 @@ void Scene::Load(std::string_view path) {
 }
 
 void Scene::Impl::Load(std::string_view path) {
-    if (mLoaded) {
+    if (mLoaded || mLoadError) {
         return;
     }
     Corrade::Containers::Pointer<Magnum::Trade::AbstractImporter> importer =
@@ -102,7 +103,6 @@ void Scene::Impl::Load(std::string_view path) {
     bool success = importer->openFile({path.data(), path.size()});
 
     if (!success) {
-        mLoaded = true;
         mLoadError = true;
         return;
     }

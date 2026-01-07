@@ -15,7 +15,10 @@
 #endif
 
 namespace kitgui {
-Context::~Context() = default;
+Context::~Context() {
+    Destroy();
+};
+
 void Context::init(kitgui::WindowApi api, bool isFloating) {
     Impl::init(api, isFloating);
 }

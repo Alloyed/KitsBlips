@@ -382,7 +382,7 @@ void ContextImpl::RunSingleFrame() {
     for (int32_t idx = static_cast<int32_t>(sActiveInstances.size()) - 1; idx >= 0; idx--) {
         auto& instance = sActiveInstances[idx];
         if (instance->mDestroy) {
-            instance->Destroy();
+            instance->mContext.Destroy();
         }
         if (instance->mActive == false) {
             RemoveActiveInstance(instance);
