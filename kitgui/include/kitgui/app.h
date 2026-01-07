@@ -39,11 +39,6 @@ class BaseApp {
      * Triggers on a regular basis. use gl to manipulate the visual state.
      */
     virtual void OnDraw() {}
-    /**
-     * Called when a file needs to be loaded. Override to provide custom file loading behavior.
-     * Default implementation uses C stdio to read the file.
-     */
-    virtual std::optional<std::string> OnFileLoadRequest(std::string_view path);
 
     Context& GetContext() { return mContext; }
 

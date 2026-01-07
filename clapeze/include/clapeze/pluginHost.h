@@ -69,11 +69,11 @@ class PluginHost {
     std::unordered_map<TimerId, TimerFn> mActiveTimers;
 };
 
-template <typename TFeature>
+template <typename THostExtension>
 bool PluginHost::TryGetExtension(const char* extensionName,
                                  const clap_host_t*& hostOut,
-                                 const TFeature*& extOut) const {
-    extOut = static_cast<const TFeature*>(mHost->get_extension(mHost, extensionName));
+                                 const THostExtension*& extOut) const {
+    extOut = static_cast<const THostExtension*>(mHost->get_extension(mHost, extensionName));
     if (extOut) {
         hostOut = mHost;
         return true;

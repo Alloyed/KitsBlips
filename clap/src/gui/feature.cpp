@@ -1,7 +1,9 @@
+#include "clapeze/basePlugin.h"
 #include "clapeze/pluginHost.h"
 #if KITSBLIPS_ENABLE_GUI
 #include "gui/feature.h"
 
+#include "clapeze/ext/assets.h"
 #include "clapeze/ext/gui.h"
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
@@ -65,6 +67,27 @@ PluginHost::TimerId KitguiFeature::sTimerId = 0;
 
 KitguiFeature::KitguiFeature(PluginHost& mPluginHost, kitgui::Context::AppFactory createAppFn)
     : mHost(mPluginHost), mCtx(std::move(createAppFn)) {}
+
+void KitguiFeature::Configure(BasePlugin& self) {
+    GuiFeature::Configure(self);
+    mCtx.SetFileLoader([&self](std::string_view path) -> std::optional<std::string> {
+        // TODO: what if no such feature?
+        auto& assets = clapeze::AssetsFeature::GetFromPlugin<clapeze::AssetsFeature>(self);
+        std::string out;
+        std::string pathstr{path};
+        bool ok = assets.LoadResourceToString(CLAP_PRESET_DISCOVERY_LOCATION_PLUGIN, "", pathstr.c_str(), out);
+        if (ok) {
+            return out;
+        } else {
+            return std::nullopt;
+        }
+    });
+}
+
+bool KitguiFeature::Validate(const BasePlugin& plugin) const {
+    // TODO: ensure we have timer support on linux
+    return true;
+}
 
 bool KitguiFeature::IsApiSupported(ClapWindowApi api, bool isFloating) {
     return kitgui::Context::IsApiSupported(toKitGui(api), isFloating);

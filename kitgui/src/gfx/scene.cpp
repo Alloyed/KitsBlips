@@ -86,7 +86,7 @@ void Scene::Impl::Load(std::string_view path) {
 
     const auto fileCallback = [](const std::string& filename, Magnum::InputFileCallbackPolicy policy,
                                  void* ctx) -> Containers::Optional<Containers::ArrayView<const char>> {
-        std::string* fileData = ((kitgui::FileContext*)ctx)->getOrLoadFileByName(filename, policy);
+        std::string* fileData = ((kitgui::FileContext*)ctx)->GetOrLoadFileByName(filename, policy);
         if (fileData == nullptr) {
             return {};
         }

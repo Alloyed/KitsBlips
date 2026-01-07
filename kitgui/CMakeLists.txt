@@ -23,7 +23,6 @@ set_property(TARGET kitgui PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
 target_enable_warnings(kitgui)
 
 target_sources(kitgui PRIVATE
-    src/app.cpp
     src/context.cpp
     src/dom/domNode.cpp
     src/dom/domKnob.cpp

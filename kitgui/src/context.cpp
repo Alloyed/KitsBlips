@@ -26,7 +26,7 @@ void Context::deinit() {
 
 Context::Context(Context::AppFactory fn)
     : mCreateAppFn(std::move(fn)),
-      mFileContext(std::make_unique<FileContext>(*this)),
+      mFileContext(std::make_unique<FileContext>()),
       mImpl(std::make_unique<Impl>(*this)),
       mApp(nullptr) {}
 
@@ -56,6 +56,10 @@ void Context::SetClearColor(Magnum::Color4 color) {
 
 FileContext* Context::GetFileContext() const {
     return mFileContext.get();
+}
+
+void Context::SetFileLoader(Context::FileLoader fn) {
+    return mFileContext->SetFileLoader(std::move(fn));
 }
 
 bool Context::SetScale(double scale) {

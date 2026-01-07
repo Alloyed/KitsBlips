@@ -15,6 +15,10 @@ class PluginHost;
 class KitguiFeature : public clapeze::GuiFeature {
    public:
     explicit KitguiFeature(clapeze::PluginHost& host, kitgui::Context::AppFactory createAppFn);
+
+    void Configure(BasePlugin& self) override;
+    bool Validate(const BasePlugin& self) const override;
+
     bool IsApiSupported(ClapWindowApi api, bool isFloating) override;
     bool GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) override;
     bool Create(ClapWindowApi api, bool isFloating) override;

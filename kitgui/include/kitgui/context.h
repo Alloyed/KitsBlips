@@ -36,6 +36,8 @@ struct SizeConfig {
 class Context {
    public:
     using AppFactory = std::function<std::unique_ptr<BaseApp>(Context& ctx)>;
+    using FileLoader = std::function<std::optional<std::string>(std::string_view path)>;
+
     explicit Context(AppFactory createAppFn);
     ~Context();
     static void init(kitgui::WindowApi api, bool isFloating);
@@ -74,6 +76,7 @@ class Context {
     bool IsCreated() const;
     void SetClearColor(Color4 color);
     FileContext* GetFileContext() const;
+    void SetFileLoader(FileLoader fn);
 
     // app events. forwards otherwise hidden events to impl
    protected:
