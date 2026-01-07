@@ -8,6 +8,20 @@
 using namespace clapeze;
 using namespace clapeze_impl;
 
+bool parseNumberFromText(std::string_view input, double out) {
+#ifdef __APPLE__
+    // Apple doesn't support charconv properly yet (2026/1/7, apple clang 14)
+    std::string tmp;
+    out = std::strtod(tmp.c_str(), nullptr);
+    return true;
+#else
+    const char* first = input.data();
+    const char* last = input.data() + input.size();
+    const auto [ptr, ec] = std::from_chars(first, last, out);
+    return ec == std::errc{} && ptr == last;
+#endif
+}
+
 bool NumericParam::FillInformation(clap_id id, clap_param_info_t* information) const {
     memset(information, 0, sizeof(clap_param_info_t));
     information->id = id;
@@ -41,10 +55,10 @@ bool NumericParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
 
 bool NumericParam::FromText(std::string_view text, double& outRawValue) const {
     double in{};
-    if (std::from_chars(text.begin(), text.end(), in).ec == std::errc{}) {
-        return FromValue(static_cast<float>(in), outRawValue);
+    if (!parseNumberFromText(text, in)) {
+        return false;
     }
-    return false;
+    return FromValue(static_cast<float>(in), outRawValue);
 }
 
 bool NumericParam::ToValue(double rawValue, float& out) const {
@@ -71,10 +85,10 @@ bool PercentParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
 
 bool PercentParam::FromText(std::string_view text, double& outRawValue) const {
     double in{};
-    if (std::from_chars(text.begin(), text.end(), in).ec == std::errc{}) {
-        return FromValue(static_cast<float>(in) / 100.0f, outRawValue);
+    if (!parseNumberFromText(text, in)) {
+        return false;
     }
-    return false;
+    return FromValue(static_cast<float>(in) / 100.0f, outRawValue);
 }
 
 bool IntegerParam::FillInformation(clap_id id, clap_param_info_t* information) const {
@@ -114,11 +128,11 @@ bool IntegerParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
 }
 
 bool IntegerParam::FromText(std::string_view text, double& outRawValue) const {
-    int32_t in{};
-    if (std::from_chars(text.begin(), text.end(), in).ec == std::errc{}) {
-        return FromValue(in, outRawValue);
+    double in{};
+    if (!parseNumberFromText(text, in)) {
+        return false;
     }
-    return false;
+    return FromValue(static_cast<int32_t>(in), outRawValue);
 }
 
 bool IntegerParam::ToValue(double rawValue, int32_t& out) const {
