@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include "kitgui/app.h"
 #include "kitgui/kitgui.h"

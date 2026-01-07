@@ -9,8 +9,11 @@
 #include <kitdsp/filters/svf.h>
 #include <kitdsp/math/units.h>
 #include <kitdsp/osc/blepOscillator.h>
+#include <memory>
 
+#include "clapeze/ext/assets.h"
 #include "descriptor.h"
+#include "kitgui/gfx/scene.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>
@@ -283,12 +286,17 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
 #if KITSBLIPS_ENABLE_GUI
 class GuiApp : public kitgui::BaseApp {
    public:
-    GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {
+    GuiApp(kitgui::Context& ctx, ParamsFeature& params)
+        : kitgui::BaseApp(ctx), mParams(params), mScene(std::make_unique<kitgui::Scene>(ctx)) {
         ctx.SetSizeConfig({1000, 600});
+        ctx.SetClearColor(Magnum::Math::Color4(0.3f, 0.7f, 0.3f, 1.0f));
     }
     ~GuiApp() = default;
 
+    void OnActivate() override { mScene->Load("assets/kitskeys.glb"); }
     void OnUpdate() override {
+        mScene->Update();
+
         ImGui::TextWrapped("WIP keys synthesizer. don't tell anybody but this is a volca keys for ur computer");
 
         ImGui::TextWrapped("Voicing");
@@ -325,8 +333,11 @@ class GuiApp : public kitgui::BaseApp {
         kitgui::DebugParam<ParamsFeature, Params::VcaLfoAmount>(mParams);
     }
 
+    void OnDraw() override { mScene->Draw(); }
+
    private:
     ParamsFeature& mParams;
+    std::unique_ptr<kitgui::Scene> mScene;
 };
 #endif
 
@@ -368,6 +379,7 @@ class Plugin : public InstrumentPlugin {
                                     .Parameter<Params::VcaEnvDisabled>()
                                     .Parameter<Params::VcaLfoAmount>();
 #if KITSBLIPS_ENABLE_GUI
+        ConfigFeature<clapeze::AssetsFeature>(GetHost());
         ConfigFeature<KitguiFeature>(GetHost(),
                                      [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif

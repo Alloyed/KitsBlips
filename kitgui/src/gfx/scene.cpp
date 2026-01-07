@@ -56,6 +56,8 @@ struct Scene::Impl {
     void Update();
     void Draw();
     kitgui::Context& mContext;
+    bool mLoaded = false;
+    bool mLoadError = false;
 
     MeshCache mMeshCache;
     Magnum::SceneGraph::DrawableGroup3D mLightDrawables;
@@ -80,6 +82,9 @@ void Scene::Load(std::string_view path) {
 }
 
 void Scene::Impl::Load(std::string_view path) {
+    if (mLoaded) {
+        return;
+    }
     Corrade::Containers::Pointer<Magnum::Trade::AbstractImporter> importer =
         sImporterManager.loadAndInstantiate("GltfImporter");
     assert(!!importer);  // FIXME: this is null right now, investigate
@@ -94,9 +99,15 @@ void Scene::Impl::Load(std::string_view path) {
     };
 
     importer->setFileCallback(fileCallback, (void*)mContext.GetFileContext());
-    importer->openFile({path.data(), path.size()});
+    bool success = importer->openFile({path.data(), path.size()});
 
+    if (!success) {
+        mLoaded = true;
+        mLoadError = true;
+        return;
+    }
     LoadImpl(*(importer.get()), path);
+    mLoaded = true;
 }
 
 void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName) {
@@ -301,6 +312,9 @@ void Scene::Draw() {
     mImpl->Draw();
 }
 void Scene::Impl::Draw() {
+    if (!mLoaded) {
+        return;
+    }
     /* Another FB could be bound from a depth / object ID read (moreover with
        color output disabled), set it back to the default framebuffer */
     GL::defaultFramebuffer.bind(); /** @todo mapForDraw() should bind implicitly */

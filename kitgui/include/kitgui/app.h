@@ -1,9 +1,5 @@
 #pragma once
 
-#include <optional>
-#include <string>
-#include <string_view>
-
 namespace kitgui {
 class Context;
 class FileContext;
