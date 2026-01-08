@@ -7,7 +7,7 @@ struct KnobConfig {
     float diameter = -1.0f;
     float minAngleRadians = -1.0f;
     float maxAngleRadians = -1.0f;
-    // TODO: fun visuals :)
+    bool invisible = false;
 };
 bool knob(const char* id, const KnobConfig& knobConfig, double& rawValueInOut);
 }  // namespace ImGuiHelpers

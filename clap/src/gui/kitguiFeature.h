@@ -39,6 +39,7 @@ class KitguiFeature : public clapeze::GuiFeature {
     clapeze::PluginHost& mHost;
     kitgui::Context mCtx;
     static int32_t sInitCount;
+    static ClapWindowApi sInitApi;  // only one API can be active per-process
     static clapeze::PluginHost::TimerId sTimerId;
 };
 }  // namespace clapeze

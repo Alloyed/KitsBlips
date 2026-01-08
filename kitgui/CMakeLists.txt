@@ -28,6 +28,7 @@ target_sources(kitgui PRIVATE
     src/dom/domKnob.cpp
     src/dom/domScene.cpp
     src/fileContext.cpp
+    src/gfx/animations.cpp
     src/gfx/drawables.cpp
     src/gfx/scene.cpp
     src/gfx/lights.cpp
@@ -93,15 +94,5 @@ elseif(KITGUI_USE_COCOA)
 endif()
 
 if (PROJECT_IS_TOP_LEVEL)
-    # add example exes
-    set(CMAKE_CXX_STANDARD 20)
-
-    add_executable(multiwindow examples/multiwindow.cpp)
-    target_link_libraries(multiwindow kitgui Corrade::Utility Corrade::Main)
-
-    add_executable(3dscene examples/3dscene.cpp)
-    target_link_libraries(3dscene kitgui Corrade::Utility Corrade::Main)
-
-    add_executable(immediatemode examples/immediatemode.cpp)
-    target_link_libraries(immediatemode kitgui Corrade::Utility Corrade::Main)
+    add_subdirectory(examples)
 endif()

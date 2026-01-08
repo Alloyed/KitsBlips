@@ -1,10 +1,10 @@
-#include "clapeze/basePlugin.h"
-#include "clapeze/pluginHost.h"
 #if KITSBLIPS_ENABLE_GUI
-#include "gui/feature.h"
+#include "gui/kitguiFeature.h"
 
+#include "clapeze/basePlugin.h"
 #include "clapeze/ext/assets.h"
 #include "clapeze/ext/gui.h"
+#include "clapeze/pluginHost.h"
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
 
@@ -63,6 +63,7 @@ kitgui::WindowApi toKitGui(clapeze::ClapWindowApi api) {
 namespace clapeze {
 
 int32_t KitguiFeature::sInitCount = 0;
+ClapWindowApi KitguiFeature::sInitApi = ClapWindowApi::None;
 PluginHost::TimerId KitguiFeature::sTimerId = 0;
 
 KitguiFeature::KitguiFeature(PluginHost& mPluginHost, kitgui::Context::AppFactory createAppFn)
@@ -103,19 +104,24 @@ bool KitguiFeature::GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) 
 bool KitguiFeature::Create(ClapWindowApi api, bool isFloating) {
     sInitCount++;
     if (sInitCount == 1) {
-        kitgui::Context::init(toKitGui(api), isFloating);
+        printf("init\n");
+        sInitApi = api;
+        kitgui::Context::init(toKitGui(api));
         if (kitgui::Context::NeedsUpdateLoopIntegration()) {
             sTimerId = mHost.AddTimer(32, []() { kitgui::Context::RunSingleFrame(); });
         }
+    } else {
+        assert(sInitApi == api);  // only one api supported at a time
     }
 
-    return mCtx.Create();
+    return mCtx.Create(isFloating);
 }
 
 void KitguiFeature::Destroy() {
     mCtx.Destroy();
     sInitCount--;
-    if (sInitCount == 0) {
+    if (sInitCount <= 0) {
+        printf("deinit\n");
         kitgui::Context::deinit();
         if (sTimerId) {
             mHost.CancelTimer(sTimerId);
@@ -155,7 +161,8 @@ bool KitguiFeature::AdjustSize(uint32_t& widthInOut, uint32_t& heightInOut) {
 }
 
 bool KitguiFeature::SetSize(uint32_t width, uint32_t height) {
-    return mCtx.SetSizeDirectly(width, height);
+    const auto& cfg = mCtx.GetSizeConfig();
+    return mCtx.SetSizeDirectly(width, height, cfg.resizable);
 }
 
 bool KitguiFeature::SetParent(WindowHandle handle) {

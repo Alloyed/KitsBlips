@@ -46,10 +46,10 @@ X11Window getX11Window(const kitgui::WindowRef& ref) {
     }
     return 0;
 }
-void onCreateWindow(kitgui::WindowApi api, SDL_Window* sdlWindow) {
+void onCreateWindow(kitgui::WindowApi api, SDL_Window* sdlWindow, bool isFloating) {
     if (api == kitgui::WindowApi::Wayland) {
         return;
-    } else if (api == kitgui::WindowApi::X11) {
+    } else if (api == kitgui::WindowApi::X11 && !isFloating) {
         Window xWindow{};
         Display* xDisplay{};
         getX11Handles(sdlWindow, xWindow, xDisplay);
@@ -156,9 +156,8 @@ bool getPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
 using namespace Magnum;
 
 namespace kitgui::sdl {
-void ContextImpl::init(kitgui::WindowApi api, bool isFloating) {
+void ContextImpl::init(kitgui::WindowApi api) {
     sApi = api;
-    sIsFloating = isFloating;
     switch (api) {
         // only one API possible on these platforms
         case kitgui::WindowApi::Any:
@@ -198,7 +197,7 @@ void ContextImpl::deinit() {
 
 ContextImpl::ContextImpl(kitgui::Context& ctx) : mContext(ctx) {}
 
-bool ContextImpl::Create() {
+bool ContextImpl::Create(bool isFloating) {
     mApi = sApi;
     mWindowProps = SDL_CreateProperties();
     if (mWindowProps == 0) {
@@ -212,6 +211,7 @@ bool ContextImpl::Create() {
     SDL_SetBooleanProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, cfg.resizable);
     SDL_SetNumberProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, cfg.startingWidth);
     SDL_SetNumberProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, cfg.startingHeight);
+    mContext.mSizeConfigChanged = false;
     mWindow = SDL_CreateWindowWithProperties(mWindowProps);
 
     if (mWindow == nullptr) {
@@ -231,7 +231,7 @@ bool ContextImpl::Create() {
         }
     }
 
-    onCreateWindow(mApi, mWindow);
+    onCreateWindow(mApi, mWindow, isFloating);
 
     SDL_GLContext gl_context = SDL_GL_CreateContext(mWindow);
     if (gl_context == nullptr) {
@@ -305,8 +305,9 @@ bool ContextImpl::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     heightOut = static_cast<uint32_t>(h);
     return success;
 }
-bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height) {
-    return SDL_SetWindowSize(mWindow, static_cast<int32_t>(width), static_cast<int32_t>(height));
+bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
+    return SDL_SetWindowResizable(mWindow, resizable) &&
+           SDL_SetWindowSize(mWindow, static_cast<int32_t>(width), static_cast<int32_t>(height));
 }
 bool ContextImpl::SetParent(const kitgui::WindowRef& parentWindowRef) {
     return setParent(mApi, mWindow, parentWindowRef);
@@ -352,7 +353,6 @@ void ContextImpl::MakeCurrent() {
 
 std::vector<ContextImpl*> ContextImpl::sActiveInstances = {};
 kitgui::WindowApi ContextImpl::sApi = kitgui::WindowApi::Any;
-bool ContextImpl::sIsFloating = false;
 
 void ContextImpl::AddActiveInstance(ContextImpl* instance) {
     if (std::find(sActiveInstances.begin(), sActiveInstances.end(), instance) == sActiveInstances.end()) {

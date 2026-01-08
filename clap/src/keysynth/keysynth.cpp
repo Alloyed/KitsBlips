@@ -19,7 +19,7 @@
 #include <imgui.h>
 #include <kitgui/app.h>
 #include "gui/debugui.h"
-#include "gui/feature.h"
+#include "gui/kitguiFeature.h"
 #endif
 
 namespace {

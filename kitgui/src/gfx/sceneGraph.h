@@ -12,7 +12,7 @@ using Scene3D = Magnum::SceneGraph::Scene<Magnum::SceneGraph::TranslationRotatio
 struct ObjectInfo {
     uint32_t id;
     Object3D* object;
-    std::string debugName;
+    std::string name;
     uint32_t lightId{0xffffffffu};
 };
 

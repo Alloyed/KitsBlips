@@ -1,12 +1,12 @@
-#include <kitgui/dom/domScene.h>
 #include <kitgui/immediateMode.h>
 
 #include <imgui.h>
 #include "controls/knob.h"
+#include "kitgui/gfx/scene.h"
 
 namespace {
 void Imgui_DrawSceneCallback(const ImDrawList* parent_list, const ImDrawCmd* cmd) {
-    kitgui::DomScene* scene = static_cast<kitgui::DomScene*>(cmd->UserCallbackData);
+    kitgui::Scene* scene = static_cast<kitgui::Scene*>(cmd->UserCallbackData);
     scene->Draw();
 }
 }  // namespace
@@ -21,7 +21,8 @@ bool ImGuiKnob(const char* label, float* value, float min, float max, float step
     return changed;
 }
 
-bool ImGuiScene(const char* label, DomScene& scene) {
+bool ImGuiScene(const char* label, Scene& scene) {
+    scene.Update();
     ImGui::GetWindowDrawList()->AddCallback(Imgui_DrawSceneCallback, &scene);
     return false;
 }

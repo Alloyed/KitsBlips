@@ -21,11 +21,11 @@ class MyApp : public kitgui::BaseApp {
 };
 
 int main() {
-    kitgui::Context::init(kitgui::WindowApi::Any, true);
+    kitgui::Context::init(kitgui::WindowApi::Any);
 
     {
         kitgui::Context ctx1([](kitgui::Context& ctx) { return std::make_unique<MyApp>(ctx); });
-        ctx1.Create();
+        ctx1.Create(true);
         ctx1.Show();
 
         kitgui::Context::RunLoop();

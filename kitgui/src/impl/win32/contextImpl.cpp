@@ -95,8 +95,7 @@ using namespace Magnum;
 namespace kitgui::win32 {
 static constexpr wchar_t kClassName[] = L"BLEHHH\0";  // TODO: runtime selectable
 
-void ContextImpl::init(kitgui::WindowApi api, bool isFloating) {
-    sIsFloating = isFloating;
+void ContextImpl::init(kitgui::WindowApi api) {
     ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSW windowClass = {};
     windowClass.lpfnWndProc = WndProc;
@@ -113,9 +112,8 @@ void ContextImpl::deinit() {
 
 ContextImpl::ContextImpl(kitgui::Context& ctx) : mContext(ctx) {}
 
-bool ContextImpl::Create() {
+bool ContextImpl::Create(bool isFloating) {
     kitgui::WindowApi api = kitgui::WindowApi::Win32;
-    bool isFloating = sIsFloating;
     mApi = api;
 
     SizeConfig cfg = mContext.GetSizeConfig();
@@ -225,7 +223,8 @@ bool ContextImpl::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     heightOut = rect.bottom - rect.top;
     return true;
 }
-bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height) {
+bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
+    // TODO: resizable
     return ::SetWindowPos(mWindow, nullptr, 0, 0, width, height,
                           SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
 }
@@ -268,7 +267,6 @@ void ContextImpl::MakeCurrent() {
 }
 
 std::vector<ContextImpl*> ContextImpl::sActiveInstances = {};
-bool ContextImpl::sIsFloating = false;
 
 void ContextImpl::AddActiveInstance(ContextImpl* instance) {
     if (std::find(sActiveInstances.begin(), sActiveInstances.end(), instance) == sActiveInstances.end()) {

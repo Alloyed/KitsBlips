@@ -2,11 +2,9 @@ custom gui framework! (oh no!)
 
 Tech design notes
 
-- We're piggybacking off of [Dear ImGui](https://github.com/ocornut/imgui/) to get most UI features, and making it "retained" via wrappers. For more traditional UI tasks (preset browser etc.) you're welcome to use ImGui directly!
+- We're piggybacking off of [Dear ImGui](https://github.com/ocornut/imgui/) to get most UI features.
 - We're using [Magnum](https://doc.magnum.graphics/) for GPU-native rendering, instead of using a raster library like cairo. OpenGL 3.3 only. gltf is the main import format.
-- [SDL3](https://wiki.libsdl.org/) is our windowing/platform API.
-
-All of these APIs are exposed directly, to avoid too much wrapper boilerplate.
+- [SDL3](https://wiki.libsdl.org/) is our windowing on linux, win32 is used directly on windows, and macOS/cocoa... isn't implemented yet.
 
 ### Goals
 
@@ -24,8 +22,10 @@ All of these APIs are exposed directly, to avoid too much wrapper boilerplate.
 
 ### TODO
 
-- File loading API that will work for physicsfs when when we get there
-- DOM wrappers for knob, slider, vslider
-- Scene position -> DOM position and back
-- complex layout integration (yoga?)
+- Cocoa!!
+- Scene position -> screen position and back
+- complex responsive layout integration (yoga?)
+- DOM+Signals api for a web-like authoring experience
 - template language based on pugixml
+- Vulkan/other rendering backends?
+- Compute shader support as an exposed feature? for doing heavy lifting on the gpu

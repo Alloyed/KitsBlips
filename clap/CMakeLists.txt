@@ -41,7 +41,7 @@ target_sources(KitsBlips PRIVATE
     src/freqshift/freqshift.cpp
     src/harmonizer/harmonizer.cpp
     src/keysynth/keysynth.cpp
-    src/gui/feature.cpp
+    src/gui/kitguiFeature.cpp
 )
 
 target_include_directories(KitsBlips PUBLIC src)

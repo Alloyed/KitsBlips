@@ -60,14 +60,14 @@ class MyApp2 : public kitgui::BaseApp {
 };
 
 int main() {
-    kitgui::Context::init(kitgui::WindowApi::Any, true);
+    kitgui::Context::init(kitgui::WindowApi::Any);
 
     {
         kitgui::Context ctx1([](kitgui::Context& ctx) { return std::make_unique<MyApp2>(ctx); });
-        ctx1.Create();
+        ctx1.Create(true);
 
         kitgui::Context ctx2([](kitgui::Context& ctx) { return std::make_unique<MyApp2>(ctx); });
-        ctx2.Create();
+        ctx2.Create(true);
 
         ctx1.Show();
         ctx2.Show();

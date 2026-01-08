@@ -7,9 +7,9 @@
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI
-#include <gui/feature.h>
 #include <imgui.h>
 #include <kitgui/app.h>
+#include "gui/kitguiFeature.h"
 #endif
 
 namespace {

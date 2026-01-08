@@ -45,7 +45,7 @@ bool knob(const char* id, const KnobConfig& knobConfig, double& rawValueInOut) {
         rawValueInOut = defaultValue;
     }
 
-    {
+    if (!knobConfig.invisible) {
         // Drawing
         auto angle_min = knobConfig.minAngleRadians < 0 ? kPi * 0.75f : knobConfig.minAngleRadians;
         auto angle_max = knobConfig.maxAngleRadians < 0 ? kPi * 2.25f : knobConfig.maxAngleRadians;
@@ -54,8 +54,8 @@ bool knob(const char* id, const KnobConfig& knobConfig, double& rawValueInOut) {
         auto is_active = ImGui::IsItemActive();
         auto is_hovered = ImGui::IsItemHovered();
         auto angle = angle_min + (angle_max - angle_min) * rawValueInOut;
-        auto angle_cos = cosf(angle);
-        auto angle_sin = sinf(angle);
+        auto angle_cos = std::cos(static_cast<float>(angle));
+        auto angle_sin = std::sin(static_cast<float>(angle));
         auto* colors = ImGui::GetStyle().Colors;
         // circle
         auto size = 0.85f;
@@ -71,13 +71,10 @@ bool knob(const char* id, const KnobConfig& knobConfig, double& rawValueInOut) {
         // tick
         ImColor base2 = ImVec4(colors[ImGuiCol_ButtonActive].x * 0.5f, colors[ImGuiCol_ButtonActive].y * 0.5f,
                                colors[ImGuiCol_ButtonActive].z * 0.5f, colors[ImGuiCol_ButtonActive].w);
-        ;
         ImColor hovered2 = ImVec4(colors[ImGuiCol_ButtonHovered].x * 0.5f, colors[ImGuiCol_ButtonHovered].y * 0.5f,
                                   colors[ImGuiCol_ButtonHovered].z * 0.5f, colors[ImGuiCol_ButtonHovered].w);
-        ;
         ImColor active2 = ImVec4(colors[ImGuiCol_ButtonHovered].x * 0.5f, colors[ImGuiCol_ButtonHovered].y * 0.5f,
                                  colors[ImGuiCol_ButtonHovered].z * 0.5f, colors[ImGuiCol_ButtonHovered].w);
-        ;
         auto start = 0.5f;
         auto end = 0.85f;
         auto width = 0.08f;

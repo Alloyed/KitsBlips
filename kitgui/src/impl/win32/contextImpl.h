@@ -35,15 +35,15 @@ class ContextImpl {
    public:
     explicit ContextImpl(kitgui::Context& ctx);
     ~ContextImpl() = default;
-    static void init(kitgui::WindowApi api, bool isFloating);
+    static void init(kitgui::WindowApi api);
     static void deinit();
 
     // host events: (matches clap API)
-    bool Create();
+    bool Create(bool isFloating);
     bool Destroy();
     bool SetScale(double scale);
     bool GetSize(uint32_t& widthOut, uint32_t& heightOut) const;
-    bool SetSizeDirectly(uint32_t width, uint32_t height);
+    bool SetSizeDirectly(uint32_t width, uint32_t height, bool resizable);
     bool SetParent(const kitgui::WindowRef& handle);
     bool SetTransient(const kitgui::WindowRef& handle);
     void SuggestTitle(std::string_view title);
@@ -86,7 +86,6 @@ class ContextImpl {
     static void RemoveActiveInstance(ContextImpl* instance);
     static ContextImpl* FindContextImplForWindow(HWND wnd);
     static std::vector<ContextImpl*> sActiveInstances;
-    static bool sIsFloating;
 };
 
 }  // namespace kitgui::win32

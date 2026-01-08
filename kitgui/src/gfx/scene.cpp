@@ -30,7 +30,9 @@
 #include <chrono>
 #include <optional>
 #include <string>
+#include "Magnum/Magnum.h"
 #include "fileContext.h"
+#include "gfx/animations.h"
 #include "gfx/drawables.h"
 #include "gfx/lights.h"
 #include "gfx/materials.h"
@@ -50,12 +52,17 @@ PluginManager::Manager<Trade::AbstractImporter> sImporterManager{};
 namespace kitgui {
 
 struct Scene::Impl {
+   public:
     explicit Impl(kitgui::Context& mContext) : mContext(mContext) {};
     ~Impl() = default;
     void Load(std::string_view path);
     void LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
     void Update();
     void Draw();
+    void PlayAnimationByName(std::string_view name);
+    void SetObjectRotationByName(std::string_view name, const Quaternion& rot);
+
+   public:
     kitgui::Context& mContext;
     bool mLoaded = false;
     bool mLoadError = false;
@@ -71,8 +78,8 @@ struct Scene::Impl {
     std::vector<ObjectInfo> mSceneObjects;
     Object3D* mCameraObject{};
     Magnum::SceneGraph::Camera3D* mCamera;
-
-    Magnum::Animation::Player<std::chrono::nanoseconds, float> mPlayer;
+    AnimationCache mAnimationCache;
+    std::vector<AnimationPlayer*> mAdvancingAnimations;
 };
 
 Scene::Scene(kitgui::Context& mContext) : mImpl(std::make_unique<Scene::Impl>(mContext)) {};
@@ -138,9 +145,9 @@ void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::strin
 
         objectInfo.id = objectId;
         objectInfo.object = new Object3D{};
-        objectInfo.debugName = importer.objectName(objectId);
-        if (objectInfo.debugName.empty()) {
-            objectInfo.debugName = fmt::format("{}/object:{}", debugName, objectId);
+        objectInfo.name = importer.objectName(objectId);
+        if (objectInfo.name.empty()) {
+            objectInfo.name = fmt::format("{}/object:{}", debugName, objectId);
         }
     }
 
@@ -246,67 +253,47 @@ void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::strin
     }
 
     /* Import animations */
-    if (importer.animationCount()) {
-        kitgui::log::info("importing animations");
+    mAnimationCache.LoadAnimations(importer, mSceneObjects);
+}
+
+void Scene::PlayAnimationByName(std::string_view name) {
+    mImpl->PlayAnimationByName(name);
+}
+
+void Scene::Impl::PlayAnimationByName(std::string_view name) {
+    for (auto& info : mAnimationCache.mAnimations) {
+        if (info.name == name) {
+            info.player.play(std::chrono::system_clock::now().time_since_epoch());
+            mAdvancingAnimations.push_back(&info.player);
+        }
     }
-    for (uint32_t i = 0; i != importer.animationCount(); ++i) {
-        auto animation = importer.animation(i);
-        if (!animation) {
-            kitgui::log::error(fmt::format("cannot load: {}/animation:{}:{}", debugName, i, importer.animationName(i)));
-            continue;
+}
+
+void Scene::SetObjectRotationByName(std::string_view name, const Quaternion& rot) {
+    mImpl->SetObjectRotationByName(name, rot);
+}
+
+void Scene::Impl::SetObjectRotationByName(std::string_view name, const Quaternion& rot) {
+    for (auto& info : mSceneObjects) {
+        if (info.name == name) {
+            info.object->setRotation(rot);
         }
-
-        for (uint32_t j = 0; j != animation->trackCount(); ++j) {
-            if (animation->trackTarget(j) >= mSceneObjects.size() || !mSceneObjects[animation->trackTarget(j)].object) {
-                continue;
-            }
-
-            Object3D& animatedObject = *mSceneObjects[animation->trackTarget(j)].object;
-
-            if (animation->trackTargetName(j) == Trade::AnimationTrackTarget::Translation3D) {
-                const auto callback = [](float, const Vector3& translation, Object3D& object) {
-                    object.setTranslation(translation);
-                };
-                if (animation->trackType(j) == Trade::AnimationTrackType::CubicHermite3D) {
-                    mPlayer.addWithCallback(animation->track<CubicHermite3D>(j), callback, animatedObject);
-                } else {
-                    assert(animation->trackType(j) == Trade::AnimationTrackType::Vector3);
-                    mPlayer.addWithCallback(animation->track<Vector3>(j), callback, animatedObject);
-                }
-            } else if (animation->trackTargetName(j) == Trade::AnimationTrackTarget::Rotation3D) {
-                const auto callback = [](float, const Quaternion& rotation, Object3D& object) {
-                    object.setRotation(rotation);
-                };
-                if (animation->trackType(j) == Trade::AnimationTrackType::CubicHermiteQuaternion) {
-                    mPlayer.addWithCallback(animation->track<CubicHermiteQuaternion>(j), callback, animatedObject);
-                } else {
-                    assert(animation->trackType(j) == Trade::AnimationTrackType::Quaternion);
-                    mPlayer.addWithCallback(animation->track<Quaternion>(j), callback, animatedObject);
-                }
-            } else if (animation->trackTargetName(j) == Trade::AnimationTrackTarget::Scaling3D) {
-                const auto callback = [](float, const Vector3& scaling, Object3D& object) {
-                    object.setScaling(scaling);
-                };
-                if (animation->trackType(j) == Trade::AnimationTrackType::CubicHermite3D) {
-                    mPlayer.addWithCallback(animation->track<CubicHermite3D>(j), callback, animatedObject);
-                } else {
-                    assert(animation->trackType(j) == Trade::AnimationTrackType::Vector3);
-                    mPlayer.addWithCallback(animation->track<Vector3>(j), callback, animatedObject);
-                }
-            } else {
-            }
-        }
-        //_data->animationData = animation->release();
-
-        /* Load only the first animation at the moment */
-        break;
     }
 }
 
 void Scene::Update() {
     mImpl->Update();
 }
-void Scene::Impl::Update() {}
+void Scene::Impl::Update() {
+    for (auto& player : mAdvancingAnimations) {
+        player->advance(std::chrono::system_clock::now().time_since_epoch());
+    }
+    // remove non-advancing animations
+    mAdvancingAnimations.erase(
+        std::remove_if(mAdvancingAnimations.begin(), mAdvancingAnimations.end(),
+                       [](auto& player) { return player->state() == Magnum::Animation::State::Stopped; }),
+        mAdvancingAnimations.end());
+}
 
 void Scene::Draw() {
     mImpl->Draw();

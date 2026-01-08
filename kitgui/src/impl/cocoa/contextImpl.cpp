@@ -12,18 +12,14 @@
 using namespace Magnum;
 
 namespace kitgui::cocoa {
-void ContextImpl::init(kitgui::WindowApi api, bool isFloating) {
-    sIsFloating = isFloating;
-}
+void ContextImpl::init(kitgui::WindowApi api) {}
 
 void ContextImpl::deinit() {}
 
 ContextImpl::ContextImpl(kitgui::Context& ctx) : mContext(ctx) {}
 
-bool ContextImpl::Create() {
-    kitgui::WindowApi api = kitgui::WindowApi::Cocoa;
-    bool isFloating = sIsFloating;
-    mApi = api;
+bool ContextImpl::Create(bool isFloating) {
+    mApi = kitgui::WindowApi::Cocoa;
     SizeConfig cfg = mContext.GetSizeConfig();
 
     // createWindow
@@ -102,7 +98,7 @@ bool ContextImpl::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     // heightOut = static_cast<uint32_t>(h);
     // return success;
 }
-bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height) {
+bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
     return false;
     // return SDL_SetWindowSize(mWindow, static_cast<int32_t>(width), static_cast<int32_t>(height));
 }
@@ -151,7 +147,6 @@ void ContextImpl::MakeCurrent() {
 }
 
 std::vector<ContextImpl*> ContextImpl::sActiveInstances = {};
-bool ContextImpl::sIsFloating = false;
 
 void ContextImpl::AddActiveInstance(ContextImpl* instance) {
     if (std::find(sActiveInstances.begin(), sActiveInstances.end(), instance) == sActiveInstances.end()) {

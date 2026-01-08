@@ -19,8 +19,8 @@ Context::~Context() {
     Destroy();
 };
 
-void Context::init(kitgui::WindowApi api, bool isFloating) {
-    Impl::init(api, isFloating);
+void Context::init(kitgui::WindowApi api) {
+    Impl::init(api);
 }
 
 void Context::deinit() {
@@ -33,12 +33,16 @@ Context::Context(Context::AppFactory fn)
       mImpl(std::make_unique<Impl>(*this)),
       mApp(nullptr) {}
 
-bool Context::Create() {
-    if (!mImpl->Create()) {
+bool Context::Create(bool isFloating) {
+    mSizeConfigChanged = false;
+    if (!mImpl->Create(isFloating)) {
         return false;
     }
     // Setup app
     mApp = mCreateAppFn(*this);
+    if (mSizeConfigChanged) {
+        SetSizeDirectly(mSizeConfig.startingWidth, mSizeConfig.startingHeight, mSizeConfig.resizable);
+    }
 
     return true;
 }
@@ -73,12 +77,13 @@ const SizeConfig& Context::GetSizeConfig() const {
 }
 void Context::SetSizeConfig(const SizeConfig& cfg) {
     mSizeConfig = cfg;
+    mSizeConfigChanged = true;
 }
 bool Context::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     return mImpl->GetSize(widthOut, heightOut);
 }
-bool Context::SetSizeDirectly(uint32_t width, uint32_t height) {
-    return mImpl->SetSizeDirectly(width, height);
+bool Context::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
+    return mImpl->SetSizeDirectly(width, height, resizable);
 }
 bool Context::SetParent(const kitgui::WindowRef& window) {
     return mImpl->SetParent(window);

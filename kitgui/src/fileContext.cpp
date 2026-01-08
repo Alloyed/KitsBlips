@@ -1,44 +1,31 @@
 #include "fileContext.h"
 
+#include <fstream>
 #include <optional>
 #include "kitgui/context.h"
 
 namespace {
 std::optional<std::string> defaultFileLoader(std::string_view path) {
-    // implements file loading using "dumb" c file io
-    std::string pathStr(path);
-    FILE* file = std::fopen(pathStr.c_str(), "rb");
-    if (!file) {
+    // default file loading using stdio
+    constexpr auto read_size = std::size_t(4096);
+    auto stream = std::ifstream(std::string(path));
+    stream.exceptions(std::ios_base::badbit);
+
+    if (not stream) {
         return std::nullopt;
     }
 
-    // Get file size
-    std::fseek(file, 0, SEEK_END);
-    long size = std::ftell(file);
-    std::fseek(file, 0, SEEK_SET);
-
-    if (size < 0) {
-        std::fclose(file);
-        return std::nullopt;
+    auto out = std::string();
+    auto buf = std::string(read_size, '\0');
+    while (stream.read(&buf[0], read_size)) {
+        out.append(buf, 0, stream.gcount());
     }
-
-    // Read file contents
-    std::string contents;
-    contents.resize(static_cast<size_t>(size));
-    size_t readSize = std::fread(contents.data(), 1, static_cast<size_t>(size), file);
-    std::fclose(file);
-
-    if (readSize != static_cast<size_t>(size)) {
-        return std::nullopt;
-    }
-
-    return contents;
+    out.append(buf, 0, stream.gcount());
+    return out;
 }
-
 }  // namespace
 
 namespace kitgui {
-
 FileContext::FileContext() : mLoader(defaultFileLoader) {}
 
 std::string* FileContext::GetOrLoadFileByName(const std::string& filename, Magnum::InputFileCallbackPolicy policy) {
@@ -74,5 +61,4 @@ std::string* FileContext::GetOrLoadFileByName(const std::string& filename, Magnu
 void FileContext::SetFileLoader(Context::FileLoader fn) {
     mLoader = std::move(fn);
 }
-
 }  // namespace kitgui
