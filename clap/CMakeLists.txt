@@ -74,3 +74,10 @@ if(KITSBLIPS_ENABLE_VST)
     )
     add_bundle(KitsBlips-vst3 "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.vst3" "${CMAKE_CURRENT_LIST_DIR}/assets")
 endif()
+
+# when built standalone, enable tests
+if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    include(CTest)
+    add_subdirectory(test)
+endif()
+
