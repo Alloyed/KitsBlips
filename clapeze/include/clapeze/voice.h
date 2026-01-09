@@ -158,12 +158,12 @@ class VoicePool {
             // no voice available, time to steal
             if (voiceIndex == SIZE_MAX) {
                 voiceIndex = mVoicesByLastUsed.front();
-                mVoicesByLastUsed.pop();
+                mVoicesByLastUsed.pop();  // from front
                 auto& data = pool.mVoices[voiceIndex];
                 pool.SendNoteEnd(*(data.activeNote));
             }
 
-            mVoicesByLastUsed.push(voiceIndex);
+            mVoicesByLastUsed.push(voiceIndex);  // to back
             pool.mVoices[voiceIndex].activeNote = note;
             pool.mVoices[voiceIndex].voice.ProcessNoteOn(note, velocity);
         }

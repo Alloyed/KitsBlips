@@ -27,22 +27,22 @@ struct clapeze::ParamTraits<Params, Params::Transpose> : public clapeze::Integer
 
 template <>
 struct clapeze::ParamTraits<Params, Params::Finetune> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Fine Tune", -100, 100, 0, "cents") {}
+    ParamTraits() : clapeze::NumericParam("Fine Tune", cLinearCurve, -100, 100, 0, "cents") {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params, Params::BaseDelay> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Base Delay", 0.0f, 1000.0f, 0.0f, "ms") {}
+    ParamTraits() : clapeze::NumericParam("Base Delay", cPowCurve<2>, 0.0f, 1000.0f, 0.0f, "ms") {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params, Params::GrainSize> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Grain Size", 10, 100, 30, "ms") {}
+    ParamTraits() : clapeze::NumericParam("Grain Size", cLinearCurve, 10.0f, 100.0f, 30.0f, "ms") {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params, Params::Feedback> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Feedback", 0.0f, 0.95f, 0.0f) {}
+    ParamTraits() : clapeze::PercentParam("Feedback", 0.0f) {}
 };
 
 template <>
@@ -64,7 +64,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
         float fine = mParams.Get<Params::Finetune>();
         float delayMs = mParams.Get<Params::BaseDelay>();
         float grainSizeMs = mParams.Get<Params::GrainSize>();
-        float feedback = mParams.Get<Params::Feedback>();
+        float feedback = std::exp2f(0.5f * std::log2f(mParams.Get<Params::Feedback>()));
         float mixf = mParams.Get<Params::Mix>();
 
         float shiftRatio = kitdsp::midiToRatio(transpose + (fine * 0.01f));

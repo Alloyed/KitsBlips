@@ -20,7 +20,7 @@ using ParamsFeature = clapeze::ParametersFeature<Params>;
 
 template <>
 struct clapeze::ParamTraits<Params, Params::Rate> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Rate", 0.0f, 5.0f, 1.0f, "hz") {}
+    ParamTraits() : clapeze::NumericParam("Rate", cLinearCurve, 0.0f, 5.0f, 1.0f, "hz") {}
 };
 
 template <>
@@ -30,12 +30,12 @@ struct clapeze::ParamTraits<Params, Params::Depth> : public clapeze::PercentPara
 
 template <>
 struct clapeze::ParamTraits<Params, Params::Delay> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Delay", 2.0f, 20.0f, 8.0f, "ms") {}
+    ParamTraits() : clapeze::NumericParam("Delay", cPowCurve<2>, 2.0f, 20.0f, 8.0f, "ms") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Feedback> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Feedback", -0.95f, 0.95f, 0.0f) {}
+struct clapeze::ParamTraits<Params, Params::Feedback> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("Feedback", cLinearCurve, -0.95f, 0.95f, 0.0f) {}
 };
 
 template <>

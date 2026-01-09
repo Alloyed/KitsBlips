@@ -3,6 +3,7 @@
 #include <clap/clap.h>
 #include <clap/ext/params.h>
 #include <etl/span.h>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -23,6 +24,25 @@ void stringCopy(char (&buffer)[BUFFER_SIZE], std::string_view src) {
 }  // namespace clapeze_impl
 
 namespace clapeze {
+struct ParamCurve {
+    float (*toCurved)(float);
+    float (*fromCurved)(float);
+};
+constexpr ParamCurve cLinearCurve{[](float x) { return x; }, [](float x) { return x; }};
+template <auto K>
+constexpr ParamCurve cPowCurve{[](float x) { return std::exp2(K * std::log2(x)); },
+                               [](float x) { return std::exp2(std::log2(x) / K); }};
+template <auto K>
+constexpr ParamCurve cPowBipolarCurve{[](float x) {
+                                          float xb = 2.0f * (x - 0.5f);  // to -1, 1
+                                          float xexp = std::copysign(std::exp2(K * std::log2(std::abs(xb))), xb);
+                                          return (xexp * 0.5f) + 0.5f;  // back to 0, 1
+                                      },
+                                      [](float x) {
+                                          float xb = 2.0f * (x - 0.5f);  // to -1, 1
+                                          float xexp = std::copysign(std::exp2(std::log2(std::abs(xb)) / K), xb);
+                                          return (xexp * 0.5f) + 0.5f;  // back to 0, 1
+                                      }};
 /**
  * Represents a numeric value. these are always mapped 0-1 on the DAW side so we can adjust the response curve to the
  * user's taste.
@@ -30,8 +50,13 @@ namespace clapeze {
 struct NumericParam : public BaseParam {
    public:
     using _valuetype = float;
-    NumericParam(std::string_view mName, float mMin, float mMax, float mDefaultValue, std::string_view mUnit = "")
-        : mName(mName), mMin(mMin), mMax(mMax), mDefaultValue(mDefaultValue), mUnit(mUnit) {}
+    NumericParam(std::string_view mName,
+                 const ParamCurve& curve,
+                 float mMin,
+                 float mMax,
+                 float mDefaultValue,
+                 std::string_view mUnit = "")
+        : mName(mName), mCurve(curve), mMin(mMin), mMax(mMax), mDefaultValue(mDefaultValue), mUnit(mUnit) {}
     bool FillInformation(clap_id id, clap_param_info_t* information) const override;
     double GetRawDefault() const override;
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override;
@@ -40,6 +65,7 @@ struct NumericParam : public BaseParam {
     bool FromValue(float in, double& outRaw) const;
 
     const std::string mName;
+    const ParamCurve mCurve;
     const float mMin;
     const float mMax;
     const float mDefaultValue;
@@ -49,9 +75,8 @@ struct NumericParam : public BaseParam {
 struct PercentParam : public NumericParam {
    public:
     using _valuetype = float;
-    PercentParam(std::string_view mName, float mDefaultValue) : NumericParam(mName, 0.0f, 1.0f, mDefaultValue) {}
-    PercentParam(std::string_view mName, float minValue, float maxValue, float mDefaultValue)
-        : NumericParam(mName, minValue, maxValue, mDefaultValue) {}
+    PercentParam(std::string_view mName, float mDefaultValue)
+        : NumericParam(mName, cLinearCurve, 0.0f, 1.0f, mDefaultValue) {}
 
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override;
     bool FromText(std::string_view text, double& outRawValue) const override;
@@ -60,7 +85,7 @@ struct PercentParam : public NumericParam {
 struct DbParam : public NumericParam {
    public:
     DbParam(std::string_view name, float minValue, float maxValue, float mDefaultValue)
-        : NumericParam(name, minValue, maxValue, mDefaultValue, "db") {}
+        : NumericParam(name, cLinearCurve, minValue, maxValue, mDefaultValue, "db") {}
 };
 
 /**
@@ -86,8 +111,8 @@ struct IntegerParam : public BaseParam {
     double GetRawDefault() const override;
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override;
     bool FromText(std::string_view text, double& outRawValue) const override;
-    bool ToValue(double rawValue, int32_t& out) const;
-    bool FromValue(int32_t in, double& outRaw) const;
+    static bool ToValue(double rawValue, int32_t& out);
+    static bool FromValue(int32_t in, double& outRaw);
 
     const std::string mName;
     const int32_t mMin;

@@ -21,7 +21,7 @@ using ParamsFeature = clapeze::ParametersFeature<Params>;
 
 template <>
 struct clapeze::ParamTraits<Params, Params::Shift> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Shift", -1000, 1000, 0, "hz") {}
+    ParamTraits() : clapeze::NumericParam("Shift", cPowBipolarCurve<2>, -1000, 1000, 0, "hz") {}
 };
 
 template <>

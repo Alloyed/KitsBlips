@@ -3,30 +3,20 @@
 #include "kitgui/app.h"
 #include "kitgui/context.h"
 #include "kitgui/gfx/scene.h"
-#include "kitgui/immediateMode.h"
 #include "kitgui/kitgui.h"
 
 class MyApp : public kitgui::BaseApp {
    public:
-    explicit MyApp(kitgui::Context& mContext) : kitgui::BaseApp(mContext), mScene(mContext) {
-        mContext.SetSizeConfig({400, 400});
+    explicit MyApp(kitgui::Context& mContext) : kitgui::BaseApp(mContext) {
+        mContext.SetSizeConfig({800, 800});
         mContext.SetClearColor(Magnum::Math::Color4(1.0f, 1.0f, 1.0f, 1.0f));
     }
     ~MyApp() = default;
 
    protected:
-    void OnActivate() override {
-        mScene.Load("../assets/duck.glb");
-        // mScene.PlayAnimationByName("Suzanne");
-    }
-    void OnUpdate() override {
-        mScene.Update();
-        kitgui::ImGuiScene("##myscene", mScene);
-        ImGui::Text("Oh yeah, gamer time!");
-    }
+    void OnUpdate() override { ImGui::ShowDemoWindow(); }
 
    private:
-    kitgui::Scene mScene;
 };
 
 int main() {

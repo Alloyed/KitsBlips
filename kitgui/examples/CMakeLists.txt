@@ -14,6 +14,9 @@ set(CMAKE_CXX_STANDARD 20)
 #
 # and it'll be available to link, as below.
 
+add_executable(demo demo.cpp)
+target_link_libraries(demo kitgui)
+
 add_executable(multiwindow multiwindow.cpp)
 target_link_libraries(multiwindow kitgui)
 

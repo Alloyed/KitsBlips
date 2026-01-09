@@ -36,6 +36,7 @@ target_sources(kitgui PRIVATE
     src/gfx/meshes.cpp
     src/controls/knob.cpp
     src/immediateMode/immediateMode.cpp
+    src/theme/everforest.cpp
 )
 
 target_include_directories(kitgui PUBLIC include)

@@ -16,7 +16,7 @@ using ParamsFeature = clapeze::ParametersFeature<Params>;
 
 template <>
 struct clapeze::ParamTraits<Params, Params::Fall> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Fall", 0.0001f, 1.f, .01f, "ms") {}
+    ParamTraits() : clapeze::NumericParam("Fall", cLinearCurve, 0.0001f, 1.f, .01f) {}
 };
 
 template <>

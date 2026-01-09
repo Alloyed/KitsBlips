@@ -18,7 +18,7 @@ inline constexpr clap_plugin_descriptor_t AudioEffectDescriptor(const char* id,
     descriptor.url = "https://alloyed.me/KitsBlips";
     descriptor.manual_url = "https://alloyed.me/KitsBlips";
     descriptor.support_url = "https://alloyed.me/KitsBlips";
-    descriptor.version = "0.0.0";
+    descriptor.version = PRODUCT_VERSION;
     descriptor.description = description;
     descriptor.features = audio_effect_features;
 
@@ -40,7 +40,7 @@ inline constexpr clap_plugin_descriptor_t AudioInstrumentDescriptor(const char* 
     descriptor.url = "https://alloyed.me/KitsBlips";
     descriptor.manual_url = "https://alloyed.me/KitsBlips";
     descriptor.support_url = "https://alloyed.me/KitsBlips";
-    descriptor.version = "0.0.0";
+    descriptor.version = PRODUCT_VERSION;
     descriptor.description = description;
     descriptor.features = audio_instrument_features;
 

@@ -11,15 +11,15 @@
 #include <kitdsp/osc/blepOscillator.h>
 #include <memory>
 
-#include "clapeze/ext/assets.h"
 #include "descriptor.h"
-#include "kitgui/gfx/scene.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>
 #include <kitgui/app.h>
+#include "clapeze/ext/assets.h"
 #include "gui/debugui.h"
 #include "gui/kitguiFeature.h"
+#include "kitgui/gfx/scene.h"
 #endif
 
 namespace {
@@ -65,7 +65,7 @@ struct clapeze::ParamTraits<Params, Params::OscOctave> : public clapeze::Integer
 
 template <>
 struct clapeze::ParamTraits<Params, Params::OscTune> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Tune", -12, 12, 0.0f) {}
+    ParamTraits() : clapeze::NumericParam("Tune", cPowCurve<2>, -12, 12, 0.0f) {}
 };
 
 template <>
@@ -75,7 +75,7 @@ struct clapeze::ParamTraits<Params, Params::OscModMix> : public clapeze::Percent
 
 template <>
 struct clapeze::ParamTraits<Params, Params::OscModAmount> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("OSC Mod Amount", -1.0f, 1.0f, 0.0f) {}
+    ParamTraits() : clapeze::NumericParam("OSC Mod Amount", cLinearCurve, -1.0f, 1.0f, 0.0f) {}
 };
 
 template <>
@@ -95,12 +95,12 @@ struct clapeze::ParamTraits<Params, Params::FilterModMix> : public clapeze::Perc
 
 template <>
 struct clapeze::ParamTraits<Params, Params::FilterModAmount> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("VCF Mod Amount", -1.0f, 1.0f, 0.0f) {}
+    ParamTraits() : clapeze::NumericParam("VCF Mod Amount", cLinearCurve, -1.0f, 1.0f, 0.0f) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params, Params::LfoRate> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Rate", 0.001f, 20.0f, 0.2f, "hz") {}
+    ParamTraits() : clapeze::NumericParam("Rate", cLinearCurve, 0.001f, 20.0f, 0.2f, "hz") {}
 };
 
 template <>
@@ -110,12 +110,12 @@ struct clapeze::ParamTraits<Params, Params::LfoShape> : public clapeze::PercentP
 
 template <>
 struct clapeze::ParamTraits<Params, Params::EnvAttack> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Attack", 0.001f, 1000.0f, 1.0f, "ms") {}
+    ParamTraits() : clapeze::NumericParam("Attack", cPowCurve<2>, 1.0f, 1000.0f, 1.0f, "ms") {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params, Params::EnvDecay> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Decay", 0.001f, 1000.0f, 1.0f, "ms") {}
+    ParamTraits() : clapeze::NumericParam("Decay", cPowCurve<2>, 1.0f, 1000.0f, 1.0f, "ms") {}
 };
 
 template <>
@@ -125,7 +125,7 @@ struct clapeze::ParamTraits<Params, Params::EnvSustain> : public clapeze::Percen
 
 template <>
 struct clapeze::ParamTraits<Params, Params::EnvRelease> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Release", 0.001f, 1000.0f, 1.0f, "ms") {}
+    ParamTraits() : clapeze::NumericParam("Release", cPowCurve<2>, 1.0f, 2000.0f, 1.0f, "ms") {}
 };
 
 template <>
@@ -140,7 +140,7 @@ struct clapeze::ParamTraits<Params, Params::VcaEnvDisabled> : public clapeze::On
 
 template <>
 struct clapeze::ParamTraits<Params, Params::VcaLfoAmount> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("VCA LFO Amount", -1.0f, 1.0f, 0.0f) {}
+    ParamTraits() : clapeze::NumericParam("VCA LFO Amount", cLinearCurve, -1.0f, 1.0f, 0.0f) {}
 };
 
 template <>

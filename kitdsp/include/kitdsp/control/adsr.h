@@ -43,7 +43,7 @@ class ApproachAdsr {
         mReleaseH = Approach::CalculateHalfLifeFromSettleTime(releaseMs, sampleRate, cSettlePrecision, sustainValue);
         // any -> 0
         // Chokes just need to end "pretty soon" to sound correct
-        mReleaseH = Approach::CalculateHalfLifeFromSettleTime(1.0f, sampleRate, cSettlePrecision, 1.0f);
+        mChokeH = Approach::CalculateHalfLifeFromSettleTime(1.0f, sampleRate, cSettlePrecision, 1.0f);
         // TODO: mState not updated until after Process() called at least once
         Update(false);
     }

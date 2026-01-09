@@ -5,6 +5,7 @@
 #include <string_view>
 #include <utility>
 #include "fileContext.h"
+#include "theme/everforest.h"
 
 #if KITGUI_USE_SDL
 #include "impl/sdl/contextImpl.h"
@@ -40,6 +41,8 @@ bool Context::Create(bool isFloating) {
     }
     // Setup app
     mApp = mCreateAppFn(*this);
+    SetupImGuiFont_everforest();
+    SetupImGuiStyle_everforest();
     if (mSizeConfigChanged) {
         SetSizeDirectly(mSizeConfig.startingWidth, mSizeConfig.startingHeight, mSizeConfig.resizable);
     }

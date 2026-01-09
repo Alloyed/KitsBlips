@@ -1,9 +1,9 @@
 #include "clapeze/ext/parameterConfigs.h"
 #include <charconv>
-#include <cstdio>
 #include <cstring>
 #include <string_view>
 #include "clap/ext/params.h"
+#include "fmt/base.h"
 
 using namespace clapeze;
 using namespace clapeze_impl;
@@ -46,9 +46,9 @@ bool NumericParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
         return false;
     }
     if (mUnit.empty()) {
-        snprintf(outTextBuf.data(), outTextBuf.size(), "%.3f", displayValue);
+        fmt::format_to_n(outTextBuf.data(), outTextBuf.size(), "{:.3f}", displayValue);
     } else {
-        snprintf(outTextBuf.data(), outTextBuf.size(), "%.3f %s", displayValue, mUnit.data());
+        fmt::format_to_n(outTextBuf.data(), outTextBuf.size(), "{:.3f} {}", displayValue, mUnit);
     }
     return true;
 }
@@ -62,12 +62,14 @@ bool NumericParam::FromText(std::string_view text, double& outRawValue) const {
 }
 
 bool NumericParam::ToValue(double rawValue, float& out) const {
-    out = std::lerp(mMin, mMax, static_cast<float>(rawValue));
+    float curvedValue = mCurve.toCurved(static_cast<float>(rawValue));
+    out = std::lerp(mMin, mMax, curvedValue);
     return true;
 }
 
 bool NumericParam::FromValue(float in, double& outRaw) const {
     float range = mMax - mMin;
+    in = mCurve.fromCurved(in);
     outRaw = range != 0.0f ? (in - mMin) / range : mMin;
     return true;
 }
@@ -79,7 +81,7 @@ bool PercentParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
     }
     displayValue *= 100.0f;
 
-    snprintf(outTextBuf.data(), outTextBuf.size(), "%.2f%%", displayValue);
+    fmt::format_to_n(outTextBuf.data(), outTextBuf.size(), "{:.2f}%", displayValue);
     return true;
 }
 
@@ -119,11 +121,11 @@ bool IntegerParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
         if (rawValue == 1.0 && !mUnitSingular.empty()) {
             unit = mUnitSingular;
         }
-        snprintf(outTextBuf.data(), outTextBuf.size(), "%d %s", value, unit.data());
+        fmt::format_to_n(outTextBuf.data(), outTextBuf.size(), "{} {}", value, unit);
         return true;
     }
 
-    snprintf(outTextBuf.data(), outTextBuf.size(), "%d", value);
+    fmt::format_to_n(outTextBuf.data(), outTextBuf.size(), "{}", value);
     return true;
 }
 
@@ -135,12 +137,12 @@ bool IntegerParam::FromText(std::string_view text, double& outRawValue) const {
     return FromValue(static_cast<int32_t>(in), outRawValue);
 }
 
-bool IntegerParam::ToValue(double rawValue, int32_t& out) const {
+bool IntegerParam::ToValue(double rawValue, int32_t& out) {
     out = static_cast<int32_t>(rawValue);
     return true;
 }
 
-bool IntegerParam::FromValue(int32_t in, double& outRaw) const {
+bool IntegerParam::FromValue(int32_t in, double& outRaw) {
     outRaw = static_cast<double>(in);
     return true;
 }
