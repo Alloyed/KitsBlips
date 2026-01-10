@@ -4,7 +4,9 @@
 #include <clap/factory/plugin-factory.h>
 #include <algorithm>
 #include <cassert>
+#include <chrono>  // IWYU pragma: keep
 #include <cstdio>
+#include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>

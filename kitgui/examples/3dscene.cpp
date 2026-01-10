@@ -21,9 +21,9 @@ class MyApp : public kitgui::BaseApp {
     }
     void OnUpdate() override {
         mScene.Update();
-        kitgui::ImGuiScene("##myscene", mScene);
         ImGui::Text("Oh yeah, gamer time!");
     }
+    void OnDraw() override { mScene.Draw(); }
 
    private:
     kitgui::Scene mScene;

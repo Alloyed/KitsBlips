@@ -104,7 +104,6 @@ bool KitguiFeature::GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) 
 bool KitguiFeature::Create(ClapWindowApi api, bool isFloating) {
     sInitCount++;
     if (sInitCount == 1) {
-        printf("init\n");
         sInitApi = api;
         kitgui::Context::init(toKitGui(api));
         if (kitgui::Context::NeedsUpdateLoopIntegration()) {
@@ -121,7 +120,6 @@ void KitguiFeature::Destroy() {
     mCtx.Destroy();
     sInitCount--;
     if (sInitCount <= 0) {
-        printf("deinit\n");
         kitgui::Context::deinit();
         if (sTimerId) {
             mHost.CancelTimer(sTimerId);
