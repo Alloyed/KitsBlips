@@ -27,11 +27,11 @@ class ContextImpl {
    public:
     explicit ContextImpl(kitgui::Context& ctx);
     ~ContextImpl() = default;
-    static void init(kitgui::WindowApi api, bool isFloating);
+    static void init(kitgui::WindowApi api);
     static void deinit();
 
     // host events: (matches clap API)
-    bool Create();
+    bool Create(bool isFloating);
     bool Destroy();
     bool SetScale(double scale);
     bool GetSize(uint32_t& widthOut, uint32_t& heightOut) const;
