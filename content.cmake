@@ -76,6 +76,7 @@ FetchContent_Declare(
 
 # TODO: switch to FetchContent?
 set(IMGUI_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/imgui)
+set(PUGL_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/pugl)
 
 # remote
 FetchContent_Declare(
