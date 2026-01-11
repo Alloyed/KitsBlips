@@ -160,6 +160,12 @@ FetchContent_Declare(
 	GIT_TAG        d70c3fcf06814f8608c8327d3e8136063ee0133d
     EXCLUDE_FROM_ALL
 )
+FetchContent_Declare(
+	miniz
+	GIT_REPOSITORY https://github.com/richgel999/miniz.git
+	GIT_TAG        3.1.0
+    EXCLUDE_FROM_ALL
+)
 
 set(CORRADE_BUILD_STATIC ON)
 set(MAGNUM_BUILD_STATIC ON)

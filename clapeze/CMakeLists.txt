@@ -3,7 +3,7 @@ cmake_policy(SET CMP0048 NEW)
 project(clapeze VERSION 0.0.0)
 
 include(../content.cmake)
-FetchContent_MakeAvailable(clap etl physfs fmt)
+FetchContent_MakeAvailable(clap etl physfs miniz fmt)
 
 add_library(clapeze STATIC)
 set_target_properties(clapeze PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -23,6 +23,7 @@ target_link_libraries(clapeze PUBLIC
     clap
     etl
     PhysFS::PhysFS-static
+    #miniz
     fmt::fmt
 )
 
