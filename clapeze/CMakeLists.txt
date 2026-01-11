@@ -32,12 +32,9 @@ if(PROJECT_IS_TOP_LEVEL)
     set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
     set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 
-    include(GenerateExportHeader)
-
     add_library(clapeze-examples MODULE)
     set_target_properties(clapeze-examples PROPERTIES SUFFIX ".clap" PREFIX "")
     target_enable_warnings(clapeze-examples)
-    generate_export_header(clapeze-examples BASE_NAME clapeze EXPORT_FILE_NAME "${CMAKE_CURRENT_LIST_DIR}/examples/clapeze_export_generated.h")
 
     target_sources(clapeze-examples PRIVATE
         examples/entry.cpp

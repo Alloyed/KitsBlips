@@ -290,7 +290,7 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params)
         : kitgui::BaseApp(ctx), mParams(params), mScene(std::make_unique<kitgui::Scene>(ctx)) {
-        ctx.SetSizeConfig({1000, 600});
+        // ctx.SetSizeConfig({1000, 600});
         ctx.SetClearColor(Magnum::Math::Color4(0.3f, 0.7f, 0.3f, 1.0f));
     }
     ~GuiApp() = default;
