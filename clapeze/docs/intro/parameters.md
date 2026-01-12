@@ -79,6 +79,6 @@ Tricky, but done! The most common parameter type is probably percent, but to get
 - EnumParam (will display as a dropdown in supported DAWs)
 - OnOffParam (boolean)
 
-[^src]: /clapeze/examples/effectExample.cpp
+[^src]: [source](/clapeze/examples/effectExample.cpp)
 [^traits]: https://www.cs.rpi.edu/~musser/design/blitz/traits1.html
-[^paramConfigs]: /clapeze/include/clapeze/ext/parameterConfigs.h
+[^paramConfigs]: [source](/clapeze/include/clapeze/ext/parameterConfigs.h)

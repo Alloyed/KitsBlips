@@ -10,7 +10,7 @@ Clapeze uses
 - The [CLAP](https://github.com/free-audio/clap) api (as its plugin format)
 - The [ETL Embedded Template Library](https://github.com/ETLCPP/etl) For datastructures that can be safely used on the audio thread
 - [{fmt}](https://github.com/fmtlib/fmt) For string formatting
-- [PhysicsFS](https://github.com/icculus/physfs) For asset loading and saving
+- [miniz](https://github.com/richgel999/miniz) For asset loading
 
 All are compiled statically into clapeze. It should be portable to all platforms clap itself can be hosted. Thanks, those projects!
 

@@ -1,6 +1,6 @@
 # Assets
 
-clapeze supports bundling assets directly in your plugin binary using PhysicsFS[^physfs].
+clapeze supports bundling assets directly in your plugin binary using miniz[^miniz].
 
 To use it, simply concatenate a .zip file to the end of your plugin:
 
@@ -42,8 +42,8 @@ Zip files, by comparison, _end_ with a central directory[^zip] which represents 
 
 Put simply, given the same file, a computer told to look for the CLAP will look from the start, but a computer told to look for a zip will look from the end. Each format won't see the other. This technique was stolen from the LÖVE[^love] game framework, but works equally well here.
 
-[^physfs]: https://github.com/icculus/physfs
-[^src]: /clapeze/include/clapeze/ext/assets.h
+[^miniz]: https://github.com/richgel999/miniz
+[^src]: [source](/clapeze/include/clapeze/ext/assets.h)
 [^elf]: https://en.wikipedia.org/wiki/Executable_and_Linkable_Format#File_layout
 [^zip]: https://en.wikipedia.org/wiki/ZIP_(file_format)#Structure
 [^love]: https://love2d.org

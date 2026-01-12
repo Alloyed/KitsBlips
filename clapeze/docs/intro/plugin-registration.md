@@ -61,4 +61,4 @@ namespace MyPlugin{
 
 This works even in static libraries.
 
-[^src]: /clapeze/include/clapeze/entryPoint.h
+[^src]: [source](/clapeze/include/clapeze/entryPoint.h)
