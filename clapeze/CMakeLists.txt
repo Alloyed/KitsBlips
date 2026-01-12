@@ -3,18 +3,20 @@ cmake_policy(SET CMP0048 NEW)
 project(clapeze VERSION 0.0.0)
 
 include(../content.cmake)
-FetchContent_MakeAvailable(clap etl physfs miniz fmt)
+FetchContent_MakeAvailable(clap etl miniz fmt)
 
 add_library(clapeze STATIC)
 set_target_properties(clapeze PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(clapeze PRIVATE cxx_std_20)
 target_enable_warnings(clapeze)
+target_disable_warnings(miniz)
 
 target_sources(clapeze PRIVATE
     src/basePlugin.cpp
     src/pluginHost.cpp
     src/entryPoint.cpp
     src/ext/parameterConfigs.cpp
+    src/ext/assets.cpp
 )
 
 target_include_directories(clapeze PUBLIC include)
@@ -22,8 +24,7 @@ target_include_directories(clapeze PUBLIC include)
 target_link_libraries(clapeze PUBLIC
     clap
     etl
-    PhysFS::PhysFS-static
-    #miniz
+    miniz
     fmt::fmt
 )
 

@@ -9,6 +9,10 @@ namespace clapeze {
  * Explictly registers a new plugin entry. Call this during entry point init, or earlier.
  */
 void registerPlugin(PluginEntry plugin);
+/**
+ * Returns the path to the shared library that this plugin is run from.
+ */
+const char* getPluginPath();
 namespace EntryPoint {
 bool _init(const char* path);
 void _deinit();

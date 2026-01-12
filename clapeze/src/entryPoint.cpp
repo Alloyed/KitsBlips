@@ -1,7 +1,6 @@
 #include "clapeze/entryPoint.h"
 
 #include <clap/factory/preset-discovery.h>
-#include <physfs.h>
 #include "clapeze/ext/presets.h"
 
 namespace clapeze {
@@ -10,6 +9,11 @@ namespace {
 
 std::vector<PluginEntry>& sPlugins() {
     static std::vector<PluginEntry> inner;
+    return inner;
+};
+
+std::string& sPluginPath() {
+    static std::string inner;
     return inner;
 };
 
@@ -78,16 +82,17 @@ void registerPlugin(PluginEntry plugin) {
     sPlugins().push_back(plugin);
 }
 
+const char* getPluginPath() {
+    return sPluginPath().c_str();
+}
+
 namespace EntryPoint {
 bool _init(const char* path) {
-    PHYSFS_init(path);
     // add dll to mount path
-    PHYSFS_mount(path, nullptr, 0);
+    sPluginPath() = path;
     return true;
 }
-void _deinit() {
-    PHYSFS_deinit();
-}
+void _deinit() {}
 const void* _get_factory(const char* factoryId) {
     if (std::string_view(CLAP_PLUGIN_FACTORY_ID) == factoryId) {
         return &PluginFactory::value;

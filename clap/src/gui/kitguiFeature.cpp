@@ -76,7 +76,7 @@ void KitguiFeature::Configure(BasePlugin& self) {
         auto& assets = clapeze::AssetsFeature::GetFromPlugin<clapeze::AssetsFeature>(self);
         std::string out;
         std::string pathstr{path};
-        bool ok = assets.LoadResourceToString(CLAP_PRESET_DISCOVERY_LOCATION_PLUGIN, "", pathstr.c_str(), out);
+        bool ok = assets.LoadFromPlugin(pathstr.c_str(), out);
         if (ok) {
             return out;
         } else {

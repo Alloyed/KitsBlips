@@ -22,7 +22,7 @@ set(CMAKE_CXX_STANDARD 20)
 include(../content.cmake)
 include(cmake/add_bundle.cmake)
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
-FetchContent_MakeAvailable(clap fmt clapeze KitDSP physfs)
+FetchContent_MakeAvailable(clap fmt clapeze KitDSP)
 FetchContent_MakeAvailable(clap-wrapper)
 
 add_library(KitsBlips OBJECT)
