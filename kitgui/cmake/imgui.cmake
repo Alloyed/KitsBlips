@@ -9,7 +9,13 @@ add_library(imgui STATIC EXCLUDE_FROM_ALL
 )
 target_include_directories(imgui INTERFACE ${IMGUI_DIR})
 
-if(KITGUI_USE_SDL)
+if(KITGUI_USE_PUGL)
+	add_library(imgui_opengl STATIC EXCLUDE_FROM_ALL
+		${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+	)
+	target_include_directories(imgui_opengl INTERFACE ${IMGUI_DIR}/backends)
+	target_link_libraries(imgui_opengl PUBLIC imgui OpenGL::GL)
+elseif(KITGUI_USE_SDL)
 	add_library(imgui_opengl_sdl3 STATIC EXCLUDE_FROM_ALL
 		${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
 		${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp

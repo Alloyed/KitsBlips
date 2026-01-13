@@ -10,7 +10,11 @@
 #include "kitgui/kitgui.h"
 #include "kitgui/types.h"
 
-#if KITGUI_USE_SDL
+#if KITGUI_USE_PUGL
+namespace kitgui::pugl {
+class ContextImpl;
+}
+#elif KITGUI_USE_SDL
 namespace kitgui::sdl {
 class ContextImpl;
 }
@@ -157,7 +161,10 @@ class Context {
     void OnDraw();
 
    private:
-#if KITGUI_USE_SDL
+#if KITGUI_USE_PUGL
+    using Impl = pugl::ContextImpl;
+    friend class pugl::ContextImpl;
+#elif KITGUI_USE_SDL
     using Impl = sdl::ContextImpl;
     friend class sdl::ContextImpl;
 #elif KITGUI_USE_WIN32

@@ -7,7 +7,9 @@
 #include "fileContext.h"
 #include "theme/everforest.h"
 
-#if KITGUI_USE_SDL
+#if KITGUI_USE_PUGL
+#include "impl/pugl/contextImpl.h"
+#elif KITGUI_USE_SDL
 #include "impl/sdl/contextImpl.h"
 #elif KITGUI_USE_WIN32
 #include "impl/win32/contextImpl.h"

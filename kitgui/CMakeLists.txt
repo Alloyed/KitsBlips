@@ -10,12 +10,9 @@ FetchContent_MakeAvailable(corrade magnum magnum-plugins fmt)
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(KITGUI_USE_WIN32 true)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(KITGUI_USE_COCOA true)
+    set(KITGUI_USE_PUGL true)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    find_package(X11)
-    FetchContent_MakeAvailable(SDL3)
-    set(KITGUI_USE_SDL true)
-    set(KITGUI_USE_X11 true)
+    set(KITGUI_USE_PUGL true)
 endif()
 include(imgui)
 include(pugl)
@@ -63,7 +60,17 @@ target_link_libraries(kitgui PRIVATE
 )
 target_disable_warnings(Magnum::Magnum Magnum::GL Magnum::SceneGraph fmt::fmt Magnum::AnyImageImporter Magnum::GltfImporter MagnumPlugins::StdbImageImporter)
 
-if(KITGUI_USE_SDL)
+if(KITGUI_USE_PUGL)
+    target_compile_definitions(kitgui PUBLIC KITGUI_USE_PUGL)
+    target_sources(kitgui PRIVATE
+        src/impl/pugl/contextImpl.cpp
+        src/impl/pugl/imgui_impl_pugl.cpp
+    )
+    target_link_libraries(kitgui PRIVATE
+        pugl
+        imgui_opengl
+    )
+elseif(KITGUI_USE_SDL)
     target_compile_definitions(kitgui PUBLIC KITGUI_USE_SDL)
     target_sources(kitgui PRIVATE
         src/impl/sdl/contextImpl.cpp
@@ -72,12 +79,10 @@ if(KITGUI_USE_SDL)
         SDL3::SDL3
         imgui_opengl_sdl3
     )
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        target_link_libraries(kitgui PRIVATE
-            X11::X11
-            X11::Xutil
-        )
-    endif()
+    target_link_libraries(kitgui PRIVATE
+        X11::X11
+        X11::Xutil
+    )
 elseif(KITGUI_USE_WIN32)
     target_compile_definitions(kitgui PUBLIC KITGUI_USE_WIN32)
     target_sources(kitgui PRIVATE
