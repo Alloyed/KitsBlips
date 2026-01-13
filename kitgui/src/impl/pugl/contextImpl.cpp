@@ -51,10 +51,17 @@ bool ContextImpl::Create(bool isFloating) {
     puglSetViewHint(mView, PUGL_RESIZABLE, cfg.resizable);
     mContext.mSizeConfigChanged = false;
 
+    puglSetViewHint(mView, PUGL_CONTEXT_API, PUGL_OPENGL_API);
     puglSetViewHint(mView, PUGL_CONTEXT_VERSION_MAJOR, 3);
     puglSetViewHint(mView, PUGL_CONTEXT_VERSION_MINOR, 3);
-    puglSetViewHint(mView, PUGL_CONTEXT_PROFILE, PUGL_OPENGL_COMPATIBILITY_PROFILE);
+    puglSetViewHint(mView, PUGL_CONTEXT_PROFILE, PUGL_OPENGL_CORE_PROFILE);
+    puglSetViewHint(mView, PUGL_DOUBLE_BUFFER, true);
+    puglSetViewHint(mView, PUGL_SWAP_INTERVAL, true);
+    puglSetViewHint(mView, PUGL_DEPTH_BITS, 24);
+    puglSetViewHint(mView, PUGL_STENCIL_BITS, 8);
     puglSetBackend(mView, puglGlBackend());
+
+    sNumInstances++;
     return true;
 }
 
@@ -76,21 +83,28 @@ bool ContextImpl::Realize() {
     // Setup Platform/Renderer backends
     ImGui_ImplPugl_InitForOpenGL(sWorld, mView);
     ImGui_ImplOpenGL3_Init();
+    // compile shaders and such
+    ImGui_ImplOpenGL3_CreateDeviceObjects();
+
+    mContext.OnActivate();
     return true;
 }
 
 void ContextImpl::Unrealize() {
-    mGl.reset();
+    MakeCurrent();
+    mContext.OnDeactivate();
 }
 
 bool ContextImpl::Destroy() {
+    mGl.reset();
     puglFreeView(mView);
+    mView = nullptr;
     sNumInstances--;
     return true;
 }
 
 bool ContextImpl::IsCreated() const {
-    return mImgui != nullptr;
+    return mView != nullptr;
 }
 
 void ContextImpl::SetClearColor(Magnum::Color4 color) {
@@ -130,14 +144,16 @@ bool ContextImpl::Hide() {
     return puglHide(mView) == PUGL_SUCCESS;
 }
 bool ContextImpl::Close() {
-    return Destroy();
+    return mContext.Destroy();
 }
 
 void ContextImpl::MakeCurrent() {
     if (mImgui) {
         ImGui::SetCurrentContext(mImgui);
     }
-    Magnum::Platform::GLContext::makeCurrent(mGl.get());
+    if (mGl.get()) {
+        Magnum::Platform::GLContext::makeCurrent(mGl.get());
+    }
 }
 
 void ContextImpl::RunLoop() {
@@ -156,7 +172,8 @@ void ContextImpl::OnResizeOrMove() {
 }
 
 PuglStatus ContextImpl::OnPuglEvent(const PuglEvent* event) {
-    if (ImGui_ImplPugl_ProcessEvent(event)) {
+    MakeCurrent();
+    if (mImgui && ImGui_ImplPugl_ProcessEvent(event)) {
         return PUGL_SUCCESS;
     }
     switch (event->type) {
@@ -166,8 +183,8 @@ PuglStatus ContextImpl::OnPuglEvent(const PuglEvent* event) {
         }
         case PUGL_UPDATE: {
             // update
-            ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplPugl_NewFrame();
+            ImGui_ImplOpenGL3_NewFrame();
             ImGui::NewFrame();
             ImGuiHelpers::beginFullscreen([&]() { mContext.OnUpdate(); });
             puglObscureView(mView);  // request draw

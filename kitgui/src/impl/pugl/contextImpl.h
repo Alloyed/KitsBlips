@@ -68,7 +68,7 @@ class ContextImpl {
     PuglView* mView;
     std::unique_ptr<Magnum::Platform::GLContext> mGl = nullptr;
     ImGuiContext* mImgui = nullptr;
-    Magnum::Color4 mClearColor = {0.5f, 0.5f, 0.5f, 1.0f};
+    Magnum::Color4 mClearColor = {0.8f, 0.8f, 0.0f, 1.0f};
 
     static PuglWorld* sWorld;
     static kitgui::WindowApi sApi;

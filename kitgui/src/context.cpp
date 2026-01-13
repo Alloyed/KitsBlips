@@ -43,8 +43,6 @@ bool Context::Create(bool isFloating) {
     }
     // Setup app
     mApp = mCreateAppFn(*this);
-    SetupImGuiFont_everforest();
-    SetupImGuiStyle_everforest();
     if (mSizeConfigChanged) {
         SetSizeDirectly(mSizeConfig.startingWidth, mSizeConfig.startingHeight, mSizeConfig.resizable);
     }
@@ -53,6 +51,11 @@ bool Context::Create(bool isFloating) {
 }
 
 bool Context::Destroy() {
+    if (!mImpl->IsCreated()) {
+        // nothing to do
+        return true;
+    }
+    MakeCurrent();
     mApp.reset();
 
     return mImpl->Destroy();
@@ -137,6 +140,8 @@ void Context::OnActivate() {
     if (mApp) {
         mApp->OnActivate();
     }
+    SetupImGuiFont_everforest();
+    SetupImGuiStyle_everforest();
 }
 
 void Context::OnDeactivate() {
