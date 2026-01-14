@@ -6,14 +6,14 @@
 
 namespace kitgui {
 inline bool DebugParam(const clapeze::NumericParam& param, double& inOutRawValue) {
-    // TODO: show the ToText() version of the number, too
     // We can't use ToValue/FromValue versions; those have nonlinear curves
     float value = static_cast<float>(inOutRawValue);
     std::string label(param.mName);
     char buf[64] = {};
     etl::span<char> span{buf, 64};
     param.ToText(inOutRawValue, span);
-    bool changed = ImGui::SliderFloat(label.c_str(), &value, 0.0f, 1.0f, buf);
+    bool changed = ImGui::SliderFloat(label.c_str(), &value, 0.0f, 1.0f, buf,
+                                      ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_NoRoundToFormat);
     inOutRawValue = value;
     return changed;
 }
@@ -22,7 +22,8 @@ inline bool DebugParam(const clapeze::IntegerParam& param, double& inOutRawValue
     int32_t value = 0.0f;
     clapeze::IntegerParam::ToValue(inOutRawValue, value);
     std::string label(param.mName);
-    bool changed = ImGui::SliderInt(label.c_str(), &value, param.mMin, param.mMax);
+    bool changed =
+        ImGui::SliderInt(label.c_str(), &value, param.mMin, param.mMax, nullptr, ImGuiSliderFlags_AlwaysClamp);
     clapeze::IntegerParam::FromValue(value, inOutRawValue);
     return changed;
 }

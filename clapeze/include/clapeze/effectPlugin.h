@@ -23,18 +23,12 @@ class EffectProcessor : public BaseProcessor {
 
     /* call to copy the input, unmodified, to the output */
     void Bypass(const StereoAudioBuffer& in, StereoAudioBuffer& out) {
-        if (in.isLeftConstant) {
-            out.isLeftConstant = true;
-            out.left[0] = in.left[0];
-        } else {
-            std::copy(in.left.begin(), in.left.end(), out.left.begin());
-        }
-        if (in.isRightConstant) {
-            out.isRightConstant = true;
-            out.right[0] = in.right[0];
-        } else {
-            std::copy(in.right.begin(), in.right.end(), out.right.begin());
-        }
+        // per spec the constant flag is a hint; even if it's true
+        // we need to do a copy
+        out.isLeftConstant = in.isLeftConstant;
+        std::copy(in.left.begin(), in.left.end(), out.left.begin());
+        out.isRightConstant = in.isRightConstant;
+        std::copy(in.right.begin(), in.right.end(), out.right.begin());
     }
 
     // impl
