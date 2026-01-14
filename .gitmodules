@@ -1,6 +1,6 @@
 [submodule "sdk/libDaisy"]
 	path = sdk/libDaisy
-	url = git@github.com:Alloyed/libDaisy.git
+	url = https://github.com/Alloyed/libDaisy.git
 	branch = patch-2
 [submodule "sdk/imgui"]
 	path = sdk/imgui

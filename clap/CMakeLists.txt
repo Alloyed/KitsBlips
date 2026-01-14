@@ -1,5 +1,16 @@
 cmake_minimum_required(VERSION 3.22)
 cmake_policy(SET CMP0048 NEW)
+project(KitsBlips VERSION 0.0.0)
+
+set(PRODUCT_NAME "KitsBlips")
+set(PRODUCT_ID "me.alloyed.KitsBlips")
+
+include(CMakeDependentOption)
+option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
+option(KITSBLIPS_ENABLE_VST "build VSTs" ON)
+if(APPLE)
+    option(KITSBLIPS_ENABLE_AUDIOUNIT "build Audio Units" OFF)
+endif()
 
 # TODO: needed for clap-wrapper, who should really be doing this for us
 if(APPLE)
@@ -9,13 +20,6 @@ endif()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 #end globals
-
-project(KitsBlips VERSION 0.0.0)
-set(PRODUCT_NAME "KitsBlips")
-set(PRODUCT_ID "me.alloyed.KitsBlips")
-option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
-option(KITSBLIPS_ENABLE_VST "build VSTs" ON)
-
 set(CMAKE_CXX_STANDARD 20)
 
 # shared libs
@@ -70,10 +74,30 @@ if(KITSBLIPS_ENABLE_VST)
         OUTPUT_NAME "KitsBlips"
         BUNDLE_IDENTIFIER "${PRODUCT_ID}"
         BUNDLE_VERSION "${PROJECT_VERSION}"
-        ASSET_OUTPUT_DIRECTORY "tmp_vst3"
         SUPPORTS_ALL_NOTE_EXPRESSIONS TRUE
     )
+    # the normal vst wrapper includes a $<CONFIG> generator in its output path, which add_bundle() can't support for dumb cmake reasons :/
+    set_target_properties(KitsBlips-vst3 PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tmp" )
     add_bundle(KitsBlips-vst3 "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.vst3" "${CMAKE_CURRENT_LIST_DIR}/assets")
+endif()
+
+if(KITSBLIPS_ENABLE_AUDIOUNIT)
+    # TODO
+    add_library(KitsBlips-au MODULE)
+    target_link_libraries(KitsBlips-au PRIVATE KitsBlips)
+    target_add_auv2_wrapper(TARGET KitsBlips-au
+        OUTPUT_NAME "KitsBlips"
+        BUNDLE_IDENTIFIER "${PRODUCT_ID}"
+        BUNDLE_VERSION "${PROJECT_VERSION}"
+
+        # MANUFACTURER_NAME
+        # MANUFACTURER_CODE
+        # SUBTYPE_CODE
+        # INSTRUMENT_TYPE
+    )
+    # the normal vst wrapper includes a $<CONFIG> generator in its output path, which add_bundle() can't support for dumb cmake reasons :/
+    set_target_properties(KitsBlips-au PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tmp" )
+    add_bundle(KitsBlips-au "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.au" "${CMAKE_CURRENT_LIST_DIR}/assets")
 endif()
 
 # when built standalone, enable tests
