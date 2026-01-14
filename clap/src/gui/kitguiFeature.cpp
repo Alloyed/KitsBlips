@@ -105,7 +105,7 @@ bool KitguiFeature::Create(ClapWindowApi api, bool isFloating) {
     sInitCount++;
     if (sInitCount == 1) {
         sInitApi = api;
-        kitgui::Context::init(toKitGui(api));
+        kitgui::Context::init(toKitGui(api), PRODUCT_NAME);
         if (kitgui::Context::NeedsUpdateLoopIntegration()) {
             sTimerId = mHost.AddTimer(32, []() { kitgui::Context::RunSingleFrame(); });
         }

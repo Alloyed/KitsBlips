@@ -265,10 +265,10 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
     explicit Processor(ParamsFeature::ProcessParameters& params) : InstrumentProcessor(params), mVoices(*this) {}
     ~Processor() = default;
 
-    void ProcessAudio(clapeze::StereoAudioBuffer& out) override {
+    clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) override {
         mVoices.SetNumVoices(mParams.Get<Params::PolyCount>());
         mVoices.SetStrategy(mParams.Get<Params::PolyMode>());
-        mVoices.ProcessAudio(out);
+        return mVoices.ProcessAudio(out);
     }
 
     void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) override {

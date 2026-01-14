@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string_view>
 #include "kitgui/types.h"
 
@@ -22,8 +23,10 @@ class Scene {
     /** Draws the scene. */
     void Draw();
 
+    // These methods are added as needed, so no rhyme or reason to what's supported really
     void PlayAnimationByName(std::string_view name);
     void SetObjectRotationByName(std::string_view name, const kitgui::Quaternion& rot);
+    std::optional<kitgui::Vector2> GetObjectScreenPositionByName(std::string_view name);
 
    private:
     struct Impl;

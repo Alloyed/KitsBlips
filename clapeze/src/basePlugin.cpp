@@ -1,7 +1,10 @@
 #include "clapeze/basePlugin.h"
 
+#include <chrono>
 #include <memory>
 #include "clap/ext/latency.h"
+#include "clap/process.h"
+#include "clapeze/baseProcessor.h"
 #include "clapeze/ext/latency.h"
 #include "clapeze/pluginHost.h"
 
@@ -122,11 +125,13 @@ void BasePlugin::_reset(const clap_plugin* plugin) {
 }
 
 clap_process_status BasePlugin::_process(const clap_plugin* plugin, const clap_process_t* process) {
+    auto startWallClockTime = std::chrono::high_resolution_clock::now();
+
     BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
     BaseProcessor& p = *self.mProcessor.get();
 
     // in clap parlance, samples == frames
-    // for us, we'll use time as a clue that the values are related to sample-accurate timing.
+    // for us, we'll use the word `time` as a clue that the values are related to sample-accurate timing.
     const uint32_t timeCount = process->frames_count;
     const uint32_t inputEventCount = process->in_events->size(process->in_events);
     uint32_t eventIndex = 0;
@@ -135,6 +140,8 @@ clap_process_status BasePlugin::_process(const clap_plugin* plugin, const clap_p
     uint32_t nextTimeIndex = inputEventCount ? 0 : timeCount;
 
     p.ProcessFlush(*process);
+
+    ProcessStatus lastStatus;
 
     while (p.mTime < timeCount) {
         // process events that occurred this frame
@@ -156,12 +163,17 @@ clap_process_status BasePlugin::_process(const clap_plugin* plugin, const clap_p
         size_t rangeStart = p.mTime;
         size_t rangeStop = nextTimeIndex;
         // process audio from this frame
-        p.ProcessAudio(*process, rangeStart, rangeStop);
+        lastStatus = p.ProcessAudio(*process, rangeStart, rangeStop);
         p.mTime = nextTimeIndex;
     }
 
     p.mOutEvents = nullptr;
-    return CLAP_PROCESS_CONTINUE;
+
+    auto endWallClockTime = std::chrono::high_resolution_clock::now();
+    double wallClockTimeSpent = std::chrono::duration<double>(endWallClockTime - startWallClockTime).count();
+    double processClockTime = timeCount / p.mSampleRate;
+    p.mLastTimeSpentRatio = wallClockTimeSpent / processClockTime;
+    return static_cast<clap_process_status>(lastStatus);
 }
 
 const void* BasePlugin::_get_extension(const clap_plugin* plugin, const char* name) {

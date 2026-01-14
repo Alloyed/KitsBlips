@@ -1,4 +1,5 @@
 #include <clapeze/entryPoint.h>
+#include "clapeze/baseProcessor.h"
 #include "clapeze/effectPlugin.h"
 #include "clapeze/ext/parameterConfigs.h"
 #include "clapeze/ext/parameters.h"
@@ -105,7 +106,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
     explicit Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
-    void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
+    ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
         bool bypass = mParams.Get<Params::Bypass>() == OnOff::On;
         bool stereoMode = mParams.Get<Params::StereoMode>() == OnOff::On;
         if (bypass) {
@@ -118,6 +119,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
             mLeft.ProcessAudio(mParams, in.left, out.left);
             etl::mem_copy(out.left.begin(), out.left.end(), out.right.data());
         }
+        return ProcessStatus::Continue;
     }
 
     void ProcessReset() override {

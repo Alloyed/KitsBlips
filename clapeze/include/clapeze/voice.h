@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <optional>
 #include "clap/events.h"
+#include "clapeze/baseProcessor.h"
 #include "clapeze/common.h"
 
 namespace clapeze {
@@ -81,7 +82,7 @@ class VoicePool {
             }
         }
     }
-    void ProcessAudio(StereoAudioBuffer& out) {
+    ProcessStatus ProcessAudio(StereoAudioBuffer& out) {
         std::fill(out.left.begin(), out.left.end(), 0);
         std::fill(out.right.begin(), out.right.end(), 0);
         for (VoiceIndex idx = 0; idx < mVoices.size(); idx++) {
@@ -96,6 +97,7 @@ class VoicePool {
                 }
             }
         }
+        return ProcessStatus::ContinueIfNotQuiet;
     }
 
     void StopAllVoices() {

@@ -59,8 +59,10 @@ struct Scene::Impl {
     void LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
     void Update();
     void Draw();
+
     void PlayAnimationByName(std::string_view name);
     void SetObjectRotationByName(std::string_view name, const Quaternion& rot);
+    std::optional<Vector2> GetObjectScreenPositionByName(std::string_view name);
 
    public:
     kitgui::Context& mContext;
@@ -279,6 +281,33 @@ void Scene::Impl::SetObjectRotationByName(std::string_view name, const Quaternio
             info.object->setRotation(rot);
         }
     }
+}
+
+std::optional<kitgui::Vector2> Scene::GetObjectScreenPositionByName(std::string_view name) {
+    return mImpl->GetObjectScreenPositionByName(name);
+}
+
+std::optional<kitgui::Vector2> Scene::Impl::GetObjectScreenPositionByName(std::string_view name) {
+    for (auto& info : mSceneObjects) {
+        if (info.name == name) {
+            const Matrix4 viewProjection =
+                mCamera->projectionMatrix() * mCamera->cameraMatrix() * info.object->absoluteTransformationMatrix();
+            const Vector4 clip = viewProjection * Vector4{0.0f, 0.0f, 0.0f, 1.0f};
+            if (clip.w() <= 0.0f) {
+                // behind camera or invalid
+                return std::nullopt;
+            }
+
+            Vector3 ndc = clip.xyz() / clip.w();
+            Vector2 viewportSize = Vector2{mCamera->viewport()};
+            Vector2 screen;
+            screen.x() = (ndc.x() * 0.5f + 0.5f) * viewportSize.x();
+            screen.y() = (1.0f - (ndc.y() * 0.5f + 0.5f)) * viewportSize.y();
+
+            return screen;
+        }
+    }
+    return std::nullopt;
 }
 
 void Scene::Update() {

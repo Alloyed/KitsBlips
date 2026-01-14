@@ -2,6 +2,7 @@
 #include <clapeze/entryPoint.h>
 #include <clapeze/ext/parameterConfigs.h>
 #include <clapeze/ext/parameters.h>
+#include "clapeze/baseProcessor.h"
 #include "descriptor.h"
 
 /*
@@ -49,7 +50,8 @@ class Processor : public clapeze::EffectProcessor<ParamsFeature::ProcessParamete
     explicit Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
-    void ProcessAudio(const clapeze::StereoAudioBuffer& in, clapeze::StereoAudioBuffer& out) override {
+    clapeze::ProcessStatus ProcessAudio(const clapeze::StereoAudioBuffer& in,
+                                        clapeze::StereoAudioBuffer& out) override {
         // each parameter is sample accurate, because ProcessAudio is split into smaller chunks in between each host
         // event.
         float gain = dbToRatio(mParams.Get<Params::Gain>());
@@ -68,6 +70,7 @@ class Processor : public clapeze::EffectProcessor<ParamsFeature::ProcessParamete
             out.left[idx] = std::lerp(left, crunchedLeft, mixf);
             out.right[idx] = std::lerp(right, crunchedRight, mixf);
         }
+        return clapeze::ProcessStatus::Continue;
     }
 
     // called to reset internal state. we don't have any, so it's unnecessary here

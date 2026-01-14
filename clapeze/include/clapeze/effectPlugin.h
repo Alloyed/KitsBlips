@@ -19,7 +19,7 @@ class EffectProcessor : public BaseProcessor {
         }
     }
 
-    virtual void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) = 0;
+    virtual ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) = 0;
 
     /* call to copy the input, unmodified, to the output */
     void Bypass(const StereoAudioBuffer& in, StereoAudioBuffer& out) {
@@ -39,7 +39,7 @@ class EffectProcessor : public BaseProcessor {
 
     // impl
     void ProcessFlush(const clap_process_t& process) final { mParams.FlushEventsFromMain(*this, process.out_events); }
-    void ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) final {
+    ProcessStatus ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) final {
         size_t numSamples = rangeStop - rangeStart;
         const StereoAudioBuffer in{
             // inLeft
@@ -61,7 +61,7 @@ class EffectProcessor : public BaseProcessor {
             // isOutRightConstant
             false,
         };
-        ProcessAudio(in, out);
+        return ProcessAudio(in, out);
     }
 
     ParamsType& mParams;

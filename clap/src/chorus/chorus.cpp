@@ -4,6 +4,7 @@
 #include <clapeze/ext/parameters.h>
 #include <kitdsp/apps/chorus.h>
 
+#include "clapeze/baseProcessor.h"
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI
@@ -52,7 +53,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
     explicit Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
-    void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
+    ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
         mChorus->cfg.lfoRateHz = mParams.Get<Params::Rate>();
         mChorus->cfg.delayBaseMs = mParams.Get<Params::Delay>();
         mChorus->cfg.delayModMs = mChorus->cfg.delayBaseMs * mParams.Get<Params::Depth>();
@@ -66,6 +67,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
             out.left[idx] = processed.left;
             out.right[idx] = processed.right;
         }
+        return ProcessStatus::Continue;
     }
 
     void ProcessReset() override { mChorus->Reset(); }

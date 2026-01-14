@@ -6,6 +6,7 @@
 #include <kitdsp/math/units.h>
 #include <kitdsp/math/util.h>
 
+#include "clapeze/baseProcessor.h"
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI
@@ -59,7 +60,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
     explicit Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
-    void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
+    ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
         float transpose = static_cast<float>(mParams.Get<Params::Transpose>());
         float fine = mParams.Get<Params::Finetune>();
         float delayMs = mParams.Get<Params::BaseDelay>();
@@ -83,6 +84,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
             float processedRight = mRight->Process(right);
             out.right[idx] = kitdsp::lerpf(right, processedRight, mixf);
         }
+        return ProcessStatus::Continue;
     }
 
     void ProcessReset() override {

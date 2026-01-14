@@ -3,8 +3,24 @@
 #include <clap/clap.h>
 #include <cstddef>
 #include <cstdio>
+#include "clap/process.h"
 
 namespace clapeze {
+
+enum class ProcessStatus {
+    // Processing failed. The output buffer must be discarded.
+    Error = CLAP_PROCESS_ERROR,
+    // Processing succeeded, keep processing.
+    Continue = CLAP_PROCESS_CONTINUE,
+    // Processing succeeded, keep processing if the output is not quiet.
+    ContinueIfNotQuiet = CLAP_PROCESS_CONTINUE_IF_NOT_QUIET,
+    // Rely upon the plugin's tail to determine if the plugin should continue to process.
+    // see clap_plugin_tail
+    Tail = CLAP_PROCESS_TAIL,
+    // Processing succeeded, but no more processing is required,
+    // until the next event or variation in audio input.
+    Sleep = CLAP_PROCESS_SLEEP,
+};
 
 class BasePlugin;
 class BaseProcessor {
@@ -20,7 +36,9 @@ class BaseProcessor {
      *
      * [main-thread & !active]
      */
-    virtual void Activate([[maybe_unused]] double sampleRate, [[maybe_unused]] size_t minBlockSize, [[maybe_unused]] size_t maxBlockSize) {};
+    virtual void Activate([[maybe_unused]] double sampleRate,
+                          [[maybe_unused]] size_t minBlockSize,
+                          [[maybe_unused]] size_t maxBlockSize) {};
     /**
      * Called when the plugin is deactivated.
      *
@@ -39,7 +57,7 @@ class BaseProcessor {
      *
      * [audio-thread & active & processing]
      */
-    virtual void ProcessAudio(const clap_process_t& process, size_t blockStart, size_t blockStop) = 0;
+    virtual ProcessStatus ProcessAudio(const clap_process_t& process, size_t blockStart, size_t blockStop) = 0;
     /**
      * Override to communicate with the main thread. Called once per process.
      *
@@ -68,12 +86,15 @@ class BaseProcessor {
     size_t GetMaxBlockSize() const { return mMinBlockSize; }
     size_t GetMinBlockSize() const { return mMaxBlockSize; }
 
-   private:
-    double mSampleRate;
-    size_t mMinBlockSize;
-    size_t mMaxBlockSize;
+    // returns a ratio of cpu time spent vs audio time generated. above 1, we've failed to meet our deadline.
+    double mLastTimeSpentRatio{};
 
-    const clap_output_events_t* mOutEvents;
-    uint32_t mTime;
+   private:
+    double mSampleRate{};
+    size_t mMinBlockSize{};
+    size_t mMaxBlockSize{};
+
+    const clap_output_events_t* mOutEvents{};
+    uint32_t mTime{};
 };
 }  // namespace clapeze

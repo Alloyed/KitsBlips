@@ -7,6 +7,7 @@
 #include <kitdsp/math/units.h>
 #include <kitdsp/math/util.h>
 
+#include "clapeze/baseProcessor.h"
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI
@@ -106,7 +107,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
     explicit Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
-    void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
+    ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
         Algorithm algorithm = mParams.Get<Params::Algorithm>();
         float gain = kitdsp::dbToRatio(mParams.Get<Params::Gain>());
         float tonef = mParams.Get<Params::Tone>();
@@ -136,6 +137,8 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
             out.left[idx] = kitdsp::lerpf(left, processedLeft, mixf);
             out.right[idx] = kitdsp::lerpf(right, processedRight, mixf);
         }
+
+        return ProcessStatus::Continue;
     }
 
     void ProcessReset() override {

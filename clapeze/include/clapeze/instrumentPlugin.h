@@ -59,7 +59,7 @@ class InstrumentProcessor : public BaseProcessor {
 
    protected:
     // API
-    virtual void ProcessAudio(StereoAudioBuffer& out) = 0;
+    virtual ProcessStatus ProcessAudio(StereoAudioBuffer& out) = 0;
     virtual void ProcessNoteOn(const NoteTuple& note, float velocity) = 0;
     virtual void ProcessNoteOff(const NoteTuple& note) = 0;
     virtual void ProcessNoteChoke(const NoteTuple& note) = 0;
@@ -67,7 +67,7 @@ class InstrumentProcessor : public BaseProcessor {
 
     // impl
     void ProcessFlush(const clap_process_t& process) final { mParams.FlushEventsFromMain(*this, process.out_events); }
-    void ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) final {
+    ProcessStatus ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) final {
         // BaseParamsFeature::AudioParameters& params =
         // BaseParamsFeature::GetFromPlugin<BaseParamsFeature>(*this).GetStateForAudioThread();
         size_t numSamples = rangeStop - rangeStart;
@@ -82,7 +82,7 @@ class InstrumentProcessor : public BaseProcessor {
             false,
         };
         // process audio from this frame
-        ProcessAudio(out);
+        return ProcessAudio(out);
     }
     ParamsType& mParams;
 };

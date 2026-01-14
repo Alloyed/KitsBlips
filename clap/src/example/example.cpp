@@ -1,3 +1,4 @@
+#include <clapeze/baseProcessor.h>
 #include <clapeze/effectPlugin.h>
 #include <clapeze/entryPoint.h>
 #include <clapeze/ext/parameterConfigs.h>
@@ -31,7 +32,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
     explicit Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
-    void ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
+    ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
         float mixf = mParams.Get<Params::Mix>();
 
         for (size_t idx = 0; idx < in.left.size(); ++idx) {
@@ -46,6 +47,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
             out.left[idx] = kitdsp::lerpf(left, processedLeft, mixf);
             out.right[idx] = kitdsp::lerpf(right, processedRight, mixf);
         }
+        return ProcessStatus::Continue;
     }
 
     void ProcessReset() override {}
