@@ -9,31 +9,30 @@ add_library(imgui STATIC EXCLUDE_FROM_ALL
 )
 target_include_directories(imgui INTERFACE ${IMGUI_DIR})
 
+add_library(imgui_opengl STATIC EXCLUDE_FROM_ALL
+	${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+)
+target_include_directories(imgui_opengl INTERFACE ${IMGUI_DIR}/backends)
+target_link_libraries(imgui_opengl PUBLIC imgui OpenGL::GL)
+
 if(KITGUI_USE_PUGL)
-	add_library(imgui_opengl STATIC EXCLUDE_FROM_ALL
-		${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
-	)
-	target_include_directories(imgui_opengl INTERFACE ${IMGUI_DIR}/backends)
-	target_link_libraries(imgui_opengl PUBLIC imgui OpenGL::GL)
+	#implemented in-tree
 elseif(KITGUI_USE_SDL)
-	add_library(imgui_opengl_sdl3 STATIC EXCLUDE_FROM_ALL
-		${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+	add_library(imgui_sdl3 STATIC EXCLUDE_FROM_ALL
 		${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
 	)
-	target_include_directories(imgui_opengl_sdl3 INTERFACE ${IMGUI_DIR}/backends)
-	target_link_libraries(imgui_opengl_sdl3 PUBLIC imgui SDL3::SDL3 OpenGL::GL)
+	target_include_directories(imgui_sdl3 INTERFACE ${IMGUI_DIR}/backends)
+	target_link_libraries(imgui_sdl3 PUBLIC imgui SDL3::SDL3)
 elseif(KITGUI_USE_WIN32)
-	add_library(imgui_opengl_win32 STATIC EXCLUDE_FROM_ALL
-		${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+	add_library(imgui_win32 STATIC EXCLUDE_FROM_ALL
 		${IMGUI_DIR}/backends/imgui_impl_win32.cpp
 	)
-	target_include_directories(imgui_opengl_win32 INTERFACE ${IMGUI_DIR}/backends)
-	target_link_libraries(imgui_opengl_win32 PUBLIC imgui OpenGL::GL)
+	target_include_directories(imgui_win32 INTERFACE ${IMGUI_DIR}/backends)
+	target_link_libraries(imgui_win32 PUBLIC imgui)
 elseif(KITGUI_USE_COCOA)
 	add_library(imgui_opengl_cocoa STATIC EXCLUDE_FROM_ALL
-		${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
 		${IMGUI_DIR}/backends/imgui_impl_osx.mm
 	)
-	target_include_directories(imgui_opengl_cocoa INTERFACE ${IMGUI_DIR}/backends)
-	target_link_libraries(imgui_opengl_cocoa PUBLIC imgui OpenGL::GL)
+	target_include_directories(imgui_cocoa INTERFACE ${IMGUI_DIR}/backends)
+	target_link_libraries(imgui_cocoa PUBLIC imgui)
 endif()

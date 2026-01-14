@@ -22,8 +22,8 @@ Context::~Context() {
     Destroy();
 };
 
-void Context::init(kitgui::WindowApi api) {
-    Impl::init(api);
+void Context::init(kitgui::WindowApi api, std::string_view appName) {
+    Impl::init(api, appName);
 }
 
 void Context::deinit() {

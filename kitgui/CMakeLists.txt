@@ -7,15 +7,20 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(../content.cmake)
 FetchContent_MakeAvailable(corrade magnum magnum-plugins fmt)
 
+# Only one backend can be compiled in at a time
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    #set(KITGUI_USE_PUGL true)
     set(KITGUI_USE_WIN32 true)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(KITGUI_USE_PUGL true)
+    #set(KITGUI_USE_PUGL true)
+    #set(KITGUI_USE_SDL true)
+    set(KITGUI_USE_COCOA true)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(KITGUI_USE_PUGL true)
+    #set(KITGUI_USE_PUGL true)
+    set(KITGUI_USE_SDL true)
 endif()
+
 include(imgui)
-include(pugl)
 
 add_library(kitgui STATIC)
 set_property(TARGET kitgui PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
@@ -61,6 +66,7 @@ target_link_libraries(kitgui PRIVATE
 target_disable_warnings(Magnum::Magnum Magnum::GL Magnum::SceneGraph fmt::fmt Magnum::AnyImageImporter Magnum::GltfImporter MagnumPlugins::StdbImageImporter)
 
 if(KITGUI_USE_PUGL)
+    include(pugl)
     target_compile_definitions(kitgui PUBLIC KITGUI_USE_PUGL)
     target_sources(kitgui PRIVATE
         src/impl/pugl/contextImpl.cpp
@@ -71,25 +77,31 @@ if(KITGUI_USE_PUGL)
         imgui_opengl
     )
 elseif(KITGUI_USE_SDL)
+    FetchContent_MakeAvailable(SDL3)
     target_compile_definitions(kitgui PUBLIC KITGUI_USE_SDL)
     target_sources(kitgui PRIVATE
         src/impl/sdl/contextImpl.cpp
     )
     target_link_libraries(kitgui PRIVATE
         SDL3::SDL3
-        imgui_opengl_sdl3
+        imgui_opengl
+        imgui_sdl3
     )
-    target_link_libraries(kitgui PRIVATE
-        X11::X11
-        X11::Xutil
-    )
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        find_package(X11)
+        target_link_libraries(kitgui PRIVATE
+            X11::X11
+            X11::Xutil
+        )
+    endif()
 elseif(KITGUI_USE_WIN32)
     target_compile_definitions(kitgui PUBLIC KITGUI_USE_WIN32)
     target_sources(kitgui PRIVATE
         src/impl/win32/contextImpl.cpp
     )
     target_link_libraries(kitgui PRIVATE
-        imgui_opengl_win32
+        imgui_opengl
+        imgui_win32
     )
 elseif(KITGUI_USE_COCOA)
     target_compile_definitions(kitgui PUBLIC KITGUI_USE_COCOA)
@@ -97,7 +109,8 @@ elseif(KITGUI_USE_COCOA)
         src/impl/cocoa/contextImpl.cpp
     )
     target_link_libraries(kitgui PRIVATE
-        imgui_opengl_cocoa
+        imgui_opengl
+        imgui_cocoa
     )
 endif()
 

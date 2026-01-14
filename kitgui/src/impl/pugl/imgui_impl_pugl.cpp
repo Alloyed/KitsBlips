@@ -1,3 +1,4 @@
+#include <cstdio>
 #include "imgui.h"
 #include "pugl/pugl.h"
 #ifndef IMGUI_DISABLE

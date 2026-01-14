@@ -35,7 +35,7 @@ class ContextImpl {
    public:
     explicit ContextImpl(kitgui::Context& ctx);
     ~ContextImpl() = default;
-    static void init(kitgui::WindowApi api);
+    static void init(kitgui::WindowApi api, std::string_view appName);
     static void deinit();
 
     // host events: (matches clap API)
@@ -81,6 +81,8 @@ class ContextImpl {
     bool mActive = false;
     bool mDestroy = false;
     Magnum::Color4 mClearColor = {0.5f, 0.5f, 0.5f, 1.0f};
+
+    static std::wstring sClassName;
 
     static void AddActiveInstance(ContextImpl* instance);
     static void RemoveActiveInstance(ContextImpl* instance);

@@ -93,21 +93,22 @@ std::wstring utf8_to_utf16(std::string_view str) {
 using namespace Magnum;
 
 namespace kitgui::win32 {
-static constexpr wchar_t kClassName[] = L"BLEHHH\0";  // TODO: runtime selectable
+static std::wstring sClassName{};
 
-void ContextImpl::init(kitgui::WindowApi api) {
+void ContextImpl::init(kitgui::WindowApi api, std::string_view appName) {
+    sClassName = utf8_to_utf16(appName);
     ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSW windowClass = {};
     windowClass.lpfnWndProc = WndProc;
     windowClass.cbWndExtra = sizeof(ContextImpl*);
-    windowClass.lpszClassName = kClassName;
+    windowClass.lpszClassName = sClassName.c_str();
     windowClass.hCursor = ::LoadCursor(nullptr, IDC_ARROW);
     windowClass.style = CS_DBLCLKS;
     ::RegisterClassW(&windowClass);
 }
 
 void ContextImpl::deinit() {
-    ::UnregisterClassW(kClassName, nullptr);
+    ::UnregisterClassW(sClassName.c_str(), nullptr);
 }
 
 ContextImpl::ContextImpl(kitgui::Context& ctx) : mContext(ctx) {}
@@ -317,37 +318,6 @@ void ContextImpl::RunSingleFrame() {
         }
     }
 
-    // SDL_Event event;
-    // while (SDL_PollEvent(&event)) {
-    //     SDL_Window* window = SDL_GetWindowFromEvent(&event);
-    //     ContextImpl* instance = window ? FindContextImplForWindow(window) : nullptr;
-    //     switch (event.type) {
-    //         case SDL_EVENT_WINDOW_DESTROYED: {
-    //             goto skip_event;
-    //         }
-    //         case SDL_EVENT_QUIT: {
-    //             for (auto instanceIter : sActiveInstances) {
-    //                 instanceIter->Close();
-    //             }
-    //             break;
-    //         }
-    //         case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
-    //             if (instance) {
-    //                 instance->Close();
-    //             }
-    //             break;
-    //         }
-    //     }
-
-    //    if (instance) {
-    //        instance->MakeCurrent();
-    //        ImGui_ImplSDL3_ProcessEvent(&event);
-    //    }
-
-    // skip_event:
-    //     continue;
-    // }
-
     for (auto instance : sActiveInstances) {
         instance->MakeCurrent();
 
@@ -387,7 +357,7 @@ LRESULT ContextImpl::OnWindowsEvent(HWND hWnd,
         case WM_DESTROY: {
             ContextImpl* instance = FindContextImplForWindow(hWnd);
             if (instance) {
-                instance->Close();
+                instance->mContext.Close();
             }
             return 0;
         }

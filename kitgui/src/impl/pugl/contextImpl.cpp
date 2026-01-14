@@ -8,6 +8,7 @@
 #include <pugl/pugl.h>
 #include "immediateMode/misc.h"
 #include "impl/pugl/imgui_impl_pugl.h"
+#include "kitgui/context.h"
 #include "kitgui/kitgui.h"
 
 #define LOG_PUGL_ERROR(status) kitgui::log::error(puglStrerror(status))
@@ -18,6 +19,7 @@ namespace kitgui::pugl {
 PuglWorld* ContextImpl::sWorld{};
 kitgui::WindowApi ContextImpl::sApi{};
 int32_t ContextImpl::sNumInstances{};
+std::vector<Context*> ContextImpl::sToClose{};
 
 namespace {
 
@@ -27,10 +29,11 @@ PuglStatus onEvent(PuglView* view, const PuglEvent* event) {
 }
 }  // namespace
 
-void ContextImpl::init(kitgui::WindowApi api) {
+void ContextImpl::init(kitgui::WindowApi api, std::string_view appName) {
     sApi = api;
     sWorld = puglNewWorld(PUGL_MODULE, PUGL_WORLD_THREADS);
-    puglSetWorldString(sWorld, PUGL_CLASS_NAME, "Swag");  // TODO
+    std::string tmp(appName);
+    puglSetWorldString(sWorld, PUGL_CLASS_NAME, tmp.c_str());
 }
 
 void ContextImpl::deinit() {
@@ -66,6 +69,7 @@ bool ContextImpl::Create(bool isFloating) {
 }
 
 bool ContextImpl::Realize() {
+    // Realise is the pugl name for opengl setup
     Magnum::Platform::GLContext::makeCurrent(nullptr);
     mGl = std::make_unique<Magnum::Platform::GLContext>();
     Magnum::Platform::GLContext::makeCurrent(mGl.get());
@@ -84,13 +88,17 @@ bool ContextImpl::Realize() {
     ImGui_ImplPugl_InitForOpenGL(sWorld, mView);
     ImGui_ImplOpenGL3_Init();
     // compile shaders and such
-    ImGui_ImplOpenGL3_CreateDeviceObjects();
+    ImGui_ImplPugl_NewFrame();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui::NewFrame();
+    ImGui::EndFrame();
 
     mContext.OnActivate();
     return true;
 }
 
 void ContextImpl::Unrealize() {
+    // opengl teardown
     MakeCurrent();
     mContext.OnDeactivate();
 }
@@ -144,7 +152,9 @@ bool ContextImpl::Hide() {
     return puglHide(mView) == PUGL_SUCCESS;
 }
 bool ContextImpl::Close() {
-    return mContext.Destroy();
+    // to avoid potential iterator invalidation we close in a single pass after an update
+    sToClose.push_back(&mContext);
+    return true;
 }
 
 void ContextImpl::MakeCurrent() {
@@ -156,14 +166,27 @@ void ContextImpl::MakeCurrent() {
     }
 }
 
+void ContextImpl::ClearCurrent() {
+    ImGui::SetCurrentContext(nullptr);
+    Magnum::Platform::GLContext::makeCurrent(nullptr);
+}
+
 void ContextImpl::RunLoop() {
     while (sNumInstances > 0) {
         puglUpdate(sWorld, -1.0);
+        for (auto ctx : sToClose) {
+            ctx->Destroy();
+        }
+        sToClose.clear();
     }
 }
 
 void ContextImpl::RunSingleFrame() {
     puglUpdate(sWorld, 0.0);
+    for (auto ctx : sToClose) {
+        ctx->Destroy();
+    }
+    sToClose.clear();
 }
 
 void ContextImpl::OnResizeOrMove() {
@@ -188,6 +211,7 @@ PuglStatus ContextImpl::OnPuglEvent(const PuglEvent* event) {
             ImGui::NewFrame();
             ImGuiHelpers::beginFullscreen([&]() { mContext.OnUpdate(); });
             puglObscureView(mView);  // request draw
+            ImGui::EndFrame();
             break;
         }
         case PUGL_EXPOSE: {
@@ -204,6 +228,8 @@ PuglStatus ContextImpl::OnPuglEvent(const PuglEvent* event) {
             // TODO: the implementation of this has a big comment on it saying multi-window is untested. it _kinda_
             // works, but it'd probably work better if we forked it and used our glad handle internally
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+            // Pugl will swap buffers for us
             break;
         }
         case PUGL_REALIZE: {
@@ -238,14 +264,22 @@ PuglStatus ContextImpl::OnPuglEvent(const PuglEvent* event) {
         case PUGL_DATA:
             break;
     }
+    ClearCurrent();
     return PUGL_SUCCESS;
 }
 
 bool ContextImpl::IsApiSupported(kitgui::WindowApi api, bool isFloating) {
-    return api == kitgui::WindowApi::Any || api == kitgui::WindowApi::X11;
+    // everything but wayland supported on backend
+    return api != kitgui::WindowApi::Wayland;
 }
 bool ContextImpl::GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
+#if _WIN32
+    apiOut = kitgui::WindowApi::Win32;
+#elif __APPLE__
+    apiOut = kitgui::WindowApi::Cocoa;
+#else
     apiOut = kitgui::WindowApi::X11;
+#endif
     isFloatingOut = false;
     return true;
 }

@@ -12,7 +12,7 @@
 using namespace Magnum;
 
 namespace kitgui::cocoa {
-void ContextImpl::init(kitgui::WindowApi api) {}
+void ContextImpl::init(kitgui::WindowApi api, std::string_view appName) {}
 
 void ContextImpl::deinit() {}
 

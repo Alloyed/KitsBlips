@@ -27,7 +27,7 @@ class ContextImpl {
    public:
     explicit ContextImpl(kitgui::Context& ctx);
     ~ContextImpl() = default;
-    static void init(kitgui::WindowApi api);
+    static void init(kitgui::WindowApi api, std::string_view appName);
     static void deinit();
 
     // host events: (matches clap API)

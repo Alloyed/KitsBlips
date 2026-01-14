@@ -28,7 +28,7 @@ class ContextImpl {
    public:
     explicit ContextImpl(kitgui::Context& ctx);
     ~ContextImpl() = default;
-    static void init(kitgui::WindowApi api);
+    static void init(kitgui::WindowApi api, std::string_view appName);
     static void deinit();
 
     // host events: (matches clap API)
@@ -45,6 +45,7 @@ class ContextImpl {
     bool Close();
 
     void MakeCurrent();
+    static void ClearCurrent();
 
     static bool IsApiSupported(kitgui::WindowApi api, bool isFloating);
     static bool GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut);
@@ -73,6 +74,7 @@ class ContextImpl {
     static PuglWorld* sWorld;
     static kitgui::WindowApi sApi;
     static int32_t sNumInstances;
+    static std::vector<kitgui::Context*> sToClose;
 };
 
 }  // namespace kitgui::pugl

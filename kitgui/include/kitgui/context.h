@@ -55,7 +55,7 @@ class Context {
     explicit Context(AppFactory createAppFn);
     ~Context();
     /** Runs any initialization the UI backend needs. run at most once, at the start of your application */
-    static void init(kitgui::WindowApi api);
+    static void init(kitgui::WindowApi api, std::string_view appName);
     /** cleans up the init() call. ensure all contexts are destroyed before doing this! */
     static void deinit();
 

@@ -156,7 +156,8 @@ bool getPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
 using namespace Magnum;
 
 namespace kitgui::sdl {
-void ContextImpl::init(kitgui::WindowApi api) {
+void ContextImpl::init(kitgui::WindowApi api, std::string_view appName) {
+    (void)appName;
     sApi = api;
     switch (api) {
         // only one API possible on these platforms
