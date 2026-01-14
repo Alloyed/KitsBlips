@@ -93,7 +93,7 @@ std::wstring utf8_to_utf16(std::string_view str) {
 using namespace Magnum;
 
 namespace kitgui::win32 {
-static std::wstring sClassName{};
+std::wstring ContextImpl::sClassName{};
 
 void ContextImpl::init(kitgui::WindowApi api, std::string_view appName) {
     sClassName = utf8_to_utf16(appName);
@@ -131,7 +131,7 @@ bool ContextImpl::Create(bool isFloating) {
 
     mWindow = ::CreateWindowW(
         // class name
-        kClassName,
+        sClassName.c_str(),
         // window name (fill in later)
         L"",
         // window style

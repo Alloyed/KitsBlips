@@ -70,6 +70,7 @@ if(KITSBLIPS_ENABLE_VST)
         OUTPUT_NAME "KitsBlips"
         BUNDLE_IDENTIFIER "${PRODUCT_ID}"
         BUNDLE_VERSION "${PROJECT_VERSION}"
+        ASSET_OUTPUT_DIRECTORY "tmp_vst3"
         SUPPORTS_ALL_NOTE_EXPRESSIONS TRUE
     )
     add_bundle(KitsBlips-vst3 "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.vst3" "${CMAKE_CURRENT_LIST_DIR}/assets")

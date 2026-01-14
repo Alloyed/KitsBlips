@@ -141,7 +141,7 @@ clap_process_status BasePlugin::_process(const clap_plugin* plugin, const clap_p
 
     p.ProcessFlush(*process);
 
-    ProcessStatus lastStatus;
+    ProcessStatus lastStatus{};
 
     while (p.mTime < timeCount) {
         // process events that occurred this frame

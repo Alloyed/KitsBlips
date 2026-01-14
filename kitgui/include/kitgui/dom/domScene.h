@@ -7,7 +7,7 @@
 namespace kitgui {
 class Context;
 
-struct Scene;
+class Scene;
 class DomScene : public DomNode {
    public:
     struct Props {

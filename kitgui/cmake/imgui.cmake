@@ -30,7 +30,7 @@ elseif(KITGUI_USE_WIN32)
 	target_include_directories(imgui_win32 INTERFACE ${IMGUI_DIR}/backends)
 	target_link_libraries(imgui_win32 PUBLIC imgui)
 elseif(KITGUI_USE_COCOA)
-	add_library(imgui_opengl_cocoa STATIC EXCLUDE_FROM_ALL
+	add_library(imgui_cocoa STATIC EXCLUDE_FROM_ALL
 		${IMGUI_DIR}/backends/imgui_impl_osx.mm
 	)
 	target_include_directories(imgui_cocoa INTERFACE ${IMGUI_DIR}/backends)
