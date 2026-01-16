@@ -24,7 +24,6 @@ set(CMAKE_CXX_STANDARD 20)
 
 # shared libs
 include(../content.cmake)
-include(cmake/add_bundle.cmake)
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
 FetchContent_MakeAvailable(clap fmt clapeze KitDSP)
 FetchContent_MakeAvailable(clap-wrapper)
@@ -65,7 +64,13 @@ endif()
 # as shrimple as that!
 add_library(KitsBlips-clap MODULE)
 target_link_libraries(KitsBlips-clap PUBLIC KitsBlips)
-add_bundle(KitsBlips-clap "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.clap" "${CMAKE_CURRENT_LIST_DIR}/assets")
+target_add_clap_configuration(TARGET KitsBlips-clap
+    OUTPUT_NAME "KitsBlips"
+    BUNDLE_IDENTIFIER "${PRODUCT_ID}"
+    BUNDLE_VERSION "${PROJECT_VERSION}"
+)
+set_target_properties(KitsBlips-clap PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/dist" ) 
+target_add_bundle(KitsBlips-clap "${CMAKE_CURRENT_LIST_DIR}/assets")
 
 if(KITSBLIPS_ENABLE_VST)
     add_library(KitsBlips-vst3 MODULE)
@@ -75,10 +80,10 @@ if(KITSBLIPS_ENABLE_VST)
         BUNDLE_IDENTIFIER "${PRODUCT_ID}"
         BUNDLE_VERSION "${PROJECT_VERSION}"
         SUPPORTS_ALL_NOTE_EXPRESSIONS TRUE
+        ASSET_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/dist" 
+        WINDOWS_FOLDER_VST3 FALSE
     )
-    # the normal vst wrapper includes a $<CONFIG> generator in its output path, which add_bundle() can't support for dumb cmake reasons :/
-    set_target_properties(KitsBlips-vst3 PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tmp" )
-    add_bundle(KitsBlips-vst3 "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.vst3" "${CMAKE_CURRENT_LIST_DIR}/assets")
+    target_add_bundle(KitsBlips-vst3 "${CMAKE_CURRENT_LIST_DIR}/assets")
 endif()
 
 if(KITSBLIPS_ENABLE_AUDIOUNIT)
@@ -97,7 +102,7 @@ if(KITSBLIPS_ENABLE_AUDIOUNIT)
     )
     # the normal vst wrapper includes a $<CONFIG> generator in its output path, which add_bundle() can't support for dumb cmake reasons :/
     set_target_properties(KitsBlips-au PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tmp" )
-    add_bundle(KitsBlips-au "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.au" "${CMAKE_CURRENT_LIST_DIR}/assets")
+    target_add_bundle(KitsBlips-au "${CMAKE_CURRENT_LIST_DIR}/assets")
 endif()
 
 # when built standalone, enable tests

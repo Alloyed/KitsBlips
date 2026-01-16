@@ -28,6 +28,8 @@ target_link_libraries(clapeze PUBLIC
     fmt::fmt
 )
 
+include(cmake/target_add_bundle.cmake)
+
 if(PROJECT_IS_TOP_LEVEL)
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)

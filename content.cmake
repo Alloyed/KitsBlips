@@ -147,6 +147,7 @@ FetchContent_Declare(
 set(CORRADE_BUILD_STATIC ON)
 set(MAGNUM_BUILD_STATIC ON)
 set(MAGNUM_BUILD_PLUGINS_STATIC ON)
+set(MAGNUM_WITH_IMGUIINTEGRATION ON)
 
 # opting into images, scenes, fonts
 set(MAGNUM_WITH_ANYIMAGEIMPORTER ON)
@@ -189,3 +190,10 @@ FetchContent_Declare(
     GIT_TAG        420a0e27b8a3a006a1b4db9c200139473a047b84
     EXCLUDE_FROM_ALL
 )
+FetchContent_Declare(
+    magnum-integration
+    GIT_REPOSITORY https://github.com/mosra/magnum-integration.git
+    GIT_TAG 0184c8371d499d4a4f20b5982722f7942ff6f364
+    EXCLUDE_FROM_ALL
+)
+

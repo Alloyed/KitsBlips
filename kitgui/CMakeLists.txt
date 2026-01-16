@@ -21,6 +21,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 include(imgui)
+FetchContent_MakeAvailable(magnum-integration)
 
 add_library(kitgui STATIC)
 set_property(TARGET kitgui PROPERTY CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
@@ -53,6 +54,7 @@ target_link_libraries(kitgui PUBLIC
     Magnum::SceneGraph
     fmt::fmt
 
+    MagnumIntegration::ImGui
     Magnum::AnyImageImporter
     MagnumPlugins::GltfImporter
     MagnumPlugins::StbImageImporter
