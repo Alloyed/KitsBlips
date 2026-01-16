@@ -22,6 +22,15 @@ bool parseNumberFromText(std::string_view input, double out) {
 #endif
 }
 
+template<typename... Args>
+void formatToSpan(etl::span<char>& buf, fmt::format_string<Args...> fmt, Args&&... args)
+{
+    // -1 to save space for null terminator
+    auto result = fmt::format_to_n(buf.data(), buf.size() - 1, fmt, std::forward<Args>(args)...);
+    // now, actually null terminate
+    *result.out = '\0';
+}
+
 bool NumericParam::FillInformation(clap_id id, clap_param_info_t* information) const {
     memset(information, 0, sizeof(clap_param_info_t));
     information->id = id;
@@ -46,9 +55,9 @@ bool NumericParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
         return false;
     }
     if (mUnit.empty()) {
-        fmt::format_to_n(outTextBuf.data(), outTextBuf.size(), "{:.3f}", displayValue);
+        formatToSpan(outTextBuf, "{:.3f}", displayValue);
     } else {
-        fmt::format_to_n(outTextBuf.data(), outTextBuf.size(), "{:.3f} {}", displayValue, mUnit);
+        formatToSpan(outTextBuf, "{:.3f} {}", displayValue, mUnit);
     }
     return true;
 }
@@ -81,7 +90,7 @@ bool PercentParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
     }
     displayValue *= 100.0f;
 
-    fmt::format_to_n(outTextBuf.data(), outTextBuf.size(), "{:.2f}%", displayValue);
+    formatToSpan(outTextBuf, "{:.2f}%", displayValue);
     return true;
 }
 
@@ -121,11 +130,11 @@ bool IntegerParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
         if (rawValue == 1.0 && !mUnitSingular.empty()) {
             unit = mUnitSingular;
         }
-        fmt::format_to_n(outTextBuf.data(), outTextBuf.size(), "{} {}", value, unit);
+        formatToSpan(outTextBuf,  "{} {}", value, unit);
         return true;
     }
 
-    fmt::format_to_n(outTextBuf.data(), outTextBuf.size(), "{}", value);
+    formatToSpan(outTextBuf, "{}", value);
     return true;
 }
 
