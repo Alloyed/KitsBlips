@@ -5,7 +5,7 @@ clapeze supports bundling assets directly in your plugin binary using miniz[^min
 To use it, simply concatenate a .zip file to the end of your plugin:
 
 ```bash
-cat my-clap.clap my-assets.zip > my-clap-with-assets.zip
+zip -r - my-assets-folder >> my-plugin.clap
 ```
 
 and in code you can write plugins that access your zip file with the `AssetsFeature` class[^src]:
