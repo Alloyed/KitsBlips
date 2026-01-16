@@ -4,13 +4,18 @@ add_library(pugl STATIC EXCLUDE_FROM_ALL
 )
 target_include_directories(pugl PUBLIC ${PUGL_DIR}/include)
 target_include_directories(pugl PRIVATE ${PUGL_DIR}/src)
+target_disable_warnings(pugl)
+target_compile_definitions(pugl PUBLIC PUGL_STATIC)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	target_sources(pugl PRIVATE
 		${PUGL_DIR}/src/win.c
 		${PUGL_DIR}/src/win_gl.c
 	)
-	target_link_libraries(pugl PUBLIC OpenGL::GL)
+	target_link_libraries(pugl PUBLIC
+	OpenGL::GL
+	Dwmapi.lib
+	)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	target_sources(pugl PRIVATE
 		${PUGL_DIR}/src/mac.m

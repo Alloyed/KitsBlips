@@ -8,7 +8,7 @@ namespace {
 std::optional<std::string> defaultFileLoader(std::string_view path) {
     // default file loading using stdio
     constexpr auto read_size = std::size_t(4096);
-    auto stream = std::ifstream(std::string(path));
+    auto stream = std::ifstream(std::string(path), std::ios::binary);
     stream.exceptions(std::ios_base::badbit);
 
     if (not stream) {

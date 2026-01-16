@@ -136,42 +136,42 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
 
    private:
     struct Channel {
-        void ProcessAudio(ParamsFeature::ProcessParameters& mParams,
+        void ProcessAudio(ParamsFeature::ProcessParameters& params,
                           const etl::span<float>& in,
                           etl::span<float>& out) {
             // inputs
             // core
-            snes1.cfg.echoBufferSize = mParams.Get<Params::Size>();
+            snes1.cfg.echoBufferSize = params.Get<Params::Size>();
 
-            snes1.cfg.echoFeedback = mParams.Get<Params::Feedback>();
+            snes1.cfg.echoFeedback = params.Get<Params::Feedback>();
 
-            size_t filterPreset = mParams.Get<Params::FilterPreset>();
+            size_t filterPreset = params.Get<Params::FilterPreset>();
             if (filterPreset != mLastFilterPreset) {
                 mLastFilterPreset = filterPreset;
                 memcpy(snes1.cfg.filterCoefficients, SNES::kFilterPresets[filterPreset].data, SNES::kFIRTaps);
                 // snes1.cfg.filterGain = dbToRatio(-SNES::kFilterPresets[filterPreset].maxGainDb);
             }
 
-            int32_t range = mParams.Get<Params::SizeRange>();
+            int32_t range = params.Get<Params::SizeRange>();
             if (range == 0) {
                 snes1.cfg.echoBufferRangeMaxSamples = SNES::kOriginalMaxEchoSamples;
             } else if (range == 1) {
                 snes1.cfg.echoBufferRangeMaxSamples = SNES::kExtremeMaxEchoSamples;
             } else {
-                snes1.cfg.echoBufferRangeMaxSamples = SNES::MsToSamples(10000.0f);
+                snes1.cfg.echoBufferRangeMaxSamples = SNES::MsToSamples(10000);
             }
 
-            float wetDryMix = mParams.Get<Params::Mix>();
+            float wetDryMix = params.Get<Params::Mix>();
 
-            snes1.cfg.freezeEcho = mParams.Get<Params::FreezeEcho>() == OnOff::On;
+            snes1.cfg.freezeEcho = params.Get<Params::FreezeEcho>() == OnOff::On;
 
             // extension
-            snes1.cfg.echoDelayMod = mParams.Get<Params::EchoDelayMod>();
+            snes1.cfg.echoDelayMod = params.Get<Params::EchoDelayMod>();
 
-            snes1.cfg.filterMix = mParams.Get<Params::FilterMix>();
+            snes1.cfg.filterMix = params.Get<Params::FilterMix>();
 
-            snes1.mod.clearBuffer = mParams.Get<Params::ClearBuffer>() == OnOff::On;
-            snes1.mod.resetHead = mParams.Get<Params::ResetHead>() == OnOff::On;
+            snes1.mod.clearBuffer = params.Get<Params::ClearBuffer>() == OnOff::On;
+            snes1.mod.resetHead = params.Get<Params::ResetHead>() == OnOff::On;
             snes1.cfg.echoBufferIncrementSamples = SNES::kOriginalEchoIncrementSamples;
 
             // processing

@@ -50,7 +50,7 @@ bool AssetsFeature::LoadFromPlugin(const char* path, std::string& out) {
 bool AssetsFeature::LoadFromFilesystem(const char* path, std::string& out) {
     out.clear();
     constexpr auto read_size = std::size_t(4096);
-    auto stream = std::ifstream(std::string(path));
+    auto stream = std::ifstream(std::string(path), std::ios::binary);
     stream.exceptions(std::ios_base::badbit);
 
     if (!stream) {

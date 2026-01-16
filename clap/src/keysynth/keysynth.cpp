@@ -173,6 +173,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
        public:
         explicit Voice(Processor& p) : mProcessor(p) {}
         void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
+            (void)velocity;
             mNote = note.key;
             mEnv.TriggerOpen();
             mGateEnv.TriggerOpen();
@@ -224,7 +225,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
             for (uint32_t index = 0; index < out.left.size(); index++) {
                 // modulation
                 float lfoTri = mLfo.Process();  // [-1, 1]
-                float lfoSquare = lfoTri > 0.0 ? -1 : 1;
+                float lfoSquare = lfoTri > 0.0f ? -1.0f : 1.0f;
                 float lfo = kitdsp::lerpf(lfoTri, lfoSquare, lfoShape);
                 float env = mEnv.Process();          // [0, 1]
                 float gateEnv = mGateEnv.Process();  // [0, 1]

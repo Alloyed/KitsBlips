@@ -19,7 +19,7 @@ inline bool DebugParam(const clapeze::NumericParam& param, double& inOutRawValue
 }
 
 inline bool DebugParam(const clapeze::IntegerParam& param, double& inOutRawValue) {
-    int32_t value = 0.0f;
+    int32_t value = 0;
     clapeze::IntegerParam::ToValue(inOutRawValue, value);
     std::string label(param.mName);
     bool changed =
