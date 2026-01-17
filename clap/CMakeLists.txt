@@ -8,6 +8,7 @@ set(PRODUCT_ID "me.alloyed.KitsBlips")
 include(CMakeDependentOption)
 option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
 option(KITSBLIPS_ENABLE_VST "build VSTs" ON)
+option(KITSBLIPS_ENABLE_SENTRY "Enable sentry error reporting" OFF)
 if(APPLE)
     option(KITSBLIPS_ENABLE_AUDIOUNIT "build Audio Units" OFF)
 endif()
@@ -60,6 +61,22 @@ if(KITSBLIPS_ENABLE_GUI)
     target_compile_definitions(KitsBlips PUBLIC KITSBLIPS_ENABLE_GUI=1)
     target_link_libraries(KitsBlips PRIVATE kitgui)
 endif()
+
+if(KITSBLIPS_ENABLE_SENTRY)
+    # TODO: move into clapeze?
+    FetchContent_MakeAvailable(sentry-native)
+    target_compile_definitions(KitsBlips PUBLIC
+        KITSBLIPS_ENABLE_SENTRY=1
+        KITSBLIPS_SENTRY_DSN="https://6a29094f0e160a0d6fd7126e0a877ccc@o4510724360568832.ingest.us.sentry.io/4510724362076160"
+    )
+    target_link_libraries(KitsBlips PRIVATE sentry)
+    # dummy target used to re-add the handler to the default build without pulling in the rest of sentry
+    add_custom_target(handler-dist ALL
+        COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:crashpad_handler>"  "${CMAKE_CURRENT_BINARY_DIR}/dist"
+    )
+    add_dependencies(handler-dist crashpad_handler)
+endif()
+
 
 # as shrimple as that!
 add_library(KitsBlips-clap MODULE)

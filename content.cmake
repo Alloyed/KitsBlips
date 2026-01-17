@@ -121,6 +121,12 @@ FetchContent_Declare(
     GIT_TAG        1.1.3
     EXCLUDE_FROM_ALL
 )
+FetchContent_Declare(
+    sentry-native
+    GIT_REPOSITORY https://github.com/getsentry/sentry-native.git
+    GIT_TAG        0.12.3
+    EXCLUDE_FROM_ALL
+)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(SDL_SHARED OFF)
