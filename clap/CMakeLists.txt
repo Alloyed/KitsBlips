@@ -89,7 +89,9 @@ target_add_clap_configuration(TARGET KitsBlips-clap
     BUNDLE_IDENTIFIER "${PRODUCT_ID}"
     BUNDLE_VERSION "${PROJECT_VERSION}"
 )
-target_add_bundle(KitsBlips-clap "${CMAKE_CURRENT_LIST_DIR}/assets" "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.clap")
+if(NOT APPLE) # TODO: mac support
+    target_add_bundle(KitsBlips-clap "${CMAKE_CURRENT_LIST_DIR}/assets" "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.clap")
+endif()
 
 if(KITSBLIPS_ENABLE_VST)
     add_library(KitsBlips-vst3 MODULE)
@@ -102,7 +104,9 @@ if(KITSBLIPS_ENABLE_VST)
         ASSET_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tmp" # default doesn't work on mac
         WINDOWS_FOLDER_VST3 FALSE
     )
-    target_add_bundle(KitsBlips-vst3 "${CMAKE_CURRENT_LIST_DIR}/assets" "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.vst3")
+    if(NOT APPLE) # TODO: mac support
+        target_add_bundle(KitsBlips-vst3 "${CMAKE_CURRENT_LIST_DIR}/assets" "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.vst3")
+    endif()
 endif()
 
 if(KITSBLIPS_ENABLE_AUDIOUNIT)
