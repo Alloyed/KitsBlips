@@ -5,6 +5,7 @@
 #include <string_view>
 #include <utility>
 #include "fileContext.h"
+#include "log.h"
 #include "theme/everforest.h"
 
 #if KITGUI_USE_PUGL
@@ -77,37 +78,51 @@ void Context::SetFileLoader(Context::FileLoader fn) {
     return mFileContext->SetFileLoader(std::move(fn));
 }
 
+void Context::SetLogger(Context::Logger fn) {
+    log::sLogFn() = std::move(fn);
+}
+
 bool Context::SetScale(double scale) {
     return mImpl->SetScale(scale);
 }
+
 const SizeConfig& Context::GetSizeConfig() const {
     return mSizeConfig;
 }
+
 void Context::SetSizeConfig(const SizeConfig& cfg) {
     mSizeConfig = cfg;
     mSizeConfigChanged = true;
 }
+
 bool Context::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     return mImpl->GetSize(widthOut, heightOut);
 }
+
 bool Context::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
     return mImpl->SetSizeDirectly(width, height, resizable);
 }
+
 bool Context::SetParent(const kitgui::WindowRef& window) {
     return mImpl->SetParent(window);
 }
+
 bool Context::SetTransient(const kitgui::WindowRef& window) {
     return mImpl->SetTransient(window);
 }
+
 void Context::SuggestTitle(std::string_view title) {
     return mImpl->SuggestTitle(title);
 }
+
 bool Context::Show() {
     return mImpl->Show();
 }
+
 bool Context::Hide() {
     return mImpl->Hide();
 }
+
 bool Context::Close() {
     return mImpl->Close();
 }

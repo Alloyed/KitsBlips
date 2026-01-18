@@ -46,6 +46,7 @@ class Context {
    public:
     using AppFactory = std::function<std::unique_ptr<BaseApp>(Context& ctx)>;
     using FileLoader = std::function<std::optional<std::string>(std::string_view path)>;
+    using Logger = std::function<void(std::string_view message)>;
 
     /**
      * Creates a new application context. you can customize the application by subclassing and then constructing an
@@ -152,6 +153,10 @@ class Context {
      * Sets the mechanism that `GetFileContext()` uses to load asset files. the default mechanism uses stdio.
      */
     void SetFileLoader(FileLoader fn);
+    /**
+     * Sets the mechanism that kitgui uses to log info. the default mechanism uses stdout.
+     */
+    static void SetLogger(Logger fn);
 
    protected:
     // app events. forwards otherwise hidden events to impl

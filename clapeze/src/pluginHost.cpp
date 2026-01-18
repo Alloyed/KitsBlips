@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <sstream>
+#include <utility>
 #include "clapeze/basePlugin.h"
 
 namespace clapeze {
@@ -33,8 +34,18 @@ bool PluginHost::IsAudioThread() const {
 
 void PluginHost::Log(LogSeverity severity, const std::string& message) const {
     if (mLog) {
-        return mLog->log(mHost, static_cast<clap_log_severity>(severity), message.c_str());
+        mLog->log(mHost, static_cast<clap_log_severity>(severity), message.c_str());
+    } else {
+        // host doesn't support logging, we'll go to stdout
+        printf("%s\n", message.c_str());
     }
+    if (mLogFn) {
+        mLogFn(severity, message);
+    }
+}
+
+void PluginHost::SetLogFn(PluginHost::LogFn fn) {
+    mLogFn = std::move(fn);
 }
 
 void PluginHost::LogSupportMatrix() const {
@@ -107,7 +118,8 @@ void PluginHost::LogSupportMatrix() const {
     /*
     // log to stdout
     */
-    printf("%s\n", ss.str().c_str());
+    Log(LogSeverity::Debug, ss.str().c_str());
+    Log(LogSeverity::Info, "Extension support matrix dumped to CLAP_SUPPORT.csv");
 }
 
 void PluginHost::RequestRestart() const {

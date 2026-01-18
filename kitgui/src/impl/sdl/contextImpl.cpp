@@ -36,7 +36,6 @@ void getX11Handles(SDL_Window* sdlWindow, X11Window& xWindow, X11Display*& xDisp
     xDisplay =
         static_cast<X11Display*>(SDL_GetPointerProperty(windowProps, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr));
 
-    kitgui::log::info(fmt::format("display: {}, window: {}", (void*)xDisplay, xWindow));
     assert(xDisplay != nullptr);
     assert(xWindow != 0);
 }

@@ -3,6 +3,9 @@
 #include <clap/clap.h>
 #include <functional>
 #include <string>
+#include <utility>
+#include "fmt/base.h"
+#include "fmt/format.h"
 
 namespace clapeze {
 
@@ -26,6 +29,7 @@ class PluginHost {
    public:
     using TimerId = clap_id;
     using TimerFn = std::function<void()>;
+    using LogFn = std::function<void(LogSeverity severity, const std::string& message)>;
 
     explicit PluginHost(const clap_host_t* host);
 
@@ -43,6 +47,13 @@ class PluginHost {
 
     /** Add a message to the host's log */
     void Log(LogSeverity severity, const std::string& message) const;
+    /** Add a message to the host's log */
+    template <typename... Args>
+    void LogFmt(LogSeverity severity, fmt::format_string<Args...> fmt, Args&&... args) const {
+        Log(severity, fmt::format(fmt, std::forward<Args>(args)...));
+    }
+    /** Add a callback to be run every time Log() is called. use for log visualization */
+    void SetLogFn(LogFn fn);
 
     /** requests that the host restarts the plugin next chance it gets. */
     void RequestRestart() const;
@@ -66,7 +77,8 @@ class PluginHost {
     const clap_host_thread_check_t* mThreadCheck;
     const clap_host_log_t* mLog;
     const clap_host_timer_support_t* mTimer;
-    std::unordered_map<TimerId, TimerFn> mActiveTimers;
+    std::unordered_map<TimerId, TimerFn> mActiveTimers{};
+    LogFn mLogFn{};
 };
 
 template <typename THostExtension>

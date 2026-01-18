@@ -1,3 +1,4 @@
+#include <string_view>
 #if KITSBLIPS_ENABLE_GUI
 #include "gui/kitguiFeature.h"
 
@@ -66,8 +67,12 @@ int32_t KitguiFeature::sInitCount = 0;
 ClapWindowApi KitguiFeature::sInitApi = ClapWindowApi::None;
 PluginHost::TimerId KitguiFeature::sTimerId = 0;
 
-KitguiFeature::KitguiFeature(PluginHost& mPluginHost, kitgui::Context::AppFactory createAppFn)
-    : mHost(mPluginHost), mCtx(std::move(createAppFn)) {}
+KitguiFeature::KitguiFeature(PluginHost& mPluginHost,
+                             kitgui::Context::AppFactory createAppFn,
+                             const kitgui::SizeConfig& cfg)
+    : mHost(mPluginHost), mCtx(std::move(createAppFn)) {
+    mCtx.SetSizeConfig(cfg);
+}
 
 void KitguiFeature::Configure(BasePlugin& self) {
     GuiFeature::Configure(self);
@@ -105,6 +110,10 @@ bool KitguiFeature::Create(ClapWindowApi api, bool isFloating) {
     sInitCount++;
     if (sInitCount == 1) {
         sInitApi = api;
+        kitgui::Context::SetLogger([this](std::string_view message) {
+            std::string tmp{message};
+            mHost.Log(LogSeverity::Info, tmp);
+        });
         kitgui::Context::init(toKitGui(api), PRODUCT_NAME);
         if (kitgui::Context::NeedsUpdateLoopIntegration()) {
             sTimerId = mHost.AddTimer(32, []() { kitgui::Context::RunSingleFrame(); });

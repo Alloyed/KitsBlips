@@ -1,14 +1,21 @@
 #pragma once
+
 #include <Corrade/Containers/String.h>
+
 #include <fmt/format.h>
+#include <functional>
 #include <iostream>
 #include <source_location>
 #include <string_view>
 
 namespace kitgui::log {
+using Logger = std::function<void(std::string_view message)>;
+inline Logger& sLogFn() {
+    static Logger logger{[](std::string_view message) { std::cout << message << '\n'; }};
+    return logger;
+}
 inline void rawlog(std::string_view message, std::source_location loc = std::source_location::current()) {
-    std::cout << "[KITGUI](" << loc.file_name() << ":" << loc.line() << " " << loc.function_name() << "): " << message
-              << '\n';
+    sLogFn()(fmt::format("[KITGUI]({}:{}): {}", loc.file_name(), loc.line(), message));
 }
 inline void info(std::string_view message, std::source_location loc = std::source_location::current()) {
     rawlog(message, loc);
