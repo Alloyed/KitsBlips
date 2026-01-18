@@ -65,9 +65,12 @@ endif()
 if(KITSBLIPS_ENABLE_SENTRY)
     # TODO: move into clapeze?
     FetchContent_MakeAvailable(sentry-native)
+    if(NOT DEFINED ENV{KITSBLIPS_SENTRY_DSN})
+        message(FATAL_ERROR "Sentry requires the environment variable KITSBLIPS_SENTRY_DSN to be defined")
+    endif()
     target_compile_definitions(KitsBlips PUBLIC
         KITSBLIPS_ENABLE_SENTRY=1
-        KITSBLIPS_SENTRY_DSN="https://6a29094f0e160a0d6fd7126e0a877ccc@o4510724360568832.ingest.us.sentry.io/4510724362076160"
+        KITSBLIPS_SENTRY_DSN="$ENV{KITSBLIPS_SENTRY_DSN}"
     )
     target_link_libraries(KitsBlips PRIVATE sentry)
     # dummy target used to re-add the handler to the default build without pulling in the rest of sentry

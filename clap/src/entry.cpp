@@ -53,11 +53,12 @@ extern "C" const clap_plugin_entry_t clap_entry = (clap_plugin_entry_t{
         sentry_options_set_debug(options, 1);
 
         auto pluginPath = std::filesystem::path(path);
-        auto dbPath = getSentryDbPath(PRODUCT_NAME);
+        auto dbPath = getSentryDbPath(PRODUCT_NAME).generic_string();
 #if _WIN32
-        auto crashpadPath = std::filesystem::absolute(pluginPath.parent_path() / "./crashpad_handler.exe");
+        auto crashpadPath =
+            std::filesystem::absolute(pluginPath.parent_path() / "./crashpad_handler.exe").generic_string();
 #else
-        auto crashpadPath = std::filesystem::absolute(pluginPath.parent_path() / "./crashpad_handler");
+        auto crashpadPath = std::filesystem::absolute(pluginPath.parent_path() / "./crashpad_handler").generic_string();
 #endif
         sentry_options_set_handler_path(options, crashpadPath.c_str());
         sentry_options_set_database_path(options, dbPath.c_str());

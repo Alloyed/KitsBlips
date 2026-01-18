@@ -29,21 +29,21 @@ jobs:
         include:
           - name: Linux
             os: ubuntu-24.04
-            extra-flags: -DKITSBLIPS_ENABLE_GUI="ON" -DKITSBLIPS_ENABLE_SENTRY="ON"
+            extra-flags: -DKITSBLIPS_ENABLE_SENTRY="ON"
           - name: macOS
             os: macos-14
-            extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+            extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DKITSBLIPS_ENABLE_VST="OFF"
           - name: Windows
             # https://github.com/actions/runner-images/issues/10980
             os: windows-2025
-            extra-flags: -DKITSBLIPS_ENABLE_GUI="ON" -DKITSBLIPS_ENABLE_SENTRY="ON"
+            extra-flags: -DKITSBLIPS_ENABLE_SENTRY="ON"
 
     steps:
       - name: Set up Linux deps
         if: runner.os == 'Linux'
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: libsdl2-dev libxtst-dev
+          packages: libsdl2-dev libxtst-dev libcurl-dev
           version: 1.0
 
       - uses: actions/checkout@v4
@@ -51,6 +51,8 @@ jobs:
           submodules: recursive
 
       - uses: ./.github/actions/cmake
+        env:
+          KITSBLIPS_SENTRY_DSN: ${{ secrets.KITSBLIPS_SENTRY_DSN }}
         with:
           source: ${{github.workspace}}/clap
           build: ${{github.workspace}}/build
