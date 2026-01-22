@@ -20,12 +20,14 @@ $ cmake --install . --prefix <location> # if the target supports installation
 $ ctest # if the target has unit tests
 ```
 
+once you have all your configurations set up, you can quickly rebuild all/run tests using `rebuild-all.sh`.
+
 ## Projects
 
 For Hardware:
 
 - [/daisy](daisy/README.md)
-  - DSP code for hardware modules
+  - DSP code for hardware modules, using the Daisy microcontroller.
 - [/kicad](kicad/README.md)
   - Hardware design files
 
@@ -36,7 +38,7 @@ For VCV Rack:
 
 For DAWS:
 
-- [/clap](clap/README.md)
+- [/daw](clap/README.md)
   - Modules for DAWS (VST3/CLAP plugins)
 - [/clapeze](clapeze/README.md)
   - Microframework for writing clap plugins

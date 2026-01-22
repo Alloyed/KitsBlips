@@ -20,8 +20,8 @@ defaults:
     shell: bash
 
 jobs:
-  build-clap:
-    name: clap ${{ matrix.name }}
+  build-daw:
+    name: daw ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
@@ -30,9 +30,9 @@ jobs:
           - name: Linux
             os: ubuntu-24.04
             extra-flags:
-          - name: macOS
-            os: macos-14
-            extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DKITSBLIPS_ENABLE_VST="OFF"
+          #- name: macOS
+          #  os: macos-14
+          #  extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DKITSBLIPS_ENABLE_VST="OFF"
           - name: Windows
             os: windows-2025
             extra-flags:
@@ -53,7 +53,7 @@ jobs:
         env:
           KITSBLIPS_SENTRY_DSN: ${{ secrets.KITSBLIPS_SENTRY_DSN }}
         with:
-          source: ${{github.workspace}}/clap
+          source: ${{github.workspace}}/daw
           build: ${{github.workspace}}/build
           extra-flags: ${{matrix.extra-flags}}
 
