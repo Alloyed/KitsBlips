@@ -5,13 +5,14 @@ include(../../content.cmake)
 FetchContent_MakeAvailable(googletest AudioFile)
 
 add_executable(testdsp
-    dsfOscillator.test.cpp
-    oscillatorSweeps.test.cpp
-    snesEcho.test.cpp
-    psxReverb.test.cpp
-    chorus.test.cpp
-    harmonizer.test.cpp
-    frequencyShifter.test.cpp
+    osc/dsfOscillator.test.cpp
+    osc/oscillatorSweeps.test.cpp
+    apps/snesEcho.test.cpp
+    apps/psxReverb.test.cpp
+    apps/chorus.test.cpp
+    apps/harmonizer.test.cpp
+    apps/frequencyShifter.test.cpp
+    control/adsr.test.cpp
 )
 
 target_link_libraries(testdsp

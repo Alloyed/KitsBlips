@@ -10,6 +10,10 @@ namespace clapeze {
  */
 void registerPlugin(PluginEntry plugin);
 /**
+ * Removes existing plugin entries. for testing.
+ */
+void clearPlugins();
+/**
  * Returns the path to the shared library that this plugin is run from.
  */
 const char* getPluginPath();

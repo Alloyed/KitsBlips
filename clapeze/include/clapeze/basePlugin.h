@@ -70,11 +70,11 @@ class BasePlugin {
 
     /* internal implementation*/
    private:
-    std::unique_ptr<clap_plugin_t> mPlugin;
-    std::unordered_map<std::string, std::unique_ptr<BaseFeature>> mFeatures;
-    std::unordered_map<std::string, const void*> mExtensions;
+    std::unique_ptr<clap_plugin_t> mPlugin{};
+    std::unordered_map<std::string, std::unique_ptr<BaseFeature>> mFeatures{};
+    std::unordered_map<std::string, const void*> mExtensions{};
     PluginHost& mHost;
-    std::unique_ptr<BaseProcessor> mProcessor;
+    std::unique_ptr<BaseProcessor> mProcessor{};
 
     static bool _init(const clap_plugin* plugin);
     static void _destroy(const clap_plugin* plugin);

@@ -82,6 +82,10 @@ void registerPlugin(PluginEntry plugin) {
     sPlugins().push_back(plugin);
 }
 
+void clearPlugins() {
+    sPlugins().clear();
+}
+
 const char* getPluginPath() {
     return sPluginPath().c_str();
 }

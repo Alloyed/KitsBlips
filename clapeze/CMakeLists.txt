@@ -49,4 +49,7 @@ if(PROJECT_IS_TOP_LEVEL)
     target_include_directories(clapeze-examples PRIVATE examples)
 
     target_link_libraries(clapeze-examples PUBLIC clapeze)
+
+	include(CTest)
+	add_subdirectory(test)
 endif()
