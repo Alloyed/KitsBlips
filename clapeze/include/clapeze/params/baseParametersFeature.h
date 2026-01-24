@@ -112,6 +112,11 @@ bool BaseParametersFeature<TMainHandle, TAudioHandle>::Validate(const BasePlugin
             return false;
         }
     }
+
+    if (self.TryGetFeature(CLAP_EXT_STATE) == nullptr) {
+        self.GetHost().Log(LogSeverity::Warning,
+                           "Missing implementation of CLAP_EXT_STATE: all parameters will be lost upon save/reload");
+    }
     return true;
 }
 
