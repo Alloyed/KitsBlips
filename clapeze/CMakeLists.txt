@@ -17,6 +17,7 @@ target_sources(clapeze PRIVATE
     src/entryPoint.cpp
     src/ext/parameterConfigs.cpp
     src/ext/assets.cpp
+    src/params/dynamicParameters.cpp
 )
 
 target_include_directories(clapeze PUBLIC include)

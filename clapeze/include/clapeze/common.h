@@ -15,6 +15,18 @@ struct StereoAudioBuffer {
     etl::span<float> right;
     bool isLeftConstant;
     bool isRightConstant;
+    void CopyFrom(const StereoAudioBuffer& in) {
+        isLeftConstant = in.isLeftConstant;
+        std::copy(in.left.begin(), in.left.end(), left.begin());
+        isRightConstant = in.isRightConstant;
+        std::copy(in.right.begin(), in.right.end(), right.begin());
+    }
+    void Fill(float value) {
+        std::fill(left.begin(), left.end(), value);
+        std::fill(right.begin(), right.end(), value);
+        isLeftConstant = true;
+        isRightConstant = true;
+    }
 };
 
 // All of the identifying info for a given note.

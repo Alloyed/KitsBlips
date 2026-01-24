@@ -14,7 +14,7 @@
  */
 namespace effectExample {
 /* Here are all the parameters we support. */
-enum class Params : clap_id {
+enum class MyParams : clap_id {
     Gain,
     VuPPM,
     Bypass,
@@ -25,7 +25,7 @@ enum class Params : clap_id {
  * clapeze::ParametersFeature<> implements the nuts and bolts of parameters, including persistence and audio<->main
  * thread communication. Specializing on our Params enum tells it what parameters exist and how they behave.
  */
-using ParamsFeature = clapeze::ParametersFeature<Params>;  // save some typing
+using MyParamsFeature = clapeze::ParametersFeature<MyParams>;  // save some typing
 }  // namespace effectExample
 
 /**
@@ -38,23 +38,23 @@ using namespace effectExample;
 // a ParamTraits implementation should inherit from clapeze::BaseParam. they can do anything, but there are a number of
 // convenient ones built-in. see `clapeze/ext/parameterConfigs.h` for more.
 template <>
-struct ParamTraits<Params, Params::Gain> : public DbParam {
+struct ParamTraits<MyParams, MyParams::Gain> : public DbParam {
     //                       name    min    max    default
     ParamTraits() : DbParam("Gain", -60.0f, 30.0f, 0.0f) {}
 };
 
 template <>
-struct ParamTraits<Params, Params::VuPPM> : public NumericParam {
+struct ParamTraits<MyParams, MyParams::VuPPM> : public NumericParam {
     //                           name    curve         min   max   default
     ParamTraits() : NumericParam("Peak", cLinearCurve, 0.0f, 1.0f, 0.0f) { mFlags |= CLAP_PARAM_IS_READONLY; }
 };
 
 template <>
-struct ParamTraits<Params, Params::Bypass> : public OnOffParam {
+struct ParamTraits<MyParams, MyParams::Bypass> : public OnOffParam {
     //                         name      default
     ParamTraits() : OnOffParam("Bypass", OnOff::Off) { mFlags |= CLAP_PARAM_IS_BYPASS; }
 };
-static_assert(static_cast<clap_id>(Params::Count) == 3, "update parameter traits");
+static_assert(static_cast<clap_id>(MyParams::Count) == 3, "update parameter traits");
 }  // namespace clapeze
 
 /*
@@ -66,32 +66,27 @@ namespace effectExample {
  * Processor holds the code that runs on the audio thread.
  * EffectProcessor provides a shortcut for simple 2-channel stereo effects with parameters
  */
-class Processor : public clapeze::EffectProcessor<ParamsFeature::ProcessParameters> {
+class MyProcessor : public clapeze::EffectProcessor<MyParamsFeature::ProcessParameters> {
    public:
-    explicit Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
-    ~Processor() = default;
+    explicit MyProcessor(MyParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
+    ~MyProcessor() = default;
 
     clapeze::ProcessStatus ProcessAudio(const clapeze::StereoAudioBuffer& in,
                                         clapeze::StereoAudioBuffer& out) override {
         // each parameter is sample accurate, because ProcessAudio is split into smaller chunks in between each host
         // event.
-        float gainDb = mParams.Get<Params::Gain>();
+        float gainDb = mParams.Get<MyParams::Gain>();
         float gainRatio = std::pow(10.0f, gainDb / 20.0f);
-        bool shouldBypass = mParams.Get<Params::Bypass>() == clapeze::OnOff::On;
+        bool shouldBypass = mParams.Get<MyParams::Bypass>() == clapeze::OnOff::On;
         if (shouldBypass) {
-            Bypass(in, out);  // built-in helper method
+            out.CopyFrom(in);
             return clapeze::ProcessStatus::Continue;
         }
 
         float peakValue = mLastPeakValue;
         if (gainDb <= -60.01f) {
             // we'll treat gain values at the very bottom as if they are totally silent.
-            for (size_t idx = 0; idx < in.left.size(); ++idx) {
-                out.left[idx] = 0.0f;
-                out.right[idx] = 0.0f;
-            }
-            out.isLeftConstant = true;
-            out.isRightConstant = true;
+            out.Fill(0.0f);
         } else {
             for (size_t idx = 0; idx < in.left.size(); ++idx) {
                 out.left[idx] = in.left[idx] * gainRatio;
@@ -105,7 +100,7 @@ class Processor : public clapeze::EffectProcessor<ParamsFeature::ProcessParamete
         }
 
         if (peakValue != mLastPeakValue) {
-            mParams.Send<Params::VuPPM>(peakValue);
+            mParams.Send<MyParams::VuPPM>(peakValue);
             mLastPeakValue = peakValue;
         }
 
@@ -127,10 +122,10 @@ class Processor : public clapeze::EffectProcessor<ParamsFeature::ProcessParamete
  * Plugin represents the overall state of the plugin.
  * EffectPlugin is the paired plugin to the EffectProcessor, so likewise, you can drop down to the BasePlugin whenever.
  */
-class Plugin : public clapeze::EffectPlugin {
+class MyPlugin : public clapeze::EffectPlugin {
    public:
-    explicit Plugin(clapeze::PluginHost& host) : EffectPlugin(host) {}
-    ~Plugin() = default;
+    explicit MyPlugin(clapeze::PluginHost& host) : EffectPlugin(host) {}
+    ~MyPlugin() = default;
 
    protected:
     /**
@@ -142,16 +137,16 @@ class Plugin : public clapeze::EffectPlugin {
 
         // Here we configure our parameters. if you have special requirements, you can create your own implementation of
         // ParametersFeature, and config it here.
-        ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
-                                    .Module("AGain")  // applies to subsequent parameters
-                                    .Parameter<Params::Gain>()
-                                    .Parameter<Params::VuPPM>()
-                                    .Parameter<Params::Bypass>();
-        static_assert(static_cast<clap_id>(Params::Count) == 3, "update parameter order");
+        MyParamsFeature& params = ConfigFeature<MyParamsFeature>(GetHost(), MyParams::Count)
+                                      .Module("AGain")  // applies to subsequent parameters
+                                      .Parameter<MyParams::Gain>()
+                                      .Parameter<MyParams::VuPPM>()
+                                      .Parameter<MyParams::Bypass>();
+        static_assert(static_cast<clap_id>(MyParams::Count) == 3, "update parameter order");
 
         // we are opting into audio processing using the Processor object defined before, and using the params object as
         // our communication channel.
-        ConfigProcessor<Processor>(params.GetStateForAudioThread());
+        ConfigProcessor<MyProcessor>(params.GetStateForAudioThread());
     }
 };
 
@@ -174,6 +169,6 @@ constexpr clap_plugin_descriptor_t kDescriptor = {
 
 // this macro does magic under the hood to tell clapeze that this plugin exists and should be added to the DAW's list of
 // plugins.
-CLAPEZE_REGISTER_PLUGIN(Plugin, kDescriptor);
+CLAPEZE_REGISTER_PLUGIN(MyPlugin, kDescriptor);
 
 }  // namespace effectExample

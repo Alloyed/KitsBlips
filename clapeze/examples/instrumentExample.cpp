@@ -1,8 +1,8 @@
 #include <clapeze/common.h>
 #include <clapeze/entryPoint.h>
 #include <clapeze/ext/parameterConfigs.h>
-#include <clapeze/ext/parameters.h>
 #include <clapeze/instrumentPlugin.h>
+#include <clapeze/params/dynamicParametersFeature.h>
 #include <clapeze/voice.h>
 
 #include <cmath>
@@ -11,17 +11,15 @@
 
 namespace {
 enum class Params : clap_id { Fall, Polyphony, Count };
-using ParamsFeature = clapeze::ParametersFeature<Params>;
+using ParamsFeature = clapeze::params::DynamicParametersFeature;
 }  // namespace
 
-template <>
-struct clapeze::ParamTraits<Params, Params::Fall> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Fall", cLinearCurve, 0.0001f, 1.f, .01f) {}
+struct FallTraits : public clapeze::NumericParam {
+    FallTraits() : clapeze::NumericParam("Fall", clapeze::cLinearCurve, 0.0001f, 1.f, .01f) {}
 };
 
-template <>
-struct clapeze::ParamTraits<Params, Params::Polyphony> : public clapeze::IntegerParam {
-    ParamTraits() : clapeze::IntegerParam("Polyphony", 1, 16, 8, "voices", "voice") {}
+struct PolyphonyTraits : public clapeze::IntegerParam {
+    PolyphonyTraits() : clapeze::IntegerParam("Polyphony", 1, 16, 8, "voices", "voice") {}
 };
 
 namespace instrumentExample {
@@ -33,7 +31,7 @@ inline float sinOsc(float phase) {
     return std::sinf(phase * std::numbers::pi_v<float> * 2.0f);
 }
 
-class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessParameters> {
+class Processor : public clapeze::InstrumentProcessor<clapeze::params::DynamicProcessorHandle> {
     class Voice {
        public:
         explicit Voice(Processor& p) : mProcessor(p) {}
@@ -47,7 +45,10 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
         bool ProcessAudio(clapeze::StereoAudioBuffer& out) {
             const auto& params = mProcessor.mParams;
             const float sampleRate = static_cast<float>(mProcessor.GetSampleRate());
-            float fallRate = params.Get<Params::Fall>();
+            // This call is the primary difference between the Dynamic and Templated param variants.
+            // The templated version knows which id is associated with which type, and also how to turn an enum into an
+            // id. here, we do both of those manually.
+            float fallRate = params.Get<FallTraits>(static_cast<clap_id>(Params::Fall));
 
             for (uint32_t index = 0; index < out.left.size(); index++) {
                 // NOTE: this is sample-rate dependent! do something smarter in your own plugins
@@ -77,11 +78,12 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
     };
 
    public:
-    explicit Processor(ParamsFeature::ProcessParameters& params) : InstrumentProcessor(params), mVoices(*this) {}
+    explicit Processor(clapeze::params::DynamicProcessorHandle& params) : InstrumentProcessor(params), mVoices(*this) {}
     ~Processor() = default;
 
     clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) override {
-        mVoices.SetNumVoices(mParams.Get<Params::Polyphony>());
+        int32_t numVoices = mParams.Get<PolyphonyTraits>(static_cast<clap_id>(Params::Polyphony));
+        mVoices.SetNumVoices(numVoices);
         return mVoices.ProcessAudio(out);
     }
 
@@ -107,10 +109,10 @@ class Plugin : public clapeze::InstrumentPlugin {
    protected:
     void Config() override {
         clapeze::InstrumentPlugin::Config();
-        ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
-                                    .Parameter<Params::Fall>()
-                                    .Parameter<Params::Polyphony>();
-        ConfigProcessor<Processor>(params.GetStateForAudioThread());
+        ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), static_cast<clap_id>(Params::Count))
+                                    .Parameter(static_cast<clap_id>(Params::Fall), new FallTraits())
+                                    .Parameter(static_cast<clap_id>(Params::Polyphony), new PolyphonyTraits());
+        ConfigProcessor<Processor>(params.GetProcessorHandle());
     }
 };
 

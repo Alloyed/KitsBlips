@@ -8,29 +8,16 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <memory>
 #include <string_view>
 #include <type_traits>
 
 #include "clap/events.h"
 #include "clap/ext/params.h"
 #include "clapeze/basePlugin.h"
+#include "clapeze/params/baseParameter.h"
 #include "clapeze/pluginHost.h"
 
 namespace clapeze {
-
-struct BaseParam {
-   public:
-    virtual ~BaseParam() = default;
-    virtual bool FillInformation(clap_id id, clap_param_info_t* information) const = 0;
-    virtual bool ToText(double rawValue, etl::span<char>& outTextBuf) const = 0;
-    virtual bool FromText(std::string_view text, double& outRawValue) const = 0;
-    virtual double GetRawDefault() const = 0;
-
-    const std::string& GetModule() const { return mModule; }
-    void SetModule(std::string_view module) { mModule = module; }
-    std::string mModule;
-};
 
 /** specialize by inheriting from baseparam */
 template <class TParamId, auto id>
