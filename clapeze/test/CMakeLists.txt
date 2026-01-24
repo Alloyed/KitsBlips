@@ -6,6 +6,8 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(test-clapeze
   factory.test.cpp
+  ../examples/effectExample.cpp
+  ../examples/instrumentExample.cpp
 )
 
 target_link_libraries(test-clapeze

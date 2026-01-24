@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <cstddef>
 #include "clap/factory/plugin-factory.h"
 #include "clap/plugin.h"
 #include "clap/version.h"
