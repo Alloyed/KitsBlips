@@ -1,8 +1,9 @@
 #include <clapeze/common.h>
 #include <clapeze/entryPoint.h>
-#include <clapeze/ext/parameterConfigs.h>
 #include <clapeze/instrumentPlugin.h>
 #include <clapeze/params/dynamicParametersFeature.h>
+#include <clapeze/params/parameterOnlyStateFeature.h>
+#include <clapeze/params/parameterTypes.h>
 #include <clapeze/voice.h>
 
 #include <cmath>
@@ -113,9 +114,11 @@ class Plugin : public clapeze::InstrumentPlugin {
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), static_cast<clap_id>(Params::Count))
                                     .Parameter(static_cast<clap_id>(Params::Fall), new FallTraits())
                                     .Parameter(static_cast<clap_id>(Params::Polyphony), new PolyphonyTraits());
+        ConfigFeature<clapeze::ParameterOnlyStateFeature<ParamsFeature>>();
         ConfigProcessor<Processor>(params.GetProcessorHandle());
     }
 };
 
-CLAPEZE_REGISTER_PLUGIN(Plugin, AudioInstrumentDescriptor("kitsblips.sines", "Sines", "a simple sine wave synth"));
+CLAPEZE_REGISTER_PLUGIN(Plugin,
+                        AudioInstrumentDescriptor("clapeze.example.sines", "Sines", "a simple sine wave synth"));
 }  // namespace instrumentExample

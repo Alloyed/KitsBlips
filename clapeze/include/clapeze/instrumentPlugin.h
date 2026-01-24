@@ -7,7 +7,6 @@
 
 #include "clapeze/ext/audioPorts.h"
 #include "clapeze/ext/notePorts.h"
-#include "clapeze/ext/state.h"
 
 namespace clapeze {
 
@@ -98,7 +97,6 @@ class InstrumentPlugin : public BasePlugin {
     void Config() override {
         ConfigFeature<NotePortsFeature<1, 0>>();
         ConfigFeature<StereoAudioPortsFeature<0, 1>>();
-        ConfigFeature<StateFeature>();
     }
 };
 }  // namespace clapeze

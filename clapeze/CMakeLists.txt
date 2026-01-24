@@ -15,9 +15,9 @@ target_sources(clapeze PRIVATE
     src/basePlugin.cpp
     src/pluginHost.cpp
     src/entryPoint.cpp
-    src/ext/parameterConfigs.cpp
     src/ext/assets.cpp
-    src/params/dynamicParameters.cpp
+    src/params/dynamicParametersFeature.cpp
+    src/params/parameterTypes.cpp
 )
 
 target_include_directories(clapeze PUBLIC include)

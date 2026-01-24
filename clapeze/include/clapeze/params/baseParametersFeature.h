@@ -49,6 +49,8 @@ class BaseParametersFeature : public BaseFeature {
     void RequestFlushIfNotProcessing();
 
     TAudioHandle& GetProcessorHandle();
+    TMainHandle& GetMainHandle();
+
     size_t GetNumParams() const;
 
    protected:
@@ -167,6 +169,10 @@ void BaseParametersFeature<TMainHandle, TAudioHandle>::RequestFlushIfNotProcessi
 template <class TMainHandle, class TAudioHandle>
 TAudioHandle& BaseParametersFeature<TMainHandle, TAudioHandle>::GetProcessorHandle() {
     return mAudio;
+}
+template <class TMainHandle, class TAudioHandle>
+TMainHandle& BaseParametersFeature<TMainHandle, TAudioHandle>::GetMainHandle() {
+    return mMain;
 }
 template <class TMainHandle, class TAudioHandle>
 size_t BaseParametersFeature<TMainHandle, TAudioHandle>::GetNumParams() const {

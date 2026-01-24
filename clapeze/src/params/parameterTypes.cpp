@@ -1,4 +1,5 @@
-#include "clapeze/ext/parameterConfigs.h"
+#include "clapeze/params/parameterTypes.h"
+
 #include <charconv>
 #include <cstring>
 #include <string_view>

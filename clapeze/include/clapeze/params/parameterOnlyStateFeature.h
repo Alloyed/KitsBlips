@@ -6,12 +6,20 @@
 #include <cstdio>
 
 #include "clapeze/basePlugin.h"
-#include "clapeze/ext/parameters.h"
 
 namespace clapeze {
 
-/* Saves and loads parameter state. Depends on ParametersFeature. */
-class StateFeature : public BaseFeature {
+/*
+ * Saves and loads parameter state. Depends on ParametersFeature.
+ * TODO:
+ *  - plain text format (xml? toml?)
+ *  - migrations/versioning
+ *  - non-parameter state
+ *  - samples/wavetables?
+ *  - presets?
+ */
+template <class TParamsFeature>
+class ParameterOnlyStateFeature : public BaseFeature {
    public:
     static constexpr auto NAME = CLAP_EXT_STATE;
     const char* Name() const override { return NAME; }
@@ -34,13 +42,14 @@ class StateFeature : public BaseFeature {
 
    private:
     static bool _save(const clap_plugin_t* plugin, const clap_ostream_t* out) {
-        BaseParamsFeature& params = BaseParamsFeature::GetFromPluginObject<BaseParamsFeature>(plugin);
+        TParamsFeature& params = TParamsFeature::template GetFromPluginObject<TParamsFeature>(plugin);
 
         params.FlushFromAudio();  // empty queue to ensure newest changes
+        auto& handle = params.GetMainHandle();
 
         size_t numParams = params.GetNumParams();
         for (clap_id id = 0; id < numParams; ++id) {
-            double value = params.GetRawValue(id);
+            double value = handle.GetRawValue(id);
             if (out->write(out, &value, sizeof(double)) == -1) {
                 return false;
             }
@@ -49,10 +58,10 @@ class StateFeature : public BaseFeature {
     }
 
     static bool _load(const clap_plugin_t* plugin, const clap_istream_t* in) {
-        BaseParamsFeature& params = BaseParamsFeature::GetFromPluginObject<BaseParamsFeature>(plugin);
+        TParamsFeature& params = TParamsFeature::template GetFromPluginObject<TParamsFeature>(plugin);
 
         params.FlushFromAudio();  // empty queue so changes apply on top
-
+        auto& handle = params.GetMainHandle();
         size_t numParams = params.GetNumParams();
         clap_id id = 0;
         while (id < numParams) {
@@ -65,7 +74,7 @@ class StateFeature : public BaseFeature {
                 // eof
                 break;
             }
-            params.SetRawValue(id, value);
+            handle.SetRawValue(id, value);
             id++;
         }
         return id == numParams;

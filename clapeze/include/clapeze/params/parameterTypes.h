@@ -8,8 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string_view>
-
-#include <clapeze/ext/parameters.h>
+#include "clapeze/params/baseParameter.h"
 
 namespace clapeze_impl {
 /* safe alternative to strcpy when the buffer size is known at compile time. assumes the buffer is zero'd out in

@@ -3,7 +3,6 @@
 #include "clapeze/basePlugin.h"
 #include "clapeze/common.h"
 #include "clapeze/ext/audioPorts.h"
-#include "clapeze/ext/state.h"
 
 namespace clapeze {
 
@@ -58,9 +57,6 @@ class EffectPlugin : public BasePlugin {
     ~EffectPlugin() = default;
 
    protected:
-    void Config() override {
-        ConfigFeature<StereoAudioPortsFeature<1, 1>>();
-        ConfigFeature<StateFeature>();
-    }
+    void Config() override { ConfigFeature<StereoAudioPortsFeature<1, 1>>(); }
 };
 }  // namespace clapeze

@@ -4,16 +4,20 @@ set(BUILD_GTEST ON CACHE BOOL "" FORCE)
 include(../../content.cmake)
 FetchContent_MakeAvailable(googletest)
 
-add_executable(test-clapeze
-  factory.test.cpp
-  ../examples/effectExample.cpp
-  ../examples/instrumentExample.cpp
-)
+add_executable(factory-test factory.test.cpp)
+target_link_libraries(factory-test clapeze gtest_main)
+add_test(NAME factory-test COMMAND factory-test)
 
-target_link_libraries(test-clapeze
+add_executable(effect-test effect.test.cpp)
+target_link_libraries(effect-test
     clapeze
     gtest_main
 )
+add_test(NAME effect-test COMMAND effect-test)
 
-add_test(NAME test-clapeze
-         COMMAND test-clapeze)
+add_executable(instrument-test instrument.test.cpp)
+target_link_libraries(instrument-test
+    clapeze
+    gtest_main
+)
+add_test(NAME instrument-test COMMAND instrument-test)
