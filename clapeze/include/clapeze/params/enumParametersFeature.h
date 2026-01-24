@@ -1,0 +1,294 @@
+#pragma once
+
+#include <clap/clap.h>
+#include <etl/queue_spsc_atomic.h>
+#include <etl/span.h>
+#include <fmt/format.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <memory>
+#include <string_view>
+
+#include "clap/events.h"
+#include "clapeze/params/baseParametersFeature.h"
+#include "clapeze/pluginHost.h"
+
+namespace clapeze::params {
+
+/** specialize by inheriting from baseparam */
+template <class TParamId, auto id>
+    requires std::is_same_v<std::underlying_type_t<decltype(id)>, clap_id>
+struct ParamTraits;
+
+template <typename TParamId>
+class EnumProcessorHandle {
+   public:
+    EnumProcessorHandle(std::vector<std::unique_ptr<const BaseParam>>& ref,
+                        size_t numParams,
+                        Queue& mainToAudio,
+                        Queue& audioToMain);
+
+    template <class TParam>
+    typename TParam::_valuetype Get(Id id) const;
+
+    template <TParamId id>
+    typename ParamTraits<TParamId, id>::_valuetype Get() const {
+        using ParamType = ParamTraits<TParamId, id>;
+        clap_id index = static_cast<clap_id>(id);
+        return Get<ParamType>(index);
+    }
+
+    template <TParamId id>
+    void Send(typename ParamTraits<TParamId, id>::_valuetype in) {
+        using ParamType = ParamTraits<TParamId, id>;
+        clap_id index = static_cast<clap_id>(id);
+        double raw{};
+        if (index < mValues.size()) {
+            if (static_cast<const ParamType*>(mParamsRef[index].get())->FromValue(in, raw)) {
+                SetRawValue(index, raw);
+                // tricksy: we're sending our own update from the audio thread to be processed in
+                // FlushEventsFromMain. probably smarter to ask for the event queue and push ourselves in there
+                // instead.
+                mMainToAudio.push({ChangeType::SetValue, index, raw});
+            }
+        }
+    }
+
+    bool ProcessEvent(const clap_event_header_t& event);
+    void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out);
+
+   private:
+    double GetRawValue(Id id) const;
+    void SetRawValue(Id id, double newValue);
+
+    double GetRawModulation(Id id) const;
+    void SetRawModulation(Id id, double newModulation);
+
+    std::vector<std::unique_ptr<const BaseParam>>& mParamsRef;
+    std::vector<double> mValues;
+    std::vector<double> mModulations;
+    Queue& mMainToAudio;
+    Queue& mAudioToMain;
+};
+
+class EnumMainHandle {
+   public:
+    EnumMainHandle(size_t numParams, Queue& mainToAudio, Queue& audioToMain);
+
+    double GetRawValue(Id id) const;
+    void SetRawValue(Id id, double newValue);
+
+    void FlushFromAudio();
+
+   private:
+    std::vector<double> mValues;
+    std::vector<double> mModulations;
+    Queue& mMainToAudio;
+    Queue& mAudioToMain;
+};
+
+template <typename TParamId>
+class EnumParametersFeature : public BaseParametersFeature<EnumMainHandle, EnumProcessorHandle<TParamId>> {
+    // Reminder: to use Base anything you need to prefix with BaseType::!
+    // yeah it's annoying sorry
+    using BaseType = BaseParametersFeature<EnumMainHandle, EnumProcessorHandle<TParamId>>;
+
+   public:
+    EnumParametersFeature(PluginHost& host, TParamId numParams) : BaseType(host, static_cast<Id>(numParams)) {}
+
+    template <TParamId id>
+    EnumParametersFeature& Parameter() {
+        using ParamType = ParamTraits<TParamId, id>;
+        clap_id index = static_cast<clap_id>(id);
+        ParamType* param = new ParamType();
+        param->SetModule(mNextModule);
+        BaseType::mParams[index].reset(param);
+        BaseType::mMain.SetRawValue(index, param->GetRawDefault());
+        return *this;
+    }
+
+    EnumParametersFeature& Module(std::string_view moduleName) {
+        mNextModule = moduleName;
+        return *this;
+    }
+
+    std::string_view mNextModule = "";
+};
+
+// impl
+template <class TParamId>
+template <class TParam>
+typename TParam::_valuetype EnumProcessorHandle<TParamId>::Get(Id id) const {
+    typename TParam::_valuetype out{};
+    clap_id index = static_cast<clap_id>(id);
+    if (index < mValues.size()) {
+        double raw = GetRawValue(id);
+        double mod = GetRawModulation(id);
+        static_cast<const TParam*>(mParamsRef[index].get())->ToValue(raw + mod, out);
+    }
+    return out;
+}
+
+template <class TParamId>
+EnumProcessorHandle<TParamId>::EnumProcessorHandle(std::vector<std::unique_ptr<const BaseParam>>& ref,
+                                                   size_t numParams,
+                                                   Queue& mainToAudio,
+                                                   Queue& audioToMain)
+    : mParamsRef(ref),
+      mValues(numParams, 0.0f),
+      mModulations(numParams, 0.0f),
+      mMainToAudio(mainToAudio),
+      mAudioToMain(audioToMain) {}
+
+template <class TParamId>
+bool EnumProcessorHandle<TParamId>::ProcessEvent(const clap_event_header_t& event) {
+    if (event.space_id == CLAP_CORE_EVENT_SPACE_ID) {
+        switch (event.type) {
+            case CLAP_EVENT_PARAM_VALUE: {
+                const auto& paramChange = reinterpret_cast<const clap_event_param_value_t&>(event);
+                const Id id = static_cast<Id>(paramChange.param_id);
+                SetRawValue(id, paramChange.value);
+                return true;
+            }
+            case CLAP_EVENT_PARAM_MOD: {
+                const auto& paramChange = reinterpret_cast<const clap_event_param_mod_t&>(event);
+                const Id id = static_cast<Id>(paramChange.param_id);
+                SetRawModulation(id, paramChange.amount);
+                return true;
+            }
+            default: {
+                break;
+            }
+        }
+    }
+    return false;
+}
+
+template <class TParamId>
+void EnumProcessorHandle<TParamId>::FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) {
+    (void)processor;
+    // Send events queued from us to the host
+    // Since these all happened on an independent thread, they do not have sample-accurate timing; we'll just
+    // send them at the front of the queue.
+    Change change;
+    while (mMainToAudio.pop(change)) {
+        switch (change.type) {
+            case ChangeType::StartGesture:
+            case ChangeType::StopGesture: {
+                clap_event_param_gesture_t event = {};
+                event.header.size = sizeof(event);
+                event.header.time = 0;
+                event.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+                event.header.type =
+                    static_cast<uint16_t>(change.type == ChangeType::StartGesture ? CLAP_EVENT_PARAM_GESTURE_BEGIN
+                                                                                  : CLAP_EVENT_PARAM_GESTURE_END);
+                event.header.flags = 0;
+                event.param_id = static_cast<clap_id>(change.id);
+                out->try_push(out, &event.header);
+                break;
+            }
+            case ChangeType::SetValue: {
+                clap_id index = static_cast<clap_id>(change.id);
+                mValues[index] = change.value;
+
+                clap_event_param_value_t event = {};
+                event.header.size = sizeof(event);
+                event.header.time = 0;
+                event.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+                event.header.type = static_cast<uint16_t>(CLAP_EVENT_PARAM_VALUE);
+                event.header.flags = 0;
+                event.param_id = index;
+                event.cookie = nullptr;
+                event.note_id = -1;
+                event.port_index = -1;
+                event.channel = -1;
+                event.key = -1;
+                event.value = change.value;
+
+                out->try_push(out, &event.header);
+                break;
+            }
+            case ChangeType::SetModulation: {
+                // this is if the plugin sets the modulation, i don't think this happens??
+                assert(false);
+                break;
+            }
+        }
+    }
+}
+template <class TParamId>
+double EnumProcessorHandle<TParamId>::GetRawValue(Id id) const {
+    clap_id index = static_cast<clap_id>(id);
+    if (index < mValues.size()) {
+        return mValues[index];
+    }
+    return 0.0f;
+}
+template <class TParamId>
+void EnumProcessorHandle<TParamId>::SetRawValue(Id id, double newValue) {
+    clap_id index = static_cast<clap_id>(id);
+    if (index < mValues.size()) {
+        mValues[index] = newValue;
+        mAudioToMain.push({ChangeType::SetValue, id, newValue});
+    }
+}
+
+template <class TParamId>
+double EnumProcessorHandle<TParamId>::GetRawModulation(Id id) const {
+    clap_id index = static_cast<clap_id>(id);
+    if (index < mModulations.size()) {
+        return mModulations[index];
+    }
+    return 0.0f;
+}
+template <class TParamId>
+void EnumProcessorHandle<TParamId>::SetRawModulation(Id id, double newModulation) {
+    clap_id index = static_cast<clap_id>(id);
+    if (index < mModulations.size()) {
+        mModulations[index] = newModulation;
+        mAudioToMain.push({ChangeType::SetModulation, id, newModulation});
+    }
+}
+
+EnumMainHandle::EnumMainHandle(size_t numParams, Queue& mainToAudio, Queue& audioToMain)
+    : mValues(numParams, 0.0f), mModulations(numParams, 0.0f), mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {}
+
+double EnumMainHandle::GetRawValue(Id id) const {
+    clap_id index = static_cast<clap_id>(id);
+    if (index >= mValues.size()) {
+        return 0.0f;
+    }
+    return mValues[index];
+}
+
+void EnumMainHandle::SetRawValue(Id id, double newValue) {
+    clap_id index = static_cast<clap_id>(id);
+    if (index < mValues.size()) {
+        mValues[index] = newValue;
+        mMainToAudio.push({ChangeType::SetValue, id, newValue});
+    }
+}
+
+void EnumMainHandle::FlushFromAudio() {
+    Change change;
+    while (mAudioToMain.pop(change)) {
+        clap_id index = static_cast<clap_id>(change.id);
+        switch (change.type) {
+            case ChangeType::SetValue: {
+                mValues[index] = change.value;
+                break;
+            }
+            case ChangeType::SetModulation: {
+                mModulations[index] = change.value;
+                break;
+            }
+            case ChangeType::StartGesture:
+            case ChangeType::StopGesture: {
+                break;
+            }
+        }
+    }
+}
+
+}  // namespace clapeze::params

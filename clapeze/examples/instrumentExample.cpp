@@ -12,6 +12,7 @@
 namespace {
 enum class Params : clap_id { Fall, Polyphony, Count };
 using ParamsFeature = clapeze::params::DynamicParametersFeature;
+using ParamsHandle = ParamsFeature::ProcessorHandle;
 }  // namespace
 
 struct FallTraits : public clapeze::NumericParam {
@@ -31,7 +32,7 @@ inline float sinOsc(float phase) {
     return std::sinf(phase * std::numbers::pi_v<float> * 2.0f);
 }
 
-class Processor : public clapeze::InstrumentProcessor<clapeze::params::DynamicProcessorHandle> {
+class Processor : public clapeze::InstrumentProcessor<ParamsHandle> {
     class Voice {
        public:
         explicit Voice(Processor& p) : mProcessor(p) {}

@@ -17,6 +17,8 @@
 #include "clapeze/params/baseParameter.h"
 #include "clapeze/pluginHost.h"
 
+/* DEPRECATED, doing migration now */
+
 namespace clapeze {
 
 /** specialize by inheriting from baseparam */

@@ -1,7 +1,5 @@
 #pragma once
 
-/** WARNING!!! WIP, untested **/
-
 #include <clap/clap.h>
 #include <etl/queue_spsc_atomic.h>
 #include <etl/span.h>
@@ -13,7 +11,6 @@
 #include <string_view>
 
 #include "clap/events.h"
-#include "clapeze/ext/parameters.h"
 #include "clapeze/params/baseParametersFeature.h"
 #include "clapeze/pluginHost.h"
 

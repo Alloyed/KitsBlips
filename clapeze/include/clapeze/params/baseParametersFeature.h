@@ -20,6 +20,11 @@ using Queue = etl::queue_spsc_atomic<Change, 100, etl::memory_model::MEMORY_MODE
 template <class TMainHandle, class TAudioHandle>
 class BaseParametersFeature : public BaseFeature {
    public:
+    // these `using` declarations are part of the public API. use them to get the handle types without having to think
+    // about the declaration of them :)
+    using MainHandle = TMainHandle;
+    using ProcessorHandle = TAudioHandle;
+
     static constexpr auto NAME = CLAP_EXT_PARAMS;
     const char* Name() const override;
 

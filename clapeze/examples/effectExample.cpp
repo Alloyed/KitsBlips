@@ -5,7 +5,7 @@
 #include <clapeze/effectPlugin.h>
 #include <clapeze/entryPoint.h>
 #include <clapeze/ext/parameterConfigs.h>
-#include <clapeze/ext/parameters.h>
+#include <clapeze/params/enumParametersFeature.h>
 
 /**
  * This is the clapeze interpretation of "AGain", a classic short example plugin.
@@ -25,7 +25,9 @@ enum class MyParams : clap_id {
  * clapeze::ParametersFeature<> implements the nuts and bolts of parameters, including persistence and audio<->main
  * thread communication. Specializing on our Params enum tells it what parameters exist and how they behave.
  */
-using MyParamsFeature = clapeze::ParametersFeature<MyParams>;  // save some typing
+// let's make some aliases to save some typing
+using MyParamsFeature = clapeze::params::EnumParametersFeature<MyParams>;
+using MyParamsHandle = MyParamsFeature::ProcessorHandle;
 }  // namespace effectExample
 
 /**
@@ -33,7 +35,7 @@ using MyParamsFeature = clapeze::ParametersFeature<MyParams>;  // save some typi
  * more info: https://www.cs.rpi.edu/~musser/design/blitz/traits1.html
  * Any parameter we try to use but forget to specialize will result in a compile error.
  */
-namespace clapeze {
+namespace clapeze::params {
 using namespace effectExample;
 // a ParamTraits implementation should inherit from clapeze::BaseParam. they can do anything, but there are a number of
 // convenient ones built-in. see `clapeze/ext/parameterConfigs.h` for more.
@@ -55,7 +57,7 @@ struct ParamTraits<MyParams, MyParams::Bypass> : public OnOffParam {
     ParamTraits() : OnOffParam("Bypass", OnOff::Off) { mFlags |= CLAP_PARAM_IS_BYPASS; }
 };
 static_assert(static_cast<clap_id>(MyParams::Count) == 3, "update parameter traits");
-}  // namespace clapeze
+}  // namespace clapeze::params
 
 /*
  * Ok, now that our parameters are defined, let's write our plugin! you may prefer to put the parameters in their own
@@ -66,9 +68,11 @@ namespace effectExample {
  * Processor holds the code that runs on the audio thread.
  * EffectProcessor provides a shortcut for simple 2-channel stereo effects with parameters
  */
-class MyProcessor : public clapeze::EffectProcessor<MyParamsFeature::ProcessParameters> {
+class MyProcessor : public clapeze::EffectProcessor<MyParamsHandle> {
+    using BaseType = clapeze::EffectProcessor<MyParamsHandle>;
+
    public:
-    explicit MyProcessor(MyParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
+    explicit MyProcessor(MyParamsHandle& params) : BaseType(params) {}
     ~MyProcessor() = default;
 
     clapeze::ProcessStatus ProcessAudio(const clapeze::StereoAudioBuffer& in,
@@ -146,7 +150,7 @@ class MyPlugin : public clapeze::EffectPlugin {
 
         // we are opting into audio processing using the Processor object defined before, and using the params object as
         // our communication channel.
-        ConfigProcessor<MyProcessor>(params.GetStateForAudioThread());
+        ConfigProcessor<MyProcessor>(params.GetProcessorHandle());
     }
 };
 
