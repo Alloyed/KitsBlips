@@ -212,6 +212,23 @@ class ParametersFeature : public BaseFeature {
             }
             return out;
         }
+
+        template <Id id>
+        void Send(typename ParamTraits<TParamId, id>::_valuetype in) {
+            using ParamType = ParamTraits<TParamId, id>;
+            clap_id index = static_cast<clap_id>(id);
+            double raw{};
+            if (index < mValues.size()) {
+                if (static_cast<const ParamType*>(mParamsRef[index].get())->FromValue(in, raw)) {
+                    SetRawValue(id, raw);
+                    // tricksy: we're sending our own update from the audio thread to be processed in
+                    // FlushEventsFromMain. probably smarter to ask for the event queue and push ourselves in there
+                    // instead.
+                    mMainToAudio.push({ChangeType::SetValue, id, raw});
+                }
+            }
+        }
+
         double GetRawValue(Id id) const {
             clap_id index = static_cast<clap_id>(id);
             if (index < mValues.size()) {
@@ -226,6 +243,7 @@ class ParametersFeature : public BaseFeature {
                 mAudioToMain.push({ChangeType::SetValue, id, newValue});
             }
         }
+
         double GetRawModulation(Id id) const {
             clap_id index = static_cast<clap_id>(id);
             if (index < mModulations.size()) {

@@ -24,7 +24,7 @@ struct clapeze::ParamTraits<Params, Params::Polyphony> : public clapeze::Integer
     ParamTraits() : clapeze::IntegerParam("Polyphony", 1, 16, 8, "voices", "voice") {}
 };
 
-namespace sines {
+namespace instrumentExample {
 inline float mtof(float midiNote) {
     return std::exp2((midiNote - 69.0f) / 12.0f) * 440.0f;
 }
@@ -115,4 +115,4 @@ class Plugin : public clapeze::InstrumentPlugin {
 };
 
 CLAPEZE_REGISTER_PLUGIN(Plugin, AudioInstrumentDescriptor("kitsblips.sines", "Sines", "a simple sine wave synth"));
-}  // namespace sines
+}  // namespace instrumentExample

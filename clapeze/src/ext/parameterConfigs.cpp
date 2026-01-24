@@ -22,9 +22,8 @@ bool parseNumberFromText(std::string_view input, double out) {
 #endif
 }
 
-template<typename... Args>
-void formatToSpan(etl::span<char>& buf, fmt::format_string<Args...> fmt, Args&&... args)
-{
+template <typename... Args>
+void formatToSpan(etl::span<char>& buf, fmt::format_string<Args...> fmt, Args&&... args) {
     // -1 to save space for null terminator
     auto result = fmt::format_to_n(buf.data(), buf.size() - 1, fmt, std::forward<Args>(args)...);
     // now, actually null terminate
@@ -34,7 +33,7 @@ void formatToSpan(etl::span<char>& buf, fmt::format_string<Args...> fmt, Args&&.
 bool NumericParam::FillInformation(clap_id id, clap_param_info_t* information) const {
     memset(information, 0, sizeof(clap_param_info_t));
     information->id = id;
-    information->flags = CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_MODULATABLE;
+    information->flags = mFlags;
     information->min_value = 0.0;
     information->max_value = 1.0;
     information->default_value = GetRawDefault();
@@ -105,7 +104,7 @@ bool PercentParam::FromText(std::string_view text, double& outRawValue) const {
 bool IntegerParam::FillInformation(clap_id id, clap_param_info_t* information) const {
     memset(information, 0, sizeof(clap_param_info_t));
     information->id = id;
-    information->flags = CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_MODULATABLE | CLAP_PARAM_IS_STEPPED;
+    information->flags = mFlags;
     information->min_value = static_cast<double>(mMin);
     information->max_value = static_cast<double>(mMax);
     information->default_value = GetRawDefault();
@@ -130,7 +129,7 @@ bool IntegerParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
         if (rawValue == 1.0 && !mUnitSingular.empty()) {
             unit = mUnitSingular;
         }
-        formatToSpan(outTextBuf,  "{} {}", value, unit);
+        formatToSpan(outTextBuf, "{} {}", value, unit);
         return true;
     }
 

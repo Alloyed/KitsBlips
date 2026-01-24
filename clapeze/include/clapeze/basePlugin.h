@@ -31,14 +31,34 @@ class BasePlugin {
     virtual ~BasePlugin() = default;
 
    protected:
-    // required
+    /**
+     * Configures the plugin. Call ConfigFeature()/ConfigProcessor() in here to set them up for later!
+     */
     virtual void Config() = 0;
-    // optional
+    /**
+     * @see clap_plugin_t::init
+     */
     virtual bool Init();
+    /**
+     * @see clap_plugin_t::activate
+     */
     virtual bool Activate(double sampleRate, uint32_t minBlockSize, uint32_t maxBlockSize);
+    /**
+     * @see clap_plugin_t::deactivate
+     */
     virtual void Deactivate();
+    /**
+     * @see clap_plugin_t::reset
+     */
     virtual void Reset();
+    /**
+     * @see clap_plugin_t::on_main_thread
+     */
     virtual void OnMainThread();
+    /**
+     * Called right after config. This can be used to ensure that dependencies/complex situations are valid, as a sanity
+     * check.
+     */
     virtual bool ValidateConfig();
 
     /* implementation methods */

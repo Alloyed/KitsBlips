@@ -70,6 +70,7 @@ struct NumericParam : public BaseParam {
     const float mMax;
     const float mDefaultValue;
     const std::string mUnit;
+    clap_param_info_flags mFlags = CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_MODULATABLE;
 };
 
 struct PercentParam : public NumericParam {
@@ -120,6 +121,7 @@ struct IntegerParam : public BaseParam {
     const int32_t mDefaultValue;
     const std::string mUnit;
     const std::string mUnitSingular;
+    clap_param_info_flags mFlags = CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_MODULATABLE | CLAP_PARAM_IS_STEPPED;
 };
 
 /**
@@ -134,7 +136,7 @@ struct EnumParam : public BaseParam {
     bool FillInformation(clap_id id, clap_param_info_t* information) const override {
         memset(information, 0, sizeof(clap_param_info_t));
         information->id = id;
-        information->flags = CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_ENUM | CLAP_PARAM_IS_STEPPED;
+        information->flags = mFlags;
         information->min_value = 0;
         information->max_value = static_cast<double>(mLabels.size() - 1);
         information->default_value = GetRawDefault();
@@ -179,6 +181,7 @@ struct EnumParam : public BaseParam {
     const std::string mName;
     const std::vector<std::string> mLabels;
     const TEnum mDefaultValue;
+    clap_param_info_flags mFlags = CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_ENUM | CLAP_PARAM_IS_STEPPED;
 };
 
 enum class OnOff : uint8_t { Off, On };

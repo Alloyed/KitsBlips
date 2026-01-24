@@ -23,10 +23,16 @@ enum class ProcessStatus {
 };
 
 class BasePlugin;
+/**
+ * A processor holds the audio-thread-specific state related to your plugin. On the audio thread, it will process audio
+ * (duh) and events, and then it can send the resulting audio and events back out into the wider world. Most of your
+ * DSP-related code will live here.
+ */
 class BaseProcessor {
     friend class BasePlugin;
 
    public:
+    /* Processors are created during the Config() phase of the plugin, and destroyed when the plugin is destroyed. */
     BaseProcessor() {}
     virtual ~BaseProcessor() = default;
 
@@ -35,6 +41,7 @@ class BaseProcessor {
      * before the main thread can no longer communicate with the processor directly.
      *
      * [main-thread & !active]
+     * @see clap_plugin_t::activate
      */
     virtual void Activate([[maybe_unused]] double sampleRate,
                           [[maybe_unused]] size_t minBlockSize,
@@ -43,12 +50,14 @@ class BaseProcessor {
      * Called when the plugin is deactivated.
      *
      * [main-thread & active]
+     * @see clap_plugin_t::deactivate
      */
     virtual void Deactivate() {};
     /**
      * Override to handle discrete events coming from the host.
      *
      * [audio-thread & active & processing]
+     * @see clap_plugin_t::process
      */
     virtual void ProcessEvent(const clap_event_header_t& event) = 0;
     /**
@@ -56,12 +65,14 @@ class BaseProcessor {
      * sample-accurate timing for events.
      *
      * [audio-thread & active & processing]
+     * @see clap_plugin_t::process
      */
     virtual ProcessStatus ProcessAudio(const clap_process_t& process, size_t blockStart, size_t blockStop) = 0;
     /**
      * Override to communicate with the main thread. Called once per process.
      *
      * [audio-thread & active & processing]
+     * @see clap_plugin_t::process
      */
     virtual void ProcessFlush(const clap_process_t& process) = 0;
     /**
@@ -69,10 +80,14 @@ class BaseProcessor {
      * etc.
      *
      * [audio-thread & active]
+     * @see clap_plugin_t::reset
      */
     virtual void ProcessReset() {};
 
-    /* only valid while processing. using contextual state. */
+    /**
+     * sends an event back to the host.
+     * [audio-thread & active & processing]
+     */
     void SendEvent(clap_event_header_t& event) {
         event.time += mTime;  // this is probably very not smart
         mOutEvents->try_push(mOutEvents, &event);
