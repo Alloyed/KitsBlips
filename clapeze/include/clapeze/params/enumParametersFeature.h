@@ -79,6 +79,9 @@ class EnumMainHandle {
     double GetRawValue(Id id) const;
     void SetRawValue(Id id, double newValue);
 
+    void StartGesture(Id id);
+    void StopGesture(Id id);
+
     void FlushFromAudio();
 
    private:
@@ -95,7 +98,8 @@ class EnumParametersFeature : public BaseParametersFeature<EnumMainHandle, EnumP
     using BaseType = BaseParametersFeature<EnumMainHandle, EnumProcessorHandle<TParamId>>;
 
    public:
-    EnumParametersFeature(PluginHost& host, TParamId numParams) : BaseType(host, static_cast<Id>(numParams)) {}
+    using Id = TParamId;
+    EnumParametersFeature(PluginHost& host, TParamId numParams) : BaseType(host, static_cast<clap_id>(numParams)) {}
 
     template <TParamId id>
     EnumParametersFeature& Parameter() {
@@ -111,6 +115,13 @@ class EnumParametersFeature : public BaseParametersFeature<EnumMainHandle, EnumP
     EnumParametersFeature& Module(std::string_view moduleName) {
         mNextModule = moduleName;
         return *this;
+    }
+
+    template <TParamId id>
+    const ParamTraits<TParamId, id>* GetSpecificParam() const {
+        using TParam = ParamTraits<TParamId, id>;
+        clap_id index = static_cast<clap_id>(id);
+        return static_cast<const TParam*>(BaseType::GetBaseParam(index));
     }
 
     std::string_view mNextModule = "";
@@ -250,45 +261,4 @@ void EnumProcessorHandle<TParamId>::SetRawModulation(Id id, double newModulation
         mAudioToMain.push({ChangeType::SetModulation, id, newModulation});
     }
 }
-
-EnumMainHandle::EnumMainHandle(size_t numParams, Queue& mainToAudio, Queue& audioToMain)
-    : mValues(numParams, 0.0f), mModulations(numParams, 0.0f), mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {}
-
-double EnumMainHandle::GetRawValue(Id id) const {
-    clap_id index = static_cast<clap_id>(id);
-    if (index >= mValues.size()) {
-        return 0.0f;
-    }
-    return mValues[index];
-}
-
-void EnumMainHandle::SetRawValue(Id id, double newValue) {
-    clap_id index = static_cast<clap_id>(id);
-    if (index < mValues.size()) {
-        mValues[index] = newValue;
-        mMainToAudio.push({ChangeType::SetValue, id, newValue});
-    }
-}
-
-void EnumMainHandle::FlushFromAudio() {
-    Change change;
-    while (mAudioToMain.pop(change)) {
-        clap_id index = static_cast<clap_id>(change.id);
-        switch (change.type) {
-            case ChangeType::SetValue: {
-                mValues[index] = change.value;
-                break;
-            }
-            case ChangeType::SetModulation: {
-                mModulations[index] = change.value;
-                break;
-            }
-            case ChangeType::StartGesture:
-            case ChangeType::StopGesture: {
-                break;
-            }
-        }
-    }
-}
-
 }  // namespace clapeze::params

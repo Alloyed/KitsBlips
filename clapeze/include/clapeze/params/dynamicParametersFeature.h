@@ -51,6 +51,9 @@ class DynamicMainHandle {
     double GetRawValue(Id id) const;
     void SetRawValue(Id id, double newValue);
 
+    void StartGesture(Id id);
+    void StopGesture(Id id);
+
     void FlushFromAudio();
 
    private:

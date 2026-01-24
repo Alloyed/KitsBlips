@@ -8,6 +8,7 @@
 #include "clapeze/params/baseParameter.h"
 
 namespace clapeze::params {
+// TODO: remove
 using Id = clap_id;
 enum class ChangeType : uint8_t { SetValue, SetModulation, StartGesture, StopGesture };
 struct Change {
@@ -35,10 +36,6 @@ class BaseParametersFeature : public BaseFeature {
     bool Validate(const BasePlugin& self) const override;
 
     const BaseParam* GetBaseParam(Id id) const;
-
-    void StartGesture(Id id);
-
-    void StopGesture(Id id);
 
     void RequestClear(Id id, clap_param_clear_flags flags = CLAP_PARAM_CLEAR_ALL);
 
@@ -121,16 +118,6 @@ const BaseParam* BaseParametersFeature<TMainHandle, TAudioHandle>::GetBaseParam(
         return nullptr;
     }
     return mParams[index].get();
-}
-
-template <class TMainHandle, class TAudioHandle>
-void BaseParametersFeature<TMainHandle, TAudioHandle>::StartGesture(Id id) {
-    mMainToAudio.push({ChangeType::StartGesture, id, 0.0});
-}
-
-template <class TMainHandle, class TAudioHandle>
-void BaseParametersFeature<TMainHandle, TAudioHandle>::StopGesture(Id id) {
-    mMainToAudio.push({ChangeType::StopGesture, id, 0.0});
 }
 
 template <class TMainHandle, class TAudioHandle>

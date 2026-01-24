@@ -135,6 +135,14 @@ void DynamicMainHandle::SetRawValue(Id id, double newValue) {
     }
 }
 
+void DynamicMainHandle::StartGesture(Id id) {
+    mMainToAudio.push({ChangeType::StartGesture, id, 0.0});
+}
+
+void DynamicMainHandle::StopGesture(Id id) {
+    mMainToAudio.push({ChangeType::StopGesture, id, 0.0});
+}
+
 void DynamicMainHandle::FlushFromAudio() {
     Change change;
     while (mAudioToMain.pop(change)) {

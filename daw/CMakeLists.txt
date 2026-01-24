@@ -39,14 +39,13 @@ target_enable_warnings(KitsBlips)
 
 target_sources(KitsBlips PRIVATE
     src/entry.cpp
-    src/distort/distort.cpp
-    src/snecho/snecho.cpp
     src/chorus/chorus.cpp
+    src/distort/distort.cpp
     src/freqshift/freqshift.cpp
+    src/gui/kitguiFeature.cpp
     src/harmonizer/harmonizer.cpp
     src/keysynth/keysynth.cpp
-    src/tester/tester.cpp
-    src/gui/kitguiFeature.cpp
+    src/snecho/snecho.cpp
 )
 
 target_include_directories(KitsBlips PUBLIC src)

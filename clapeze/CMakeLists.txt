@@ -17,6 +17,7 @@ target_sources(clapeze PRIVATE
     src/entryPoint.cpp
     src/ext/assets.cpp
     src/params/dynamicParametersFeature.cpp
+    src/params/enumParametersFeature.cpp
     src/params/parameterTypes.cpp
 )
 

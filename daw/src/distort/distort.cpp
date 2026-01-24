@@ -1,13 +1,14 @@
 #include <clapeze/effectPlugin.h>
 #include <clapeze/entryPoint.h>
-#include <clapeze/ext/parameterConfigs.h>
-#include <clapeze/ext/parameters.h>
+#include <clapeze/params/enumParametersFeature.h>
+#include <clapeze/params/parameterTypes.h>
 #include <kitdsp/filters/dcBlocker.h>
 #include <kitdsp/filters/onePole.h>
 #include <kitdsp/math/units.h>
 #include <kitdsp/math/util.h>
 
 #include "clapeze/baseProcessor.h"
+#include "clapeze/params/parameterOnlyStateFeature.h"
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI
@@ -27,34 +28,36 @@ enum class Algorithm {
     // not an algorithm :)
     Count
 };
-using ParamsFeature = clapeze::ParametersFeature<Params>;
+using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 }  // namespace
 
+namespace clapeze::params {
 template <>
-struct clapeze::ParamTraits<Params, Params::Algorithm> : public clapeze::EnumParam<Algorithm> {
+struct ParamTraits<Params, Params::Algorithm> : public clapeze::EnumParam<Algorithm> {
     ParamTraits()
         : clapeze::EnumParam<Algorithm>("Algorithm", {"Clip", "Saturate", "Fold", "Rectify"}, Algorithm::HardClip) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Gain> : public clapeze::DbParam {
+struct ParamTraits<Params, Params::Gain> : public clapeze::DbParam {
     ParamTraits() : clapeze::DbParam("Gain", 0.0f, 32.0f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Tone> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::Tone> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Tone", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Makeup> : public clapeze::DbParam {
+struct ParamTraits<Params, Params::Makeup> : public clapeze::DbParam {
     ParamTraits() : clapeze::DbParam("Makeup", -9.0f, 9.0f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Mix", 1.0f) {}
 };
+}  // namespace clapeze::params
 
 using namespace clapeze;
 
@@ -102,9 +105,9 @@ class ToneFilter {
 };
 }  // namespace
 
-class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
+class Processor : public EffectProcessor<ParamsFeature::ProcessorHandle> {
    public:
-    explicit Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
+    explicit Processor(ParamsFeature::ProcessorHandle& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
     ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
@@ -203,12 +206,13 @@ class Plugin : public EffectPlugin {
                                     .Parameter<Params::Tone>()
                                     .Parameter<Params::Makeup>()
                                     .Parameter<Params::Mix>();
+        ConfigFeature<ParameterOnlyStateFeature<ParamsFeature>>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>(GetHost(),
                                      [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif
 
-        ConfigProcessor<Processor>(params.GetStateForAudioThread());
+        ConfigProcessor<Processor>(params.GetProcessorHandle());
     }
 };
 

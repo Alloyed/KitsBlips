@@ -1,11 +1,12 @@
 #include <clapeze/effectPlugin.h>
 #include <clapeze/entryPoint.h>
-#include <clapeze/ext/parameterConfigs.h>
-#include <clapeze/ext/parameters.h>
+#include <clapeze/params/enumParametersFeature.h>
+#include <clapeze/params/parameterTypes.h>
 #include <kitdsp/frequencyShifter.h>
 #include <kitdsp/math/util.h>
 
 #include "clapeze/baseProcessor.h"
+#include "clapeze/params/parameterOnlyStateFeature.h"
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI
@@ -17,26 +18,28 @@
 
 namespace {
 enum class Params : clap_id { Shift, Mix, Count };
-using ParamsFeature = clapeze::ParametersFeature<Params>;
+using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 }  // namespace
 
+namespace clapeze::params {
 template <>
-struct clapeze::ParamTraits<Params, Params::Shift> : public clapeze::NumericParam {
+struct ParamTraits<Params, Params::Shift> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Shift", cPowBipolarCurve<2>, -1000, 1000, 0, "hz") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Mix", 1.0f) {}
 };
+}  // namespace clapeze::params
 
 using namespace clapeze;
 
 namespace freqshift {
 
-class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
+class Processor : public EffectProcessor<ParamsFeature::ProcessorHandle> {
    public:
-    explicit Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
+    explicit Processor(ParamsFeature::ProcessorHandle& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
     ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
@@ -109,12 +112,13 @@ class Plugin : public EffectPlugin {
 
         ParamsFeature& params =
             ConfigFeature<ParamsFeature>(GetHost(), Params::Count).Parameter<Params::Shift>().Parameter<Params::Mix>();
+        ConfigFeature<ParameterOnlyStateFeature<ParamsFeature>>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>(GetHost(),
                                      [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif
 
-        ConfigProcessor<Processor>(params.GetStateForAudioThread());
+        ConfigProcessor<Processor>(params.GetProcessorHandle());
     }
 };
 

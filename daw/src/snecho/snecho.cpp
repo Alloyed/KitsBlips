@@ -1,8 +1,9 @@
 #include <clapeze/entryPoint.h>
+#include <clapeze/params/enumParametersFeature.h>
+#include <clapeze/params/parameterTypes.h>
 #include "clapeze/baseProcessor.h"
 #include "clapeze/effectPlugin.h"
-#include "clapeze/ext/parameterConfigs.h"
-#include "clapeze/ext/parameters.h"
+#include "clapeze/params/parameterOnlyStateFeature.h"
 #include "descriptor.h"
 
 #include <etl/memory.h>
@@ -34,76 +35,78 @@ enum class Params : clap_id {
     StereoMode,
     Count
 };
-using ParamsFeature = clapeze::ParametersFeature<Params>;
+using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 }  // namespace
 
+namespace clapeze::params {
 template <>
-struct clapeze::ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Mix", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Bypass> : public clapeze::OnOffParam {
+struct ParamTraits<Params, Params::Bypass> : public clapeze::OnOffParam {
     ParamTraits() : clapeze::OnOffParam("Bypass", OnOff::Off) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Size> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::Size> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Size", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Feedback> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::Feedback> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Feedback", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::FilterPreset> : public clapeze::IntegerParam {
+struct ParamTraits<Params, Params::FilterPreset> : public clapeze::IntegerParam {
     ParamTraits() : clapeze::IntegerParam("Filter Preset", 0, kitdsp::SNES::kNumFilterPresets, 0) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::FreezeEcho> : public clapeze::OnOffParam {
+struct ParamTraits<Params, Params::FreezeEcho> : public clapeze::OnOffParam {
     ParamTraits() : clapeze::OnOffParam("Freeze Echo", OnOff::Off) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::ResetHead> : public clapeze::OnOffParam {
+struct ParamTraits<Params, Params::ResetHead> : public clapeze::OnOffParam {
     ParamTraits() : clapeze::OnOffParam("Reset Playhead", OnOff::Off) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::SizeRange> : public clapeze::IntegerParam {
+struct ParamTraits<Params, Params::SizeRange> : public clapeze::IntegerParam {
     ParamTraits() : clapeze::IntegerParam("Size Range", 0, 2, 0) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::EchoDelayMod> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::EchoDelayMod> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Echo Mod", 1.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::FilterMix> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::FilterMix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Filter Mix", 1.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::ClearBuffer> : public clapeze::OnOffParam {
+struct ParamTraits<Params, Params::ClearBuffer> : public clapeze::OnOffParam {
     ParamTraits() : clapeze::OnOffParam("Clear Buffer", OnOff::Off) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::StereoMode> : public clapeze::OnOffParam {
+struct ParamTraits<Params, Params::StereoMode> : public clapeze::OnOffParam {
     ParamTraits() : clapeze::OnOffParam("Stereo Mode", OnOff::Off) {}
 };
+}  // namespace clapeze::params
 
 using namespace kitdsp;
 using namespace clapeze;
 
 namespace snecho {
-class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
+class Processor : public EffectProcessor<ParamsFeature::ProcessorHandle> {
    public:
-    explicit Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
+    explicit Processor(ParamsFeature::ProcessorHandle& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
     ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
@@ -136,9 +139,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
 
    private:
     struct Channel {
-        void ProcessAudio(ParamsFeature::ProcessParameters& params,
-                          const etl::span<float>& in,
-                          etl::span<float>& out) {
+        void ProcessAudio(ParamsFeature::ProcessorHandle& params, const etl::span<float>& in, etl::span<float>& out) {
             // inputs
             // core
             snes1.cfg.echoBufferSize = params.Get<Params::Size>();
@@ -257,12 +258,13 @@ class Plugin : public EffectPlugin {
                                     .Parameter<Params::EchoDelayMod>()
                                     .Parameter<Params::FilterMix>()
                                     .Parameter<Params::ClearBuffer>();
+        ConfigFeature<ParameterOnlyStateFeature<ParamsFeature>>();
 
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>(GetHost(),
                                      [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif
-        ConfigProcessor<Processor>(params.GetStateForAudioThread());
+        ConfigProcessor<Processor>(params.GetProcessorHandle());
     }
 };
 

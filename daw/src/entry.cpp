@@ -1,5 +1,4 @@
 #include <clapeze/entryPoint.h>
-#include "clap/version.h"
 
 #ifndef KITSBLIPS_ENABLE_SENTRY
 // simple entry point

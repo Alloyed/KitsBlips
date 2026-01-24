@@ -1,7 +1,7 @@
 #pragma once
 
 #if KITSBLIPS_ENABLE_GUI
-#include <clapeze/ext/parameterConfigs.h>
+#include <clapeze/params/parameterTypes.h>
 #include <imgui.h>
 
 namespace kitgui {
@@ -50,16 +50,18 @@ inline bool DebugParam(const clapeze::EnumParam<TEnum>& param, double& inOutRawV
 
 template <typename TParamsFeature, TParamsFeature::Id id>
 void DebugParam(TParamsFeature& feature) {
-    double raw = feature.GetRawValue(id);
+    auto& handle = feature.GetMainHandle();
+    auto index = static_cast<clap_id>(id);
+    double raw = handle.GetRawValue(index);
 
     if (DebugParam(*(feature.template GetSpecificParam<id>()), raw)) {
-        feature.SetRawValue(id, raw);
+        handle.SetRawValue(index, raw);
     }
     if (ImGui::IsItemActivated()) {
-        feature.StartGesture(id);
+        handle.StartGesture(index);
     }
     if (ImGui::IsItemDeactivated()) {
-        feature.StopGesture(id);
+        handle.StopGesture(index);
     }
 }
 }  // namespace kitgui

@@ -1,7 +1,7 @@
 #include <clapeze/entryPoint.h>
-#include <clapeze/ext/parameterConfigs.h>
-#include <clapeze/ext/parameters.h>
 #include <clapeze/instrumentPlugin.h>
+#include <clapeze/params/enumParametersFeature.h>
+#include <clapeze/params/parameterTypes.h>
 #include <clapeze/voice.h>
 #include <kitdsp/control/adsr.h>
 #include <kitdsp/control/gate.h>
@@ -11,6 +11,7 @@
 #include <kitdsp/osc/blepOscillator.h>
 #include <memory>
 
+#include "clapeze/params/parameterOnlyStateFeature.h"
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI
@@ -55,96 +56,97 @@ enum class PolyChordType {
     Min7,
 };
 constexpr size_t cMaxVoices = 16;
-using ParamsFeature = clapeze::ParametersFeature<Params>;
+using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 }  // namespace
 
+namespace clapeze::params {
 template <>
-struct clapeze::ParamTraits<Params, Params::OscOctave> : public clapeze::IntegerParam {
+struct ParamTraits<Params, Params::OscOctave> : public clapeze::IntegerParam {
     ParamTraits() : clapeze::IntegerParam("Octave", -2, 2, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::OscTune> : public clapeze::NumericParam {
+struct ParamTraits<Params, Params::OscTune> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Tune", cPowBipolarCurve<2>, -12.0f, 12.0f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::OscModMix> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::OscModMix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("OSC ModMix (LFO <-> EG)", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::OscModAmount> : public clapeze::NumericParam {
+struct ParamTraits<Params, Params::OscModAmount> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("OSC Mod Amount", cPowBipolarCurve<2>, -1.0f, 1.0f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::FilterCutoff> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::FilterCutoff> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Cutoff", 1.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::FilterResonance> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::FilterResonance> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Resonance", 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::FilterModMix> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::FilterModMix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("VCF ModMix (LFO <-> EG)", 0.5f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::FilterModAmount> : public clapeze::NumericParam {
+struct ParamTraits<Params, Params::FilterModAmount> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("VCF Mod Amount", cLinearCurve, -1.0f, 1.0f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::LfoRate> : public clapeze::NumericParam {
+struct ParamTraits<Params, Params::LfoRate> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Rate", cLinearCurve, 0.001f, 20.0f, 0.2f, "hz") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::LfoShape> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::LfoShape> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("LFO Shape", 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::EnvAttack> : public clapeze::NumericParam {
+struct ParamTraits<Params, Params::EnvAttack> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Attack", cPowCurve<2>, 1.0f, 1000.0f, 1.0f, "ms") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::EnvDecay> : public clapeze::NumericParam {
+struct ParamTraits<Params, Params::EnvDecay> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Decay", cPowCurve<2>, 1.0f, 1000.0f, 1.0f, "ms") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::EnvSustain> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::EnvSustain> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Sustain", 1.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::EnvRelease> : public clapeze::NumericParam {
+struct ParamTraits<Params, Params::EnvRelease> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Release", cPowCurve<2>, 1.0f, 2000.0f, 1.0f, "ms") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::VcaGain> : public clapeze::DbParam {
+struct ParamTraits<Params, Params::VcaGain> : public clapeze::DbParam {
     ParamTraits() : clapeze::DbParam("VCA Volume", -80.0f, 12.0f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::VcaEnvDisabled> : public clapeze::OnOffParam {
+struct ParamTraits<Params, Params::VcaEnvDisabled> : public clapeze::OnOffParam {
     ParamTraits() : clapeze::OnOffParam("VCA Env/Gate", OnOff::Off) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::VcaLfoAmount> : public clapeze::NumericParam {
+struct ParamTraits<Params, Params::VcaLfoAmount> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("VCA LFO Amount", cLinearCurve, -1.0f, 1.0f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::PolyMode> : public clapeze::EnumParam<clapeze::VoiceStrategy> {
+struct ParamTraits<Params, Params::PolyMode> : public clapeze::EnumParam<clapeze::VoiceStrategy> {
     ParamTraits()
         : clapeze::EnumParam<clapeze::VoiceStrategy>("Voice Mode",
                                                      {"Poly", "Mono (last)"},
@@ -152,23 +154,24 @@ struct clapeze::ParamTraits<Params, Params::PolyMode> : public clapeze::EnumPara
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::PolyCount> : public clapeze::IntegerParam {
+struct ParamTraits<Params, Params::PolyCount> : public clapeze::IntegerParam {
     ParamTraits() : clapeze::IntegerParam("Voice Count", 1, cMaxVoices, 4) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::PolyChordType> : public clapeze::EnumParam<PolyChordType> {
+struct ParamTraits<Params, Params::PolyChordType> : public clapeze::EnumParam<PolyChordType> {
     ParamTraits()
         : clapeze::EnumParam<PolyChordType>("Chord",
                                             {"Octave", "5th", "Major", "Minor", "Major 7th", "Minor 7th"},
                                             PolyChordType::Octave) {}
 };
+}  // namespace clapeze::params
 
 using namespace clapeze;
 
 namespace keysynth {
 
-class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessParameters> {
+class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHandle> {
     class Voice {
        public:
         explicit Voice(Processor& p) : mProcessor(p) {}
@@ -263,7 +266,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessPara
     };
 
    public:
-    explicit Processor(ParamsFeature::ProcessParameters& params) : InstrumentProcessor(params), mVoices(*this) {}
+    explicit Processor(ParamsFeature::ProcessorHandle& params) : InstrumentProcessor(params), mVoices(*this) {}
     ~Processor() = default;
 
     clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) override {
@@ -381,13 +384,14 @@ class Plugin : public InstrumentPlugin {
                                     .Parameter<Params::VcaGain>()
                                     .Parameter<Params::VcaEnvDisabled>()
                                     .Parameter<Params::VcaLfoAmount>();
+        ConfigFeature<ParameterOnlyStateFeature<ParamsFeature>>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<clapeze::AssetsFeature>(GetHost());
         ConfigFeature<KitguiFeature>(GetHost(),
                                      [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif
 
-        ConfigProcessor<Processor>(params.GetStateForAudioThread());
+        ConfigProcessor<Processor>(params.GetProcessorHandle());
     }
 };
 

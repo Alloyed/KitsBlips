@@ -1,10 +1,11 @@
 #include <clapeze/effectPlugin.h>
 #include <clapeze/entryPoint.h>
-#include <clapeze/ext/parameterConfigs.h>
-#include <clapeze/ext/parameters.h>
+#include <clapeze/params/enumParametersFeature.h>
+#include <clapeze/params/parameterTypes.h>
 #include <kitdsp/apps/chorus.h>
 
 #include "clapeze/baseProcessor.h"
+#include "clapeze/params/parameterOnlyStateFeature.h"
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI
@@ -16,41 +17,43 @@
 
 namespace {
 enum class Params : clap_id { Rate, Depth, Delay, Feedback, Mix, Count };
-using ParamsFeature = clapeze::ParametersFeature<Params>;
+using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 }  // namespace
 
+namespace clapeze::params {
 template <>
-struct clapeze::ParamTraits<Params, Params::Rate> : public clapeze::NumericParam {
+struct ParamTraits<Params, Params::Rate> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Rate", cLinearCurve, 0.0f, 5.0f, 1.0f, "hz") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Depth> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::Depth> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Depth", 0.2f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Delay> : public clapeze::NumericParam {
+struct ParamTraits<Params, Params::Delay> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Delay", cPowCurve<2>, 2.0f, 20.0f, 8.0f, "ms") {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Feedback> : public clapeze::NumericParam {
+struct ParamTraits<Params, Params::Feedback> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("Feedback", cLinearCurve, -0.95f, 0.95f, 0.0f) {}
 };
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
+struct ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Mix", 0.5f) {}
 };
+}  // namespace clapeze::params
 
 using namespace clapeze;
 
 namespace chorus {
 
-class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
+class Processor : public EffectProcessor<ParamsFeature::ProcessorHandle> {
    public:
-    explicit Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
+    explicit Processor(ParamsFeature::ProcessorHandle& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
     ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
@@ -124,12 +127,13 @@ class Plugin : public EffectPlugin {
                                     .Parameter<Params::Delay>()
                                     .Parameter<Params::Feedback>()
                                     .Parameter<Params::Mix>();
+        ConfigFeature<ParameterOnlyStateFeature<ParamsFeature>>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>(GetHost(),
                                      [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif
 
-        ConfigProcessor<Processor>(params.GetStateForAudioThread());
+        ConfigProcessor<Processor>(params.GetProcessorHandle());
     }
 };
 

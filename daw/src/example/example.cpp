@@ -1,11 +1,9 @@
 #include <clapeze/baseProcessor.h>
 #include <clapeze/effectPlugin.h>
-#include <clapeze/entryPoint.h>
-#include <clapeze/ext/parameterConfigs.h>
-#include <clapeze/ext/parameters.h>
+#include <clapeze/params/enumParametersFeature.h>
+#include <clapeze/params/parameterTypes.h>
 #include <kitdsp/math/util.h>
-
-#include "descriptor.h"
+#include "clapeze/params/parameterOnlyStateFeature.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>
@@ -15,11 +13,11 @@
 
 namespace {
 enum class Params : clap_id { Mix, Count };
-using ParamsFeature = clapeze::ParametersFeature<Params>;
+using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 }  // namespace
 
 template <>
-struct clapeze::ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
+struct clapeze::params::ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Mix", 1.0f) {}
 };
 
@@ -27,9 +25,9 @@ using namespace clapeze;
 
 namespace example {
 
-class Processor : public EffectProcessor<ParamsFeature::ProcessParameters> {
+class Processor : public EffectProcessor<ParamsFeature::ProcessorHandle> {
    public:
-    explicit Processor(ParamsFeature::ProcessParameters& params) : EffectProcessor(params) {}
+    explicit Processor(ParamsFeature::ProcessorHandle& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
     ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
@@ -86,15 +84,16 @@ class Plugin : public EffectPlugin {
         EffectPlugin::Config();
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count).Parameter<Params::Mix>();
+        ConfigFeature<ParameterOnlyStateFeature<ParamsFeature>>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>(GetHost(),
                                      [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif
 
-        ConfigProcessor<Processor>(params.GetStateForAudioThread());
+        ConfigProcessor<Processor>(params.GetProcessorHandle());
     }
 };
 
-CLAPEZE_REGISTER_PLUGIN(Plugin, AudioEffectDescriptor("kitsblips.example", "example", "Plugin description"));
+// CLAPEZE_REGISTER_PLUGIN(Plugin, AudioEffectDescriptor("kitsblips.example", "example", "Plugin description"));
 
 }  // namespace example
