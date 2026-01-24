@@ -32,7 +32,7 @@ class EnumProcessorHandle {
                         Queue& audioToMain);
 
     template <class TParam>
-    typename TParam::_valuetype Get(Id id) const;
+    typename TParam::_valuetype Get(clap_id id) const;
 
     template <TParamId id>
     typename ParamTraits<TParamId, id>::_valuetype Get() const {
@@ -61,11 +61,11 @@ class EnumProcessorHandle {
     void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out);
 
    private:
-    double GetRawValue(Id id) const;
-    void SetRawValue(Id id, double newValue);
+    double GetRawValue(clap_id id) const;
+    void SetRawValue(clap_id id, double newValue);
 
-    double GetRawModulation(Id id) const;
-    void SetRawModulation(Id id, double newModulation);
+    double GetRawModulation(clap_id id) const;
+    void SetRawModulation(clap_id id, double newModulation);
 
     std::vector<std::unique_ptr<const BaseParam>>& mParamsRef;
     std::vector<double> mValues;
@@ -78,11 +78,11 @@ class EnumMainHandle {
    public:
     EnumMainHandle(size_t numParams, Queue& mainToAudio, Queue& audioToMain);
 
-    double GetRawValue(Id id) const;
-    void SetRawValue(Id id, double newValue);
+    double GetRawValue(clap_id id) const;
+    void SetRawValue(clap_id id, double newValue);
 
-    void StartGesture(Id id);
-    void StopGesture(Id id);
+    void StartGesture(clap_id id);
+    void StopGesture(clap_id id);
 
     void FlushFromAudio();
 
@@ -132,7 +132,7 @@ class EnumParametersFeature : public BaseParametersFeature<EnumMainHandle, EnumP
 // impl
 template <ParamEnum TParamId>
 template <class TParam>
-typename TParam::_valuetype EnumProcessorHandle<TParamId>::Get(Id id) const {
+typename TParam::_valuetype EnumProcessorHandle<TParamId>::Get(clap_id id) const {
     typename TParam::_valuetype out{};
     clap_id index = static_cast<clap_id>(id);
     if (index < mValues.size()) {
@@ -160,14 +160,12 @@ bool EnumProcessorHandle<TParamId>::ProcessEvent(const clap_event_header_t& even
         switch (event.type) {
             case CLAP_EVENT_PARAM_VALUE: {
                 const auto& paramChange = reinterpret_cast<const clap_event_param_value_t&>(event);
-                const Id id = static_cast<Id>(paramChange.param_id);
-                SetRawValue(id, paramChange.value);
+                SetRawValue(paramChange.param_id, paramChange.value);
                 return true;
             }
             case CLAP_EVENT_PARAM_MOD: {
                 const auto& paramChange = reinterpret_cast<const clap_event_param_mod_t&>(event);
-                const Id id = static_cast<Id>(paramChange.param_id);
-                SetRawModulation(id, paramChange.amount);
+                SetRawModulation(paramChange.param_id, paramChange.amount);
                 return true;
             }
             default: {
@@ -231,7 +229,7 @@ void EnumProcessorHandle<TParamId>::FlushEventsFromMain(BaseProcessor& processor
     }
 }
 template <ParamEnum TParamId>
-double EnumProcessorHandle<TParamId>::GetRawValue(Id id) const {
+double EnumProcessorHandle<TParamId>::GetRawValue(clap_id id) const {
     clap_id index = static_cast<clap_id>(id);
     if (index < mValues.size()) {
         return mValues[index];
@@ -239,7 +237,7 @@ double EnumProcessorHandle<TParamId>::GetRawValue(Id id) const {
     return 0.0f;
 }
 template <ParamEnum TParamId>
-void EnumProcessorHandle<TParamId>::SetRawValue(Id id, double newValue) {
+void EnumProcessorHandle<TParamId>::SetRawValue(clap_id id, double newValue) {
     clap_id index = static_cast<clap_id>(id);
     if (index < mValues.size()) {
         mValues[index] = newValue;
@@ -248,7 +246,7 @@ void EnumProcessorHandle<TParamId>::SetRawValue(Id id, double newValue) {
 }
 
 template <ParamEnum TParamId>
-double EnumProcessorHandle<TParamId>::GetRawModulation(Id id) const {
+double EnumProcessorHandle<TParamId>::GetRawModulation(clap_id id) const {
     clap_id index = static_cast<clap_id>(id);
     if (index < mModulations.size()) {
         return mModulations[index];
@@ -256,7 +254,7 @@ double EnumProcessorHandle<TParamId>::GetRawModulation(Id id) const {
     return 0.0f;
 }
 template <ParamEnum TParamId>
-void EnumProcessorHandle<TParamId>::SetRawModulation(Id id, double newModulation) {
+void EnumProcessorHandle<TParamId>::SetRawModulation(clap_id id, double newModulation) {
     clap_id index = static_cast<clap_id>(id);
     if (index < mModulations.size()) {
         mModulations[index] = newModulation;

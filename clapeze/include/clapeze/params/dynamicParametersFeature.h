@@ -25,17 +25,17 @@ class DynamicProcessorHandle {
                            Queue& audioToMain);
 
     template <class TParam>
-    typename TParam::_valuetype Get(Id id) const;
+    typename TParam::_valuetype Get(clap_id id) const;
 
     bool ProcessEvent(const clap_event_header_t& event);
     void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out);
 
    private:
-    double GetRawValue(Id id) const;
-    void SetRawValue(Id id, double newValue);
+    double GetRawValue(clap_id id) const;
+    void SetRawValue(clap_id id, double newValue);
 
-    double GetRawModulation(Id id) const;
-    void SetRawModulation(Id id, double newModulation);
+    double GetRawModulation(clap_id id) const;
+    void SetRawModulation(clap_id id, double newModulation);
 
     std::vector<std::unique_ptr<const BaseParam>>& mParamsRef;
     std::vector<double> mValues;
@@ -48,11 +48,11 @@ class DynamicMainHandle {
    public:
     DynamicMainHandle(size_t numParams, Queue& mainToAudio, Queue& audioToMain);
 
-    double GetRawValue(Id id) const;
-    void SetRawValue(Id id, double newValue);
+    double GetRawValue(clap_id id) const;
+    void SetRawValue(clap_id id, double newValue);
 
-    void StartGesture(Id id);
-    void StopGesture(Id id);
+    void StartGesture(clap_id id);
+    void StopGesture(clap_id id);
 
     void FlushFromAudio();
 
@@ -65,13 +65,12 @@ class DynamicMainHandle {
 
 class DynamicParametersFeature : public BaseParametersFeature<DynamicMainHandle, DynamicProcessorHandle> {
    public:
-    DynamicParametersFeature(PluginHost& host, Id numParams) : BaseParametersFeature(host, numParams) {}
+    DynamicParametersFeature(PluginHost& host, clap_id numParams) : BaseParametersFeature(host, numParams) {}
 
     DynamicParametersFeature& Parameter(clap_id id, BaseParam* param) {
-        clap_id index = static_cast<clap_id>(id);
         param->SetModule(mNextModule);
-        mParams[index].reset(param);
-        mMain.SetRawValue(id, mParams[index]->GetRawDefault());
+        mParams[id].reset(param);
+        mMain.SetRawValue(id, mParams[id]->GetRawDefault());
         return *this;
     }
 
@@ -85,13 +84,12 @@ class DynamicParametersFeature : public BaseParametersFeature<DynamicMainHandle,
 
 // impl
 template <class TParam>
-typename TParam::_valuetype DynamicProcessorHandle::Get(Id id) const {
+typename TParam::_valuetype DynamicProcessorHandle::Get(clap_id id) const {
     typename TParam::_valuetype out{};
-    clap_id index = static_cast<clap_id>(id);
-    if (index < mValues.size()) {
+    if (id < mValues.size()) {
         double raw = GetRawValue(id);
         double mod = GetRawModulation(id);
-        static_cast<const TParam*>(mParamsRef[index].get())->ToValue(raw + mod, out);
+        static_cast<const TParam*>(mParamsRef[id].get())->ToValue(raw + mod, out);
     }
     return out;
 }

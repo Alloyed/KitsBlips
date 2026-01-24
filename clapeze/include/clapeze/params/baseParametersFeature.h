@@ -8,18 +8,16 @@
 #include "clapeze/params/baseParameter.h"
 
 namespace clapeze::params {
-// TODO: remove
-using Id = clap_id;
 enum class ChangeType : uint8_t { SetValue, SetModulation, StartGesture, StopGesture };
 struct Change {
     ChangeType type;
-    Id id;
+    clap_id id;
     double value;
 };
 using Queue = etl::queue_spsc_atomic<Change, 100, etl::memory_model::MEMORY_MODEL_SMALL>;
 
 template <typename T>
-concept BaseMainHandle = requires(T handle, Id id, double value) {
+concept BaseMainHandle = requires(T handle, clap_id id, double value) {
     { handle.GetRawValue(id) } -> std::convertible_to<double>;
     { handle.SetRawValue(id, value) } -> std::same_as<void>;
     { handle.StartGesture(id) } -> std::same_as<void>;
@@ -29,7 +27,7 @@ concept BaseMainHandle = requires(T handle, Id id, double value) {
 
 template <typename T>
 concept BaseAudioHandle =
-    requires(T handle, Id id, double value, BaseProcessor& processor, const clap_output_events_t* out) {
+    requires(T handle, clap_id id, double value, BaseProcessor& processor, const clap_output_events_t* out) {
         { handle.ProcessEvent(std::declval<const clap_event_header_t&>()) } -> std::convertible_to<bool>;
         { handle.FlushEventsFromMain(processor, out) } -> std::same_as<void>;
     };
@@ -45,15 +43,15 @@ class BaseParametersFeature : public BaseFeature {
     static constexpr auto NAME = CLAP_EXT_PARAMS;
     const char* Name() const override;
 
-    BaseParametersFeature(PluginHost& host, Id numParams);
+    BaseParametersFeature(PluginHost& host, clap_id numParams);
 
     void Configure(BasePlugin& self) override;
 
     bool Validate(const BasePlugin& self) const override;
 
-    const BaseParam* GetBaseParam(Id id) const;
+    const BaseParam* GetBaseParam(clap_id id) const;
 
-    void RequestClear(Id id, clap_param_clear_flags flags = CLAP_PARAM_CLEAR_ALL);
+    void RequestClear(clap_id id, clap_param_clear_flags flags = CLAP_PARAM_CLEAR_ALL);
 
     void RequestRescan(clap_param_rescan_flags flags = CLAP_PARAM_RESCAN_ALL);
 
@@ -118,7 +116,7 @@ bool BaseParametersFeature<TMainHandle, TAudioHandle>::Validate(const BasePlugin
 }
 
 template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
-BaseParametersFeature<TMainHandle, TAudioHandle>::BaseParametersFeature(PluginHost& host, Id numParams)
+BaseParametersFeature<TMainHandle, TAudioHandle>::BaseParametersFeature(PluginHost& host, clap_id numParams)
     : mHost(host),
       mNumParams(static_cast<size_t>(numParams)),
       mParams(mNumParams),
@@ -128,21 +126,19 @@ BaseParametersFeature<TMainHandle, TAudioHandle>::BaseParametersFeature(PluginHo
       mAudio(mParams, mNumParams, mMainToAudio, mAudioToMain) {}
 
 template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
-const BaseParam* BaseParametersFeature<TMainHandle, TAudioHandle>::GetBaseParam(Id id) const {
-    clap_id index = static_cast<clap_id>(id);
-    if (index >= mNumParams) {
+const BaseParam* BaseParametersFeature<TMainHandle, TAudioHandle>::GetBaseParam(clap_id id) const {
+    if (id >= mNumParams) {
         return nullptr;
     }
-    return mParams[index].get();
+    return mParams[id].get();
 }
 
 template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
-void BaseParametersFeature<TMainHandle, TAudioHandle>::RequestClear(Id id, clap_param_clear_flags flags) {
+void BaseParametersFeature<TMainHandle, TAudioHandle>::RequestClear(clap_id id, clap_param_clear_flags flags) {
     const clap_host_t* rawHost = nullptr;
     const clap_host_params_t* rawHostParams = nullptr;
     if (mHost.TryGetExtension(CLAP_EXT_PARAMS, rawHost, rawHostParams)) {
-        clap_id index = static_cast<clap_id>(id);
-        rawHostParams->clear(rawHost, index, flags);
+        rawHostParams->clear(rawHost, id, flags);
     }
 }
 
@@ -193,7 +189,7 @@ template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
                                                                             clap_param_info_t* information) {
     BaseParametersFeature& self = BaseParametersFeature::GetFromPluginObject<BaseParametersFeature>(plugin);
 
-    const BaseParam* param = self.GetBaseParam(static_cast<Id>(index));
+    const BaseParam* param = self.GetBaseParam(index);
     if (param != nullptr) {
         return param->FillInformation(index, information);
     }
@@ -208,7 +204,7 @@ template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
     // called from main thread
     if (id < self.mParams.size()) {
         self.FlushFromAudio();
-        *value = self.mMain.GetRawValue(static_cast<Id>(id));
+        *value = self.mMain.GetRawValue(id);
         return true;
     }
     return false;
@@ -222,7 +218,7 @@ template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
                                                                                  uint32_t bufferSize) {
     BaseParametersFeature& self = BaseParametersFeature::GetFromPluginObject<BaseParametersFeature>(plugin);
 
-    const BaseParam* param = self.GetBaseParam(static_cast<Id>(param_id));
+    const BaseParam* param = self.GetBaseParam(param_id);
     if (param != nullptr) {
         auto span = etl::span<char>(buf, bufferSize);
         return param->ToText(value, span);
@@ -237,7 +233,7 @@ template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
                                                                                  double* out) {
     BaseParametersFeature& self = BaseParametersFeature::GetFromPluginObject<BaseParametersFeature>(plugin);
 
-    const BaseParam* param = self.GetBaseParam(static_cast<Id>(param_id));
+    const BaseParam* param = self.GetBaseParam(param_id);
     if (param != nullptr) {
         return param->FromText(display, *out);
     }

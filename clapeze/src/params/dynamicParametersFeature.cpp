@@ -17,14 +17,12 @@ bool DynamicProcessorHandle::ProcessEvent(const clap_event_header_t& event) {
         switch (event.type) {
             case CLAP_EVENT_PARAM_VALUE: {
                 const auto& paramChange = reinterpret_cast<const clap_event_param_value_t&>(event);
-                const Id id = static_cast<Id>(paramChange.param_id);
-                SetRawValue(id, paramChange.value);
+                SetRawValue(paramChange.param_id, paramChange.value);
                 return true;
             }
             case CLAP_EVENT_PARAM_MOD: {
                 const auto& paramChange = reinterpret_cast<const clap_event_param_mod_t&>(event);
-                const Id id = static_cast<Id>(paramChange.param_id);
-                SetRawModulation(id, paramChange.amount);
+                SetRawModulation(paramChange.param_id, paramChange.amount);
                 return true;
             }
             default: {
@@ -53,12 +51,12 @@ void DynamicProcessorHandle::FlushEventsFromMain(BaseProcessor& processor, const
                     static_cast<uint16_t>(change.type == ChangeType::StartGesture ? CLAP_EVENT_PARAM_GESTURE_BEGIN
                                                                                   : CLAP_EVENT_PARAM_GESTURE_END);
                 event.header.flags = 0;
-                event.param_id = static_cast<clap_id>(change.id);
+                event.param_id = change.id;
                 out->try_push(out, &event.header);
                 break;
             }
             case ChangeType::SetValue: {
-                clap_id index = static_cast<clap_id>(change.id);
+                clap_id index = change.id;
                 mValues[index] = change.value;
 
                 clap_event_param_value_t event = {};
@@ -86,32 +84,28 @@ void DynamicProcessorHandle::FlushEventsFromMain(BaseProcessor& processor, const
         }
     }
 }
-double DynamicProcessorHandle::GetRawValue(Id id) const {
-    clap_id index = static_cast<clap_id>(id);
-    if (index < mValues.size()) {
-        return mValues[index];
+double DynamicProcessorHandle::GetRawValue(clap_id id) const {
+    if (id < mValues.size()) {
+        return mValues[id];
     }
     return 0.0f;
 }
-void DynamicProcessorHandle::SetRawValue(Id id, double newValue) {
-    clap_id index = static_cast<clap_id>(id);
-    if (index < mValues.size()) {
-        mValues[index] = newValue;
+void DynamicProcessorHandle::SetRawValue(clap_id id, double newValue) {
+    if (id < mValues.size()) {
+        mValues[id] = newValue;
         mAudioToMain.push({ChangeType::SetValue, id, newValue});
     }
 }
 
-double DynamicProcessorHandle::GetRawModulation(Id id) const {
-    clap_id index = static_cast<clap_id>(id);
-    if (index < mModulations.size()) {
-        return mModulations[index];
+double DynamicProcessorHandle::GetRawModulation(clap_id id) const {
+    if (id < mModulations.size()) {
+        return mModulations[id];
     }
     return 0.0f;
 }
-void DynamicProcessorHandle::SetRawModulation(Id id, double newModulation) {
-    clap_id index = static_cast<clap_id>(id);
-    if (index < mModulations.size()) {
-        mModulations[index] = newModulation;
+void DynamicProcessorHandle::SetRawModulation(clap_id id, double newModulation) {
+    if (id < mModulations.size()) {
+        mModulations[id] = newModulation;
         mAudioToMain.push({ChangeType::SetModulation, id, newModulation});
     }
 }
@@ -119,34 +113,32 @@ void DynamicProcessorHandle::SetRawModulation(Id id, double newModulation) {
 DynamicMainHandle::DynamicMainHandle(size_t numParams, Queue& mainToAudio, Queue& audioToMain)
     : mValues(numParams, 0.0f), mModulations(numParams, 0.0f), mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {}
 
-double DynamicMainHandle::GetRawValue(Id id) const {
-    clap_id index = static_cast<clap_id>(id);
-    if (index >= mValues.size()) {
+double DynamicMainHandle::GetRawValue(clap_id id) const {
+    if (id >= mValues.size()) {
         return 0.0f;
     }
-    return mValues[index];
+    return mValues[id];
 }
 
-void DynamicMainHandle::SetRawValue(Id id, double newValue) {
-    clap_id index = static_cast<clap_id>(id);
-    if (index < mValues.size()) {
-        mValues[index] = newValue;
+void DynamicMainHandle::SetRawValue(clap_id id, double newValue) {
+    if (id < mValues.size()) {
+        mValues[id] = newValue;
         mMainToAudio.push({ChangeType::SetValue, id, newValue});
     }
 }
 
-void DynamicMainHandle::StartGesture(Id id) {
+void DynamicMainHandle::StartGesture(clap_id id) {
     mMainToAudio.push({ChangeType::StartGesture, id, 0.0});
 }
 
-void DynamicMainHandle::StopGesture(Id id) {
+void DynamicMainHandle::StopGesture(clap_id id) {
     mMainToAudio.push({ChangeType::StopGesture, id, 0.0});
 }
 
 void DynamicMainHandle::FlushFromAudio() {
     Change change;
     while (mAudioToMain.pop(change)) {
-        clap_id index = static_cast<clap_id>(change.id);
+        clap_id index = change.id;
         switch (change.type) {
             case ChangeType::SetValue: {
                 mValues[index] = change.value;

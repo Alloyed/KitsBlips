@@ -5,18 +5,16 @@ namespace clapeze::params {
 EnumMainHandle::EnumMainHandle(size_t numParams, Queue& mainToAudio, Queue& audioToMain)
     : mValues(numParams, 0.0f), mModulations(numParams, 0.0f), mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {}
 
-double EnumMainHandle::GetRawValue(Id id) const {
-    clap_id index = static_cast<clap_id>(id);
-    if (index >= mValues.size()) {
+double EnumMainHandle::GetRawValue(clap_id id) const {
+    if (id >= mValues.size()) {
         return 0.0f;
     }
-    return mValues[index];
+    return mValues[id];
 }
 
-void EnumMainHandle::SetRawValue(Id id, double newValue) {
-    clap_id index = static_cast<clap_id>(id);
-    if (index < mValues.size()) {
-        mValues[index] = newValue;
+void EnumMainHandle::SetRawValue(clap_id id, double newValue) {
+    if (id < mValues.size()) {
+        mValues[id] = newValue;
         mMainToAudio.push({ChangeType::SetValue, id, newValue});
     }
 }
@@ -24,7 +22,7 @@ void EnumMainHandle::SetRawValue(Id id, double newValue) {
 void EnumMainHandle::FlushFromAudio() {
     Change change;
     while (mAudioToMain.pop(change)) {
-        clap_id index = static_cast<clap_id>(change.id);
+        clap_id index = change.id;
         switch (change.type) {
             case ChangeType::SetValue: {
                 mValues[index] = change.value;
@@ -42,11 +40,11 @@ void EnumMainHandle::FlushFromAudio() {
     }
 }
 
-void EnumMainHandle::StartGesture(Id id) {
+void EnumMainHandle::StartGesture(clap_id id) {
     mMainToAudio.push({ChangeType::StartGesture, id, 0.0});
 }
 
-void EnumMainHandle::StopGesture(Id id) {
+void EnumMainHandle::StopGesture(clap_id id) {
     mMainToAudio.push({ChangeType::StopGesture, id, 0.0});
 }
 
