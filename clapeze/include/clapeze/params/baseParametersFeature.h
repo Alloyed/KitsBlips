@@ -18,7 +18,23 @@ struct Change {
 };
 using Queue = etl::queue_spsc_atomic<Change, 100, etl::memory_model::MEMORY_MODEL_SMALL>;
 
-template <class TMainHandle, class TAudioHandle>
+template <typename T>
+concept BaseMainHandle = requires(T handle, Id id, double value) {
+    { handle.GetRawValue(id) } -> std::convertible_to<double>;
+    { handle.SetRawValue(id, value) } -> std::same_as<void>;
+    { handle.StartGesture(id) } -> std::same_as<void>;
+    { handle.StopGesture(id) } -> std::same_as<void>;
+    { handle.FlushFromAudio() } -> std::same_as<void>;
+};
+
+template <typename T>
+concept BaseAudioHandle =
+    requires(T handle, Id id, double value, BaseProcessor& processor, const clap_output_events_t* out) {
+        { handle.ProcessEvent(std::declval<const clap_event_header_t&>()) } -> std::convertible_to<bool>;
+        { handle.FlushEventsFromMain(processor, out) } -> std::same_as<void>;
+    };
+
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 class BaseParametersFeature : public BaseFeature {
    public:
     // these `using` declarations are part of the public API. use them to get the handle types without having to think
@@ -77,12 +93,12 @@ class BaseParametersFeature : public BaseFeature {
 };
 
 // impl
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 const char* BaseParametersFeature<TMainHandle, TAudioHandle>::Name() const {
     return NAME;
 }
 
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 void BaseParametersFeature<TMainHandle, TAudioHandle>::Configure(BasePlugin& self) {
     static const clap_plugin_params_t value = {
         &_count, &_get_info, &_get_value, &_value_to_text, &_text_to_value, &_flush,
@@ -90,7 +106,7 @@ void BaseParametersFeature<TMainHandle, TAudioHandle>::Configure(BasePlugin& sel
     self.RegisterExtension(NAME, static_cast<const void*>(&value));
 }
 
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 bool BaseParametersFeature<TMainHandle, TAudioHandle>::Validate(const BasePlugin& self) const {
     for (size_t index = 0; index < mNumParams; index++) {
         if (mParams[index].get() == nullptr) {
@@ -101,7 +117,7 @@ bool BaseParametersFeature<TMainHandle, TAudioHandle>::Validate(const BasePlugin
     return true;
 }
 
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 BaseParametersFeature<TMainHandle, TAudioHandle>::BaseParametersFeature(PluginHost& host, Id numParams)
     : mHost(host),
       mNumParams(static_cast<size_t>(numParams)),
@@ -111,7 +127,7 @@ BaseParametersFeature<TMainHandle, TAudioHandle>::BaseParametersFeature(PluginHo
       mMain(mNumParams, mMainToAudio, mAudioToMain),
       mAudio(mParams, mNumParams, mMainToAudio, mAudioToMain) {}
 
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 const BaseParam* BaseParametersFeature<TMainHandle, TAudioHandle>::GetBaseParam(Id id) const {
     clap_id index = static_cast<clap_id>(id);
     if (index >= mNumParams) {
@@ -120,7 +136,7 @@ const BaseParam* BaseParametersFeature<TMainHandle, TAudioHandle>::GetBaseParam(
     return mParams[index].get();
 }
 
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 void BaseParametersFeature<TMainHandle, TAudioHandle>::RequestClear(Id id, clap_param_clear_flags flags) {
     const clap_host_t* rawHost = nullptr;
     const clap_host_params_t* rawHostParams = nullptr;
@@ -130,7 +146,7 @@ void BaseParametersFeature<TMainHandle, TAudioHandle>::RequestClear(Id id, clap_
     }
 }
 
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 void BaseParametersFeature<TMainHandle, TAudioHandle>::RequestRescan(clap_param_rescan_flags flags) {
     const clap_host_t* rawHost = nullptr;
     const clap_host_params_t* rawHostParams = nullptr;
@@ -139,12 +155,12 @@ void BaseParametersFeature<TMainHandle, TAudioHandle>::RequestRescan(clap_param_
     }
 }
 
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 void BaseParametersFeature<TMainHandle, TAudioHandle>::FlushFromAudio() {
     mMain.FlushFromAudio();
 }
 
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 void BaseParametersFeature<TMainHandle, TAudioHandle>::RequestFlushIfNotProcessing() {
     const clap_host_t* rawHost{};
     const clap_host_params_t* rawHostParams{};
@@ -153,25 +169,25 @@ void BaseParametersFeature<TMainHandle, TAudioHandle>::RequestFlushIfNotProcessi
     }
 }
 
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 TAudioHandle& BaseParametersFeature<TMainHandle, TAudioHandle>::GetProcessorHandle() {
     return mAudio;
 }
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 TMainHandle& BaseParametersFeature<TMainHandle, TAudioHandle>::GetMainHandle() {
     return mMain;
 }
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 size_t BaseParametersFeature<TMainHandle, TAudioHandle>::GetNumParams() const {
     return mNumParams;
 }
 
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 /*static*/ uint32_t BaseParametersFeature<TMainHandle, TAudioHandle>::_count(const clap_plugin_t* plugin) {
     BaseParametersFeature& self = BaseParametersFeature::GetFromPluginObject<BaseParametersFeature>(plugin);
     return static_cast<uint32_t>(self.mNumParams);
 }
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 /*static*/ bool BaseParametersFeature<TMainHandle, TAudioHandle>::_get_info(const clap_plugin_t* plugin,
                                                                             uint32_t index,
                                                                             clap_param_info_t* information) {
@@ -184,7 +200,7 @@ template <class TMainHandle, class TAudioHandle>
     return false;
 }
 
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 /*static*/ bool BaseParametersFeature<TMainHandle, TAudioHandle>::_get_value(const clap_plugin_t* plugin,
                                                                              clap_id id,
                                                                              double* value) {
@@ -198,7 +214,7 @@ template <class TMainHandle, class TAudioHandle>
     return false;
 }
 
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 /*static*/ bool BaseParametersFeature<TMainHandle, TAudioHandle>::_value_to_text(const clap_plugin_t* plugin,
                                                                                  clap_id param_id,
                                                                                  double value,
@@ -214,7 +230,7 @@ template <class TMainHandle, class TAudioHandle>
     return false;
 }
 
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 /*static*/ bool BaseParametersFeature<TMainHandle, TAudioHandle>::_text_to_value(const clap_plugin_t* plugin,
                                                                                  clap_id param_id,
                                                                                  const char* display,
@@ -228,7 +244,7 @@ template <class TMainHandle, class TAudioHandle>
     return false;
 }
 
-template <class TMainHandle, class TAudioHandle>
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 /*static*/ void BaseParametersFeature<TMainHandle, TAudioHandle>::_flush(const clap_plugin_t* plugin,
                                                                          const clap_input_events_t* in,
                                                                          const clap_output_events_t* out) {

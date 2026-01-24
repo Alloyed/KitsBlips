@@ -16,12 +16,14 @@
 
 namespace clapeze::params {
 
+template <typename T>
+concept ParamEnum = std::is_enum_v<T> && std::is_same_v<std::underlying_type_t<T>, clap_id>;
+
 /** specialize by inheriting from baseparam */
-template <class TParamId, auto id>
-    requires std::is_same_v<std::underlying_type_t<decltype(id)>, clap_id>
+template <ParamEnum TParamId, TParamId id>
 struct ParamTraits;
 
-template <typename TParamId>
+template <ParamEnum TParamId>
 class EnumProcessorHandle {
    public:
     EnumProcessorHandle(std::vector<std::unique_ptr<const BaseParam>>& ref,
@@ -91,7 +93,7 @@ class EnumMainHandle {
     Queue& mAudioToMain;
 };
 
-template <typename TParamId>
+template <ParamEnum TParamId>
 class EnumParametersFeature : public BaseParametersFeature<EnumMainHandle, EnumProcessorHandle<TParamId>> {
     // Reminder: to use Base anything you need to prefix with BaseType::!
     // yeah it's annoying sorry
@@ -128,7 +130,7 @@ class EnumParametersFeature : public BaseParametersFeature<EnumMainHandle, EnumP
 };
 
 // impl
-template <class TParamId>
+template <ParamEnum TParamId>
 template <class TParam>
 typename TParam::_valuetype EnumProcessorHandle<TParamId>::Get(Id id) const {
     typename TParam::_valuetype out{};
@@ -141,7 +143,7 @@ typename TParam::_valuetype EnumProcessorHandle<TParamId>::Get(Id id) const {
     return out;
 }
 
-template <class TParamId>
+template <ParamEnum TParamId>
 EnumProcessorHandle<TParamId>::EnumProcessorHandle(std::vector<std::unique_ptr<const BaseParam>>& ref,
                                                    size_t numParams,
                                                    Queue& mainToAudio,
@@ -152,7 +154,7 @@ EnumProcessorHandle<TParamId>::EnumProcessorHandle(std::vector<std::unique_ptr<c
       mMainToAudio(mainToAudio),
       mAudioToMain(audioToMain) {}
 
-template <class TParamId>
+template <ParamEnum TParamId>
 bool EnumProcessorHandle<TParamId>::ProcessEvent(const clap_event_header_t& event) {
     if (event.space_id == CLAP_CORE_EVENT_SPACE_ID) {
         switch (event.type) {
@@ -176,7 +178,7 @@ bool EnumProcessorHandle<TParamId>::ProcessEvent(const clap_event_header_t& even
     return false;
 }
 
-template <class TParamId>
+template <ParamEnum TParamId>
 void EnumProcessorHandle<TParamId>::FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) {
     (void)processor;
     // Send events queued from us to the host
@@ -228,7 +230,7 @@ void EnumProcessorHandle<TParamId>::FlushEventsFromMain(BaseProcessor& processor
         }
     }
 }
-template <class TParamId>
+template <ParamEnum TParamId>
 double EnumProcessorHandle<TParamId>::GetRawValue(Id id) const {
     clap_id index = static_cast<clap_id>(id);
     if (index < mValues.size()) {
@@ -236,7 +238,7 @@ double EnumProcessorHandle<TParamId>::GetRawValue(Id id) const {
     }
     return 0.0f;
 }
-template <class TParamId>
+template <ParamEnum TParamId>
 void EnumProcessorHandle<TParamId>::SetRawValue(Id id, double newValue) {
     clap_id index = static_cast<clap_id>(id);
     if (index < mValues.size()) {
@@ -245,7 +247,7 @@ void EnumProcessorHandle<TParamId>::SetRawValue(Id id, double newValue) {
     }
 }
 
-template <class TParamId>
+template <ParamEnum TParamId>
 double EnumProcessorHandle<TParamId>::GetRawModulation(Id id) const {
     clap_id index = static_cast<clap_id>(id);
     if (index < mModulations.size()) {
@@ -253,7 +255,7 @@ double EnumProcessorHandle<TParamId>::GetRawModulation(Id id) const {
     }
     return 0.0f;
 }
-template <class TParamId>
+template <ParamEnum TParamId>
 void EnumProcessorHandle<TParamId>::SetRawModulation(Id id, double newModulation) {
     clap_id index = static_cast<clap_id>(id);
     if (index < mModulations.size()) {
