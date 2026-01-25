@@ -72,14 +72,14 @@ bool NumericParam::FromText(std::string_view text, double& outRawValue) const {
 
 bool NumericParam::ToValue(double rawValue, float& out) const {
     float curvedValue = mCurve.toCurved(static_cast<float>(rawValue));
-    out = std::lerp(mMin, mMax, curvedValue);
+    out = std::clamp(std::lerp(mMin, mMax, curvedValue), mMin, mMax);
     return true;
 }
 
 bool NumericParam::FromValue(float in, double& outRaw) const {
     float range = mMax - mMin;
     in = mCurve.fromCurved(in);
-    outRaw = range != 0.0f ? (in - mMin) / range : mMin;
+    outRaw = std::clamp(range != 0.0f ? (in - mMin) / range : mMin, 0.0f, 1.0f);
     return true;
 }
 
@@ -146,12 +146,12 @@ bool IntegerParam::FromText(std::string_view text, double& outRawValue) const {
     return FromValue(static_cast<int32_t>(in), outRawValue);
 }
 
-bool IntegerParam::ToValue(double rawValue, int32_t& out) {
-    out = static_cast<int32_t>(rawValue);
+bool IntegerParam::ToValue(double rawValue, int32_t& out) const {
+    out = std::clamp(static_cast<int32_t>(rawValue), mMin, mMax);
     return true;
 }
 
-bool IntegerParam::FromValue(int32_t in, double& outRaw) {
-    outRaw = static_cast<double>(in);
+bool IntegerParam::FromValue(int32_t in, double& outRaw) const {
+    outRaw = static_cast<double>(std::clamp(in, mMin, mMax));
     return true;
 }

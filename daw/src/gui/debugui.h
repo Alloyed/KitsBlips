@@ -20,11 +20,11 @@ inline bool DebugParam(const clapeze::NumericParam& param, double& inOutRawValue
 
 inline bool DebugParam(const clapeze::IntegerParam& param, double& inOutRawValue) {
     int32_t value = 0;
-    clapeze::IntegerParam::ToValue(inOutRawValue, value);
+    param.ToValue(inOutRawValue, value);
     std::string label(param.mName);
     bool changed =
         ImGui::SliderInt(label.c_str(), &value, param.mMin, param.mMax, nullptr, ImGuiSliderFlags_AlwaysClamp);
-    clapeze::IntegerParam::FromValue(value, inOutRawValue);
+    param.FromValue(value, inOutRawValue);
     return changed;
 }
 

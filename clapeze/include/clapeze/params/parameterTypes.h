@@ -29,18 +29,18 @@ struct ParamCurve {
 };
 constexpr ParamCurve cLinearCurve{[](float x) { return x; }, [](float x) { return x; }};
 template <auto K>
-constexpr ParamCurve cPowCurve{[](float x) { return std::exp2(K * std::log2(x)); },
-                               [](float x) { return std::exp2(std::log2(x) / K); }};
+constexpr ParamCurve cPowCurve{[](float x) { return std::clamp(std::exp2(K * std::log2(x)), 0.0f, 1.0f); },
+                               [](float x) { return std::clamp(std::exp2(std::log2(x) / K), 0.0f, 1.0f); }};
 template <auto K>
 constexpr ParamCurve cPowBipolarCurve{[](float x) {
                                           float xb = 2.0f * (x - 0.5f);  // to -1, 1
                                           float xexp = std::copysign(std::exp2(K * std::log2(std::abs(xb))), xb);
-                                          return (xexp * 0.5f) + 0.5f;  // back to 0, 1
+                                          return std::clamp((xexp * 0.5f) + 0.5f, 0.0f, 1.0f);  // back to 0, 1
                                       },
                                       [](float x) {
                                           float xb = 2.0f * (x - 0.5f);  // to -1, 1
                                           float xexp = std::copysign(std::exp2(std::log2(std::abs(xb)) / K), xb);
-                                          return (xexp * 0.5f) + 0.5f;  // back to 0, 1
+                                          return std::clamp((xexp * 0.5f) + 0.5f, 0.0f, 1.0f);  // back to 0, 1
                                       }};
 /**
  * Represents a numeric value. these are always mapped 0-1 on the DAW side so we can adjust the response curve to the
@@ -111,8 +111,8 @@ struct IntegerParam : public BaseParam {
     double GetRawDefault() const override;
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override;
     bool FromText(std::string_view text, double& outRawValue) const override;
-    static bool ToValue(double rawValue, int32_t& out);
-    static bool FromValue(int32_t in, double& outRaw);
+    bool ToValue(double rawValue, int32_t& out) const;
+    bool FromValue(int32_t in, double& outRaw) const;
 
     const std::string mName;
     const int32_t mMin;

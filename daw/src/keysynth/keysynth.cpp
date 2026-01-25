@@ -2,6 +2,7 @@
 #include <clapeze/instrumentPlugin.h>
 #include <clapeze/params/enumParametersFeature.h>
 #include <clapeze/params/parameterTypes.h>
+#include <clapeze/state/tomlStateFeature.h>
 #include <clapeze/voice.h>
 #include <kitdsp/control/adsr.h>
 #include <kitdsp/control/gate.h>
@@ -11,7 +12,6 @@
 #include <kitdsp/osc/blepOscillator.h>
 #include <memory>
 
-#include "clapeze/params/parameterOnlyStateFeature.h"
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI
@@ -384,7 +384,7 @@ class Plugin : public InstrumentPlugin {
                                     .Parameter<Params::VcaGain>()
                                     .Parameter<Params::VcaEnvDisabled>()
                                     .Parameter<Params::VcaLfoAmount>();
-        //ConfigFeature<ParameterOnlyStateFeature<ParamsFeature>>();
+        ConfigFeature<clapeze::TomlStateFeature<ParamsFeature>>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<clapeze::AssetsFeature>(GetHost());
         ConfigFeature<KitguiFeature>(GetHost(),
