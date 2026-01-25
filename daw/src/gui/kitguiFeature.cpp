@@ -138,7 +138,7 @@ void KitguiFeature::Destroy() {
 }
 
 bool KitguiFeature::SetScale(double scale) {
-    return mCtx.SetScale(scale);
+    return mCtx.SetUIScale(scale);
 }
 
 bool KitguiFeature::GetSize(uint32_t& widthOut, uint32_t& heightOut) {
