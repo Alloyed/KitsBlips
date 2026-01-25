@@ -31,7 +31,7 @@ inline float mtof(float midiNote) {
 }
 
 inline float sinOsc(float phase) {
-    return std::sinf(phase * std::numbers::pi_v<float> * 2.0f);
+    return sinf(phase * std::numbers::pi_v<float> * 2.0f);
 }
 
 class Processor : public clapeze::InstrumentProcessor<ParamsHandle> {

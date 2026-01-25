@@ -3,7 +3,6 @@
 #include <clap/clap.h>
 #include <clap/ext/params.h>
 #include <charconv>
-#include <cstdint>
 #include <cstdio>
 #include <sstream>
 #include <toml++/toml.hpp>
@@ -11,6 +10,7 @@
 #include "clapeze/basePlugin.h"
 #include "clapeze/params/baseParameter.h"
 #include "clapeze/pluginHost.h"
+#include "clapeze/state/stateUtils.h"
 
 namespace clapeze {
 
@@ -41,7 +41,6 @@ class TomlStateFeature : public BaseFeature {
    private:
     static bool _save(const clap_plugin_t* plugin, const clap_ostream_t* out) {
         TParamsFeature& feature = TParamsFeature::template GetFromPluginObject<TParamsFeature>(plugin);
-        auto& host = BasePlugin::GetFromPluginObject(plugin).GetHost();
 
         feature.FlushFromAudio();  // empty queue to ensure newest changes
         auto& handle = feature.GetMainHandle();
@@ -61,15 +60,12 @@ class TomlStateFeature : public BaseFeature {
 
         // TODO meta
         toml::table file{{"_meta", toml::table{{"version", 0}, {"plugin", "halp"}}}, {"params", paramkv}};
-        // TODO: could i wrap a clap_ostream in the C++ stream iterator instead?
-        std::ostringstream ss;
-        ss << file;
-        std::string s = ss.str();
-        host.LogFmt(clapeze::LogSeverity::Debug, "saving\n\n{}\n\n", s);
-        if (out->write(out, s.data(), s.size()) == -1) {
-            return false;
-        }
-        return true;
+
+        clap_ostream_streambuf buf(out);
+        std::ostream stream(&buf);
+        stream << file;
+
+        return stream.good();
     }
 
     static bool _load(const clap_plugin_t* plugin, const clap_istream_t* in) {
@@ -78,6 +74,9 @@ class TomlStateFeature : public BaseFeature {
 
         params.FlushFromAudio();  // empty queue so changes apply on top
         auto& handle = params.GetMainHandle();
+
+        // TODO we can't use clap_istream_streambuf because it doesn't implement random seek, and toml::parse() expects
+        // that. full example at https://stackoverflow.com/a/79746417
         std::string file;
         std::string chunk(256, '\0');
         int64_t size{};
@@ -89,7 +88,7 @@ class TomlStateFeature : public BaseFeature {
             return false;
         }
 
-        host.LogFmt(clapeze::LogSeverity::Debug, "loading\n\n{}\n\n", file);
+        host.Log(clapeze::LogSeverity::Debug, "loading file");
         auto result = toml::parse(file);
         if (!result) {
             // parse error
