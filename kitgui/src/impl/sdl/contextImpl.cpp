@@ -209,14 +209,30 @@ bool ContextImpl::Create(bool isFloating) {
     SDL_SetBooleanProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
     SDL_SetBooleanProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, true);
     SDL_SetBooleanProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, cfg.resizable);
-    SDL_SetNumberProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, cfg.startingWidth);
-    SDL_SetNumberProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, cfg.startingHeight);
+    SDL_SetBooleanProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, cfg.resizable);
+
+    // https://wiki.libsdl.org/SDL3/README-highdpi
+    SDL_SetBooleanProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_HIGH_PIXEL_DENSITY_BOOLEAN, true);
+    SDL_SetNumberProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, static_cast<int64_t>(cfg.startingWidth));
+    SDL_SetNumberProperty(mWindowProps, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, static_cast<int64_t>(cfg.startingHeight));
+
     mContext.mSizeConfigChanged = false;
     mWindow = SDL_CreateWindowWithProperties(mWindowProps);
 
     if (mWindow == nullptr) {
         LOG_SDL_ERROR();
         return false;
+    }
+
+    // apply highdpi scale
+    float scale = SDL_GetWindowDisplayScale(mWindow);
+    if (scale == 0.0f) {
+        LOG_SDL_ERROR();
+        return false;
+    } else if (scale > 1.0f) {
+        SDL_SetWindowSize(mWindow, static_cast<int32_t>(scale * cfg.startingWidth),
+                          static_cast<int32_t>(scale * cfg.startingWidth));
+        SetUIScale(scale);
     }
 
     if (mApi == kitgui::WindowApi::Any) {
@@ -293,10 +309,13 @@ void ContextImpl::SetClearColor(Magnum::Color4 color) {
     mClearColor = color;
 }
 
-bool ContextImpl::SetScale(double scale) {
-    // TODO: scale font
-    ImGui::GetStyle().ScaleAllSizes(static_cast<float>(scale));
+bool ContextImpl::SetUIScale(double scale) {
+    mScale = scale;
+    // applied elsewhere
     return true;
+}
+double ContextImpl::GetUIScale() const {
+    return mScale;
 }
 bool ContextImpl::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     int32_t w{}, h{};

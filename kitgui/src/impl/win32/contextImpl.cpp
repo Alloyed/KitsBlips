@@ -216,10 +216,14 @@ void ContextImpl::SetClearColor(Magnum::Color4 color) {
     mClearColor = color;
 }
 
-bool ContextImpl::SetScale(double scale) {
+bool ContextImpl::SetUIScale(double scale) {
     // TODO: scale font
     ImGui::GetStyle().ScaleAllSizes(static_cast<float>(scale));
     return true;
+}
+double ContextImpl::GetUIScale() const {
+    // TODO
+    return 1.0f;
 }
 bool ContextImpl::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     RECT rect;

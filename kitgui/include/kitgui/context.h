@@ -72,7 +72,8 @@ class Context {
     /**
      * Set the desired scale of the UI as a multiplier: (eg. 2.0 means 200% scaling)
      */
-    bool SetScale(double scale);
+    bool SetUIScale(double scale);
+    double GetUIScale() const;
     const SizeConfig& GetSizeConfig() const;
     void SetSizeConfig(const SizeConfig& cfg);
     bool GetSize(uint32_t& widthOut, uint32_t& heightOut) const;

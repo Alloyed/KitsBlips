@@ -3,17 +3,20 @@
 #include <Corrade/Containers/String.h>
 
 #include <fmt/format.h>
+#include <chrono>
 #include <functional>
 #include <iostream>
+#include <ratio>
 #include <source_location>
 #include <string_view>
-#include <chrono>
-#include <ratio>
 
 namespace kitgui::log {
 using Logger = std::function<void(std::string_view message)>;
 inline Logger& sLogFn() {
-    static Logger logger{[](std::string_view message) { std::cout << message << '\n'; std::cout.flush(); }};
+    static Logger logger{[](std::string_view message) {
+        std::cout << message << '\n';
+        std::cout.flush();
+    }};
     return logger;
 }
 inline void rawlog(std::string_view message, std::source_location loc = std::source_location::current()) {
@@ -30,18 +33,23 @@ inline void verbose(std::string_view message, std::source_location loc = std::so
 }
 
 class TimeRegion {
-    public:
-    TimeRegion(std::string_view region, std::source_location loc = std::source_location::current()): mRegionName(region), mLoc(loc), mStartTime(std::chrono::high_resolution_clock::now()) {
-    }
+   public:
+    explicit TimeRegion(std::string_view region, std::source_location loc = std::source_location::current())
+        : mRegionName(region), mLoc(loc), mStartTime(std::chrono::high_resolution_clock::now()) {}
     ~TimeRegion() {
         auto endTime = std::chrono::high_resolution_clock::now();
         double timeSpentMs = std::chrono::duration<double, std::milli>(endTime - mStartTime).count();
         kitgui::log::verbose(fmt::format("{} completed: {} ms", mRegionName, timeSpentMs), mLoc);
     }
-    private:
+    TimeRegion(const TimeRegion&) = delete;
+    TimeRegion(TimeRegion&&) = delete;
+    TimeRegion& operator=(const TimeRegion&) = delete;
+    TimeRegion& operator=(TimeRegion&&) = delete;
+
+   private:
     std::string mRegionName;
     std::source_location mLoc;
-    std::chrono::steady_clock::time_point mStartTime;
+    std::chrono::high_resolution_clock::time_point mStartTime;
 };
 }  // namespace kitgui::log
 

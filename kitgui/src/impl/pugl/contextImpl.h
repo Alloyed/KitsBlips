@@ -34,7 +34,8 @@ class ContextImpl {
     // host events: (matches clap API)
     bool Create(bool isFloating);
     bool Destroy();
-    bool SetScale(double scale);
+    bool SetUIScale(double scale);
+    double GetUIScale() const;
     bool GetSize(uint32_t& widthOut, uint32_t& heightOut) const;
     bool SetSizeDirectly(uint32_t width, uint32_t height, bool resizable);
     bool SetParent(const kitgui::WindowRef& handle);

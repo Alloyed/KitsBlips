@@ -1,8 +1,9 @@
 #include "kitgui/context.h"
+#include <imgui.h>
 
+#include <chrono>
 #include <cstdint>
 #include <memory>
-#include <chrono>
 #include <string_view>
 #include <utility>
 #include "fileContext.h"
@@ -85,8 +86,12 @@ void Context::SetLogger(Context::Logger fn) {
     log::sLogFn() = std::move(fn);
 }
 
-bool Context::SetScale(double scale) {
-    return mImpl->SetScale(scale);
+bool Context::SetUIScale(double scale) {
+    return mImpl->SetUIScale(scale);
+}
+
+double Context::GetUIScale() const {
+    return mImpl->GetUIScale();
 }
 
 const SizeConfig& Context::GetSizeConfig() const {
@@ -159,8 +164,12 @@ void Context::OnActivate() {
     if (mApp) {
         mApp->OnActivate();
     }
+    // TODO: call this if the UI scale ever changes
     SetupImGuiFont_everforest();
     SetupImGuiStyle_everforest();
+    float scale = static_cast<float>(GetUIScale());
+    ImGui::GetStyle().ScaleAllSizes(scale);
+    ImGui::GetStyle().FontScaleMain = scale;
 }
 
 void Context::OnDeactivate() {
