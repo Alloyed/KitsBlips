@@ -16,7 +16,12 @@ class MyApp : public kitgui::BaseApp {
 
    protected:
     void OnActivate() override {
+// lazy ._.
+#if _WIN32
+        mScene.Load("F:/code/KitsBlips/kitgui/assets/duck.glb");
+#else
         mScene.Load("../assets/duck.glb");
+#endif
         // mScene.PlayAnimationByName("Suzanne");
     }
     void OnUpdate() override {

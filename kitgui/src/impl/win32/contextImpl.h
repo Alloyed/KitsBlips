@@ -15,6 +15,7 @@
 #include <Magnum/Magnum.h>
 #include <Magnum/Math/Color.h>
 #include <Magnum/Platform/GLContext.h>
+#include <Magnum/DebugTools/FrameProfiler.h>
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -77,6 +78,7 @@ class ContextImpl {
     ::HDC mDeviceContext;
     ::HGLRC mWglContext;
     std::unique_ptr<Magnum::Platform::GLContext> mGl = nullptr;
+    std::unique_ptr<Magnum::DebugTools::FrameProfilerGL> mProfiler = nullptr;
     ImGuiContext* mImgui = nullptr;
     bool mActive = false;
     bool mDestroy = false;

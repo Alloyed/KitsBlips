@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <chrono>
 #include <string_view>
 #include <utility>
 #include "fileContext.h"
@@ -38,6 +39,7 @@ Context::Context(Context::AppFactory fn)
       mApp(nullptr) {}
 
 bool Context::Create(bool isFloating) {
+    kitgui::log::TimeRegion r("Context::Create()");
     mSizeConfigChanged = false;
     if (!mImpl->Create(isFloating)) {
         return false;
@@ -56,6 +58,7 @@ bool Context::Destroy() {
         // nothing to do
         return true;
     }
+    kitgui::log::TimeRegion r("Context::Destroy()");
     MakeCurrent();
     mApp.reset();
 
@@ -152,6 +155,7 @@ bool Context::GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
 }
 
 void Context::OnActivate() {
+    kitgui::log::TimeRegion r("Context::OnActivate()");
     if (mApp) {
         mApp->OnActivate();
     }
@@ -160,6 +164,7 @@ void Context::OnActivate() {
 }
 
 void Context::OnDeactivate() {
+    kitgui::log::TimeRegion r("Context::OnDeactivate()");
     if (mApp) {
         mApp->OnDeactivate();
     }

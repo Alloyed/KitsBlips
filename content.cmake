@@ -78,7 +78,7 @@ FetchContent_Declare(
 set(IMGUI_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/imgui)
 set(PUGL_DIR ${CMAKE_CURRENT_LIST_DIR}/sdk/pugl)
 
-# remote
+# core
 FetchContent_Declare(
     fmt
     GIT_REPOSITORY https://github.com/fmtlib/fmt
@@ -89,12 +89,6 @@ FetchContent_Declare(
     etl
     GIT_REPOSITORY https://github.com/ETLCPP/etl
     GIT_TAG        20.44.2
-    EXCLUDE_FROM_ALL
-)
-FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG        v1.17.0
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
@@ -109,25 +103,8 @@ FetchContent_Declare(
     GIT_TAG        19f18f2c1b4f0aee13112d75695d48d6b2487d68
     EXCLUDE_FROM_ALL
 )
-FetchContent_Declare(
-    cpptrace
-    GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
-    GIT_TAG        v1.0.0
-    EXCLUDE_FROM_ALL
-)
-FetchContent_Declare(
-    AudioFile
-    GIT_REPOSITORY https://github.com/adamstark/AudioFile.git
-    GIT_TAG        1.1.3
-    EXCLUDE_FROM_ALL
-)
-FetchContent_Declare(
-    sentry-native
-    GIT_REPOSITORY https://github.com/getsentry/sentry-native.git
-    GIT_TAG        0.12.3
-    EXCLUDE_FROM_ALL
-)
 
+# gfx
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(SDL_SHARED OFF)
     set(SDL_STATIC ON)
@@ -207,3 +184,34 @@ FetchContent_Declare(
     EXCLUDE_FROM_ALL
 )
 
+# debug/test
+FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG        v1.17.0
+    EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
+    cpptrace
+    GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
+    GIT_TAG        v1.0.0
+    EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
+    AudioFile
+    GIT_REPOSITORY https://github.com/adamstark/AudioFile.git
+    GIT_TAG        1.1.3
+    EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
+    sentry-native
+    GIT_REPOSITORY https://github.com/getsentry/sentry-native.git
+    GIT_TAG        0.12.3
+    EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
+    tracy
+    GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+    GIT_TAG v0.13.1
+    EXCLUDE_FROM_ALL
+)

@@ -15,6 +15,7 @@
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_win32.h>
 #include <algorithm>
+#include <chrono>
 #include "immediateMode/misc.h"
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
@@ -163,6 +164,8 @@ bool ContextImpl::Create(bool isFloating) {
     Magnum::Platform::GLContext::makeCurrent(nullptr);
     mGl = std::make_unique<Magnum::Platform::GLContext>();
     Magnum::Platform::GLContext::makeCurrent(mGl.get());
+    using Value = DebugTools::FrameProfilerGL::Value;
+    mProfiler = std::make_unique<Magnum::DebugTools::FrameProfilerGL>(Value::FrameTime | Value::GpuDuration, 50);
 
     // setup imgui
     IMGUI_CHECKVERSION();
@@ -185,6 +188,7 @@ bool ContextImpl::Destroy() {
     if (IsCreated()) {
         MakeCurrent();
         RemoveActiveInstance(this);
+        mProfiler.reset();
         mGl.reset();
         DestroyWglContext();
         ::KillTimer(mWindow, 1);
@@ -320,6 +324,7 @@ void ContextImpl::RunSingleFrame() {
 
     for (auto instance : sActiveInstances) {
         instance->MakeCurrent();
+        instance->mProfiler->beginFrame();
 
         // update
         ImGui_ImplOpenGL3_NewFrame();
@@ -340,6 +345,7 @@ void ContextImpl::RunSingleFrame() {
         // TODO: the implementation of this has a big comment on it saying multi-window is untested. it _kinda_ works,
         // but it'd probably work better if we forked it and used our glad handle internally
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        instance->mProfiler->endFrame();
 
         ::SwapBuffers(instance->mDeviceContext);
     }

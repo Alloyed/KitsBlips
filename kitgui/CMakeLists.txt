@@ -62,6 +62,7 @@ target_link_libraries(kitgui PUBLIC
 target_link_libraries(kitgui PRIVATE
     ${MAGNUM_PLATFORMGL}
     Magnum::MeshTools
+    Magnum::DebugTools
     Magnum::Shaders
     Magnum::Trade
 )
