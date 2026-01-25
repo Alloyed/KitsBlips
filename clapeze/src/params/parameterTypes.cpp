@@ -9,7 +9,7 @@
 using namespace clapeze;
 using namespace clapeze_impl;
 
-bool parseNumberFromText(std::string_view input, double out) {
+bool parseNumberFromText(std::string_view input, double& out) {
 #ifdef __APPLE__
     // Apple doesn't support charconv properly yet (2026/1/7, apple clang 14)
     std::string tmp;

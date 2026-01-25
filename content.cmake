@@ -142,12 +142,16 @@ FetchContent_Declare(
     EXCLUDE_FROM_ALL
     FIND_PACKAGE_ARGS
 )
-
 FetchContent_Declare(
 	miniz
 	GIT_REPOSITORY https://github.com/richgel999/miniz.git
 	GIT_TAG        3.1.0
     EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
+    tomlplusplus
+    GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
+    GIT_TAG        v3.4.0
 )
 
 set(CORRADE_BUILD_STATIC ON)

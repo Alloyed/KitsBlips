@@ -3,10 +3,11 @@ cmake_policy(SET CMP0048 NEW)
 project(clapeze VERSION 0.0.0)
 
 include(cmake/content.cmake)
-FetchContent_MakeAvailable(clap etl miniz fmt)
+FetchContent_MakeAvailable(clap etl miniz fmt tomlplusplus)
 
 add_library(clapeze STATIC)
 set_target_properties(clapeze PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(clapeze PRIVATE cxx_std_20)
 target_enable_warnings(clapeze)
 target_disable_warnings(miniz)
@@ -19,15 +20,21 @@ target_sources(clapeze PRIVATE
     src/params/dynamicParametersFeature.cpp
     src/params/enumParametersFeature.cpp
     src/params/parameterTypes.cpp
+    src/state/tomlImplementation.cpp
 )
 
 target_include_directories(clapeze PUBLIC include)
+target_compile_definitions(clapeze PUBLIC
+    TOML_HEADER_ONLY=0
+    TOML_EXCEPTIONS=0
+)
 
 target_link_libraries(clapeze PUBLIC
     clap
     etl
     miniz
     fmt::fmt
+    tomlplusplus::tomlplusplus
 )
 
 include(cmake/target_add_bundle.cmake)

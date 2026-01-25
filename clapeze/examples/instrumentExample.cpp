@@ -8,6 +8,7 @@
 
 #include <cmath>
 #include <numbers>
+#include "clapeze/state/tomlStateFeature.h"
 #include "descriptor.h"
 
 namespace {
@@ -114,7 +115,7 @@ class Plugin : public clapeze::InstrumentPlugin {
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), static_cast<clap_id>(Params::Count))
                                     .Parameter(static_cast<clap_id>(Params::Fall), new FallTraits())
                                     .Parameter(static_cast<clap_id>(Params::Polyphony), new PolyphonyTraits());
-        ConfigFeature<clapeze::ParameterOnlyStateFeature<ParamsFeature>>();
+        ConfigFeature<clapeze::TomlStateFeature<ParamsFeature>>();
         ConfigProcessor<Processor>(params.GetProcessorHandle());
     }
 };

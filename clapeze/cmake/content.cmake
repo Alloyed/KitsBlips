@@ -54,3 +54,8 @@ FetchContent_Declare(
 	GIT_TAG        3.1.0
     EXCLUDE_FROM_ALL
 )
+FetchContent_Declare(
+    tomlplusplus
+    GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
+    GIT_TAG        v3.4.0
+)
