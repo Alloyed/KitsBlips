@@ -9,7 +9,7 @@ class PluginHost;
 class AssetsFeature : public BaseFeature {
    public:
     explicit AssetsFeature(PluginHost& host);
-    ~AssetsFeature();
+    ~AssetsFeature() override;
     AssetsFeature(const AssetsFeature&) = delete;
     AssetsFeature(AssetsFeature&&) = delete;
     AssetsFeature& operator=(const AssetsFeature&) = delete;

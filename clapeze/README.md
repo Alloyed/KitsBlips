@@ -29,12 +29,13 @@ That said, I encourage you to take inspiration or copy-paste segments of this li
 
 ## Building
 
-clapeze is a normal cmake project. It has examples, but no automated tests yet.
+clapeze is a normal cmake project. It has examples, and a few basic tests. Unlike everything else in the monorepo, clapeze is fully self-contained, so if you want to copy-paste it wholesale that should be fine.
 
 ```bash
 $ mkdir build && cd build
 $ cmake ..
 $ cmake --build .
+$ ctest
 ```
 
 ## Documentation

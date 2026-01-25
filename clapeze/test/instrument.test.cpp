@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <array>
 #include <cstddef>
 #include "clap/audio-buffer.h"
 #include "clap/events.h"

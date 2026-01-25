@@ -41,14 +41,14 @@ class NotePortsFeature : public BaseFeature {
             info->id = index;
             info->supported_dialects = CLAP_NOTE_DIALECT_CLAP;
             info->preferred_dialect = CLAP_NOTE_DIALECT_CLAP;
-            snprintf(info->name, sizeof(info->name), "%s %d", "Note Input", index);
+            snprintf(info->name, sizeof(info->name), "%s %u", "Note Input", index);
             return true;
         } else if (index < NUM_OUTPUTS) {
             // output
             info->id = index;
             info->supported_dialects = CLAP_NOTE_DIALECT_CLAP;
             info->preferred_dialect = CLAP_NOTE_DIALECT_CLAP;
-            snprintf(info->name, sizeof(info->name), "%s %d", "Note Output", index);
+            snprintf(info->name, sizeof(info->name), "%s %u", "Note Output", index);
             return true;
         }
         // not a port

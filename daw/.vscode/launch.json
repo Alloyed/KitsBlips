@@ -18,16 +18,5 @@
       "cwd": "${fileDirname}",
       //"environment": []
     },
-    {
-      "name": "(Windows) Launch",
-      "type": "cppvsdbg",
-      "request": "launch",
-      "program": "${workspaceFolder}/build/dist/Standalone-KitsBlips_sines/Debug/sines.exe",
-      "args": [],
-      "stopAtEntry": false,
-      "cwd": "${fileDirname}",
-      "environment": [],
-      "console": "externalTerminal"
-    }
   ]
 }

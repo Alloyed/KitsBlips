@@ -27,6 +27,7 @@ if(KITSBLIPS_ENABLE_GUI)
 endif()
 
 add_library(exampleplugin MODULE
+    ../src/gui/kitguiFeature.cpp
     ../src/example/example.cpp
     ../src/tester/tester.cpp
     ../src/entry.cpp

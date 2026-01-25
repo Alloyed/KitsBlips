@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <array>
 #include "clapeze/entryPoint.h"
 #include "mockHost.h"
 

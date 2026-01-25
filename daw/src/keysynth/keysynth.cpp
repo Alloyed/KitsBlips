@@ -62,7 +62,7 @@ using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 namespace clapeze::params {
 template <>
 struct ParamTraits<Params, Params::OscOctave> : public clapeze::IntegerParam {
-    ParamTraits() : clapeze::IntegerParam("Octave", -2, 2, 0.0f) {}
+    ParamTraits() : clapeze::IntegerParam("Octave", -2, 2, 0) {}
 };
 
 template <>
@@ -117,7 +117,7 @@ struct ParamTraits<Params, Params::EnvAttack> : public clapeze::NumericParam {
 
 template <>
 struct ParamTraits<Params, Params::EnvDecay> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Decay", cPowCurve<2>, 1.0f, 1000.0f, 1.0f, "ms") {}
+    ParamTraits() : clapeze::NumericParam("Decay", cPowCurve<2>, 10.0f, 30000.0f, 10.0f, "ms") {}
 };
 
 template <>
@@ -127,7 +127,7 @@ struct ParamTraits<Params, Params::EnvSustain> : public clapeze::PercentParam {
 
 template <>
 struct ParamTraits<Params, Params::EnvRelease> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Release", cPowCurve<2>, 1.0f, 2000.0f, 1.0f, "ms") {}
+    ParamTraits() : clapeze::NumericParam("Release", cPowCurve<2>, 10.0f, 30000.0f, 10.0f, "ms") {}
 };
 
 template <>
@@ -155,7 +155,7 @@ struct ParamTraits<Params, Params::PolyMode> : public clapeze::EnumParam<clapeze
 
 template <>
 struct ParamTraits<Params, Params::PolyCount> : public clapeze::IntegerParam {
-    ParamTraits() : clapeze::IntegerParam("Voice Count", 1, cMaxVoices, 4) {}
+    ParamTraits() : clapeze::IntegerParam("Voice Count", 1, cMaxVoices, 8) {}
 };
 
 template <>
@@ -384,7 +384,7 @@ class Plugin : public InstrumentPlugin {
                                     .Parameter<Params::VcaGain>()
                                     .Parameter<Params::VcaEnvDisabled>()
                                     .Parameter<Params::VcaLfoAmount>();
-        ConfigFeature<ParameterOnlyStateFeature<ParamsFeature>>();
+        //ConfigFeature<ParameterOnlyStateFeature<ParamsFeature>>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<clapeze::AssetsFeature>(GetHost());
         ConfigFeature<KitguiFeature>(GetHost(),

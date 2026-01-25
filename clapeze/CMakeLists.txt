@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 cmake_policy(SET CMP0048 NEW)
 project(clapeze VERSION 0.0.0)
 
-include(../content.cmake)
+include(cmake/content.cmake)
 FetchContent_MakeAvailable(clap etl miniz fmt)
 
 add_library(clapeze STATIC)

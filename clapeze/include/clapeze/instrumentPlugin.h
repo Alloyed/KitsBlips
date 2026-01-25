@@ -14,7 +14,7 @@ template <typename ParamsType>
 class InstrumentProcessor : public BaseProcessor {
    public:
     explicit InstrumentProcessor(ParamsType& params) : BaseProcessor(), mParams(params) {}
-    ~InstrumentProcessor() = default;
+    ~InstrumentProcessor() override = default;
 
     void ProcessEvent(const clap_event_header_t& event) final {
         if (mParams.ProcessEvent(event)) {
@@ -62,7 +62,7 @@ class InstrumentProcessor : public BaseProcessor {
     virtual void ProcessNoteOn(const NoteTuple& note, float velocity) = 0;
     virtual void ProcessNoteOff(const NoteTuple& note) = 0;
     virtual void ProcessNoteChoke(const NoteTuple& note) = 0;
-    virtual void ProcessNoteExpression(const NoteTuple& note, clap_note_expression expression, float value) {};
+    virtual void ProcessNoteExpression(const NoteTuple& note, clap_note_expression expression, float value) {}
 
     // impl
     void ProcessFlush(const clap_process_t& process) final { mParams.FlushEventsFromMain(*this, process.out_events); }

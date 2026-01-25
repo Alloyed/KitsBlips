@@ -46,12 +46,12 @@ struct WindowHandle {
 /* Unlike all other features, BaseGuiFeature is an abstract class. Implement it with your preferred gui library! */
 class GuiFeature : public BaseFeature {
    public:
-    ~GuiFeature() = default;
+    ~GuiFeature() override = default;
     // implementation methods. (maybe we should move these into a BaseGuiImpl inner class?)
     virtual bool IsApiSupported(ClapWindowApi api, bool isFloating) = 0;
     virtual bool GetPreferredApi(ClapWindowApi& apiOut, bool& isFloatingOut) = 0;
     virtual bool Create(ClapWindowApi api, bool isFloating) = 0;
-    virtual void Destroy() {};
+    virtual void Destroy() {}
     virtual bool SetScale(double scale) = 0;
     virtual bool GetSize(uint32_t& widthOut, uint32_t& heightOut) = 0;
     virtual bool CanResize() = 0;

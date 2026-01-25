@@ -41,7 +41,7 @@ class StereoAudioPortsFeature : public BaseFeature {
             info->flags = CLAP_AUDIO_PORT_IS_MAIN;
             info->port_type = CLAP_PORT_STEREO;
             info->in_place_pair = CLAP_INVALID_ID;
-            snprintf(info->name, sizeof(info->name), "%s %d", "Audio Input", index);
+            snprintf(info->name, sizeof(info->name), "%s %u", "Audio Input", index);
             return true;
         } else if (index < NUM_OUTPUTS) {
             // output
@@ -50,7 +50,7 @@ class StereoAudioPortsFeature : public BaseFeature {
             info->flags = CLAP_AUDIO_PORT_IS_MAIN;
             info->port_type = CLAP_PORT_STEREO;
             info->in_place_pair = CLAP_INVALID_ID;  // TODO: might be nice to support for effects
-            snprintf(info->name, sizeof(info->name), "%s %d", "Audio Output", index);
+            snprintf(info->name, sizeof(info->name), "%s %u", "Audio Output", index);
             return true;
         }
         // not a port
