@@ -1,5 +1,8 @@
 #pragma once
 
+#include "clap/ext/params.h"
+#include "clapeze/params/baseParameter.h"
+#include "kitgui/controls/knob.h"
 #if KITSBLIPS_ENABLE_GUI
 #include <clapeze/params/parameterTypes.h>
 #include <imgui.h>
@@ -64,6 +67,40 @@ void DebugParam(TParamsFeature& feature) {
         handle.StopGesture(index);
     }
 }
+
+class BaseParamKnob : public kitgui::Knob {
+   public:
+    explicit BaseParamKnob(const clapeze::BaseParam& param, clap_id id) : mParam(param), mId(id) {
+        // TODO: we'll need to listen for rescans if names can ever change
+        clap_param_info_t info;
+        mParam.FillInformation(id, &info);
+        mName = info.name;
+    }
+    ~BaseParamKnob() override = default;
+    clap_id GetParamId() const { return mId; }
+
+   protected:
+    const std::string& GetName() const override { return mName; }
+    double GetDefault() const override { return mParam.GetRawDefault(); }
+    std::string FormatValueText(double value) const override {
+        std::string buf(20, '\0');
+        etl::span<char> span{buf.data(), buf.size()};
+        mParam.ToText(value, span);
+        buf = buf.c_str();
+        return buf;
+    }
+
+   private:
+    const clapeze::BaseParam& mParam;
+    const clap_id mId;
+    std::string mName{};
+};
+
+/* Helper class for creating a knob based on a parameter*/
+template <typename TParamsFeature, TParamsFeature::Id id>
+class ParamKnob : kitgui::Knob {
+   public:
+};
 }  // namespace kitgui
 
 #endif

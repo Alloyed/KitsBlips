@@ -1,6 +1,7 @@
 #include <imgui.h>
 #include "kitgui/app.h"
 #include "kitgui/context.h"
+#include "kitgui/controls/knob.h"
 #include "kitgui/kitgui.h"
 
 class MyApp : public kitgui::BaseApp {
@@ -11,13 +12,19 @@ class MyApp : public kitgui::BaseApp {
    protected:
     void OnActivate() override {}
     void OnUpdate() override {
-        ImGui::Text("base window");
-        ImGui::ShowDemoWindow();
+        static kitgui::Knob knob1;
+        static kitgui::Knob knob2;
+        static kitgui::Knob knob3;
+
+        knob1.Update(mValue);
+        knob2.Update(mValue);
+        knob3.Update(mValue);
     }
 
     void OnDraw() override {}
 
    private:
+    double mValue = 0.5;
 };
 
 int main() {

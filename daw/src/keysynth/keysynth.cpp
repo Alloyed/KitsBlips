@@ -20,6 +20,7 @@
 #include "clapeze/ext/assets.h"
 #include "gui/debugui.h"
 #include "gui/kitguiFeature.h"
+#include "kitgui/controls/knob.h"
 #include "kitgui/gfx/scene.h"
 #endif
 
@@ -299,10 +300,13 @@ class GuiApp : public kitgui::BaseApp {
     }
     ~GuiApp() = default;
 
-    void OnActivate() override { mScene->Load("assets/kitskeys.glb"); }
-    void OnUpdate() override {
-        mScene->Update();
-
+    void OnActivate() override {
+        mScene->Load("assets/kitskeys.packed.glb");
+        // TODO: data-driven
+        clap_id id = static_cast<clap_id>(Params::OscTune);
+        mKnobs.push_back(std::make_unique<kitgui::BaseParamKnob>(*mParams.GetBaseParam(id), id));
+    }
+    void DebugParamList() {
         ImGui::TextWrapped("WIP keys synthesizer. don't tell anybody but this is a volca keys for ur computer");
 
         ImGui::TextWrapped("Voicing");
@@ -338,12 +342,39 @@ class GuiApp : public kitgui::BaseApp {
         kitgui::DebugParam<ParamsFeature, Params::VcaEnvDisabled>(mParams);
         kitgui::DebugParam<ParamsFeature, Params::VcaLfoAmount>(mParams);
     }
+    void OnUpdate() override {
+        mScene->Update();
+        // imgui
+        if (ImGui::BeginMenuBar()) {
+            if (ImGui::BeginMenu("View")) {
+                ImGui::MenuItem("Debug Window", NULL, &mShowDebugWindow);
+                ImGui::EndMenu();
+            }
+        }
+
+        for (auto& knob : mKnobs) {
+            clap_id id = knob->GetParamId();
+            double raw = mParams.GetMainHandle().GetRawValue(id);
+            if (knob->Update(raw)) {
+                mParams.GetMainHandle().SetRawValue(id, raw);
+            }
+        }
+
+        if (mShowDebugWindow) {
+            if (ImGui::Begin("Debug Window", &mShowDebugWindow)) {
+                DebugParamList();
+            }
+            ImGui::End();
+        }
+    }
 
     void OnDraw() override { mScene->Draw(); }
 
    private:
     ParamsFeature& mParams;
     std::unique_ptr<kitgui::Scene> mScene;
+    std::vector<std::unique_ptr<kitgui::BaseParamKnob>> mKnobs;
+    bool mShowDebugWindow = false;
 };
 #endif
 

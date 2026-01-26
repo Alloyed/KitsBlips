@@ -29,9 +29,6 @@ target_enable_warnings(kitgui)
 
 target_sources(kitgui PRIVATE
     src/context.cpp
-    src/dom/domNode.cpp
-    src/dom/domKnob.cpp
-    src/dom/domScene.cpp
     src/fileContext.cpp
     src/gfx/animations.cpp
     src/gfx/drawables.cpp
@@ -40,7 +37,6 @@ target_sources(kitgui PRIVATE
     src/gfx/materials.cpp
     src/gfx/meshes.cpp
     src/controls/knob.cpp
-    src/immediateMode/immediateMode.cpp
     src/theme/everforest.cpp
 )
 

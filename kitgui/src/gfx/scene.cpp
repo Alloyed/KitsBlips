@@ -120,8 +120,13 @@ void Scene::Impl::Load(std::string_view path) {
 }
 
 void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName) {
-    mMaterialCache.LoadTextures(importer);
-    mMaterialCache.LoadMaterials(importer);
+    kitgui::log::TimeRegion r1("Scene::Impl::LoadImpl()");
+
+    {
+        kitgui::log::TimeRegion r2("Scene::Impl::LoadImpl()::mMaterialCache");
+        mMaterialCache.LoadTextures(importer);
+        mMaterialCache.LoadMaterials(importer);
+    }
     mLightCache.LoadLights(importer);
     mMeshCache.LoadMeshes(importer);
 

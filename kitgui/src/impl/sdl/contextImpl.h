@@ -65,19 +65,20 @@ class ContextImpl {
     kitgui::WindowApi mApi;
     SDL_PropertiesID mWindowProps{};
     SDL_Window* mWindow = nullptr;
-    SDL_GLContext mSdlGl;
-    std::unique_ptr<Magnum::Platform::GLContext> mGl = nullptr;
     ImGuiContext* mImgui = nullptr;
     bool mActive = false;
     bool mDestroy = false;
     Magnum::Color4 mClearColor = {0.5f, 0.5f, 0.5f, 1.0f};
     double mScale = 1.0;
 
+    // TODO: could be moved into a big "sharedresources" type class
     static void AddActiveInstance(ContextImpl* instance);
     static void RemoveActiveInstance(ContextImpl* instance);
     static ContextImpl* FindContextImplForWindow(SDL_Window* win);
     static std::vector<ContextImpl*> sActiveInstances;
     static kitgui::WindowApi sApi;
+    static SDL_GLContext sSdlGl;
+    static std::unique_ptr<Magnum::Platform::GLContext> sGl;
 };
 
 }  // namespace kitgui::sdl

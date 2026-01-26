@@ -1,35 +1,26 @@
-#include "controls/knob.h"
+#include "kitgui/controls/knob.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <cmath>
 #include <string>
 
-namespace {
-constexpr float kPi = 3.14159265359;
-}  // namespace
-
-namespace kitgui::ImGuiHelpers {
-bool knob(const char* id, const KnobConfig& knobConfig, double& rawValueInOut) {
+namespace kitgui {
+bool Knob::Update(double& rawValueInOut) {
     // roughly adapted from https://github.com/altschuler/imgui-knobs/tree/main
-    std::string name = "";
-    std::string valueText = "";
-    double defaultValue = 0.0;
 
-    auto itemWidth = knobConfig.diameter < 0 ? ImGui::GetTextLineHeight() * 4.0f
-                                             : knobConfig.diameter * ImGui::GetIO().FontGlobalScale;
-    auto radius = itemWidth * 0.5f;
-    auto screen_pos = ImGui::GetCursorScreenPos();
+    auto itemWidth = mWidth ? (*mWidth) * ImGui::GetIO().FontGlobalScale : ImGui::GetTextLineHeight() * 2.0f;
+    ImVec2 screen_pos = mPos ? ImVec2{mPos->x(), mPos->y()} : ImGui::GetCursorScreenPos();
 
-    ImGui::PushID(id);
+    ImGui::PushID(static_cast<void*>(this));
     ImGui::PushItemWidth(itemWidth);
-
     ImGui::BeginGroup();
+    ImGui::SetCursorScreenPos(screen_pos);
 
     // Handle dragging
-    ImGui::InvisibleButton(id, {radius * 2.0f, radius * 2.0f});
+    ImGui::InvisibleButton("button", {itemWidth, itemWidth});
+    auto gid = ImGui::GetID("button");
 
-    auto gid = ImGui::GetID(id);
     ImGuiSliderFlags drag_behaviour_flags =
         static_cast<ImGuiSliderFlags>(ImGuiSliderFlags_Vertical) | ImGuiSliderFlags_AlwaysClamp;
     double min = 0.0;
@@ -37,22 +28,31 @@ bool knob(const char* id, const KnobConfig& knobConfig, double& rawValueInOut) {
     auto value_changed =
         ImGui::DragBehavior(gid, ImGuiDataType_Double, &rawValueInOut, 0, &min, &max, "%.2f", drag_behaviour_flags);
 
-    // extras
-    ImGui::Text("%s", valueText.c_str());
-    ImGui::Text("%s", name.c_str());
+    auto is_active = ImGui::IsItemActive();
+    auto is_hovered = ImGui::IsItemHovered();
 
-    if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
-        rawValueInOut = defaultValue;
+    // responses
+    if (is_active) {
+        // tooltip counts as a window! so this works
+        ImGui::SetNextWindowPos({screen_pos.x + itemWidth, screen_pos.y + (itemWidth * 0.5f)});
+        ImGui::SetTooltip("%s", FormatValueText(rawValueInOut).c_str());
+    } else if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+        // descriptive tooltip
+        ImGui::SetTooltip("%s", GetName().c_str());
     }
 
-    if (!knobConfig.invisible) {
-        // Drawing
-        auto angle_min = knobConfig.minAngleRadians < 0 ? kPi * 0.75f : knobConfig.minAngleRadians;
-        auto angle_max = knobConfig.maxAngleRadians < 0 ? kPi * 2.25f : knobConfig.maxAngleRadians;
+    if (is_active && ImGui::IsMouseDoubleClicked(0)) {
+        rawValueInOut = GetDefault();
+        value_changed = true;
+    }
 
+    if (mShowDebug) {
+        // Drawing using imgui primitives
+        auto angle_min = minAngleRadians;
+        auto angle_max = maxAngleRadians;
+
+        auto radius = itemWidth * 0.5f;
         ImVec2 center = {screen_pos[0] + radius, screen_pos[1] + radius};
-        auto is_active = ImGui::IsItemActive();
-        auto is_hovered = ImGui::IsItemHovered();
         auto angle = angle_min + (angle_max - angle_min) * rawValueInOut;
         auto angle_cos = std::cos(static_cast<float>(angle));
         auto angle_sin = std::sin(static_cast<float>(angle));
@@ -91,5 +91,4 @@ bool knob(const char* id, const KnobConfig& knobConfig, double& rawValueInOut) {
 
     return value_changed;
 }
-
-}  // namespace kitgui::ImGuiHelpers
+}  // namespace kitgui

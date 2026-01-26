@@ -192,6 +192,10 @@ void ContextImpl::init(kitgui::WindowApi api, std::string_view appName) {
 }
 
 void ContextImpl::deinit() {
+    if (sSdlGl) {
+        sGl.reset();
+        SDL_GL_DestroyContext(sSdlGl);
+    }
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
@@ -249,16 +253,19 @@ bool ContextImpl::Create(bool isFloating) {
 
     onCreateWindow(mApi, mWindow, isFloating);
 
-    SDL_GLContext gl_context = SDL_GL_CreateContext(mWindow);
-    if (gl_context == nullptr) {
-        LOG_SDL_ERROR();
-        return false;
+    if (sSdlGl == nullptr) {
+        // create context on first use
+        SDL_GLContext gl_context = SDL_GL_CreateContext(mWindow);
+        if (gl_context == nullptr) {
+            LOG_SDL_ERROR();
+            return false;
+        }
+        sSdlGl = gl_context;
+        SDL_GL_MakeCurrent(mWindow, sSdlGl);
+        Magnum::Platform::GLContext::makeCurrent(nullptr);
+        sGl = std::make_unique<Magnum::Platform::GLContext>();
     }
-    mSdlGl = gl_context;
-    SDL_GL_MakeCurrent(mWindow, mSdlGl);
-    Magnum::Platform::GLContext::makeCurrent(nullptr);
-    mGl = std::make_unique<Magnum::Platform::GLContext>();
-    Magnum::Platform::GLContext::makeCurrent(mGl.get());
+    Magnum::Platform::GLContext::makeCurrent(sGl.get());
 
     // setup imgui
     IMGUI_CHECKVERSION();
@@ -271,7 +278,7 @@ bool ContextImpl::Create(bool isFloating) {
     io.LogFilename = nullptr;
 
     // Setup Platform/Renderer backends
-    ImGui_ImplSDL3_InitForOpenGL(mWindow, mSdlGl);
+    ImGui_ImplSDL3_InitForOpenGL(mWindow, sSdlGl);
     ImGui_ImplOpenGL3_Init();
 
     return true;
@@ -281,12 +288,10 @@ bool ContextImpl::Destroy() {
     if (IsCreated()) {
         MakeCurrent();
         RemoveActiveInstance(this);
-        mGl.reset();
-        SDL_GL_DestroyContext(mSdlGl);
         SDL_DestroyProperties(mWindowProps);
         SDL_DestroyWindow(mWindow);
         mWindow = nullptr;
-        mSdlGl = nullptr;
+        sSdlGl = nullptr;
 
         // pick any valid current engine for later: this works around a bug i don't fully understand in SDL3 itself :x
         // without this block, closing a window when multiple are active causes a crash in the main update loop when we
@@ -325,6 +330,7 @@ bool ContextImpl::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     return success;
 }
 bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
+    kitgui::log::TimeRegion r("ContextImpl::SetSizeDirectly()");
     return SDL_SetWindowResizable(mWindow, resizable) &&
            SDL_SetWindowSize(mWindow, static_cast<int32_t>(width), static_cast<int32_t>(height));
 }
@@ -361,17 +367,19 @@ bool ContextImpl::Close() {
 }
 
 void ContextImpl::MakeCurrent() {
-    if (mSdlGl) {
-        SDL_GL_MakeCurrent(mWindow, mSdlGl);
+    if (sSdlGl) {
+        SDL_GL_MakeCurrent(mWindow, sSdlGl);
     }
     if (mImgui) {
         ImGui::SetCurrentContext(mImgui);
     }
-    Magnum::Platform::GLContext::makeCurrent(mGl.get());
+    Magnum::Platform::GLContext::makeCurrent(sGl.get());
 }
 
 std::vector<ContextImpl*> ContextImpl::sActiveInstances = {};
 kitgui::WindowApi ContextImpl::sApi = kitgui::WindowApi::Any;
+SDL_GLContext ContextImpl::sSdlGl{};
+std::unique_ptr<Magnum::Platform::GLContext> ContextImpl::sGl{};
 
 void ContextImpl::AddActiveInstance(ContextImpl* instance) {
     if (std::find(sActiveInstances.begin(), sActiveInstances.end(), instance) == sActiveInstances.end()) {
@@ -461,8 +469,6 @@ void ContextImpl::RunSingleFrame() {
         instance->mContext.OnDraw();
 
         ImGui::Render();
-        // TODO: the implementation of this has a big comment on it saying multi-window is untested. it _kinda_ works,
-        // but it'd probably work better if we forked it and used our glad handle internally
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         SDL_GL_SwapWindow(instance->mWindow);

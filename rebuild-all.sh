@@ -16,3 +16,5 @@ cmake --build daisy/build
 # projects with unit tests
 ctest --test-dir kitdsp/build
 ctest --test-dir kitdsp-gpl/build
+ctest --test-dir clapeze/build
+ctest --test-dir daw/build

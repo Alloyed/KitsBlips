@@ -3,7 +3,6 @@
 #include "kitgui/app.h"
 #include "kitgui/context.h"
 #include "kitgui/gfx/scene.h"
-#include "kitgui/immediateMode.h"
 #include "kitgui/kitgui.h"
 
 class MyApp : public kitgui::BaseApp {
