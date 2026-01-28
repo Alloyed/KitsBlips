@@ -1,7 +1,3 @@
-[submodule "sdk/libDaisy"]
-	path = sdk/libDaisy
-	url = https://github.com/Alloyed/libDaisy.git
-	branch = kitdsp
 [submodule "sdk/imgui"]
 	path = sdk/imgui
 	url = https://github.com/ocornut/imgui.git

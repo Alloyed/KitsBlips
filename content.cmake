@@ -55,21 +55,6 @@ endfunction()
 # local
 set(KITSBLIPS_DIR ${CMAKE_CURRENT_LIST_DIR})
 FetchContent_Declare(
-    daisy
-    SOURCE_DIR ${KITSBLIPS_DIR}/sdk/libDaisy
-    EXCLUDE_FROM_ALL
-)
-FetchContent_Declare(
-    CMSIS_5
-    SOURCE_DIR ${KITSBLIPS_DIR}/sdk/libDaisy/Drivers/CMSIS_5
-    EXCLUDE_FROM_ALL
-)
-FetchContent_Declare(
-    CMSIS-DSP
-    SOURCE_DIR ${KITSBLIPS_DIR}/sdk/libDaisy/Drivers/CMSIS-DSP
-    EXCLUDE_FROM_ALL
-)
-FetchContent_Declare(
     KitDSP
     SOURCE_DIR ${KITSBLIPS_DIR}/kitdsp
     EXCLUDE_FROM_ALL
@@ -129,6 +114,13 @@ FetchContent_Declare(
     tomlplusplus
     GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
     GIT_TAG        v3.4.0
+    EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
+    daisy
+    GIT_REPOSITORY https://github.com/alloyed/libDaisy.git
+    GIT_TAG kitdsp
+    EXCLUDE_FROM_ALL
 )
 
 # gfx

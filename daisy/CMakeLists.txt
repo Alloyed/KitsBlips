@@ -3,7 +3,7 @@ cmake_policy(SET CMP0048 NEW)
 
 # Use Daisy's toolchain
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    include(${CMAKE_CURRENT_LIST_DIR}/../sdk/libDaisy/cmake/toolchains/autodetect.cmake)
+    include(cmake/toolchains/autodetect.cmake)
 endif()
 
 include(../content.cmake)
