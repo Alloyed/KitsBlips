@@ -33,7 +33,7 @@ runs:
       shell: bash
 
     - name: Build
-      run: cmake --build "${{inputs.build}}" --config ${{env.BUILD_TYPE}}
+      run: cmake --build "${{inputs.build}}" --config ${{env.BUILD_TYPE}} --verbose
       shell: bash
 
     - name: Install
