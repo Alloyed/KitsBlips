@@ -1,7 +1,5 @@
+!/sdk
 build
-/plugin.so
-/plugin.dylib
-/plugin.dll
 .idea
 .cache
 .DS_Store

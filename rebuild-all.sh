@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+set -o xtrace
 
 # shortcut for building everything all at once. assumes you've already done your configuring
 cmake --build kitdsp/build
