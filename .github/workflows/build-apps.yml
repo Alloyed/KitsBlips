@@ -36,6 +36,9 @@ jobs:
           - name: Windows
             os: windows-2025
             extra-flags:
+          - name: Windows-sentry
+            os: windows-2025
+            extra-flags: -DKITSBLIPS_ENABLE_SENTRY="ON"
 
     steps:
       - name: Set up Linux deps

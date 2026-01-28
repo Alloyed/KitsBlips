@@ -56,6 +56,7 @@ target_link_libraries(KitsBlips PRIVATE
 )
 
 if(KITSBLIPS_ENABLE_GUI)
+    message(STATUS "Building with kitgui enabled...")
     FetchContent_MakeAvailable(kitgui)
 
     target_compile_definitions(KitsBlips PUBLIC KITSBLIPS_ENABLE_GUI=1)
@@ -63,6 +64,7 @@ if(KITSBLIPS_ENABLE_GUI)
 endif()
 
 if(KITSBLIPS_ENABLE_SENTRY)
+    message(STATUS "Building with sentry.io telemetry enabled...")
     # TODO: move into clapeze?
     FetchContent_MakeAvailable(sentry-native)
     if(NOT DEFINED ENV{KITSBLIPS_SENTRY_DSN})
@@ -94,6 +96,7 @@ if(NOT APPLE) # TODO: mac support
 endif()
 
 if(KITSBLIPS_ENABLE_VST)
+    message(STATUS "Building with VST3 Wrapper enabled...")
     add_library(KitsBlips-vst3 MODULE)
     target_link_libraries(KitsBlips-vst3 PRIVATE KitsBlips)
     target_add_vst3_wrapper(TARGET KitsBlips-vst3 
@@ -110,6 +113,7 @@ if(KITSBLIPS_ENABLE_VST)
 endif()
 
 if(KITSBLIPS_ENABLE_AUDIOUNIT)
+    message(STATUS "Building with AudioUnit Wrapper enabled...")
     # TODO
     add_library(KitsBlips-au MODULE)
     target_link_libraries(KitsBlips-au PRIVATE KitsBlips)

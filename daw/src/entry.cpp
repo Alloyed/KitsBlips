@@ -5,6 +5,7 @@
 extern "C" const clap_plugin_entry_t clap_entry = CLAPEZE_CREATE_ENTRY_POINT();
 #else
 // entry point with sentry enabled
+
 #include <sentry.h>
 #include <filesystem>
 #if _WIN32
@@ -41,31 +42,34 @@ std::filesystem::path getSentryDbPath(std::string_view appName) {
     // backup
     return fs::temp_directory_path() / app;
 }
+
+bool initSentry(const char* path) {
+    auto* opts = sentry_options_new();
+    sentry_options_set_dsn(opts, KITSBLIPS_SENTRY_DSN);
+    sentry_options_set_release(opts, PRODUCT_ID "@" PRODUCT_VERSION);
+    sentry_options_set_debug(opts, 1);
+
+    auto pluginPath = std::filesystem::path(path);
+    auto dbPath = getSentryDbPath(PRODUCT_NAME).generic_string();
+#if _WIN32
+    auto crashpadPath =
+        std::filesystem::absolute(pluginPath.parent_path() / "./crashpad_handler.exe").generic_string();
+#else
+    auto crashpadPath = std::filesystem::absolute(pluginPath.parent_path() / "./crashpad_handler").generic_string();
+#endif
+    sentry_options_set_handler_path(opts, crashpadPath.c_str());
+    sentry_options_set_database_path(opts, dbPath.c_str());
+
+    return sentry_init(opts) != 0;
+}
 }  // namespace
 
 extern "C" const clap_plugin_entry_t clap_entry = (clap_plugin_entry_t{
     CLAP_VERSION_INIT,
     [](const char* path) -> bool {
-        sentry_options_t* options = sentry_options_new();
-        sentry_options_set_dsn(options, KITSBLIPS_SENTRY_DSN);
-        sentry_options_set_release(options, PRODUCT_ID "@" PRODUCT_VERSION);
-        sentry_options_set_debug(options, 1);
-
-        auto pluginPath = std::filesystem::path(path);
-        auto dbPath = getSentryDbPath(PRODUCT_NAME).generic_string();
-#if _WIN32
-        auto crashpadPath =
-            std::filesystem::absolute(pluginPath.parent_path() / "./crashpad_handler.exe").generic_string();
-#else
-        auto crashpadPath = std::filesystem::absolute(pluginPath.parent_path() / "./crashpad_handler").generic_string();
-#endif
-        sentry_options_set_handler_path(options, crashpadPath.c_str());
-        sentry_options_set_database_path(options, dbPath.c_str());
-
-        if (sentry_init(options) != 0) {
+        if(!initSentry(path)) {
             return false;
         }
-
         return clapeze::EntryPoint::_init(path);
     },
     []() {
