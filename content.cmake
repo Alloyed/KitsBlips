@@ -25,15 +25,25 @@ endfunction()
 
 function(target_disable_warnings target_name)
     get_target_property(include_dirs ${target_name} INTERFACE_INCLUDE_DIRECTORIES)
-    set_target_properties(${target_NAME} PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${include_dirs}")
+    set_target_properties(${target_name} PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${include_dirs}")
 endfunction()
 
-function(enable_ccache)
-    find_program(CCACHE_PROGRAM ccache)
-    if(CCACHE_PROGRAM)
-        set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
-        set(CMAKE_CUDA_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
-    endif()
+function(enable_asan)
+    # https://clang.llvm.org/docs/AddressSanitizer.html
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address)
+endfunction()
+
+function(enable_msan)
+    # https://clang.llvm.org/docs/MemorySanitizer.html
+    add_compile_options(-fsanitize=memory -fsanitize-memory-track-origins -fPIE -pie -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=memory -fsanitize-memory-track-origins -fPIE -pie)
+endfunction()
+
+function(enable_tsan)
+    # https://clang.llvm.org/docs/ThreadSanitizer.html
+    add_compile_options(-fsanitize=thread)
+    add_link_options(-fsanitize=thread)
 endfunction()
 
 # local
@@ -181,6 +191,12 @@ FetchContent_Declare(
     magnum-integration
     GIT_REPOSITORY https://github.com/mosra/magnum-integration.git
     GIT_TAG 0184c8371d499d4a4f20b5982722f7942ff6f364
+    EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
+    basis_universal
+    GIT_REPOSITORY https://github.com/BinomialLLC/basis_universal.git
+    GIT_TAG v2_0_2
     EXCLUDE_FROM_ALL
 )
 
