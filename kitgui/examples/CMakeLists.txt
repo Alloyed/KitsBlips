@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 cmake_policy(SET CMP0048 NEW)
 
 set(CMAKE_CXX_STANDARD 20)
+add_compile_definitions(-DPROJECT_DIR="${CMAKE_SOURCE_DIR}")
 
 # Inside your own application, you can include kitgui like so:
 # 

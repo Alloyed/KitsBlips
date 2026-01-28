@@ -30,20 +30,26 @@ endfunction()
 
 function(enable_asan)
     # https://clang.llvm.org/docs/AddressSanitizer.html
-    add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
-    add_link_options(-fsanitize=address)
+    if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        message(FATAL_ERROR "AddressSanitizer enabled, so we need to use clang.")
+    endif()
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -O1 -g -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls)
 endfunction()
 
 function(enable_msan)
     # https://clang.llvm.org/docs/MemorySanitizer.html
-    add_compile_options(-fsanitize=memory -fsanitize-memory-track-origins -fPIE -pie -fno-omit-frame-pointer)
-    add_link_options(-fsanitize=memory -fsanitize-memory-track-origins -fPIE -pie)
+    if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        message(FATAL_ERROR "MemorySanitizer enabled, so we need to use clang.")
+    endif()
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -O1 -g -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -fno-optimize-sibling-calls)
 endfunction()
 
 function(enable_tsan)
     # https://clang.llvm.org/docs/ThreadSanitizer.html
-    add_compile_options(-fsanitize=thread)
-    add_link_options(-fsanitize=thread)
+    if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        message(FATAL_ERROR "ThreadSanitizer enabled, so we need to use clang.")
+    endif()
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -O1 -g -fsanitize=thread)
 endfunction()
 
 # local
@@ -113,6 +119,17 @@ FetchContent_Declare(
     GIT_TAG        19f18f2c1b4f0aee13112d75695d48d6b2487d68
     EXCLUDE_FROM_ALL
 )
+FetchContent_Declare(
+    miniz
+    GIT_REPOSITORY https://github.com/richgel999/miniz.git
+    GIT_TAG        3.1.0
+    EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
+    tomlplusplus
+    GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
+    GIT_TAG        v3.4.0
+)
 
 # gfx
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -128,17 +145,6 @@ FetchContent_Declare(
     GIT_TAG        release-3.4.0
     EXCLUDE_FROM_ALL
     FIND_PACKAGE_ARGS
-)
-FetchContent_Declare(
-	miniz
-	GIT_REPOSITORY https://github.com/richgel999/miniz.git
-	GIT_TAG        3.1.0
-    EXCLUDE_FROM_ALL
-)
-FetchContent_Declare(
-    tomlplusplus
-    GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
-    GIT_TAG        v3.4.0
 )
 
 set(CORRADE_BUILD_STATIC ON)
@@ -216,7 +222,7 @@ FetchContent_Declare(
 FetchContent_Declare(
     AudioFile
     GIT_REPOSITORY https://github.com/adamstark/AudioFile.git
-    GIT_TAG        1.1.3
+    GIT_TAG        1.1.4
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
