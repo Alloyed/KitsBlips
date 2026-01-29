@@ -53,3 +53,9 @@ Shared:
   - Shared DSP code, runs on all platforms
 - [/kitdsp-gpl](kitdsp-gpl/README.md)
   - DSP code with GPL algorithms. This is the only folder that comes with extra license restrictions!
+
+## AI statement
+
+KitsBlips will not accept PRs that are generated wholly or in significant part by generative AI. Future development will not use Generative AI.
+
+There are a few older commits where I tried it for automatic refactoring, found it less than successful, and cleaned it up afterward. You can try the same thing; I wouldn't be able to tell the difference probably, but my conclusion to that experiment was that it wasn't worth it at the time.
