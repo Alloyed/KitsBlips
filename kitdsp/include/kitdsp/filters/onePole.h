@@ -35,9 +35,9 @@ class OnePole {
     }
 
    private:
-    float mG;
-    float mGi;
-    float mState;
+    float mG{};
+    float mGi{};
+    float mState{};
 };
 
 // multiple OnePole filters in series
@@ -65,6 +65,6 @@ class OnePoleSeries {
     }
 
    private:
-    std::array<OnePole, NUM_POLES> mPoles;
+    std::array<OnePole, NUM_POLES> mPoles{};
 };
 }  // namespace kitdsp

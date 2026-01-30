@@ -19,6 +19,6 @@ class Gate {
     bool IsProcessing() const { return mApproach.target != 0.0f || mApproach.IsChanging(); }
 
    private:
-    Approach mApproach;
+    Approach mApproach{};
 };
 }  // namespace kitdsp

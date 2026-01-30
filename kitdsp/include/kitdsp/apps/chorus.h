@@ -35,7 +35,7 @@ class Chorus {
 
    private:
     DelayLine<float> mDelayLine;
-    lfo::TriangleOscillator mLfo;
     float mSampleRate;
+    lfo::TriangleOscillator mLfo{};
 };
 }  // namespace kitdsp

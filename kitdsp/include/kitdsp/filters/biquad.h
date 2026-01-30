@@ -85,19 +85,19 @@ class BiquadFilter {
     void CalculateCoefficients();
 
     // inputs
-    float cos_w0;
-    float sin_w0;
-    float Q;
-    float A;
-    float A_p_1;  // A+1
-    float A_m_1;  // A-1
+    float cos_w0{};
+    float sin_w0{};
+    float Q{};
+    float A{};
+    float A_p_1{};  // A+1
+    float A_m_1{};  // A-1
 
     // coefficients, all normalized to a0
-    float b0;
-    float b1;
-    float b2;
-    float a1;
-    float a2;
+    float b0{};
+    float b1{};
+    float b2{};
+    float a1{};
+    float a2{};
 
     // sample buffers
     float x[2];

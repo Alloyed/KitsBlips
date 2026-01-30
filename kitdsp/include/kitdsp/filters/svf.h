@@ -78,11 +78,11 @@ class EmileSvf {
     }
 
    private:
-    float mG;
-    float mR;
-    float mH;
+    float mG{};
+    float mR{};
+    float mH{};
 
-    float mState1;
-    float mState2;
+    float mState1{};
+    float mState2{};
 };
 }  // namespace kitdsp

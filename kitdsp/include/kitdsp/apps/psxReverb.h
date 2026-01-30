@@ -47,14 +47,14 @@ class Reverb {
     // TODO: the original algorithm used q16s instead of floats! so for full accuracy we should switch to that
     float* mBuffer;
     size_t mBufferSize;
-    size_t mBufferWrapMask;
-    size_t mBufferHeadIndex;
+    size_t mBufferWrapMask{};
+    size_t mBufferHeadIndex{};
     float_2 Get(size_2 index);
     void Set(size_2 index, float_2 sample);
 
     /* misc things */
-    int16_t mPreset;
-    float mSampleRate;
+    int16_t mPreset{};
+    float mSampleRate{};
 
     /*
      * original PSX register values:
@@ -62,35 +62,35 @@ class Reverb {
      * names preserved, order changed for cache benefits
      */
     // input gain
-    float_2 vIN;
+    float_2 vIN{};
 
     // reflections
-    float vWALL;
-    float vIIR;
-    size_2 dSAME;
-    size_2 mSAME;
-    size_2 dDIFF;
-    size_2 mDIFF;
+    float vWALL{};
+    float vIIR{};
+    size_2 dSAME{};
+    size_2 mSAME{};
+    size_2 dDIFF{};
+    size_2 mDIFF{};
 
     // early echo (implemented as comb filter)
-    size_2 mCOMB1;
-    float vCOMB1;
-    size_2 mCOMB2;
-    float vCOMB2;
-    size_2 mCOMB3;
-    float vCOMB3;
-    size_2 mCOMB4;
-    float vCOMB4;
+    size_2 mCOMB1{};
+    float vCOMB1{};
+    size_2 mCOMB2{};
+    float vCOMB2{};
+    size_2 mCOMB3{};
+    float vCOMB3{};
+    size_2 mCOMB4{};
+    float vCOMB4{};
 
     // late reverb (all pass filter, 1)
-    uint32_t dAPF1;
-    size_2 mAPF1;
-    float vAPF1;
+    uint32_t dAPF1{};
+    size_2 mAPF1{};
+    float vAPF1{};
 
     // late reverb (all pass filter, 2)
-    uint32_t dAPF2;
-    size_2 mAPF2;
-    float vAPF2;
+    uint32_t dAPF2{};
+    size_2 mAPF2{};
+    float vAPF2{};
 };
 }  // namespace PSX
 }  // namespace kitdsp

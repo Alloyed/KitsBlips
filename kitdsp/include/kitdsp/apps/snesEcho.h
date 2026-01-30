@@ -87,7 +87,7 @@ class Echo {
 
     int16_t* mEchoBuffer;
     size_t mEchoBufferCapacity;
-    size_t mEchoBufferSize;
+    size_t mEchoBufferSize = 0;
     size_t mBufferIndex = 0;
     bool mClearBufferPressed = false;
     bool mResetHeadPressed = false;
