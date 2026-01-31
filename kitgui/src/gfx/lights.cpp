@@ -1,10 +1,10 @@
 #include "gfx/lights.h"
 
-// enable conversion to stl
+// IWYU pragma: begin_keep
 #include <Corrade/Containers/OptionalStl.h>
 #include <Corrade/Containers/PairStl.h>
 #include <Corrade/Containers/StringStl.h>
-// done
+// IWYU pragma: end_keep
 
 #include <Magnum/Math/Color.h>
 #include <Magnum/Trade/AbstractImporter.h>

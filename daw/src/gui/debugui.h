@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string_view>
 #include "clap/ext/params.h"
 #include "clapeze/params/baseParameter.h"
 #include "kitgui/controls/knob.h"
@@ -70,7 +71,8 @@ void DebugParam(TParamsFeature& feature) {
 
 class BaseParamKnob : public kitgui::Knob {
    public:
-    explicit BaseParamKnob(const clapeze::BaseParam& param, clap_id id) : mParam(param), mId(id) {
+    explicit BaseParamKnob(const clapeze::BaseParam& param, clap_id id, std::string_view sceneNode)
+        : mParam(param), mId(id), mSceneNode(sceneNode) {
         // TODO: we'll need to listen for rescans if names can ever change
         clap_param_info_t info;
         mParam.FillInformation(id, &info);
@@ -78,6 +80,7 @@ class BaseParamKnob : public kitgui::Knob {
     }
     ~BaseParamKnob() override = default;
     clap_id GetParamId() const { return mId; }
+    const std::string& GetSceneNode() const { return mSceneNode; }
 
    protected:
     const std::string& GetName() const override { return mName; }
@@ -93,13 +96,8 @@ class BaseParamKnob : public kitgui::Knob {
    private:
     const clapeze::BaseParam& mParam;
     const clap_id mId;
+    std::string mSceneNode;
     std::string mName{};
-};
-
-/* Helper class for creating a knob based on a parameter*/
-template <typename TParamsFeature, TParamsFeature::Id id>
-class ParamKnob : kitgui::Knob {
-   public:
 };
 }  // namespace kitgui
 

@@ -1,6 +1,9 @@
 #include "gfx/meshes.h"
 
+// IWYU pragma: begin_keep
 #include <Corrade/Containers/OptionalStl.h>
+// IWYU pragma: end_keep
+
 #include <Magnum/GL/Mesh.h>
 #include <Magnum/MeshTools/Compile.h>
 #include <Magnum/MeshTools/GenerateIndices.h>

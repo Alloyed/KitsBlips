@@ -13,6 +13,8 @@
 #include <memory>
 
 #include "descriptor.h"
+#include "kitdsp/math/util.h"
+#include "kitgui/context.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>
@@ -20,7 +22,6 @@
 #include "clapeze/ext/assets.h"
 #include "gui/debugui.h"
 #include "gui/kitguiFeature.h"
-#include "kitgui/controls/knob.h"
 #include "kitgui/gfx/scene.h"
 #endif
 
@@ -294,18 +295,41 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
 class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params)
-        : kitgui::BaseApp(ctx), mParams(params), mScene(std::make_unique<kitgui::Scene>(ctx)) {
-        // ctx.SetSizeConfig({1000, 600});
-        ctx.SetClearColor(Magnum::Math::Color4(0.3f, 0.7f, 0.3f, 1.0f));
-    }
+        : kitgui::BaseApp(ctx), mParams(params), mScene(std::make_unique<kitgui::Scene>(ctx)) {}
     ~GuiApp() = default;
 
     void OnActivate() override {
-        mScene->Load("assets/kitskeys.packed.glb");
+        mScene->Load("assets/kitskeys.glb");
+        // TODO: to update all this if the viewport changes
+        mScene->SetViewport({600.0f, 400.0f});
+
+        struct KnobSetupInfo {
+            Params param;
+            std::string node;
+        };
+        const std::vector<KnobSetupInfo> knobs{
+            {Params::PolyMode, "knob-mid-Davies-1900h"},         {Params::PolyCount, "knob-mid-Davies-1900h.001"},
+            {Params::OscOctave, "knob-mid-Davies-1900h.003"},    {Params::OscTune, "knob-mid-Davies-1900h.004"},
+            {Params::FilterCutoff, "knob-mid-Davies-1900h.006"}, {Params::FilterResonance, "knob-mid-Davies-1900h.005"},
+        };
+
         // TODO: data-driven
-        clap_id id = static_cast<clap_id>(Params::OscTune);
-        mKnobs.push_back(std::make_unique<kitgui::BaseParamKnob>(*mParams.GetBaseParam(id), id));
+        for (const auto& knobInfo : knobs) {
+            clap_id id = static_cast<clap_id>(knobInfo.param);
+            mKnobs.push_back(std::make_unique<kitgui::BaseParamKnob>(*mParams.GetBaseParam(id), id, knobInfo.node));
+            auto pos = mScene->GetObjectScreenPositionByName(knobInfo.node);
+            if (pos) {
+                // TODO: to size the knob appropriately we need the bounding range of the object and then transform the
+                // corners of that into screen positions. for now, hardcoded.
+                float w = 40.0f;
+                float hw = w * 0.5f;
+                mKnobs.back()->mPos = {pos->x() - hw, pos->y() - hw};
+                mKnobs.back()->mWidth = w;
+                mKnobs.back()->mShowDebug = false;
+            }
+        }
     }
+
     void DebugParamList() {
         ImGui::TextWrapped("WIP keys synthesizer. don't tell anybody but this is a volca keys for ur computer");
 
@@ -358,6 +382,9 @@ class GuiApp : public kitgui::BaseApp {
             if (knob->Update(raw)) {
                 mParams.GetMainHandle().SetRawValue(id, raw);
             }
+            // we assume the knob is at 12-o-clock, and knobs have 0.75turn(270deg) ranges
+            constexpr float maxTurn = kitdsp::kPi * 2.0f * 0.75f;
+            mScene->SetObjectRotationByName(knob->GetSceneNode(), (static_cast<float>(raw) - 0.5f) * -maxTurn);
         }
 
         if (mShowDebugWindow) {
@@ -418,8 +445,10 @@ class Plugin : public InstrumentPlugin {
         ConfigFeature<clapeze::TomlStateFeature<ParamsFeature>>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<clapeze::AssetsFeature>(GetHost());
-        ConfigFeature<KitguiFeature>(GetHost(),
-                                     [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
+        // aspect ratio 1.5
+        kitgui::SizeConfig cfg{600, 400, true, true};
+        ConfigFeature<KitguiFeature>(
+            GetHost(), [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); }, cfg);
 #endif
 
         ConfigProcessor<Processor>(params.GetProcessorHandle());

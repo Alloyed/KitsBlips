@@ -8,5 +8,4 @@ namespace kitgui {
 // All magnum types that exist in the public interface should go through here instead
 using Vector2 = Magnum::Vector2;
 using Color4 = Magnum::Color4;
-using Quaternion = Magnum::Quaternion;
 }  // namespace kitgui

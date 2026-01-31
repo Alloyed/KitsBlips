@@ -20,6 +20,26 @@ Tech design notes
 - complex/dynamic visual heirarchies and layouts
 - full DAW ui (that is to say, piano rolls and such)
 
+### GLTF
+
+We use gltf as our scene presentation format. your file should include
+
+- a camera
+- any lighting you want
+
+in addition to the subjects of your scene. we support
+
+- png/jpeg/webp textures
+- PBR materials + lights
+
+we don't support:
+
+- any other kind of texture
+- mesh compression
+- transparent materials
+
+but we'd like to! someday. To make your file manipulatable, export your scene with node names included. You can query based off of them.
+
 ### TODO
 
 - Cocoa!!

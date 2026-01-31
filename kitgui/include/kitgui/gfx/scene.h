@@ -22,10 +22,12 @@ class Scene {
     void Update();
     /** Draws the scene. */
     void Draw();
+    /** Sets the viewport size, recalculating any cameras as needed. */
+    void SetViewport(const kitgui::Vector2& size);
 
     // These methods are added as needed, so no rhyme or reason to what's supported really
     void PlayAnimationByName(std::string_view name);
-    void SetObjectRotationByName(std::string_view name, const kitgui::Quaternion& rot);
+    void SetObjectRotationByName(std::string_view name, float angleRadians);
     std::optional<kitgui::Vector2> GetObjectScreenPositionByName(std::string_view name);
 
    private:

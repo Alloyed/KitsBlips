@@ -39,6 +39,7 @@
 #include "gfx/meshes.h"
 #include "gfx/sceneGraph.h"
 #include "kitgui/context.h"
+#include "kitgui/types.h"
 #include "log.h"
 
 using namespace Magnum;
@@ -59,9 +60,10 @@ struct Scene::Impl {
     void LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
     void Update();
     void Draw();
+    void SetViewport(const kitgui::Vector2& size);
 
     void PlayAnimationByName(std::string_view name);
-    void SetObjectRotationByName(std::string_view name, const Quaternion& rot);
+    void SetObjectRotationByName(std::string_view name, float angleRadians);
     std::optional<Vector2> GetObjectScreenPositionByName(std::string_view name);
 
    public:
@@ -80,6 +82,7 @@ struct Scene::Impl {
     std::vector<ObjectInfo> mSceneObjects;
     Object3D* mCameraObject{};
     Magnum::SceneGraph::Camera3D* mCamera;
+    std::optional<Magnum::Trade::CameraData> mCameraData;
     AnimationCache mAnimationCache;
     std::vector<AnimationPlayer*> mAdvancingAnimations;
 };
@@ -220,6 +223,11 @@ void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::strin
         mCameraObject = new Object3D{&mScene};
         mCameraObject->translate(Vector3::zAxis(5.0f));
     }
+    mCamera = new SceneGraph::Camera3D{*mCameraObject};
+    mCamera->setAspectRatioPolicy(SceneGraph::AspectRatioPolicy::Extend);
+    if (importer.cameraCount()) {
+        mCameraData = std::optional<Trade::CameraData>(importer.camera(0));
+    }
 
     /* Create default camera-relative lights in case they weren't present in
        the scene already. Don't add any visualization for those. */
@@ -243,24 +251,39 @@ void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::strin
     const auto lightColorsBrightness = mLightCache.CalculateLightColors();
     mDrawableCache.SetLightColors(lightColorsBrightness);
 
-    /* Basic camera setup */
-    (*(mCamera = new SceneGraph::Camera3D{*mCameraObject}))
-        .setAspectRatioPolicy(SceneGraph::AspectRatioPolicy::Extend)
-        .setProjectionMatrix(Matrix4::perspectiveProjection(75.0_degf, 1.0f, 0.01f, 1000.0f))
-        .setViewport(GL::defaultFramebuffer.viewport().size());
-
-    /* Use the settings with parameters of the camera in the model, if any,
-       otherwise just used the hardcoded setup from above */
-    if (importer.cameraCount()) {
-        auto camera = std::optional<Trade::CameraData>(importer.camera(0));
-        if (camera && camera->type() == Trade::CameraType::Perspective3D) {
-            mCamera->setProjectionMatrix(
-                Matrix4::perspectiveProjection(camera->fov(), 1.0f, camera->near(), camera->far()));
-        }
-    }
-
     /* Import animations */
     mAnimationCache.LoadAnimations(importer, mSceneObjects);
+}
+
+void Scene::SetViewport(const kitgui::Vector2& size) {
+    mImpl->SetViewport(size);
+}
+
+void Scene::Impl::SetViewport(const kitgui::Vector2& size) {
+    const Magnum::Vector2i sizei = {static_cast<int32_t>(size.x()), static_cast<int32_t>(size.y())};
+    if (mCamera->viewport() == sizei) {
+        return;
+    }
+    mCamera->setViewport(sizei);
+    /* Use the settings with parameters of the camera in the model, if any,
+       otherwise just use the hardcoded setup */
+    float aspectRatio = size.x() / size.y();
+    bool projectionFound = false;
+    if (mCameraData) {
+        if (mCameraData->type() == Trade::CameraType::Perspective3D) {
+            mCamera->setProjectionMatrix(Matrix4::perspectiveProjection(mCameraData->fov(), aspectRatio,
+                                                                        mCameraData->near(), mCameraData->far()));
+            projectionFound = true;
+
+        } else if (mCameraData->type() == Trade::CameraType::Orthographic3D) {
+            mCamera->setProjectionMatrix(
+                Matrix4::orthographicProjection(size, mCameraData->near(), mCameraData->far()));
+            projectionFound = true;
+        }
+    }
+    if (!projectionFound) {
+        mCamera->setProjectionMatrix(Matrix4::perspectiveProjection(75.0_degf, aspectRatio, 0.01f, 1000.0f));
+    }
 }
 
 void Scene::PlayAnimationByName(std::string_view name) {
@@ -276,13 +299,14 @@ void Scene::Impl::PlayAnimationByName(std::string_view name) {
     }
 }
 
-void Scene::SetObjectRotationByName(std::string_view name, const Quaternion& rot) {
-    mImpl->SetObjectRotationByName(name, rot);
+void Scene::SetObjectRotationByName(std::string_view name, float angleRadians) {
+    mImpl->SetObjectRotationByName(name, angleRadians);
 }
 
-void Scene::Impl::SetObjectRotationByName(std::string_view name, const Quaternion& rot) {
+void Scene::Impl::SetObjectRotationByName(std::string_view name, float angleRadians) {
     for (auto& info : mSceneObjects) {
         if (info.name == name) {
+            auto rot = Quaternion::rotation(Rad(angleRadians), Vector3::yAxis());
             info.object->setRotation(rot);
         }
     }
@@ -343,6 +367,10 @@ void Scene::Impl::Draw() {
     GL::defaultFramebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
 
     GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
+
+    auto size = GL::defaultFramebuffer.viewport().size();
+    const Magnum::Vector2 sizef = {static_cast<float>(size.x()), static_cast<float>(size.y())};
+    SetViewport(sizef);
 
     /* Calculate light positions first, upload them to all shaders -- all
        of them are there only if they are actually used, so it's not doing

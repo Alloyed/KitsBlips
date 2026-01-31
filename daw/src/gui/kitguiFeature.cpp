@@ -129,6 +129,7 @@ void KitguiFeature::Destroy() {
     mCtx.Destroy();
     sInitCount--;
     if (sInitCount <= 0) {
+        // todo: deinit only once
         kitgui::Context::deinit();
         if (sTimerId) {
             mHost.CancelTimer(sTimerId);

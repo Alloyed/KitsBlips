@@ -1,8 +1,10 @@
 #include "gfx/materials.h"
 
+// IWYU pragma: begin_keep
 #include <Corrade/Containers/OptionalStl.h>
 #include <Corrade/Containers/PairStl.h>
 #include <Corrade/Containers/StringStl.h>
+// IWYU pragma: end_keep
 
 #include <Corrade/Containers/Array.h>
 #include <Corrade/Utility/Algorithms.h>
@@ -11,7 +13,6 @@
 #include <Magnum/GL/Texture.h>
 #include <Magnum/GL/TextureFormat.h>
 #include <Magnum/ImageView.h>
-#include <Magnum/Math/Functions.h>
 #include <Magnum/PixelFormat.h>
 #include <Magnum/Trade/AbstractImporter.h>
 #include <Magnum/Trade/ImageData.h>
@@ -19,6 +20,7 @@
 #include <Magnum/Trade/PhongMaterialData.h>
 #include <Magnum/Trade/TextureData.h>
 #include <fmt/format.h>
+#include <cstddef>
 #include <optional>
 #include "log.h"
 
@@ -33,15 +35,17 @@ void loadImage(Magnum::GL::Texture2D& texture, const Magnum::Trade::ImageData2D&
         const uint32_t channelCount = pixelFormatChannelCount(image.format());
         if (channelCount == 1 || channelCount == 2) {
             if (GL::Context::current().isExtensionSupported<GL::Extensions::ARB::texture_swizzle>()) {
-                if (channelCount == 1)
+                if (channelCount == 1) {
                     texture.setSwizzle<'r', 'r', 'r', '1'>();
-                else if (channelCount == 2)
+                } else if (channelCount == 2) {
                     texture.setSwizzle<'r', 'r', 'r', 'g'>();
+                }
             } else {
                 const PixelFormat imageFormat =
                     pixelFormat(image.format(), channelCount == 2 ? 4 : 3, isPixelFormatSrgb(image.format()));
                 Debug{} << "Texture swizzle not supported, expanding a" << image.format() << "image to" << imageFormat;
-                const std::size_t rowStride = 4 * ((pixelFormatSize(imageFormat) * image.size().x() + 3) / 4);
+                const std::size_t rowStride =
+                    static_cast<std::size_t>(4 * ((pixelFormatSize(imageFormat) * image.size().x() + 3) / 4));
                 usedImageStorage = Containers::Array<char>{NoInit, std::size_t(rowStride * image.size().y())};
                 const MutableImageView2D usedMutableImage{imageFormat, image.size(), usedImageStorage};
                 usedImage = usedMutableImage;
@@ -53,11 +57,12 @@ void loadImage(Magnum::GL::Texture2D& texture, const Magnum::Trade::ImageData2D&
                     usedMutableImage.pixels().expanded<2>(Containers::Size2D{dstChannelCount, channelSize});
                 Utility::copy(src.exceptSuffix({0, 0, channelCount == 2 ? 1 : 0, 0}).broadcasted<2>(3),
                               dst.exceptSuffix({0, 0, channelCount == 2 ? 1 : 0, 0}));
-                if (channelCount == 2)
+                if (channelCount == 2) {
                     Utility::copy(src.exceptPrefix({0, 0, 1, 0}), dst.exceptPrefix({0, 0, 3, 0}));
+                }
             }
         }
-        GL::TextureFormat format;
+        GL::TextureFormat format{};
         switch (usedImage.format()) {
             case PixelFormat::R8Unorm:
             case PixelFormat::RG8Unorm:
@@ -84,11 +89,10 @@ void loadImage(Magnum::GL::Texture2D& texture, const Magnum::Trade::ImageData2D&
                     fmt::format("cannot load image of format {} ", static_cast<uint32_t>(usedImage.format())));
                 return;
         }
-        texture.setStorage(Math::log2(usedImage.size().max()) + 1, format, usedImage.size())
-            .setSubImage(0, {}, usedImage)
-            .generateMipmap();
+        int32_t levels = static_cast<int32_t>(std::log2<int32_t>(usedImage.size().max()) + 1);
+        texture.setStorage(levels, format, usedImage.size()).setSubImage(0, {}, usedImage).generateMipmap();
     } else {
-        GL::TextureFormat format;
+        GL::TextureFormat format{};
         switch (image.compressedFormat()) {
             case CompressedPixelFormat::Bc4RSnorm:
             case CompressedPixelFormat::Bc5RGSnorm:

@@ -13,7 +13,7 @@ class Knob {
 
     // defaults to showing for imgui display
     bool mShowDebug = true;
-    // if not provided, uses imgui cursor
+    // if not provided, uses imgui cursor. represents top left
     std::optional<Vector2> mPos = {};
     // if not provided, works off of imgui normal sizing
     std::optional<float> mWidth = {};

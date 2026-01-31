@@ -198,6 +198,7 @@ void ContextImpl::deinit() {
         if (!SDL_GL_DestroyContext(sSdlGl)) {
             LOG_SDL_ERROR();
         }
+        sSdlGl = nullptr;
     }
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
@@ -303,6 +304,7 @@ bool ContextImpl::Destroy() {
         SDL_DestroyProperties(mWindowProps);
         SDL_DestroyWindow(mWindow);
         mImgui = nullptr;
+        mWindowProps = {};
         mWindow = nullptr;
 
         // pick any valid current engine for later: this works around a bug i don't fully understand in SDL3 itself :x
