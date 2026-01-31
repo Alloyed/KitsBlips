@@ -68,7 +68,7 @@ class ContextImpl {
     ImGuiContext* mImgui = nullptr;
     bool mActive = false;
     bool mDestroy = false;
-    Magnum::Color4 mClearColor = {0.5f, 0.5f, 0.5f, 1.0f};
+    Magnum::Color4 mClearColor = {0.0f, 0.0f, 0.0f, 1.0f};
     double mScale = 1.0;
 
     // TODO: could be moved into a big "sharedresources" type class

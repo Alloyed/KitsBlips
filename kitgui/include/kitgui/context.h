@@ -33,8 +33,8 @@ class BaseApp;
 class FileContext;
 
 struct SizeConfig {
-    uint32_t startingWidth{600};
-    uint32_t startingHeight{600};
+    uint32_t startingWidth{400};
+    uint32_t startingHeight{400};
     bool resizable{false};
     bool preserveAspectRatio{true};
 };

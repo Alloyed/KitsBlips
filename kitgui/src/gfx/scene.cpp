@@ -339,8 +339,8 @@ void Scene::Impl::Draw() {
     /* Another FB could be bound from a depth / object ID read (moreover with
        color output disabled), set it back to the default framebuffer */
     GL::defaultFramebuffer.bind(); /** @todo mapForDraw() should bind implicitly */
-    GL::defaultFramebuffer.mapForDraw({{Shaders::PhongGL::ColorOutput, GL::DefaultFramebuffer::DrawAttachment::Back}})
-        .clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
+    GL::defaultFramebuffer.mapForDraw({{Shaders::PhongGL::ColorOutput, GL::DefaultFramebuffer::DrawAttachment::Back}});
+    GL::defaultFramebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
 
     GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
 

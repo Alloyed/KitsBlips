@@ -1,7 +1,6 @@
 #include "kitgui/context.h"
 #include <imgui.h>
 
-#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -165,6 +164,7 @@ void Context::OnActivate() {
         mApp->OnActivate();
     }
     // TODO: call this if the UI scale ever changes
+    MakeCurrent();
     SetupImGuiFont_everforest();
     SetupImGuiStyle_everforest();
     float scale = static_cast<float>(GetUIScale());

@@ -13,6 +13,7 @@
 #include <imgui_impl_sdl3.h>
 #include <algorithm>
 #include <string_view>
+#include "Magnum/GL/Renderer.h"
 #include "immediateMode/misc.h"
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
@@ -45,7 +46,7 @@ X11Window getX11Window(const kitgui::WindowRef& ref) {
     }
     return 0;
 }
-void onCreateWindow(kitgui::WindowApi api, SDL_Window* sdlWindow, bool isFloating) {
+void onCreateWindow_(kitgui::WindowApi api, SDL_Window* sdlWindow, bool isFloating) {
     if (api == kitgui::WindowApi::Wayland) {
         return;
     } else if (api == kitgui::WindowApi::X11 && !isFloating) {
@@ -63,7 +64,7 @@ void onCreateWindow(kitgui::WindowApi api, SDL_Window* sdlWindow, bool isFloatin
                         (uint8_t*)embedInfoData, numElements);
     }
 }
-bool setParent(kitgui::WindowApi api, SDL_Window* sdlWindow, const kitgui::WindowRef& parentRef) {
+bool setParent_(kitgui::WindowApi api, SDL_Window* sdlWindow, const kitgui::WindowRef& parentRef) {
     if (api == kitgui::WindowApi::Wayland) {
         return true;
     } else if (api == kitgui::WindowApi::X11) {
@@ -79,7 +80,7 @@ bool setParent(kitgui::WindowApi api, SDL_Window* sdlWindow, const kitgui::Windo
     return true;
 }
 
-bool setTransient(kitgui::WindowApi api, SDL_Window* sdlWindow, const kitgui::WindowRef& parentRef) {
+bool setTransient_(kitgui::WindowApi api, SDL_Window* sdlWindow, const kitgui::WindowRef& parentRef) {
     if (api == kitgui::WindowApi::Wayland) {
         return true;
     } else if (api == kitgui::WindowApi::X11) {
@@ -95,7 +96,7 @@ bool setTransient(kitgui::WindowApi api, SDL_Window* sdlWindow, const kitgui::Wi
     return true;
 }
 
-void checkSupportedApis(bool& outHasX11, bool& outHasWayland) {
+void checkSupportedApis_(bool& outHasX11, bool& outHasWayland) {
     static bool hasX11{};
     static bool hasWayland{};
     static bool hasChecked{};
@@ -116,10 +117,10 @@ void checkSupportedApis(bool& outHasX11, bool& outHasWayland) {
     outHasWayland = hasWayland;
 }
 
-bool isApiSupported(kitgui::WindowApi api, bool isFloating) {
+bool isApiSupported_(kitgui::WindowApi api, bool isFloating) {
     bool hasX11{};
     bool hasWayland{};
-    checkSupportedApis(hasX11, hasWayland);
+    checkSupportedApis_(hasX11, hasWayland);
 
     if (hasX11 && (api == kitgui::WindowApi::Any || api == kitgui::WindowApi::X11)) {
         return true;
@@ -131,10 +132,10 @@ bool isApiSupported(kitgui::WindowApi api, bool isFloating) {
     }
 }
 
-bool getPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
+bool getPreferredApi_(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
     bool hasX11{};
     bool hasWayland{};
-    checkSupportedApis(hasX11, hasWayland);
+    checkSupportedApis_(hasX11, hasWayland);
 
     if (hasWayland) {
         apiOut = kitgui::WindowApi::Wayland;
@@ -194,7 +195,9 @@ void ContextImpl::init(kitgui::WindowApi api, std::string_view appName) {
 void ContextImpl::deinit() {
     if (sSdlGl) {
         sGl.reset();
-        SDL_GL_DestroyContext(sSdlGl);
+        if (!SDL_GL_DestroyContext(sSdlGl)) {
+            LOG_SDL_ERROR();
+        }
     }
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
@@ -234,9 +237,8 @@ bool ContextImpl::Create(bool isFloating) {
         LOG_SDL_ERROR();
         return false;
     } else if (scale > 1.0f) {
-        SDL_SetWindowSize(mWindow, static_cast<int32_t>(scale * cfg.startingWidth),
-                          static_cast<int32_t>(scale * cfg.startingWidth));
         SetUIScale(scale);
+        SetSizeDirectly(cfg.startingWidth, cfg.startingHeight, cfg.resizable);
     }
 
     if (mApi == kitgui::WindowApi::Any) {
@@ -251,7 +253,7 @@ bool ContextImpl::Create(bool isFloating) {
         }
     }
 
-    onCreateWindow(mApi, mWindow, isFloating);
+    onCreateWindow_(mApi, mWindow, isFloating);
 
     if (sSdlGl == nullptr) {
         // create context on first use
@@ -261,7 +263,10 @@ bool ContextImpl::Create(bool isFloating) {
             return false;
         }
         sSdlGl = gl_context;
-        SDL_GL_MakeCurrent(mWindow, sSdlGl);
+        if (!SDL_GL_MakeCurrent(mWindow, sSdlGl)) {
+            LOG_SDL_ERROR();
+            return false;
+        }
         Magnum::Platform::GLContext::makeCurrent(nullptr);
         sGl = std::make_unique<Magnum::Platform::GLContext>();
     }
@@ -278,8 +283,12 @@ bool ContextImpl::Create(bool isFloating) {
     io.LogFilename = nullptr;
 
     // Setup Platform/Renderer backends
-    ImGui_ImplSDL3_InitForOpenGL(mWindow, sSdlGl);
-    ImGui_ImplOpenGL3_Init();
+    if (!ImGui_ImplSDL3_InitForOpenGL(mWindow, sSdlGl)) {
+        return false;
+    }
+    if (!ImGui_ImplOpenGL3_Init()) {
+        return false;
+    }
 
     return true;
 }
@@ -288,10 +297,13 @@ bool ContextImpl::Destroy() {
     if (IsCreated()) {
         MakeCurrent();
         RemoveActiveInstance(this);
+        ImGui_ImplSDL3_Shutdown();
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui::DestroyContext(mImgui);
         SDL_DestroyProperties(mWindowProps);
         SDL_DestroyWindow(mWindow);
+        mImgui = nullptr;
         mWindow = nullptr;
-        sSdlGl = nullptr;
 
         // pick any valid current engine for later: this works around a bug i don't fully understand in SDL3 itself :x
         // without this block, closing a window when multiple are active causes a crash in the main update loop when we
@@ -331,18 +343,31 @@ bool ContextImpl::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
 }
 bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
     kitgui::log::TimeRegion r("ContextImpl::SetSizeDirectly()");
-    return SDL_SetWindowResizable(mWindow, resizable) &&
-           SDL_SetWindowSize(mWindow, static_cast<int32_t>(width), static_cast<int32_t>(height));
+    if (!SDL_SetWindowResizable(mWindow, resizable)) {
+        LOG_SDL_ERROR();
+        return false;
+    }
+    double scale = GetUIScale();
+    bool usesLogicalPixels = sApi == WindowApi::Wayland || sApi == WindowApi::Cocoa;
+    int32_t targetWidth = static_cast<int32_t>(usesLogicalPixels ? width : width * scale);
+    int32_t targetHeight = static_cast<int32_t>(usesLogicalPixels ? height : height * scale);
+    if (!SDL_SetWindowSize(mWindow, targetWidth, targetHeight)) {
+        LOG_SDL_ERROR();
+        return false;
+    }
+    return true;
 }
 bool ContextImpl::SetParent(const kitgui::WindowRef& parentWindowRef) {
-    return setParent(mApi, mWindow, parentWindowRef);
+    return setParent_(mApi, mWindow, parentWindowRef);
 }
 bool ContextImpl::SetTransient(const kitgui::WindowRef& transientWindowRef) {
-    return setTransient(mApi, mWindow, transientWindowRef);
+    return setTransient_(mApi, mWindow, transientWindowRef);
 }
 void ContextImpl::SuggestTitle(std::string_view title) {
     std::string titleTemp(title);
-    SDL_SetWindowTitle(mWindow, titleTemp.c_str());
+    if (!SDL_SetWindowTitle(mWindow, titleTemp.c_str())) {
+        LOG_SDL_ERROR();
+    }
 }
 bool ContextImpl::Show() {
     if (!SDL_ShowWindow(mWindow)) {
@@ -368,7 +393,9 @@ bool ContextImpl::Close() {
 
 void ContextImpl::MakeCurrent() {
     if (sSdlGl) {
-        SDL_GL_MakeCurrent(mWindow, sSdlGl);
+        if (!SDL_GL_MakeCurrent(mWindow, sSdlGl)) {
+            LOG_SDL_ERROR();
+        }
     }
     if (mImgui) {
         ImGui::SetCurrentContext(mImgui);
@@ -463,7 +490,7 @@ void ContextImpl::RunSingleFrame() {
         uint32_t width = 0, height = 0;
         instance->GetSize(width, height);
         GL::defaultFramebuffer.setViewport({{}, {static_cast<int>(width), static_cast<int>(height)}});
-        GL::defaultFramebuffer.clearColor(instance->mClearColor);
+        GL::Renderer::setClearColor(instance->mClearColor);
         GL::defaultFramebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
 
         instance->mContext.OnDraw();
@@ -471,15 +498,17 @@ void ContextImpl::RunSingleFrame() {
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        SDL_GL_SwapWindow(instance->mWindow);
+        if (!SDL_GL_SwapWindow(instance->mWindow)) {
+            LOG_SDL_ERROR();
+        }
     }
 }
 
 bool ContextImpl::IsApiSupported(kitgui::WindowApi api, bool isFloating) {
-    return isApiSupported(api, isFloating);
+    return isApiSupported_(api, isFloating);
 }
 bool ContextImpl::GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
-    return getPreferredApi(apiOut, isFloatingOut);
+    return getPreferredApi_(apiOut, isFloatingOut);
 }
 
 ContextImpl* ContextImpl::FindContextImplForWindow(SDL_Window* win) {

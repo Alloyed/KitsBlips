@@ -6,7 +6,9 @@ add_library(imgui STATIC EXCLUDE_FROM_ALL
     ${IMGUI_DIR}/imgui_draw.cpp
     ${IMGUI_DIR}/imgui_tables.cpp
     ${IMGUI_DIR}/imgui_widgets.cpp
+    ${IMGUI_DIR}/misc/cpp/imgui_stdlib.cpp
 )
+target_include_directories(imgui PRIVATE ${IMGUI_DIR})
 target_include_directories(imgui INTERFACE ${IMGUI_DIR})
 
 add_library(imgui_opengl STATIC EXCLUDE_FROM_ALL
