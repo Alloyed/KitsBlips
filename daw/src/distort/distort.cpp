@@ -178,6 +178,7 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
+        mParams.FlushFromAudio();
         kitgui::DebugParam<ParamsFeature, Params::Algorithm>(mParams);
         kitgui::DebugParam<ParamsFeature, Params::Gain>(mParams);
         kitgui::DebugParam<ParamsFeature, Params::Tone>(mParams);

@@ -61,6 +61,7 @@ struct Scene::Impl {
     void Update();
     void Draw();
     void SetViewport(const kitgui::Vector2& size);
+    void SetBrightness(std::optional<float> brightness);
 
     void PlayAnimationByName(std::string_view name);
     void SetObjectRotationByName(std::string_view name, float angleRadians);
@@ -237,6 +238,7 @@ void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::strin
        that are not part of the hierarchy. There can be multiple mesh
        assignments for one object, simply add one drawable for each. */
     if (scene->hasField(Trade::SceneField::Mesh)) {
+        // TODO: can we redo this if shadeless changes?
         for (const auto& meshMaterial : scene->meshesMaterialsAsArray()) {
             const uint32_t objectId = meshMaterial.first();
             const uint32_t meshId = meshMaterial.second().first();
@@ -247,12 +249,11 @@ void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::strin
         }
     }
 
-    /* Initialize light colors for all instantiated shaders */
-    const auto lightColorsBrightness = mLightCache.CalculateLightColors();
-    mDrawableCache.SetLightColors(lightColorsBrightness);
-
     /* Import animations */
     mAnimationCache.LoadAnimations(importer, mSceneObjects);
+
+    /* We need to calculate SetBrightness at least once to set up light colors/intensity */
+    SetBrightness(mLightCache.mBrightness);
 }
 
 void Scene::SetViewport(const kitgui::Vector2& size) {
@@ -285,6 +286,22 @@ void Scene::Impl::SetViewport(const kitgui::Vector2& size) {
         mCamera->setProjectionMatrix(Matrix4::perspectiveProjection(75.0_degf, aspectRatio, 0.01f, 1000.0f));
     }
 }
+
+void Scene::SetBrightness(std::optional<float> brightness) {
+    mImpl->SetBrightness(brightness);
+}
+
+void Scene::Impl::SetBrightness(std::optional<float> brightness) {
+    if(brightness) {
+        mLightCache.mBrightness = *brightness;
+        mLightCache.mShadeless = false;
+    } else {
+        mLightCache.mShadeless = true;
+    }
+    const auto lightColorsBrightness = mLightCache.CalculateLightColors();
+    mDrawableCache.SetLightColors(lightColorsBrightness);
+}
+
 
 void Scene::PlayAnimationByName(std::string_view name) {
     mImpl->PlayAnimationByName(name);

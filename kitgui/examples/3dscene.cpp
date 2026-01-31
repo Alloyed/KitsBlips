@@ -44,6 +44,10 @@ class MyApp : public kitgui::BaseApp {
                     GetContext().SetSizeDirectly(w, h, false);
                 }
 
+                if(ImGui::DragFloat("brightness", &mBrightness, 0.0001, 0.0f, 1.0f, "%.6f")) {
+                    mScene->SetBrightness(mBrightness);
+                }
+
                 if (ImGui::ColorEdit4("bgcolor", reinterpret_cast<float*>(&mClearColor))) {
                     GetContext().SetClearColor(mClearColor);
                 }
@@ -56,8 +60,9 @@ class MyApp : public kitgui::BaseApp {
    private:
     std::unique_ptr<kitgui::Scene> mScene;
     bool mShowUi = true;
-    std::string mFilePath{PROJECT_DIR "/assets/duck.glb"};
+    std::string mFilePath{PROJECT_DIR "/../daw/assets/kitskeys.glb"};
     kitgui::Color4 mClearColor{0.1f, 0.4f, 0.4f, 1.0f};
+    float mBrightness = 0.0025f;
 };
 
 int main() {
@@ -65,7 +70,7 @@ int main() {
 
     {
         kitgui::Context ctx1([](kitgui::Context& ctx) { return std::make_unique<MyApp>(ctx); });
-        ctx1.SetSizeConfig({400, 400, true, false});
+        ctx1.SetSizeConfig({600, 400, true, false});
         ctx1.Create(true);
         ctx1.Show();
 

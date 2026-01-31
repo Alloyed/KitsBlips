@@ -206,7 +206,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
             // filter
             // range from 8hz to 12.5khz
             float filterNote = kitdsp::lerpf(0.0f, 127.0f, params.Get<Params::FilterCutoff>());
-            float res = params.Get<Params::FilterResonance>();
+            float res = params.Get<Params::FilterResonance>() * 0.89f; // 0.85 acts as cap, experimentally determined
             float filterSteepness = 0.5f;  // steeper means "achieves self-oscillation quicker"
             float filterQ = 0.5f * std::exp(filterSteepness * (res / (1 - res)));  // [0, 1] -> [0.5, inf]
             float filterModMix = params.Get<Params::FilterModMix>();
@@ -302,15 +302,37 @@ class GuiApp : public kitgui::BaseApp {
         mScene->Load("assets/kitskeys.glb");
         // TODO: to update all this if the viewport changes
         mScene->SetViewport({600.0f, 400.0f});
+        mScene->SetBrightness(0.0025f); // idk why magnum is so intense by default, to investigate
 
         struct KnobSetupInfo {
             Params param;
             std::string node;
         };
         const std::vector<KnobSetupInfo> knobs{
-            {Params::PolyMode, "knob-mid-Davies-1900h"},         {Params::PolyCount, "knob-mid-Davies-1900h.001"},
-            {Params::OscOctave, "knob-mid-Davies-1900h.003"},    {Params::OscTune, "knob-mid-Davies-1900h.004"},
-            {Params::FilterCutoff, "knob-mid-Davies-1900h.006"}, {Params::FilterResonance, "knob-mid-Davies-1900h.005"},
+            {Params::PolyMode, "knob-mid-Davies-1900h"},
+            {Params::PolyCount, "knob-mid-Davies-1900h.001"},
+            {Params::PolyChordType, "knob-mid-Davies-1900h.002"},
+            {Params::OscOctave, "knob-mid-Davies-1900h.003"},
+            {Params::OscTune, "knob-mid-Davies-1900h.004"},
+            {Params::OscModMix, "knob-small-trimpot-R-0904N-L-25KC"},
+            {Params::OscModAmount, "knob-small-trimpot-R-0904N-L-25KC.001"},
+            {Params::FilterCutoff, "knob-mid-Davies-1900h.006"},
+            {Params::FilterResonance, "knob-mid-Davies-1900h.005"},
+            {Params::FilterModMix, "knob-small-trimpot-R-0904N-L-25KC.002"},
+            {Params::FilterModAmount, "knob-small-trimpot-R-0904N-L-25KC.003"},
+            {Params::LfoRate, "knob-mid-Davies-1900h.008"},
+            {Params::LfoShape, "knob-mid-Davies-1900h.009"},
+            {Params::EnvAttack, "knob-mid-Davies-1900h.010"},
+            {Params::EnvDecay, "knob-mid-Davies-1900h.011"},
+            {Params::EnvSustain, "knob-mid-Davies-1900h.012"},
+            {Params::EnvRelease, "knob-mid-Davies-1900h.013"},
+            {Params::VcaGain, "knob-mid-Davies-1900h.007"},
+            {Params::VcaLfoAmount, "knob-small-trimpot-R-0904N-L-25KC.004"},
+        };
+
+        // TODO
+        const std::vector<KnobSetupInfo> toggles{
+            {Params::VcaEnvDisabled, "switch-toggle"},
         };
 
         // TODO: data-driven
@@ -367,6 +389,7 @@ class GuiApp : public kitgui::BaseApp {
         kitgui::DebugParam<ParamsFeature, Params::VcaLfoAmount>(mParams);
     }
     void OnUpdate() override {
+        mParams.FlushFromAudio();
         mScene->Update();
         // imgui
         if (ImGui::BeginMenuBar()) {
@@ -379,12 +402,20 @@ class GuiApp : public kitgui::BaseApp {
         for (auto& knob : mKnobs) {
             clap_id id = knob->GetParamId();
             double raw = mParams.GetMainHandle().GetRawValue(id);
+
+            auto pos = mScene->GetObjectScreenPositionByName(knob->GetSceneNode());
+            knob->mShowDebug = mShowDebugWindow;
             if (knob->Update(raw)) {
                 mParams.GetMainHandle().SetRawValue(id, raw);
             }
             // we assume the knob is at 12-o-clock, and knobs have 0.75turn(270deg) ranges
+            auto normalizedValue = kitdsp::clamp((raw - knob->mMin) / (knob->mMax - knob->mMin), 0.0, 1.0);
             constexpr float maxTurn = kitdsp::kPi * 2.0f * 0.75f;
-            mScene->SetObjectRotationByName(knob->GetSceneNode(), (static_cast<float>(raw) - 0.5f) * -maxTurn);
+            mScene->SetObjectRotationByName(knob->GetSceneNode(), (static_cast<float>(normalizedValue) - 0.5f) * -maxTurn);
+        }
+
+        if(ImGui::IsKeyPressed(ImGuiKey_GraveAccent)) {
+            mShowDebugWindow = !mShowDebugWindow;
         }
 
         if (mShowDebugWindow) {
@@ -401,7 +432,7 @@ class GuiApp : public kitgui::BaseApp {
     ParamsFeature& mParams;
     std::unique_ptr<kitgui::Scene> mScene;
     std::vector<std::unique_ptr<kitgui::BaseParamKnob>> mKnobs;
-    bool mShowDebugWindow = false;
+    bool mShowDebugWindow = true;
 };
 #endif
 
@@ -446,7 +477,7 @@ class Plugin : public InstrumentPlugin {
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<clapeze::AssetsFeature>(GetHost());
         // aspect ratio 1.5
-        kitgui::SizeConfig cfg{600, 400, true, true};
+        kitgui::SizeConfig cfg{600, 400, false, true};
         ConfigFeature<KitguiFeature>(
             GetHost(), [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); }, cfg);
 #endif

@@ -37,6 +37,8 @@ class KitguiFeature : public clapeze::GuiFeature {
     bool Show() override;
     bool Hide() override;
 
+    kitgui::Context& GetContext() { return mCtx; };
+
    private:
     clapeze::PluginHost& mHost;
     kitgui::Context mCtx;

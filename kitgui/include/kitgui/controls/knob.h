@@ -17,9 +17,12 @@ class Knob {
     std::optional<Vector2> mPos = {};
     // if not provided, works off of imgui normal sizing
     std::optional<float> mWidth = {};
+    double mMin = 0.0f;
+    double mMax = 1.0f;
+    double mDefault = 0.5f;
 
-    float minAngleRadians = kPi * 0.75f;
-    float maxAngleRadians = kPi * 2.25f;
+    float mMinAngleRadians = kPi * 0.75f;
+    float mMaxAngleRadians = kPi * 2.25f;
 
    protected:
     virtual const std::string& GetName() const {

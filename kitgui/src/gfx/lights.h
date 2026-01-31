@@ -29,7 +29,7 @@ struct LightCache {
     std::vector<LightInfo> mLights;
     size_t mLightCount{};
     bool mShadeless{false};
-    float mBrightness{0.5f};
+    float mBrightness{0.0025f};
     std::vector<Magnum::Vector4> mLightPositions;
     std::vector<Magnum::Color3> mLightColors;
 

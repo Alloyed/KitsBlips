@@ -8,6 +8,10 @@ cmake ..
 cmake --build .
 ```
 
+## Windows
+
+to investigate: VS2026 has a compile error that VS2022 doesn't. stick to 2022 for now.
+
 ## Assets
 
 raw gltf files right out of blender aren't great, so we use gltfpack on the result: run

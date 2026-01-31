@@ -98,8 +98,8 @@ void LightCache::LoadLights(Trade::AbstractImporter& importer) {
             lightInfo.debugName = fmt::format("{}", i);
         }
 
-        auto light = std::optional<Trade::LightData>{importer.light(i)};
-        if (!light) {
+        lightInfo.light = std::optional<Trade::LightData>{importer.light(i)};
+        if (!lightInfo.light) {
             kitgui::log::error(fmt::format("Cannot load light {} {}", i, importer.lightName(i)));
             continue;
         }

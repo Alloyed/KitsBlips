@@ -206,6 +206,7 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
+        mParams.FlushFromAudio();
         ImGui::TextWrapped(
             "With Snecho, I have created an emulation of the echo effect found in the SPC700 chip, used in the "
             "SNES/Super Famicom consoles."

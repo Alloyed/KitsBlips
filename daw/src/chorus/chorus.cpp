@@ -97,6 +97,7 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
+        mParams.FlushFromAudio();
         ImGui::TextWrapped(
             "KitsChorus is currently based on the Juno-60 chorus algorithm. More algorithms Soon(tm), maybe?");
         kitgui::DebugParam<ParamsFeature, Params::Rate>(mParams);

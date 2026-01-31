@@ -87,6 +87,7 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
+        mParams.FlushFromAudio();
         ImGui::TextWrapped(
             "KitFreqsOut shifts the frequencies of the input sound by a fixed hz amount. this is most useful for "
             "inharmonic sounds; aka sound effects, percussion, etc. Use it on a voice clip to get alien sounds, or "

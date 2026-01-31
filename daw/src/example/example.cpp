@@ -64,6 +64,7 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
+        mParams.FlushFromAudio();
         ImGui::TextWrapped("UI example (TODO)");
         /*mParams.DebugImGui();*/
     }

@@ -4,6 +4,7 @@
 #include <imgui_internal.h>
 #include <cmath>
 #include <string>
+#include <algorithm>
 
 namespace kitgui {
 bool Knob::Update(double& rawValueInOut) {
@@ -23,10 +24,8 @@ bool Knob::Update(double& rawValueInOut) {
 
     ImGuiSliderFlags drag_behaviour_flags =
         static_cast<ImGuiSliderFlags>(ImGuiSliderFlags_Vertical) | ImGuiSliderFlags_AlwaysClamp;
-    double min = 0.0;
-    double max = 1.0;
     auto value_changed =
-        ImGui::DragBehavior(gid, ImGuiDataType_Double, &rawValueInOut, 0, &min, &max, "%.2f", drag_behaviour_flags);
+        ImGui::DragBehavior(gid, ImGuiDataType_Double, &rawValueInOut, 0, &mMin, &mMax, "%.2f", drag_behaviour_flags);
 
     auto is_active = ImGui::IsItemActive();
     auto is_hovered = ImGui::IsItemHovered();
@@ -48,12 +47,13 @@ bool Knob::Update(double& rawValueInOut) {
 
     if (mShowDebug) {
         // Drawing using imgui primitives
-        auto angle_min = minAngleRadians;
-        auto angle_max = maxAngleRadians;
+        auto angle_min = mMinAngleRadians;
+        auto angle_max = mMaxAngleRadians;
+        auto normalizedValue = std::clamp((rawValueInOut - mMin) / (mMax - mMin), 0.0, 1.0);
 
         auto radius = itemWidth * 0.5f;
         ImVec2 center = {screen_pos[0] + radius, screen_pos[1] + radius};
-        auto angle = angle_min + (angle_max - angle_min) * rawValueInOut;
+        auto angle = angle_min + (angle_max - angle_min) * normalizedValue;
         auto angle_cos = std::cos(static_cast<float>(angle));
         auto angle_sin = std::sin(static_cast<float>(angle));
         auto* colors = ImGui::GetStyle().Colors;

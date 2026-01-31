@@ -123,6 +123,7 @@ class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
+        mParams.FlushFromAudio();
         ImGui::TextWrapped(
             "This is a pitch shift effect inspired by the EvenTide H910, the very first realtime pitch shift hardware "
             "module. This, of course, means the way it achieves this effect is kind of nasty, and not very "

@@ -77,6 +77,8 @@ class BaseParamKnob : public kitgui::Knob {
         clap_param_info_t info;
         mParam.FillInformation(id, &info);
         mName = info.name;
+        mMin = info.min_value;
+        mMax = info.max_value;
     }
     ~BaseParamKnob() override = default;
     clap_id GetParamId() const { return mId; }
