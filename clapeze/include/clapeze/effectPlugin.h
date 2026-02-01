@@ -53,7 +53,7 @@ class EffectProcessor : public BaseProcessor {
 /* pre-configured for simple stereo effects */
 class EffectPlugin : public BasePlugin {
    public:
-    explicit EffectPlugin(PluginHost& host) : BasePlugin(host) {}
+    explicit EffectPlugin(const clap_plugin_descriptor_t& meta) : BasePlugin(meta) {}
     ~EffectPlugin() = default;
 
    protected:

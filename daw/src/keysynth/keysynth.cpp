@@ -303,7 +303,7 @@ class GuiApp : public kitgui::BaseApp {
         mScene->Load("assets/kitskeys.glb");
         // TODO: to update all this if the viewport changes
         mScene->SetViewport({600.0f, 400.0f});
-        mScene->SetBrightness(0.0025f); // idk why magnum is so intense by default, to investigate
+        mScene->SetBrightness(0.0070f); // idk why magnum is so intense by default, to investigate
 
         struct KnobSetupInfo {
             Params param;
@@ -440,7 +440,7 @@ class GuiApp : public kitgui::BaseApp {
 class Plugin : public InstrumentPlugin {
    public:
     static const PluginEntry Entry;
-    explicit Plugin(PluginHost& host) : InstrumentPlugin(host) {}
+    explicit Plugin(const clap_plugin_descriptor_t& meta) : InstrumentPlugin(meta) {}
     ~Plugin() = default;
 
    protected:
@@ -474,8 +474,8 @@ class Plugin : public InstrumentPlugin {
                                     .Parameter<Params::VcaGain>()
                                     .Parameter<Params::VcaEnvDisabled>()
                                     .Parameter<Params::VcaLfoAmount>();
-        //ConfigFeature<clapeze::TomlStateFeature<ParamsFeature>>();
-        ConfigFeature<clapeze::NoopStateFeature<ParamsFeature>>();
+        ConfigFeature<clapeze::TomlStateFeature<ParamsFeature>>();
+        //ConfigFeature<clapeze::NoopStateFeature<ParamsFeature>>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<clapeze::AssetsFeature>(GetHost());
         // aspect ratio 1.5

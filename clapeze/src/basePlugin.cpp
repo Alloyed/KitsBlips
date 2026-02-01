@@ -10,6 +10,20 @@
 
 namespace clapeze {
 
+BasePlugin::BasePlugin(const clap_plugin_descriptor_t& meta)
+    : mPlugin{&meta,
+              this,
+              &_init,
+              &_destroy,
+              &_activate,
+              &_deactivate,
+              &_start_processing,
+              &_stop_processing,
+              &_reset,
+              &_process,
+              &_get_extension,
+              &_on_main_thread} {}
+
 BaseFeature* BasePlugin::TryGetFeature(const char* name) {
     if (auto search = mFeatures.find(name); search != mFeatures.end()) {
         return search->second.get();
@@ -40,11 +54,14 @@ const void* BasePlugin::TryGetExtension(const char* name) {
     }
 }
 
+void BasePlugin::SetHost(const clap_host_t* host) {
+    mHost = std::make_unique<PluginHost>(host);
+}
 PluginHost& BasePlugin::GetHost() {
-    return mHost;
+    return *mHost;
 }
 const PluginHost& BasePlugin::GetHost() const {
-    return mHost;
+    return *mHost;
 }
 
 bool BasePlugin::Init() {
@@ -54,7 +71,7 @@ bool BasePlugin::Init() {
 
 bool BasePlugin::ValidateConfig() {
     if (mProcessor == nullptr) {
-        mHost.Log(LogSeverity::Fatal,
+        mHost->Log(LogSeverity::Fatal,
                   "mProcessor is null. did you forget to call ConfigProcessor() in your Config method?");
         return false;
     }
@@ -186,23 +203,8 @@ void BasePlugin::_on_main_thread(const clap_plugin* plugin) {
     self.OnMainThread();
 }
 
-const clap_plugin_t* BasePlugin::GetOrCreatePluginObject(const clap_plugin_descriptor_t* meta) {
-    if (mPlugin.get() == nullptr) {
-        const clap_plugin_t pluginObject = {meta,
-                                            this,
-                                            &_init,
-                                            &_destroy,
-                                            &_activate,
-                                            &_deactivate,
-                                            &_start_processing,
-                                            &_stop_processing,
-                                            &_reset,
-                                            &_process,
-                                            &_get_extension,
-                                            &_on_main_thread};
-        mPlugin = std::make_unique<clap_plugin_t>(pluginObject);
-    }
-    return mPlugin.get();
+const clap_plugin_t* BasePlugin::GetPluginObject() {
+    return &mPlugin;
 }
 
 }  // namespace clapeze

@@ -67,7 +67,7 @@ class ContextImpl {
     bool IsCreated() const;
     void SetClearColor(Magnum::Color4 color);
 
-    static LRESULT OnWindowsEvent(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    LRESULT OnWindowsEvent(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
    private:
     bool CreateWglContext();
@@ -89,8 +89,9 @@ class ContextImpl {
 
     static void AddActiveInstance(ContextImpl* instance);
     static void RemoveActiveInstance(ContextImpl* instance);
-    static ContextImpl* FindContextImplForWindow(HWND wnd);
     static std::vector<ContextImpl*> sActiveInstances;
+    public:
+    static ContextImpl* FindContextImplForWindow(HWND wnd);
 };
 
 }  // namespace kitgui::win32

@@ -89,7 +89,7 @@ class InstrumentProcessor : public BaseProcessor {
 /* pre-configured for simple stereo instruments */
 class InstrumentPlugin : public BasePlugin {
    public:
-    explicit InstrumentPlugin(PluginHost& host) : BasePlugin(host) {}
+    explicit InstrumentPlugin(const clap_plugin_descriptor_t& meta) : BasePlugin(meta) {}
     ~InstrumentPlugin() = default;
 
    protected:

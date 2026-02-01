@@ -41,7 +41,7 @@ const void* _get_factory(const char* factoryId);
 #define CLAPEZE_REGISTER_PLUGIN(TPlugin, descriptor)                                                              \
     static bool CLAPEZE_DETAIL_CAT(_plugin_register_, __LINE__) =                                                 \
         (clapeze::registerPlugin(clapeze::PluginEntry{                                                            \
-             descriptor, ([](clapeze::PluginHost& host) -> clapeze::BasePlugin* { return new TPlugin(host); })}), \
+             descriptor, ([](const clap_plugin_descriptor_t& meta) -> clapeze::BasePlugin* { return new TPlugin(meta); })}), \
          true)
 
 /**

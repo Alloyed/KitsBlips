@@ -105,7 +105,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsHandle> {
 
 class Plugin : public clapeze::InstrumentPlugin {
    public:
-    explicit Plugin(clapeze::PluginHost& host) : clapeze::InstrumentPlugin(host) {}
+    explicit Plugin(const clap_plugin_descriptor_t& meta) : clapeze::InstrumentPlugin(meta) {}
     ~Plugin() = default;
 
    protected:

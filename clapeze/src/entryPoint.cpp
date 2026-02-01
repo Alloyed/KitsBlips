@@ -20,10 +20,12 @@ std::string& sPluginPath() {
 namespace PluginFactory {
 
 uint32_t get_plugin_count(const clap_plugin_factory* factory) {
-    return sPlugins().size();
+    (void)factory;
+    return static_cast<uint32_t>(sPlugins().size());
 }
 
 const clap_plugin_descriptor_t* get_plugin_descriptor(const clap_plugin_factory* factory, uint32_t index) {
+    (void)factory;
     if (index < sPlugins().size()) {
         const PluginEntry& entry = sPlugins()[index];
         return &entry.meta;
@@ -32,6 +34,7 @@ const clap_plugin_descriptor_t* get_plugin_descriptor(const clap_plugin_factory*
 }
 
 const clap_plugin_t* create_plugin(const clap_plugin_factory* factory, const clap_host_t* host, const char* pluginId) {
+    (void)factory;
     if (!clap_version_is_compatible(host->clap_version)) {
         return nullptr;
     }
@@ -40,7 +43,10 @@ const clap_plugin_t* create_plugin(const clap_plugin_factory* factory, const cla
 
     for (const auto& entry : sPlugins()) {
         if (std::string_view(entry.meta.id) == pluginId) {
-            return entry.factory(cppHost)->GetOrCreatePluginObject(&entry.meta);
+            BasePlugin* plugin = entry.factory(entry.meta);
+            // intentionally using a setter here to hide the host from the factory function
+            plugin->SetHost(host);
+            return plugin->GetPluginObject();
         }
     }
 
@@ -56,11 +62,13 @@ const clap_plugin_factory_t value = {
 
 namespace PresetFactory {
 uint32_t _count(const clap_preset_discovery_factory* factory) {
+    (void)factory;
     return 1;
 }
 
 const clap_preset_discovery_provider_descriptor_t* _get_descriptor(const clap_preset_discovery_factory* factory,
                                                                    uint32_t index) {
+    (void)factory;
     if (index == 0) {
         return PresetProvider::Descriptor();
     }
@@ -70,6 +78,8 @@ const clap_preset_discovery_provider_descriptor_t* _get_descriptor(const clap_pr
 const clap_preset_discovery_provider_t* _create(const clap_preset_discovery_factory* factory,
                                                 const clap_preset_discovery_indexer_t* indexer,
                                                 const char* provider_id) {
+    (void)factory;
+    (void)provider_id;
     return PresetProvider::Create(indexer);
 }
 

@@ -129,7 +129,7 @@ class MyProcessor : public clapeze::EffectProcessor<MyParamsHandle> {
  */
 class MyPlugin : public clapeze::EffectPlugin {
    public:
-    explicit MyPlugin(clapeze::PluginHost& host) : EffectPlugin(host) {}
+    explicit MyPlugin(const clap_plugin_descriptor_t& meta) : EffectPlugin(meta) {}
     ~MyPlugin() = default;
 
    protected:

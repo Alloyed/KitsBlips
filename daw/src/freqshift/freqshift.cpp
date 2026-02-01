@@ -104,7 +104,7 @@ class GuiApp : public kitgui::BaseApp {
 class Plugin : public EffectPlugin {
    public:
     static const PluginEntry Entry;
-    explicit Plugin(PluginHost& host) : EffectPlugin(host) {}
+    explicit Plugin(const clap_plugin_descriptor_t& meta) : EffectPlugin(meta) {}
     ~Plugin() = default;
 
    protected:

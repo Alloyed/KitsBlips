@@ -12,6 +12,7 @@
 #include <Magnum/Platform/GLContext.h>
 #include <dwmapi.h>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_win32.h>
 #include <algorithm>
@@ -22,7 +23,7 @@
 #include "log.h"
 
 // Forward declare message handler from imgui_impl_win32.cpp
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandlerEx(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, ImGuiIO& io); // Doesn't use ImGui::GetCurrentContext()
 
 namespace {
 // Win32 message handler
@@ -33,9 +34,13 @@ namespace {
 // clear/overwrite your copy of the keyboard data. Generally you may always pass all inputs to dear imgui, and hide them
 // from your application based on those two flags.
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
-        return true;
-
+    kitgui::win32::ContextImpl* instance = kitgui::win32::ContextImpl::FindContextImplForWindow(hWnd);
+    if(instance) {
+        auto innerResult = instance->OnWindowsEvent(hWnd, msg, wParam, lParam);
+        if (innerResult) {
+            return innerResult;
+        }
+    }
     switch (msg) {
         case WM_SYSCOMMAND: {
             if ((wParam & 0xfff0) == SC_KEYMENU)  // Disable ALT application menu
@@ -44,10 +49,6 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         }
     }
 
-    auto innerResult = kitgui::win32::ContextImpl::OnWindowsEvent(hWnd, msg, wParam, lParam);
-    if (innerResult) {
-        return innerResult;
-    }
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }
 
@@ -359,6 +360,11 @@ LRESULT ContextImpl::OnWindowsEvent(HWND hWnd,
                                     UINT msg,
                                     [[maybe_unused]] WPARAM wParam,
                                     [[maybe_unused]] LPARAM lParam) {
+
+    if (ImGui_ImplWin32_WndProcHandlerEx(hWnd, msg, wParam, lParam, mImgui->IO)) {
+        return 1;
+    }
+
     switch (msg) {
         case WM_TIMER: {
             kitgui::win32::ContextImpl::RunSingleFrame();

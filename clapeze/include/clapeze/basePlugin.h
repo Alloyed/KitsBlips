@@ -16,7 +16,7 @@ class BasePlugin;
 
 struct PluginEntry {
     clap_plugin_descriptor_t meta;
-    BasePlugin* (*factory)(PluginHost& host);
+    BasePlugin* (*factory)(const clap_plugin_descriptor_t& meta);
 };
 
 /**
@@ -27,7 +27,7 @@ struct PluginEntry {
  */
 class BasePlugin {
    public:
-    explicit BasePlugin(PluginHost& host) : mHost(host) {}
+    explicit BasePlugin(const clap_plugin_descriptor_t& desc);
     virtual ~BasePlugin() = default;
 
    protected:
@@ -73,7 +73,7 @@ class BasePlugin {
 
     /* helpers */
    public:
-    const clap_plugin_t* GetOrCreatePluginObject(const clap_plugin_descriptor_t* meta);
+    const clap_plugin_t* GetPluginObject();
 
     template <typename TPlugin = BasePlugin>
     static TPlugin& GetFromPluginObject(const clap_plugin_t* plugin);
@@ -85,15 +85,16 @@ class BasePlugin {
     const void* TryGetExtension(const char* name);
 
     BaseProcessor& GetProcessor() const;
+    void SetHost(const clap_host_t* host);
     PluginHost& GetHost();
     const PluginHost& GetHost() const;
 
     /* internal implementation*/
    private:
-    std::unique_ptr<clap_plugin_t> mPlugin{};
+    clap_plugin_t mPlugin;
     std::unordered_map<std::string, std::unique_ptr<BaseFeature>> mFeatures{};
     std::unordered_map<std::string, const void*> mExtensions{};
-    PluginHost& mHost;
+    std::unique_ptr<PluginHost> mHost{};
     std::unique_ptr<BaseProcessor> mProcessor{};
 
     static bool _init(const clap_plugin* plugin);

@@ -106,7 +106,7 @@ class GuiApp : public kitgui::BaseApp {
 class Plugin : public clapeze::BasePlugin {
    public:
     static const PluginEntry Entry;
-    explicit Plugin(PluginHost& host) : clapeze::BasePlugin(host) {}
+    explicit Plugin(const clap_plugin_descriptor_t& meta) : clapeze::BasePlugin(meta) {}
     ~Plugin() = default;
 
    protected:

@@ -36,7 +36,7 @@ TEST(clap_factory, canBeQueriedWhileEmpty) {
 namespace {
 class MockPlugin : public clapeze::BasePlugin {
    public:
-    explicit MockPlugin(clapeze::PluginHost& host) : BasePlugin(host) {}
+    explicit MockPlugin(const clap_plugin_descriptor_t& meta) : BasePlugin(meta) {}
     void Config() override {};
 };
 }  // namespace
@@ -49,8 +49,8 @@ TEST(clap_factory, canCreatePlugins) {
                                  .id = "my_id",
                                  .name = "My Name",
                              },
-                             ([](clapeze::PluginHost& host) -> clapeze::BasePlugin* {
-                                 sPlugin = new MockPlugin(host);
+                             ([](const clap_plugin_descriptor_t& meta) -> clapeze::BasePlugin* {
+                                 sPlugin = new MockPlugin(meta);
                                  return sPlugin;
                              })});
     ASSERT_TRUE(clap_entry.init(""));
@@ -62,8 +62,8 @@ TEST(clap_factory, canCreatePlugins) {
     EXPECT_EQ(desc->clap_version.major, CLAP_VERSION_MAJOR);
     EXPECT_EQ(desc->clap_version.minor, CLAP_VERSION_MINOR);
     EXPECT_EQ(desc->clap_version.revision, CLAP_VERSION_REVISION);
-    EXPECT_EQ(desc->id, "my_id");
-    EXPECT_EQ(desc->name, "My Name");
+    EXPECT_EQ(std::string_view(desc->id), "my_id");
+    EXPECT_EQ(std::string_view(desc->name), "My Name");
 
     clap_host_t mockHost{
         .clap_version = CLAP_VERSION_INIT,
@@ -71,7 +71,7 @@ TEST(clap_factory, canCreatePlugins) {
     };
     EXPECT_EQ(nullptr, factory->create_plugin(factory, &mockHost, "fake_id"));
     auto* pluginObject = factory->create_plugin(factory, &mockHost, "my_id");
-    EXPECT_EQ(sPlugin->GetOrCreatePluginObject(desc), pluginObject);
+    EXPECT_EQ(sPlugin->GetPluginObject(), pluginObject);
 
     clap_entry.deinit();
 }
