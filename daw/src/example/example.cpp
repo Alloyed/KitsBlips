@@ -3,7 +3,7 @@
 #include <clapeze/params/enumParametersFeature.h>
 #include <clapeze/params/parameterTypes.h>
 #include <kitdsp/math/util.h>
-#include "clapeze/params/parameterOnlyStateFeature.h"
+#include "clapeze/state/binaryStateFeature.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>
@@ -85,7 +85,7 @@ class Plugin : public EffectPlugin {
         EffectPlugin::Config();
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count).Parameter<Params::Mix>();
-        ConfigFeature<ParameterOnlyStateFeature<ParamsFeature>>();
+        ConfigFeature<BinaryStateFeature<ParamsFeature>>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>(GetHost(),
                                      [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });

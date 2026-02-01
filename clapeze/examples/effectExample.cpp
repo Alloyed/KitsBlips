@@ -5,7 +5,7 @@
 #include <clapeze/effectPlugin.h>
 #include <clapeze/entryPoint.h>
 #include <clapeze/params/enumParametersFeature.h>
-#include <clapeze/params/parameterOnlyStateFeature.h>
+#include <clapeze/state/binaryStateFeature.h>
 #include <clapeze/params/parameterTypes.h>
 
 /**
@@ -148,7 +148,7 @@ class MyPlugin : public clapeze::EffectPlugin {
                                       .Parameter<MyParams::VuPPM>()
                                       .Parameter<MyParams::Bypass>();
         static_assert(static_cast<clap_id>(MyParams::Count) == 3, "update parameter order");
-        ConfigFeature<clapeze::ParameterOnlyStateFeature<MyParamsFeature>>();
+        ConfigFeature<clapeze::BinaryStateFeature<MyParamsFeature>>();
 
         // we are opting into audio processing using the Processor object defined before, and using the params object as
         // our communication channel.

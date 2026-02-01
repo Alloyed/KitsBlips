@@ -3,7 +3,7 @@
 #include <clapeze/params/parameterTypes.h>
 #include "clapeze/baseProcessor.h"
 #include "clapeze/effectPlugin.h"
-#include "clapeze/params/parameterOnlyStateFeature.h"
+#include "clapeze/state/binaryStateFeature.h"
 #include "descriptor.h"
 
 #include <etl/memory.h>
@@ -259,7 +259,7 @@ class Plugin : public EffectPlugin {
                                     .Parameter<Params::EchoDelayMod>()
                                     .Parameter<Params::FilterMix>()
                                     .Parameter<Params::ClearBuffer>();
-        ConfigFeature<ParameterOnlyStateFeature<ParamsFeature>>();
+        ConfigFeature<BinaryStateFeature<ParamsFeature>>();
 
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>(GetHost(),

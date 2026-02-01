@@ -1,0 +1,1 @@
+https://github.com/getsentry/sentry-cli/releases/tag/3.1.0

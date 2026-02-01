@@ -2,13 +2,12 @@
 #include <clapeze/entryPoint.h>
 #include <clapeze/instrumentPlugin.h>
 #include <clapeze/params/dynamicParametersFeature.h>
-#include <clapeze/params/parameterOnlyStateFeature.h>
 #include <clapeze/params/parameterTypes.h>
+#include <clapeze/state/tomlStateFeature.h>
 #include <clapeze/voice.h>
 
 #include <cmath>
 #include <numbers>
-#include "clapeze/state/tomlStateFeature.h"
 #include "descriptor.h"
 
 namespace {

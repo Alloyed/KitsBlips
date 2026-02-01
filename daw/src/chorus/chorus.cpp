@@ -5,7 +5,7 @@
 #include <kitdsp/apps/chorus.h>
 
 #include "clapeze/baseProcessor.h"
-#include "clapeze/params/parameterOnlyStateFeature.h"
+#include "clapeze/state/binaryStateFeature.h"
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI
@@ -128,7 +128,7 @@ class Plugin : public EffectPlugin {
                                     .Parameter<Params::Delay>()
                                     .Parameter<Params::Feedback>()
                                     .Parameter<Params::Mix>();
-        ConfigFeature<ParameterOnlyStateFeature<ParamsFeature>>();
+        ConfigFeature<BinaryStateFeature<ParamsFeature>>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>(GetHost(),
                                      [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });

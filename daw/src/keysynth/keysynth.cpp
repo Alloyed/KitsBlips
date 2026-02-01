@@ -3,6 +3,7 @@
 #include <clapeze/params/enumParametersFeature.h>
 #include <clapeze/params/parameterTypes.h>
 #include <clapeze/state/tomlStateFeature.h>
+#include <clapeze/state/noopStateFeature.h>
 #include <clapeze/voice.h>
 #include <kitdsp/control/adsr.h>
 #include <kitdsp/control/gate.h>
@@ -432,7 +433,7 @@ class GuiApp : public kitgui::BaseApp {
     ParamsFeature& mParams;
     std::unique_ptr<kitgui::Scene> mScene;
     std::vector<std::unique_ptr<kitgui::BaseParamKnob>> mKnobs;
-    bool mShowDebugWindow = true;
+    bool mShowDebugWindow = false;
 };
 #endif
 
@@ -473,7 +474,8 @@ class Plugin : public InstrumentPlugin {
                                     .Parameter<Params::VcaGain>()
                                     .Parameter<Params::VcaEnvDisabled>()
                                     .Parameter<Params::VcaLfoAmount>();
-        ConfigFeature<clapeze::TomlStateFeature<ParamsFeature>>();
+        //ConfigFeature<clapeze::TomlStateFeature<ParamsFeature>>();
+        ConfigFeature<clapeze::NoopStateFeature<ParamsFeature>>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<clapeze::AssetsFeature>(GetHost());
         // aspect ratio 1.5
