@@ -396,6 +396,8 @@ class GuiApp : public kitgui::BaseApp {
             Params param;
             std::string node;
         };
+
+        // TODO: data-driven
         const std::vector<KnobSetupInfo> knobs{
             {Params::PolyCount, "knob-mid-Davies-1900h.001"},
             {Params::PolyChordType, "knob-mid-Davies-1900h.002"},
@@ -416,13 +418,6 @@ class GuiApp : public kitgui::BaseApp {
             {Params::VcaGain, "knob-mid-Davies-1900h.007"},
             {Params::VcaLfoAmount, "knob-small-trimpot-R-0904N-L-25KC.004"},
         };
-
-        // TODO
-        const std::vector<KnobSetupInfo> toggles{
-            {Params::VcaEnvDisabled, "switch-toggle"},
-        };
-
-        // TODO: data-driven
         for (const auto& knobInfo : knobs) {
             clap_id id = static_cast<clap_id>(knobInfo.param);
             mKnobs.push_back(std::make_unique<kitgui::BaseParamKnob>(*mParams.GetBaseParam(id), id, knobInfo.node));
@@ -435,6 +430,24 @@ class GuiApp : public kitgui::BaseApp {
                 mKnobs.back()->mPos = {pos->x() - hw, pos->y() - hw};
                 mKnobs.back()->mWidth = w;
                 mKnobs.back()->mShowDebug = false;
+            }
+        }
+
+        const std::vector<KnobSetupInfo> toggles{
+            {Params::VcaEnvDisabled, "lever"},
+        };
+        for (const auto& knobInfo : toggles) {
+            clap_id id = static_cast<clap_id>(knobInfo.param);
+            mToggles.push_back(std::make_unique<kitgui::BaseParamToggle>(*mParams.GetBaseParam(id), id, knobInfo.node));
+            auto pos = mScene->GetObjectScreenPositionByName(knobInfo.node);
+            if (pos) {
+                // TODO: to size the knob appropriately we need the bounding range of the object and then transform the
+                // corners of that into screen positions. for now, hardcoded.
+                float w = 40.0f * scale;
+                float hw = w * 0.5f;
+                mToggles.back()->mPos = {pos->x() - hw, pos->y() - hw};
+                mToggles.back()->mWidth = w;
+                mToggles.back()->mShowDebug = false;
             }
         }
     }
@@ -498,11 +511,26 @@ class GuiApp : public kitgui::BaseApp {
                 raw = std::trunc(raw);
             }
             auto normalizedValue = kitdsp::clamp((raw - knob->mMin) / (knob->mMax - knob->mMin), 0.0, 1.0);
-            constexpr float maxTurn = kitdsp::kPi * 2.0f * 0.75f;
+            constexpr float maxTurn = kitdsp::kPi * 2.0f * 0.25f;
             mScene->SetObjectRotationByName(knob->GetSceneNode(),
-                                            (static_cast<float>(normalizedValue) - 0.5f) * -maxTurn);
+                                            (static_cast<float>(normalizedValue) - 0.5f) * -maxTurn, kitgui::Scene::Axis::Y);
         }
 
+        for (auto& knob : mToggles) {
+            clap_id id = knob->GetParamId();
+            double raw = mParams.GetMainHandle().GetRawValue(id);
+            bool value = raw > 0.5;
+
+            knob->mShowDebug = mShowDebugWindow;
+            if (knob->Update(value)) {
+                mParams.GetMainHandle().SetRawValue(id, value ? 1.0 : 0.0);
+            }
+            constexpr float maxTurn = kitdsp::kPi * 2.0f * 0.05f;
+            mScene->SetObjectRotationByName(knob->GetSceneNode(), value ? -maxTurn : maxTurn, kitgui::Scene::Axis::X);
+        }
+    }
+
+    void OnGuiUpdate() override {
         if (ImGui::IsKeyPressed(ImGuiKey_GraveAccent)) {
             mShowDebugWindow = !mShowDebugWindow;
         }
@@ -521,6 +549,7 @@ class GuiApp : public kitgui::BaseApp {
     ParamsFeature& mParams;
     std::unique_ptr<kitgui::Scene> mScene;
     std::vector<std::unique_ptr<kitgui::BaseParamKnob>> mKnobs;
+    std::vector<std::unique_ptr<kitgui::BaseParamToggle>> mToggles;
     bool mShowDebugWindow = true;
 };
 #endif

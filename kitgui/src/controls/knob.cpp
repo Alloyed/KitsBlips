@@ -23,9 +23,17 @@ bool Knob::Update(double& rawValueInOut) {
     auto gid = ImGui::GetID("button");
 
     ImGuiSliderFlags drag_behaviour_flags =
-        static_cast<ImGuiSliderFlags>(ImGuiSliderFlags_Vertical) | ImGuiSliderFlags_AlwaysClamp;
+        static_cast<ImGuiSliderFlags>(ImGuiSliderFlags_Vertical) | ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_NoSpeedTweaks;
+
+    // manually inlining speed logic so we can make shift the "go slow" option
+    ImGuiContext& g = *ImGui::GetCurrentContext();
+    float v_speed = (float)((mMax - mMin) * g.DragSpeedDefaultRatio);
+    if (g.IO.KeyShift) {
+        v_speed *= 0.1f;
+    }
+
     auto value_changed =
-        ImGui::DragBehavior(gid, ImGuiDataType_Double, &rawValueInOut, 0, &mMin, &mMax, "%.2f", drag_behaviour_flags);
+        ImGui::DragBehavior(gid, ImGuiDataType_Double, &rawValueInOut, v_speed, &mMin, &mMax, "%.2f", drag_behaviour_flags);
 
     auto is_active = ImGui::IsItemActive();
     auto is_hovered = ImGui::IsItemHovered();

@@ -14,6 +14,7 @@ class Context;
  */
 class Scene {
    public:
+    enum class Axis {X, Y, Z};
     explicit Scene(kitgui::Context& mContext);
     ~Scene();
     /** Synchronously loads the scene, including all transitive resources. */
@@ -29,7 +30,7 @@ class Scene {
 
     // These methods are added as needed, so no rhyme or reason to what's supported really
     void PlayAnimationByName(std::string_view name);
-    void SetObjectRotationByName(std::string_view name, float angleRadians);
+    void SetObjectRotationByName(std::string_view name, float angleRadians, Axis axis);
     std::optional<kitgui::Vector2> GetObjectScreenPositionByName(std::string_view name);
 
    private:

@@ -1,11 +1,12 @@
 #pragma once
 
 #include <string_view>
-#include "clap/ext/params.h"
-#include "clapeze/params/baseParameter.h"
-#include "kitgui/controls/knob.h"
-#if KITSBLIPS_ENABLE_GUI
+#include <clap/ext/params.h>
+#include <clapeze/params/baseParameter.h>
 #include <clapeze/params/parameterTypes.h>
+#if KITSBLIPS_ENABLE_GUI
+#include <kitgui/controls/knob.h>
+#include <kitgui/controls/toggleSwitch.h>
 #include <imgui.h>
 
 namespace kitgui {
@@ -103,6 +104,30 @@ class BaseParamKnob : public kitgui::Knob {
     std::string mSceneNode;
     std::string mName{};
     bool mIsStepped;
+};
+
+class BaseParamToggle : public kitgui::ToggleSwitch {
+   public:
+    explicit BaseParamToggle(const clapeze::BaseParam& param, clap_id id, std::string_view sceneNode)
+        : mParam(param), mId(id), mSceneNode(sceneNode) {
+        // TODO: we'll need to listen for rescans if names can ever change
+        clap_param_info_t info;
+        mParam.FillInformation(id, &info);
+        mName = info.name;
+    }
+    ~BaseParamToggle() override = default;
+    clap_id GetParamId() const { return mId; }
+    const std::string& GetSceneNode() const { return mSceneNode; }
+
+   protected:
+    const std::string& GetName() const override { return mName; }
+    bool GetDefault() const override { return mParam.GetRawDefault() > 0.5; }
+
+   private:
+    const clapeze::BaseParam& mParam;
+    const clap_id mId;
+    std::string mSceneNode;
+    std::string mName{};
 };
 }  // namespace kitgui
 

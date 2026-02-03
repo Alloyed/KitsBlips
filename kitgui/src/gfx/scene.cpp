@@ -64,7 +64,7 @@ struct Scene::Impl {
     void SetBrightness(std::optional<float> brightness);
 
     void PlayAnimationByName(std::string_view name);
-    void SetObjectRotationByName(std::string_view name, float angleRadians);
+    void SetObjectRotationByName(std::string_view name, float angleRadians, Scene::Axis axis);
     std::optional<Vector2> GetObjectScreenPositionByName(std::string_view name);
 
    public:
@@ -316,14 +316,18 @@ void Scene::Impl::PlayAnimationByName(std::string_view name) {
     }
 }
 
-void Scene::SetObjectRotationByName(std::string_view name, float angleRadians) {
-    mImpl->SetObjectRotationByName(name, angleRadians);
+void Scene::SetObjectRotationByName(std::string_view name, float angleRadians, Scene::Axis axis) {
+    mImpl->SetObjectRotationByName(name, angleRadians, axis);
 }
 
-void Scene::Impl::SetObjectRotationByName(std::string_view name, float angleRadians) {
+void Scene::Impl::SetObjectRotationByName(std::string_view name, float angleRadians, Scene::Axis axis) {
     for (auto& info : mSceneObjects) {
         if (info.name == name) {
-            auto rot = Quaternion::rotation(Rad(angleRadians), Vector3::yAxis());
+            Vector3 axisVector {};
+            if (axis == Axis::X) { axisVector = Vector3::xAxis(); }
+            if (axis == Axis::Y) { axisVector = Vector3::yAxis(); }
+            if (axis == Axis::Z) { axisVector = Vector3::zAxis(); }
+            auto rot = Quaternion::rotation(Rad(angleRadians), axisVector);
             info.object->setRotation(rot);
         }
     }
