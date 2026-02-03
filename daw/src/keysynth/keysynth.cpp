@@ -160,7 +160,7 @@ struct ParamTraits<Params, Params::VcaLfoAmount> : public clapeze::NumericParam 
 
 template <>
 struct ParamTraits<Params, Params::PolyCount> : public clapeze::IntegerParam {
-    ParamTraits() : clapeze::IntegerParam("Voice Count", 1, cMaxVoices, 8) {}
+    ParamTraits() : clapeze::IntegerParam("Voice Count", 1, cMaxVoices, 4) {}
 };
 
 template <>

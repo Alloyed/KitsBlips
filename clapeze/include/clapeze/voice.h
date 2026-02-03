@@ -106,6 +106,16 @@ class VoicePool {
         }
     }
 
+    size_t CountNumActiveVoices() {
+        size_t count = 0;
+        for (VoiceIndex idx = 0; idx < mVoices.size(); idx++) {
+            if(mVoices[idx].activeNote) {
+                count++;
+            }
+        }
+        return count;
+    }
+
    private:
     using VoiceIndex = size_t;
     void StopVoice(VoiceIndex index) {
@@ -134,7 +144,9 @@ class VoicePool {
     struct VoiceData {
         explicit VoiceData(TProcessor& p) : voice(p) {}
         TVoice voice;
-        std::optional<NoteTuple> activeNote;
+        std::optional<NoteTuple> activeNote{};
+        bool isPressed;
+        int32_t age;
     };
 
     TProcessor& mProcessor;
@@ -142,32 +154,53 @@ class VoicePool {
     VoiceStrategy mStrategy{};
 
     struct PolyVoiceStrategy {
-        void Clear() { mVoicesByLastUsed.clear(); }
+        void Clear() { mNextAge = 0; }
         void ProcessNoteOn(VoicePool& pool, const NoteTuple& note, float velocity) {
-            // retrigger existing voice, if there is one
-            VoiceIndex voiceIndex = SIZE_MAX;
+            VoiceIndex nextVoiceIndex = SIZE_MAX;
+
+            auto compare = [&](const VoiceData& left, const VoiceData& right) {
+                // priority #1: is note not active?
+                if (left.activeNote == std::nullopt && right.activeNote != std::nullopt) {
+                    return -1;
+                }
+                if (right.activeNote == std::nullopt && left.activeNote != std::nullopt) {
+                    return 1;
+                }
+                // priority #2: is note not pressed?
+                if (!left.isPressed && right.isPressed) {
+                    return -1;
+                }
+                if (!right.isPressed && left.isPressed) {
+                    return 1;
+                }
+                // tiebreaker: least recently used
+                if(left.age != right.age) {
+                    return left.age < right.age ? -1 : 1;
+                }
+                return 0;
+            };
+
             for (VoiceIndex idx = 0; idx < pool.mVoices.size(); idx++) {
-                auto& data = pool.mVoices[idx];
-                if (data.activeNote && data.activeNote->Match(note)) {
-                    voiceIndex = idx;
-                    pool.SendNoteEnd(*(data.activeNote));
+                auto& voiceNote = pool.mVoices[idx].activeNote;
+                if (voiceNote && voiceNote->Match(note)) {
+                    // always win: does existing note match?
+                    nextVoiceIndex = idx;
                     break;
+                } else if (nextVoiceIndex == SIZE_MAX) {
+                    nextVoiceIndex = idx;
+                } else if(compare(pool.mVoices[idx], pool.mVoices[nextVoiceIndex]) == -1) {
+                    nextVoiceIndex = idx;
                 }
-                if (data.activeNote == std::nullopt && voiceIndex == SIZE_MAX) {
-                    voiceIndex = idx;
-                }
-            }
-            // no voice available, time to steal
-            if (voiceIndex == SIZE_MAX) {
-                voiceIndex = mVoicesByLastUsed.front();
-                mVoicesByLastUsed.pop();  // from front
-                auto& data = pool.mVoices[voiceIndex];
-                pool.SendNoteEnd(*(data.activeNote));
             }
 
-            mVoicesByLastUsed.push(voiceIndex);  // to back
-            pool.mVoices[voiceIndex].activeNote = note;
-            pool.mVoices[voiceIndex].voice.ProcessNoteOn(note, velocity);
+            auto& nextVoiceData = pool.mVoices[nextVoiceIndex];
+            if(nextVoiceData.activeNote) {
+                pool.SendNoteEnd(*(nextVoiceData.activeNote));
+            }
+            nextVoiceData.activeNote = note;
+            nextVoiceData.voice.ProcessNoteOn(note, velocity);
+            nextVoiceData.isPressed = true;
+            nextVoiceData.age = mNextAge++;
         }
         void ProcessNoteOff(VoicePool& pool, const NoteTuple& note) {
             auto& mVoices = pool.mVoices;
@@ -175,10 +208,12 @@ class VoicePool {
                 auto& data = mVoices[idx];
                 if (data.activeNote && data.activeNote->Match(note)) {
                     data.voice.ProcessNoteOff();
+                    data.isPressed = false;
                 }
             }
         }
-        etl::circular_buffer<VoiceIndex, TMaxVoices> mVoicesByLastUsed{};
+
+        int32_t mNextAge=0;
     } mPolyVoiceStrategy{};
 
     struct MonoLastVoiceStrategy {
