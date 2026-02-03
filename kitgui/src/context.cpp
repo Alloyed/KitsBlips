@@ -106,6 +106,10 @@ bool Context::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     return mImpl->GetSize(widthOut, heightOut);
 }
 
+bool Context::GetSizeInPixels(uint32_t& widthOut, uint32_t& heightOut) const {
+    return mImpl->GetSizeInPixels(widthOut, heightOut);
+}
+
 bool Context::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
     return mImpl->SetSizeDirectly(width, height, resizable);
 }

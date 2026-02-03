@@ -79,10 +79,12 @@ class BaseParamKnob : public kitgui::Knob {
         mName = info.name;
         mMin = info.min_value;
         mMax = info.max_value;
+        mIsStepped = (info.flags & CLAP_PARAM_IS_STEPPED) > 0;
     }
     ~BaseParamKnob() override = default;
     clap_id GetParamId() const { return mId; }
     const std::string& GetSceneNode() const { return mSceneNode; }
+    bool IsStepped() const { return mIsStepped; }
 
    protected:
     const std::string& GetName() const override { return mName; }
@@ -100,6 +102,7 @@ class BaseParamKnob : public kitgui::Knob {
     const clap_id mId;
     std::string mSceneNode;
     std::string mName{};
+    bool mIsStepped;
 };
 }  // namespace kitgui
 

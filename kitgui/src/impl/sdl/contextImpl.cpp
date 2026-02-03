@@ -206,7 +206,6 @@ void ContextImpl::deinit() {
 ContextImpl::ContextImpl(kitgui::Context& ctx) : mContext(ctx) {}
 
 bool ContextImpl::Create(bool isFloating) {
-    mApi = sApi;
     mWindowProps = SDL_CreateProperties();
     if (mWindowProps == 0) {
         LOG_SDL_ERROR();
@@ -232,6 +231,18 @@ bool ContextImpl::Create(bool isFloating) {
         return false;
     }
 
+    if (sApi == kitgui::WindowApi::Any) {
+        // figure out which api we actually are using
+        std::string_view driver = SDL_GetCurrentVideoDriver();
+        if (driver == "x11") {
+            sApi = kitgui::WindowApi::X11;
+        } else if (driver == "wayland") {
+            sApi = kitgui::WindowApi::Wayland;
+        } else {
+            assert(false);
+        }
+    }
+
     // apply highdpi scale
     float scale = SDL_GetWindowDisplayScale(mWindow);
     if (scale == 0.0f) {
@@ -242,19 +253,7 @@ bool ContextImpl::Create(bool isFloating) {
         SetSizeDirectly(cfg.startingWidth, cfg.startingHeight, cfg.resizable);
     }
 
-    if (mApi == kitgui::WindowApi::Any) {
-        // figure out which api we actually are using
-        std::string_view driver = SDL_GetCurrentVideoDriver();
-        if (driver == "x11") {
-            mApi = kitgui::WindowApi::X11;
-        } else if (driver == "wayland") {
-            mApi = kitgui::WindowApi::Wayland;
-        } else {
-            assert(false);
-        }
-    }
-
-    onCreateWindow_(mApi, mWindow, isFloating);
+    onCreateWindow_(sApi, mWindow, isFloating);
 
     if (sSdlGl == nullptr) {
         // create context on first use
@@ -279,7 +278,9 @@ bool ContextImpl::Create(bool isFloating) {
     ImGui::SetCurrentContext(mImgui);
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    // disable file writing
+    // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    //  disable file writing
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
 
@@ -343,6 +344,13 @@ bool ContextImpl::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     heightOut = static_cast<uint32_t>(h);
     return success;
 }
+bool ContextImpl::GetSizeInPixels(uint32_t& widthOut, uint32_t& heightOut) const {
+    int32_t w{}, h{};
+    bool success = SDL_GetWindowSizeInPixels(mWindow, &w, &h);
+    widthOut = static_cast<uint32_t>(w);
+    heightOut = static_cast<uint32_t>(h);
+    return success;
+}
 bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
     kitgui::log::TimeRegion r("ContextImpl::SetSizeDirectly()");
     if (!SDL_SetWindowResizable(mWindow, resizable)) {
@@ -360,10 +368,10 @@ bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizabl
     return true;
 }
 bool ContextImpl::SetParent(const kitgui::WindowRef& parentWindowRef) {
-    return setParent_(mApi, mWindow, parentWindowRef);
+    return setParent_(sApi, mWindow, parentWindowRef);
 }
 bool ContextImpl::SetTransient(const kitgui::WindowRef& transientWindowRef) {
-    return setTransient_(mApi, mWindow, transientWindowRef);
+    return setTransient_(sApi, mWindow, transientWindowRef);
 }
 void ContextImpl::SuggestTitle(std::string_view title) {
     std::string titleTemp(title);
@@ -489,9 +497,9 @@ void ContextImpl::RunSingleFrame() {
         ImGuiHelpers::beginFullscreen([&]() { instance->mContext.OnUpdate(); });
 
         // draw
-        uint32_t width = 0, height = 0;
-        instance->GetSize(width, height);
-        GL::defaultFramebuffer.setViewport({{}, {static_cast<int>(width), static_cast<int>(height)}});
+        int32_t width = 0, height = 0;
+        SDL_GetWindowSizeInPixels(instance->mWindow, &width, &height);
+        GL::defaultFramebuffer.setViewport({{}, {width, height}});
         GL::Renderer::setClearColor(instance->mClearColor);
         GL::defaultFramebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
 
@@ -502,6 +510,10 @@ void ContextImpl::RunSingleFrame() {
 
         if (!SDL_GL_SwapWindow(instance->mWindow)) {
             LOG_SDL_ERROR();
+        }
+        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
         }
     }
 }

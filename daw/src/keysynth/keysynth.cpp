@@ -2,9 +2,10 @@
 #include <clapeze/instrumentPlugin.h>
 #include <clapeze/params/enumParametersFeature.h>
 #include <clapeze/params/parameterTypes.h>
-#include <clapeze/state/tomlStateFeature.h>
 #include <clapeze/state/noopStateFeature.h>
+#include <clapeze/state/tomlStateFeature.h>
 #include <clapeze/voice.h>
+#include <etl/vector.h>
 #include <kitdsp/control/adsr.h>
 #include <kitdsp/control/gate.h>
 #include <kitdsp/control/lfo.h>
@@ -45,18 +46,27 @@ enum class Params : clap_id {
     VcaGain,
     VcaEnvDisabled,
     VcaLfoAmount,
-    PolyMode,
     PolyCount,
     PolyChordType,
     Count
 };
 enum class PolyChordType {
+    None,
     Octave,
     Fifth,
     Maj,
     Min,
     Maj7,
     Min7,
+};
+const std::vector<std::vector<int32_t>> kChordNotes {
+    {},
+    {0},
+    {0, 7},
+    {0, 4, 7},
+    {0, 3, 7},
+    {0, 4, 7, 10},
+    {0, 3, 7, 10},
 };
 constexpr size_t cMaxVoices = 16;
 using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
@@ -149,14 +159,6 @@ struct ParamTraits<Params, Params::VcaLfoAmount> : public clapeze::NumericParam 
 };
 
 template <>
-struct ParamTraits<Params, Params::PolyMode> : public clapeze::EnumParam<clapeze::VoiceStrategy> {
-    ParamTraits()
-        : clapeze::EnumParam<clapeze::VoiceStrategy>("Voice Mode",
-                                                     {"Poly", "Mono (last)"},
-                                                     clapeze::VoiceStrategy::Poly) {}
-};
-
-template <>
 struct ParamTraits<Params, Params::PolyCount> : public clapeze::IntegerParam {
     ParamTraits() : clapeze::IntegerParam("Voice Count", 1, cMaxVoices, 8) {}
 };
@@ -165,8 +167,8 @@ template <>
 struct ParamTraits<Params, Params::PolyChordType> : public clapeze::EnumParam<PolyChordType> {
     ParamTraits()
         : clapeze::EnumParam<PolyChordType>("Chord",
-                                            {"Octave", "5th", "Major", "Minor", "Major 7th", "Minor 7th"},
-                                            PolyChordType::Octave) {}
+                                            {"None", "Octave", "5th", "Major", "Minor", "Major 7th", "Minor 7th"},
+                                            PolyChordType::None) {}
 };
 }  // namespace clapeze::params
 
@@ -175,6 +177,72 @@ using namespace clapeze;
 namespace keysynth {
 
 class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHandle> {
+    class NoteProcessor {
+       public:
+        template <typename T>
+        void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity, T callback) {
+            for(auto noteOffset : mChord) {
+                clapeze::NoteTuple tmp = note;
+                tmp = note;
+                // TODO: we need to reassign ids. to have N voices per id they
+                // each need a new id, but this also means we need maintain a
+                // mapping from host ids <-> processor ids, and also apply the
+                // new IDs to modulations/anything else that wants them
+                tmp.id = -1; // TODO
+                tmp.key += noteOffset;
+                callback(tmp, velocity);
+            }
+        }
+
+        template <typename T>
+        void ProcessNoteOff(const clapeze::NoteTuple& note, T callback) {
+            for(auto noteOffset : mChord) {
+                clapeze::NoteTuple tmp = note;
+                tmp.id = -1; // TODO
+                tmp.key += noteOffset;
+                callback(tmp);
+            }
+        }
+
+        template <typename T>
+        void ProcessNoteChoke(const clapeze::NoteTuple& note, T callback) {
+            for(auto noteOffset : mChord) {
+                clapeze::NoteTuple tmp = note;
+                tmp.id = -1; // TODO
+                tmp.key += noteOffset;
+                callback(tmp);
+            }
+        }
+
+        bool SetChordType(PolyChordType chordType, int32_t numVoices) {
+            if(chordType != mChordType || numVoices != mNumVoices) {
+                mChord.clear();
+                if(chordType == PolyChordType::None || numVoices == 1) {
+                    // chord mode off
+                    mChord.push_back(0);
+                } else {
+                    // chord mode on
+                    auto& offsets = kChordNotes[static_cast<size_t>(chordType)];
+                    for(int32_t idx = 0; idx < numVoices; ++idx) {
+                        int32_t x = idx % offsets.size();
+                        int32_t y = idx / offsets.size();
+                        mChord.push_back(y * 12 + offsets[x]);
+                    }
+                }
+                mChordType = chordType;
+                mNumVoices = numVoices;
+                // caller should reset existing voices
+                return true;
+            }
+            return false;
+        }
+
+       private:
+        PolyChordType mChordType{};
+        int32_t mNumVoices{};
+        etl::vector<int32_t, 4> mChord{};
+    };
+
     class Voice {
        public:
         explicit Voice(Processor& p) : mProcessor(p) {}
@@ -207,7 +275,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
             // filter
             // range from 8hz to 12.5khz
             float filterNote = kitdsp::lerpf(0.0f, 127.0f, params.Get<Params::FilterCutoff>());
-            float res = params.Get<Params::FilterResonance>() * 0.89f; // 0.85 acts as cap, experimentally determined
+            float res = params.Get<Params::FilterResonance>() * 0.89f;  // 0.85 acts as cap, experimentally determined
             float filterSteepness = 0.5f;  // steeper means "achieves self-oscillation quicker"
             float filterQ = 0.5f * std::exp(filterSteepness * (res / (1 - res)));  // [0, 1] -> [0.5, inf]
             float filterModMix = params.Get<Params::FilterModMix>();
@@ -273,23 +341,38 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
     ~Processor() = default;
 
     clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) override {
-        mVoices.SetNumVoices(mParams.Get<Params::PolyCount>());
-        mVoices.SetStrategy(mParams.Get<Params::PolyMode>());
+        int32_t polyCount = mParams.Get<Params::PolyCount>();
+        mVoices.SetNumVoices(polyCount);
+        mVoices.SetStrategy(polyCount > 1 ? clapeze::VoiceStrategy::Poly : clapeze::VoiceStrategy::MonoLast);
+        if(mNoteProcessor.SetChordType(mParams.Get<Params::PolyChordType>(), polyCount)) {
+            mVoices.StopAllVoices();
+        }
         return mVoices.ProcessAudio(out);
     }
 
     void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) override {
-        mVoices.ProcessNoteOn(note, velocity);
+        mNoteProcessor.ProcessNoteOn(note, velocity, [this](const clapeze::NoteTuple& inote, float ivelocity) {
+            mVoices.ProcessNoteOn(inote, ivelocity);
+        });
     }
 
-    void ProcessNoteOff(const clapeze::NoteTuple& note) override { mVoices.ProcessNoteOff(note); }
+    void ProcessNoteOff(const clapeze::NoteTuple& note) override {
+        mNoteProcessor.ProcessNoteOff(note, [this](const clapeze::NoteTuple& inote) {
+            mVoices.ProcessNoteOff(inote);
+        });
+     }
 
-    void ProcessNoteChoke(const clapeze::NoteTuple& note) override { mVoices.ProcessNoteChoke(note); }
+    void ProcessNoteChoke(const clapeze::NoteTuple& note) override {
+        mNoteProcessor.ProcessNoteChoke(note, [this](const clapeze::NoteTuple& inote) {
+            mVoices.ProcessNoteChoke(inote);
+        });
+    }
 
     void ProcessReset() override { mVoices.StopAllVoices(); }
 
    private:
     clapeze::VoicePool<Processor, Voice, cMaxVoices> mVoices;
+    NoteProcessor mNoteProcessor{};
 };
 
 #if KITSBLIPS_ENABLE_GUI
@@ -300,17 +383,20 @@ class GuiApp : public kitgui::BaseApp {
     ~GuiApp() = default;
 
     void OnActivate() override {
+        float scale = static_cast<float>(GetContext().GetUIScale());
         mScene->Load("assets/kitskeys.glb");
         // TODO: to update all this if the viewport changes
-        mScene->SetViewport({600.0f, 400.0f});
-        mScene->SetBrightness(0.0070f); // idk why magnum is so intense by default, to investigate
+        uint32_t w{};
+        uint32_t h{};
+        GetContext().GetSizeInPixels(w, h);
+        mScene->SetViewport({static_cast<float>(w), static_cast<float>(h)});
+        mScene->SetBrightness(0.0070f);  // idk why magnum is so intense by default, to investigate
 
         struct KnobSetupInfo {
             Params param;
             std::string node;
         };
         const std::vector<KnobSetupInfo> knobs{
-            {Params::PolyMode, "knob-mid-Davies-1900h"},
             {Params::PolyCount, "knob-mid-Davies-1900h.001"},
             {Params::PolyChordType, "knob-mid-Davies-1900h.002"},
             {Params::OscOctave, "knob-mid-Davies-1900h.003"},
@@ -344,7 +430,7 @@ class GuiApp : public kitgui::BaseApp {
             if (pos) {
                 // TODO: to size the knob appropriately we need the bounding range of the object and then transform the
                 // corners of that into screen positions. for now, hardcoded.
-                float w = 40.0f;
+                float w = 40.0f * scale;
                 float hw = w * 0.5f;
                 mKnobs.back()->mPos = {pos->x() - hw, pos->y() - hw};
                 mKnobs.back()->mWidth = w;
@@ -357,7 +443,6 @@ class GuiApp : public kitgui::BaseApp {
         ImGui::TextWrapped("WIP keys synthesizer. don't tell anybody but this is a volca keys for ur computer");
 
         ImGui::TextWrapped("Voicing");
-        kitgui::DebugParam<ParamsFeature, Params::PolyMode>(mParams);
         kitgui::DebugParam<ParamsFeature, Params::PolyCount>(mParams);
 
         // TODO: conditionally visible
@@ -404,18 +489,21 @@ class GuiApp : public kitgui::BaseApp {
             clap_id id = knob->GetParamId();
             double raw = mParams.GetMainHandle().GetRawValue(id);
 
-            auto pos = mScene->GetObjectScreenPositionByName(knob->GetSceneNode());
             knob->mShowDebug = mShowDebugWindow;
             if (knob->Update(raw)) {
                 mParams.GetMainHandle().SetRawValue(id, raw);
             }
             // we assume the knob is at 12-o-clock, and knobs have 0.75turn(270deg) ranges
+            if (knob->IsStepped()) {
+                raw = std::trunc(raw);
+            }
             auto normalizedValue = kitdsp::clamp((raw - knob->mMin) / (knob->mMax - knob->mMin), 0.0, 1.0);
             constexpr float maxTurn = kitdsp::kPi * 2.0f * 0.75f;
-            mScene->SetObjectRotationByName(knob->GetSceneNode(), (static_cast<float>(normalizedValue) - 0.5f) * -maxTurn);
+            mScene->SetObjectRotationByName(knob->GetSceneNode(),
+                                            (static_cast<float>(normalizedValue) - 0.5f) * -maxTurn);
         }
 
-        if(ImGui::IsKeyPressed(ImGuiKey_GraveAccent)) {
+        if (ImGui::IsKeyPressed(ImGuiKey_GraveAccent)) {
             mShowDebugWindow = !mShowDebugWindow;
         }
 
@@ -433,7 +521,7 @@ class GuiApp : public kitgui::BaseApp {
     ParamsFeature& mParams;
     std::unique_ptr<kitgui::Scene> mScene;
     std::vector<std::unique_ptr<kitgui::BaseParamKnob>> mKnobs;
-    bool mShowDebugWindow = false;
+    bool mShowDebugWindow = true;
 };
 #endif
 
@@ -449,7 +537,6 @@ class Plugin : public InstrumentPlugin {
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
                                     .Module("Voicing")
-                                    .Parameter<Params::PolyMode>()
                                     .Parameter<Params::PolyCount>()
                                     .Parameter<Params::PolyChordType>()
                                     .Module("Oscillator")
@@ -475,7 +562,7 @@ class Plugin : public InstrumentPlugin {
                                     .Parameter<Params::VcaEnvDisabled>()
                                     .Parameter<Params::VcaLfoAmount>();
         ConfigFeature<clapeze::TomlStateFeature<ParamsFeature>>();
-        //ConfigFeature<clapeze::NoopStateFeature<ParamsFeature>>();
+        // ConfigFeature<clapeze::NoopStateFeature<ParamsFeature>>();
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<clapeze::AssetsFeature>(GetHost());
         // aspect ratio 1.5

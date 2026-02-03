@@ -1,6 +1,7 @@
 [submodule "sdk/imgui"]
 	path = sdk/imgui
 	url = https://github.com/ocornut/imgui.git
+	branch = docking
 [submodule "sdk/pugl"]
 	path = sdk/pugl
 	url = https://github.com/lv2/pugl.git

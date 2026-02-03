@@ -15,16 +15,19 @@ class MyApp2 : public kitgui::BaseApp {
     void OnUpdate() override {
         ImGui::Text("Window: %d", mIdx);
         ImGui::Text("Scale: %f", GetContext().GetUIScale());
+        ImGui::DragInt("Test Int", &mTestInt);
+        ImGui::ProgressBar(-1.0f * (float)ImGui::GetTime(), ImVec2(0.0f, 0.0f), "Animation");
     }
 
     void OnDraw() override {}
 
    private:
     int32_t mIdx;
+    int32_t mTestInt = 0;
 };
 
 int main() {
-    kitgui::Context::init(kitgui::WindowApi::Any, "kitgui");
+    kitgui::Context::init(kitgui::WindowApi::X11, "kitgui");
 
     {
         kitgui::Context ctx1([](kitgui::Context& ctx) { return std::make_unique<MyApp2>(ctx, 1); });

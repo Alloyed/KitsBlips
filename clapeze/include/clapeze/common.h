@@ -32,10 +32,11 @@ struct StereoAudioBuffer {
 // All of the identifying info for a given note.
 // -1 means wildcard/no value, >= 0 is a specific value.
 struct NoteTuple {
-    int32_t id = -1;
-    int16_t port = -1;
-    int16_t channel = -1;
-    int16_t key = -1;
+    static constexpr int8_t kNone = -1;
+    int32_t id = kNone;
+    int16_t port = kNone;
+    int16_t channel = kNone;
+    int16_t key = kNone;
     bool Match(const NoteTuple& other) const {
         if (id != -1 && other.id != -1) {
             // if ids match, or don't, no need to check everything else

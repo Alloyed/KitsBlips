@@ -77,6 +77,7 @@ class Context {
     const SizeConfig& GetSizeConfig() const;
     void SetSizeConfig(const SizeConfig& cfg);
     bool GetSize(uint32_t& widthOut, uint32_t& heightOut) const;
+    bool GetSizeInPixels(uint32_t& widthOut, uint32_t& heightOut) const;
     bool SetSizeDirectly(uint32_t width, uint32_t height, bool resizable);
     /**
      * Embeds this window into another OS-level window.
