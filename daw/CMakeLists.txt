@@ -44,7 +44,7 @@ target_sources(KitsBlips PRIVATE
     src/freqshift/freqshift.cpp
     src/gui/kitguiFeature.cpp
     src/harmonizer/harmonizer.cpp
-    src/keysynth/keysynth.cpp
+    src/kitskeys/kitskeys.cpp
     src/snecho/snecho.cpp
 )
 

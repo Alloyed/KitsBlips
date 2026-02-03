@@ -233,6 +233,13 @@ bool ContextImpl::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     heightOut = rect.bottom - rect.top;
     return true;
 }
+bool ContextImpl::GetSizeInPixels(uint32_t& widthOut, uint32_t& heightOut) const {
+    RECT rect;
+    ::GetWindowRect(mWindow, &rect);
+    widthOut = rect.right - rect.left;
+    heightOut = rect.bottom - rect.top;
+    return true;
+}
 bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
     // TODO: resizable
     return ::SetWindowPos(mWindow, nullptr, 0, 0, width, height,
@@ -339,7 +346,7 @@ void ContextImpl::RunSingleFrame() {
 
         // draw
         uint32_t width = 0, height = 0;
-        instance->GetSize(width, height);
+        instance->GetSizeInPixels(width, height);
         GL::defaultFramebuffer.setViewport({{}, {static_cast<int>(width), static_cast<int>(height)}});
         GL::defaultFramebuffer.clearColor(instance->mClearColor);
         GL::defaultFramebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
