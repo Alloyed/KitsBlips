@@ -214,6 +214,7 @@ PuglStatus ContextImpl::OnPuglEvent(const PuglEvent* event) {
             ImGui_ImplOpenGL3_NewFrame();
             ImGui::NewFrame();
             ImGuiHelpers::beginFullscreen([&]() { mContext.OnUpdate(); });
+            mContext.OnGuiUpdate();
             puglObscureView(mView);  // request draw
             ImGui::EndFrame();
             break;

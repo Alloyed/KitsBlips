@@ -189,6 +189,12 @@ void Context::OnUpdate() {
     }
 }
 
+void Context::OnGuiUpdate() {
+    if (mApp) {
+        mApp->OnGuiUpdate();
+    }
+}
+
 void Context::OnDraw() {
     if (mApp) {
         mApp->OnDraw();

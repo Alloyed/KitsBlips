@@ -21,6 +21,8 @@ class MyApp : public kitgui::BaseApp {
     }
     void OnUpdate() override {
         mScene->Update();
+    }
+    void OnGuiUpdate() override {
         if (mShowUi) {
             ImGui::SetNextWindowPos({ImGui::GetWindowWidth() - 300, ImGui::GetWindowHeight() - 200}, ImGuiCond_Once);
             ImGui::SetNextWindowSize({300, 200}, ImGuiCond_Once);

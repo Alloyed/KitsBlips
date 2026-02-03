@@ -343,6 +343,7 @@ void ContextImpl::RunSingleFrame() {
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
         ImGuiHelpers::beginFullscreen([&]() { instance->mContext.OnUpdate(); });
+        instance->mContext.OnGuiUpdate();
 
         // draw
         uint32_t width = 0, height = 0;

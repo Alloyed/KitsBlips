@@ -12,7 +12,7 @@ inline void beginFullscreen(FN fn) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     static bool open = true;
     ImGui::Begin("main", &open,
-                 ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize);
+                 ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus);
     {
         fn();
     }

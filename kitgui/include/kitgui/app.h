@@ -32,6 +32,10 @@ class BaseApp {
      */
     virtual void OnUpdate() {}
     /**
+     * Triggers on a regular basis. happens after the regular update
+     */
+    virtual void OnGuiUpdate() {}
+    /**
      * Triggers on a regular basis. use gl to manipulate the visual state.
      */
     virtual void OnDraw() {}

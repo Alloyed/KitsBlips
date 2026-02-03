@@ -165,6 +165,7 @@ class Context {
     void OnActivate();
     void OnDeactivate();
     void OnUpdate();
+    void OnGuiUpdate();
     void OnDraw();
 
    private:
