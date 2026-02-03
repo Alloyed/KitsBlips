@@ -84,36 +84,42 @@ FetchContent_Declare(
     fmt
     GIT_REPOSITORY https://github.com/fmtlib/fmt
     GIT_TAG        11.2.0
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     etl
     GIT_REPOSITORY https://github.com/ETLCPP/etl
     GIT_TAG        20.44.2
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     clap
     GIT_REPOSITORY https://github.com/free-audio/clap.git
     GIT_TAG        1.2.7
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     clap-wrapper
     GIT_REPOSITORY https://github.com/alloyed/clap-wrapper.git
     GIT_TAG        19f18f2c1b4f0aee13112d75695d48d6b2487d68
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     miniz
     GIT_REPOSITORY https://github.com/richgel999/miniz.git
     GIT_TAG        3.1.0
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     tomlplusplus
     GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
     GIT_TAG        v3.4.0
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
@@ -135,6 +141,7 @@ FetchContent_Declare(
     SDL3
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
     GIT_TAG        release-3.4.0
+    SYSTEM
     EXCLUDE_FROM_ALL
     FIND_PACKAGE_ARGS
 )
@@ -171,30 +178,35 @@ FetchContent_Declare(
     corrade
     GIT_REPOSITORY https://github.com/mosra/corrade.git
     GIT_TAG        b65bcc0d08c8ef4b47a19ac37cdffb267e7c9994
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     magnum
     GIT_REPOSITORY https://github.com/mosra/magnum.git
     GIT_TAG        bd52eb9be27f647cbec5475a920b79ce61953c8b
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     magnum-plugins
     GIT_REPOSITORY https://github.com/mosra/magnum-plugins.git
     GIT_TAG        420a0e27b8a3a006a1b4db9c200139473a047b84
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     magnum-integration
     GIT_REPOSITORY https://github.com/mosra/magnum-integration.git
     GIT_TAG 0184c8371d499d4a4f20b5982722f7942ff6f364
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     basis_universal
     GIT_REPOSITORY https://github.com/BinomialLLC/basis_universal.git
     GIT_TAG v2_0_2
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 
@@ -203,29 +215,34 @@ FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG        v1.17.0
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     cpptrace
     GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
     GIT_TAG        v1.0.0
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     AudioFile
     GIT_REPOSITORY https://github.com/adamstark/AudioFile.git
     GIT_TAG        1.1.4
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     sentry-native
     GIT_REPOSITORY https://github.com/getsentry/sentry-native.git
     GIT_TAG        0.12.3
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     tracy
     GIT_REPOSITORY https://github.com/wolfpld/tracy.git
     GIT_TAG v0.13.1
+    SYSTEM
     EXCLUDE_FROM_ALL
 )

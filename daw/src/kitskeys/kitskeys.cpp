@@ -174,7 +174,7 @@ struct ParamTraits<Params, Params::PolyChordType> : public clapeze::EnumParam<Po
 
 using namespace clapeze;
 
-namespace keysynth {
+namespace kitskeys {
 
 class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHandle> {
     class NoteProcessor {
@@ -579,4 +579,4 @@ CLAPEZE_REGISTER_PLUGIN(Plugin,
                         AudioInstrumentDescriptor("kitsblips.kitskeys",
                                                   "KitsKeys",
                                                   "Small Polysynth with a keys/chord focus"));
-}  // namespace keysynth
+}  // namespace kitskeys

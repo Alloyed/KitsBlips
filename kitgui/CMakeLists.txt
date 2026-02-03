@@ -37,6 +37,7 @@ target_sources(kitgui PRIVATE
     src/gfx/materials.cpp
     src/gfx/meshes.cpp
     src/controls/knob.cpp
+    src/controls/toggleSwitch.cpp
     src/theme/everforest.cpp
 )
 
