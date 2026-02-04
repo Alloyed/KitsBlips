@@ -7,6 +7,11 @@
 
 namespace kitgui {
 class Context;
+
+struct ObjectScreenPosition {
+    kitgui::Vector2 pos;
+    kitgui::Vector2 size;
+};
 /**
  * A scene represents a drawable instance of a loaded gltf/glb scene.
  * gltf scenes include drawable geometry, like 3d models, as well as camera and lighting information.
@@ -31,7 +36,7 @@ class Scene {
     // These methods are added as needed, so no rhyme or reason to what's supported really
     void PlayAnimationByName(std::string_view name);
     void SetObjectRotationByName(std::string_view name, float angleRadians, Axis axis);
-    std::optional<kitgui::Vector2> GetObjectScreenPositionByName(std::string_view name);
+    std::optional<ObjectScreenPosition> GetObjectScreenPositionByName(std::string_view name);
 
    private:
     struct Impl;

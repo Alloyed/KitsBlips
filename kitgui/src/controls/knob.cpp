@@ -2,6 +2,7 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <misc/cpp/imgui_stdlib.h>
 #include <cmath>
 #include <string>
 #include <algorithm>
@@ -9,8 +10,8 @@
 namespace kitgui {
 bool Knob::Update(double& rawValueInOut) {
     // roughly adapted from https://github.com/altschuler/imgui-knobs/tree/main
-
-    auto itemWidth = mWidth ? (*mWidth) * ImGui::GetIO().FontGlobalScale : ImGui::GetTextLineHeight() * 2.0f;
+    float scale = ImGui::GetIO().FontGlobalScale;
+    auto itemWidth = mWidth ? (*mWidth) * scale : ImGui::GetTextLineHeight() * 2.0f;
     ImVec2 screen_pos = mPos ? ImVec2{mPos->x(), mPos->y()} : ImGui::GetCursorScreenPos();
 
     ImGui::PushID(static_cast<void*>(this));
@@ -39,18 +40,49 @@ bool Knob::Update(double& rawValueInOut) {
     auto is_hovered = ImGui::IsItemHovered();
 
     // responses
-    if (is_active) {
+    if (is_active || ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
         // tooltip counts as a window! so this works
-        ImGui::SetNextWindowPos({screen_pos.x + itemWidth, screen_pos.y + (itemWidth * 0.5f)});
-        ImGui::SetTooltip("%s", FormatValueText(rawValueInOut).c_str());
-    } else if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
-        // descriptive tooltip
-        ImGui::SetTooltip("%s", GetName().c_str());
+        float view_width = ImGui::GetMainViewport()->Size.x;
+        bool pivot_left = screen_pos.x > view_width * 0.70f;
+        if(pivot_left) {
+            ImGui::SetNextWindowPos({screen_pos.x, screen_pos.y + (itemWidth * 0.5f)}, ImGuiCond_Always, {1.0, 0.0});
+        }
+        else {
+            ImGui::SetNextWindowPos({screen_pos.x + itemWidth, screen_pos.y + (itemWidth * 0.5f)}, ImGuiCond_Always, {0.0, 0.0});
+        }
+        ImGui::SetNextWindowSize({0.0f, 0.0f}, ImGuiCond_Always);
+        ImGui::SetTooltip("%s: %s", GetName().c_str(), ToValueText(rawValueInOut).c_str());
     }
 
-    if (is_active && ImGui::IsMouseDoubleClicked(0)) {
+    if (is_active && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
         rawValueInOut = GetDefault();
         value_changed = true;
+    }
+
+    static std::string sValueText{};
+    static bool sPopupOpened{};
+    if (is_hovered && ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
+        ImGui::OpenPopup("editknob");
+        sValueText = ToValueText(rawValueInOut);
+        sPopupOpened = true;
+    }
+
+    ImGui::SetNextWindowSize({160.0f*scale, 0.0f});
+    if (ImGui::BeginPopup("editknob"))
+    {
+        if(ImGui::InputText("##", &sValueText, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            if(FromValueText(sValueText, rawValueInOut)) {
+                // TODO validation
+                value_changed = true;
+            }
+            ImGui::CloseCurrentPopup();
+        }
+        if (sPopupOpened) {
+            // doesn't seem to work :/
+            //ImGui::SetKeyboardFocusHere(-1);
+            sPopupOpened = false;
+        }
+        ImGui::EndPopup();
     }
 
     if (mShowDebug) {

@@ -421,13 +421,13 @@ class GuiApp : public kitgui::BaseApp {
         for (const auto& knobInfo : knobs) {
             clap_id id = static_cast<clap_id>(knobInfo.param);
             mKnobs.push_back(std::make_unique<kitgui::BaseParamKnob>(*mParams.GetBaseParam(id), id, knobInfo.node));
-            auto pos = mScene->GetObjectScreenPositionByName(knobInfo.node);
-            if (pos) {
+            auto objectInfo = mScene->GetObjectScreenPositionByName(knobInfo.node);
+            if (objectInfo) {
                 // TODO: to size the knob appropriately we need the bounding range of the object and then transform the
                 // corners of that into screen positions. for now, hardcoded.
                 float w = 40.0f * scale;
                 float hw = w * 0.5f;
-                mKnobs.back()->mPos = {pos->x() - hw, pos->y() - hw};
+                mKnobs.back()->mPos = {objectInfo->pos.x() - hw, objectInfo->pos.y() - hw};
                 mKnobs.back()->mWidth = w;
                 mKnobs.back()->mShowDebug = false;
             }
@@ -439,13 +439,13 @@ class GuiApp : public kitgui::BaseApp {
         for (const auto& knobInfo : toggles) {
             clap_id id = static_cast<clap_id>(knobInfo.param);
             mToggles.push_back(std::make_unique<kitgui::BaseParamToggle>(*mParams.GetBaseParam(id), id, knobInfo.node));
-            auto pos = mScene->GetObjectScreenPositionByName(knobInfo.node);
-            if (pos) {
+            auto objectInfo = mScene->GetObjectScreenPositionByName(knobInfo.node);
+            if (objectInfo) {
                 // TODO: to size the knob appropriately we need the bounding range of the object and then transform the
                 // corners of that into screen positions. for now, hardcoded.
                 float w = 40.0f * scale;
                 float hw = w * 0.5f;
-                mToggles.back()->mPos = {pos->x() - hw, pos->y() - hw};
+                mKnobs.back()->mPos = {objectInfo->pos.x() - hw, objectInfo->pos.y() - hw};
                 mToggles.back()->mWidth = w;
                 mToggles.back()->mShowDebug = false;
             }
@@ -490,14 +490,6 @@ class GuiApp : public kitgui::BaseApp {
     void OnUpdate() override {
         mParams.FlushFromAudio();
         mScene->Update();
-        // imgui
-        if (ImGui::BeginMenuBar()) {
-            if (ImGui::BeginMenu("View")) {
-                ImGui::MenuItem("Debug Window", NULL, &mShowDebugWindow);
-                ImGui::EndMenu();
-            }
-        }
-
         for (auto& knob : mKnobs) {
             clap_id id = knob->GetParamId();
             double raw = mParams.GetMainHandle().GetRawValue(id);
@@ -511,7 +503,7 @@ class GuiApp : public kitgui::BaseApp {
                 raw = std::trunc(raw);
             }
             auto normalizedValue = kitdsp::clamp((raw - knob->mMin) / (knob->mMax - knob->mMin), 0.0, 1.0);
-            constexpr float maxTurn = kitdsp::kPi * 2.0f * 0.25f;
+            constexpr float maxTurn = kitdsp::kPi * 2.0f * 0.75f;
             mScene->SetObjectRotationByName(knob->GetSceneNode(),
                                             (static_cast<float>(normalizedValue) - 0.5f) * -maxTurn, kitgui::Scene::Axis::Y);
         }
@@ -531,12 +523,31 @@ class GuiApp : public kitgui::BaseApp {
     }
 
     void OnGuiUpdate() override {
+        if (ImGui::BeginMainMenuBar()) {
+            ImGui::MenuItem("Help/About", NULL, &mShowHelpWindow);
+            if(ImGui::MenuItem("Reset All")) {
+                mParams.ResetAllParamsToDefault();
+            }
+            ImGui::MenuItem("Debug", NULL, &mShowDebugWindow);
+            ImGui::EndMainMenuBar();
+        }
+
         if (ImGui::IsKeyPressed(ImGuiKey_GraveAccent)) {
             mShowDebugWindow = !mShowDebugWindow;
         }
 
+        if (mShowHelpWindow) {
+            if (ImGui::Begin("Help", &mShowHelpWindow)) {
+                ImGui::TextWrapped("KitsKeys is an intentionally simple-ish virtual analog polysynth. This is the first one I'm really dumping effort into the UI for so extra feedback there is very appreciated :)");
+                ImGui::BulletText("Shift-click for fine adjustment");
+                ImGui::BulletText("double-click to reset to default");
+                ImGui::BulletText("right-click to get a text input");
+            }
+            ImGui::End();
+        }
+
         if (mShowDebugWindow) {
-            if (ImGui::Begin("Debug Window", &mShowDebugWindow)) {
+            if (ImGui::Begin("Debugger", &mShowDebugWindow)) {
                 DebugParamList();
             }
             ImGui::End();
@@ -550,7 +561,8 @@ class GuiApp : public kitgui::BaseApp {
     std::unique_ptr<kitgui::Scene> mScene;
     std::vector<std::unique_ptr<kitgui::BaseParamKnob>> mKnobs;
     std::vector<std::unique_ptr<kitgui::BaseParamToggle>> mToggles;
-    bool mShowDebugWindow = true;
+    bool mShowDebugWindow = false;
+    bool mShowHelpWindow = false;
 };
 #endif
 

@@ -65,7 +65,7 @@ struct Scene::Impl {
 
     void PlayAnimationByName(std::string_view name);
     void SetObjectRotationByName(std::string_view name, float angleRadians, Scene::Axis axis);
-    std::optional<Vector2> GetObjectScreenPositionByName(std::string_view name);
+    std::optional<ObjectScreenPosition> GetObjectScreenPositionByName(std::string_view name);
 
    public:
     kitgui::Context& mContext;
@@ -333,28 +333,37 @@ void Scene::Impl::SetObjectRotationByName(std::string_view name, float angleRadi
     }
 }
 
-std::optional<kitgui::Vector2> Scene::GetObjectScreenPositionByName(std::string_view name) {
+std::optional<ObjectScreenPosition> Scene::GetObjectScreenPositionByName(std::string_view name) {
     return mImpl->GetObjectScreenPositionByName(name);
 }
 
-std::optional<kitgui::Vector2> Scene::Impl::GetObjectScreenPositionByName(std::string_view name) {
+std::optional<ObjectScreenPosition> Scene::Impl::GetObjectScreenPositionByName(std::string_view name) {
+    Vector2 viewportSize = Vector2{mCamera->viewport()};
+    auto pointToScreen = [this, &viewportSize] (const auto& object, const Vector3& pos) -> std::optional<Vector2> {
+        const Matrix4 viewProjection =
+            mCamera->projectionMatrix() * mCamera->cameraMatrix() * object->absoluteTransformationMatrix() * Matrix4::translation(pos);
+        const Vector4 clip = viewProjection * Vector4{0.0f, 0.0f, 0.0f, 1.0f};
+        if (clip.w() <= 0.0f) {
+            // behind camera or invalid
+            return std::nullopt;
+        }
+
+        Vector3 ndc = clip.xyz() / clip.w();
+        Vector2 screen;
+        screen.x() = (ndc.x() * 0.5f + 0.5f) * viewportSize.x();
+        screen.y() = (1.0f - (ndc.y() * 0.5f + 0.5f)) * viewportSize.y();
+
+        return screen;
+    };
     for (auto& info : mSceneObjects) {
         if (info.name == name) {
-            const Matrix4 viewProjection =
-                mCamera->projectionMatrix() * mCamera->cameraMatrix() * info.object->absoluteTransformationMatrix();
-            const Vector4 clip = viewProjection * Vector4{0.0f, 0.0f, 0.0f, 1.0f};
-            if (clip.w() <= 0.0f) {
-                // behind camera or invalid
-                return std::nullopt;
+            // TODO: get bounding volume. with the current data as is that's a jump from object <- drawable -> mesh -> boundingBox
+            //auto start = pointToScreen(info.object, ...);
+            //auto end = pointToScreen(info.object, ...);
+            auto pos = pointToScreen(info.object, Vector3{});
+            if(pos) {
+                return ObjectScreenPosition{.pos = *pos, .size = Vector2{}};
             }
-
-            Vector3 ndc = clip.xyz() / clip.w();
-            Vector2 viewportSize = Vector2{mCamera->viewport()};
-            Vector2 screen;
-            screen.x() = (ndc.x() * 0.5f + 0.5f) * viewportSize.x();
-            screen.y() = (1.0f - (ndc.y() * 0.5f + 0.5f)) * viewportSize.y();
-
-            return screen;
         }
     }
     return std::nullopt;

@@ -90,12 +90,15 @@ class BaseParamKnob : public kitgui::Knob {
    protected:
     const std::string& GetName() const override { return mName; }
     double GetDefault() const override { return mParam.GetRawDefault(); }
-    std::string FormatValueText(double value) const override {
+    std::string ToValueText(double value) const override {
         std::string buf(20, '\0');
         etl::span<char> span{buf.data(), buf.size()};
         mParam.ToText(value, span);
         buf = buf.c_str();
         return buf;
+    }
+    bool FromValueText(std::string_view text, double& value) const override {
+        return mParam.FromText(text, value);
     }
 
    private:

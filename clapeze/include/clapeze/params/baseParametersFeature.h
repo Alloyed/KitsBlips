@@ -63,6 +63,7 @@ class BaseParametersFeature : public BaseFeature {
     TMainHandle& GetMainHandle();
 
     size_t GetNumParams() const;
+    void ResetAllParamsToDefault();
 
    protected:
     PluginHost& mHost;
@@ -181,6 +182,14 @@ TMainHandle& BaseParametersFeature<TMainHandle, TAudioHandle>::GetMainHandle() {
 template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 size_t BaseParametersFeature<TMainHandle, TAudioHandle>::GetNumParams() const {
     return mNumParams;
+}
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
+void BaseParametersFeature<TMainHandle, TAudioHandle>::ResetAllParamsToDefault() {
+    for(clap_id id = 0; id < mNumParams; ++id) {
+        mMain.SetRawValue(id, GetBaseParam(id)->GetRawDefault());
+        //RequestClear(id); // resets automation? idk if necessary
+    }
+    RequestRescan(CLAP_PARAM_RESCAN_VALUES);
 }
 
 template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>

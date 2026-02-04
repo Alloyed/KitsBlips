@@ -57,6 +57,8 @@ struct NumericParam : public BaseParam {
                  std::string_view mUnit = "")
         : mName(mName), mCurve(curve), mMin(mMin), mMax(mMax), mDefaultValue(mDefaultValue), mUnit(mUnit) {}
     bool FillInformation(clap_id id, clap_param_info_t* information) const override;
+    const std::string& GetName() const override { return mName; }
+    const std::string& GetTooltip() const override { static const std::string kEmpty = ""; return kEmpty; }
     double GetRawDefault() const override;
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override;
     bool FromText(std::string_view text, double& outRawValue) const override;
@@ -108,6 +110,8 @@ struct IntegerParam : public BaseParam {
           mUnitSingular(mUnitSingular) {}
 
     bool FillInformation(clap_id id, clap_param_info_t* information) const override;
+    const std::string& GetName() const override { return mName; }
+    const std::string& GetTooltip() const override { static const std::string kEmpty = ""; return kEmpty; }
     double GetRawDefault() const override;
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override;
     bool FromText(std::string_view text, double& outRawValue) const override;
@@ -144,6 +148,8 @@ struct EnumParam : public BaseParam {
 
         return true;
     }
+    const std::string& GetName() const override { return mName; }
+    const std::string& GetTooltip() const override { static const std::string kEmpty = ""; return kEmpty; }
     double GetRawDefault() const override {
         double rawDefault{};
         FromValue(mDefaultValue, rawDefault);

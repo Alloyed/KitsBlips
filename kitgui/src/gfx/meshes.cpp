@@ -7,6 +7,7 @@
 #include <Magnum/GL/Mesh.h>
 #include <Magnum/MeshTools/Compile.h>
 #include <Magnum/MeshTools/GenerateIndices.h>
+#include <Magnum/MeshTools/BoundingVolume.h>
 #include <Magnum/Trade/AbstractImporter.h>
 #include <Magnum/Trade/MeshData.h>
 #include <fmt/format.h>
@@ -138,6 +139,7 @@ void MeshCache::LoadMeshes(Magnum::Trade::AbstractImporter& importer) {
         }
         mesh.mesh = MeshTools::compile(*meshData, flags);
         mesh.debugName = meshName;
+        mesh.boundingBox = Magnum::MeshTools::boundingRange(meshData->positions3DAsArray());
     }
 }
 }  // namespace kitgui

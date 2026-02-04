@@ -13,6 +13,8 @@ struct BaseParam {
     virtual bool ToText(double rawValue, etl::span<char>& outTextBuf) const = 0;
     virtual bool FromText(std::string_view text, double& outRawValue) const = 0;
     virtual double GetRawDefault() const = 0;
+    virtual const std::string& GetName() const = 0;
+    virtual const std::string& GetTooltip() const = 0;
 
     const std::string& GetModule() const { return mModule; }
     void SetModule(std::string_view module) { mModule = module; }
