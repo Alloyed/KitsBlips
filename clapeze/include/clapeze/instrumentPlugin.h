@@ -95,8 +95,8 @@ class InstrumentPlugin : public BasePlugin {
    protected:
     // impl
     void Config() override {
-        ConfigFeature<NotePortsFeature<1, 0>>();
-        ConfigFeature<StereoAudioPortsFeature<0, 1>>();
+        ConfigFeature<NotePortsFeature>(1, 0);
+        ConfigFeature<StereoAudioPortsFeature>(0, 1);
     }
 };
 }  // namespace clapeze

@@ -9,9 +9,9 @@
 
 namespace clapeze {
 
-template <size_t NUM_INPUTS, size_t NUM_OUTPUTS>
 class NotePortsFeature : public BaseFeature {
    public:
+    NotePortsFeature(uint32_t numInputs, uint32_t numOutputs) : NUM_INPUTS(numInputs), NUM_OUTPUTS(numOutputs) {}
     static constexpr auto NAME = CLAP_EXT_NOTE_PORTS;
     const char* Name() const override { return NAME; }
 
@@ -24,11 +24,14 @@ class NotePortsFeature : public BaseFeature {
     }
 
    private:
+    uint32_t NUM_INPUTS;
+    uint32_t NUM_OUTPUTS;
     static uint32_t _count([[maybe_unused]] const clap_plugin_t* plugin, bool isInput) {
+        NotePortsFeature& self = NotePortsFeature::GetFromPluginObject<NotePortsFeature>(plugin);
         if (isInput) {
-            return NUM_INPUTS;
+            return self.NUM_INPUTS;
         } else {
-            return NUM_OUTPUTS;
+            return self.NUM_OUTPUTS;
         }
     }
 
@@ -36,14 +39,15 @@ class NotePortsFeature : public BaseFeature {
                      uint32_t index,
                      bool isInput,
                      clap_note_port_info_t* info) {
-        if (isInput && index < NUM_INPUTS) {
+        NotePortsFeature& self = NotePortsFeature::GetFromPluginObject<NotePortsFeature>(plugin);
+        if (isInput && index < self.NUM_INPUTS) {
             // input
             info->id = index;
             info->supported_dialects = CLAP_NOTE_DIALECT_CLAP;
             info->preferred_dialect = CLAP_NOTE_DIALECT_CLAP;
             snprintf(info->name, sizeof(info->name), "%s %u", "Note Input", index);
             return true;
-        } else if (index < NUM_OUTPUTS) {
+        } else if (index < self.NUM_OUTPUTS) {
             // output
             info->id = index;
             info->supported_dialects = CLAP_NOTE_DIALECT_CLAP;

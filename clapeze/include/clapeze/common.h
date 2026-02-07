@@ -8,6 +8,14 @@ namespace clapeze {
 struct MonoAudioBuffer {
     etl::span<float> data;
     bool isConstant;
+    void CopyFrom(const MonoAudioBuffer& in) {
+        isConstant = in.isConstant;
+        std::copy(in.data.begin(), in.data.end(), data.begin());
+    }
+    void Fill(float value) {
+        std::fill(data.begin(), data.end(), value);
+        isConstant = true;
+    }
 };
 
 struct StereoAudioBuffer {
@@ -15,6 +23,12 @@ struct StereoAudioBuffer {
     etl::span<float> right;
     bool isLeftConstant;
     bool isRightConstant;
+    void CopyFrom(const MonoAudioBuffer& in) {
+        isLeftConstant = in.isConstant;
+        std::copy(in.data.begin(), in.data.end(), left.begin());
+        isRightConstant = in.isConstant;
+        std::copy(in.data.begin(), in.data.end(), right.begin());
+    }
     void CopyFrom(const StereoAudioBuffer& in) {
         isLeftConstant = in.isLeftConstant;
         std::copy(in.left.begin(), in.left.end(), left.begin());

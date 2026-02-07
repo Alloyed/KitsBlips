@@ -54,7 +54,7 @@ class OversampledOscillator {
 
    private:
     OSC mOsc;
-    Oversampler<float, FACTOR> mSampler{48000.0f};
+    OversamplerGeneric<float, FACTOR> mSampler{48000.0f};
 };
 
 }  // namespace kitdsp

@@ -57,6 +57,6 @@ class EffectPlugin : public BasePlugin {
     ~EffectPlugin() = default;
 
    protected:
-    void Config() override { ConfigFeature<StereoAudioPortsFeature<1, 1>>(); }
+    void Config() override { ConfigFeature<StereoAudioPortsFeature>(1, 1); }
 };
 }  // namespace clapeze

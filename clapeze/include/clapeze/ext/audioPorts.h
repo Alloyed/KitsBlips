@@ -8,9 +8,9 @@
 
 namespace clapeze {
 
-template <size_t NUM_INPUTS, size_t NUM_OUTPUTS>
 class StereoAudioPortsFeature : public BaseFeature {
    public:
+    StereoAudioPortsFeature(uint32_t numInputs, uint32_t numOutputs) : mNumInputs(numInputs), mNumOutputs(numOutputs) {}
     static constexpr auto NAME = CLAP_EXT_AUDIO_PORTS;
     const char* Name() const override { return NAME; }
     void Configure(BasePlugin& self) override {
@@ -22,11 +22,14 @@ class StereoAudioPortsFeature : public BaseFeature {
     }
 
    private:
+    uint32_t mNumInputs;
+    uint32_t mNumOutputs;
     static uint32_t _count([[maybe_unused]] const clap_plugin_t* plugin, bool isInput) {
+        StereoAudioPortsFeature& self = StereoAudioPortsFeature::GetFromPluginObject<StereoAudioPortsFeature>(plugin);
         if (isInput) {
-            return NUM_INPUTS;
+            return self.mNumInputs;
         } else {
-            return NUM_OUTPUTS;
+            return self.mNumOutputs;
         }
     }
 
@@ -34,7 +37,8 @@ class StereoAudioPortsFeature : public BaseFeature {
                      uint32_t index,
                      bool isInput,
                      clap_audio_port_info_t* info) {
-        if (isInput && index < NUM_INPUTS) {
+        StereoAudioPortsFeature& self = StereoAudioPortsFeature::GetFromPluginObject<StereoAudioPortsFeature>(plugin);
+        if (isInput && index < self.mNumInputs) {
             // input
             info->id = index;
             info->channel_count = 2;
@@ -43,7 +47,7 @@ class StereoAudioPortsFeature : public BaseFeature {
             info->in_place_pair = CLAP_INVALID_ID;
             snprintf(info->name, sizeof(info->name), "%s %u", "Audio Input", index);
             return true;
-        } else if (index < NUM_OUTPUTS) {
+        } else if (index < self.mNumOutputs) {
             // output
             info->id = index;
             info->channel_count = 2;
