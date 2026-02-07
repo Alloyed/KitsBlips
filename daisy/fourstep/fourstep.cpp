@@ -28,10 +28,10 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
     toggle.Debounce();
 
     // TODO: calibration on these seems way off
-    sequence[0] = lerpf(-1.0f, 1.0f, GetKnobN(hw.controls[CV_1]));
-    sequence[1] = lerpf(-1.0f, 1.0f, GetKnobN(hw.controls[CV_2]));
-    sequence[2] = lerpf(-1.0f, 1.0f, GetKnobN(hw.controls[CV_3]));
-    sequence[3] = lerpf(-1.0f, 1.0f, GetKnobN(hw.controls[CV_4]));
+    sequence[0] = lerp(-1.0f, 1.0f, GetKnobN(hw.controls[CV_1]));
+    sequence[1] = lerp(-1.0f, 1.0f, GetKnobN(hw.controls[CV_2]));
+    sequence[2] = lerp(-1.0f, 1.0f, GetKnobN(hw.controls[CV_3]));
+    sequence[3] = lerp(-1.0f, 1.0f, GetKnobN(hw.controls[CV_4]));
 
     if (hw.gate_in_1.Trig() || button.RisingEdge()) {
         size_t lastIndex = indexInternal;
@@ -57,7 +57,7 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
     }
 
     // range: 2 octaves 0-2v
-    float noteIn = lerpf(0.0f, 24.0f, outUni);
+    float noteIn = lerp(0.0f, 24.0f, outUni);
     float noteOut = clamp(quantizer.Process(noteIn), 0.f, 24.f) * 2.0f / 24.0f;
     hw.WriteCvOut(CV_OUT_1, noteOut);
     hw.WriteCvOut(CV_OUT_2, outUni * 5.0f);

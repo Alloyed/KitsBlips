@@ -1,5 +1,6 @@
 #pragma once
 
+#include <etl/span.h>
 #include <cstddef>
 #include <cstdint>
 #include "kitdsp/math/interpolate.h"
@@ -8,13 +9,14 @@ namespace kitdsp {
 template <typename SAMPLE, interpolate::InterpolationStrategy STRATEGY, bool SHOULD_LOOP>
 class Sampler1D {
    public:
-    Sampler1D(SAMPLE* buffer, size_t size) : mBuffer(buffer), mSize(size) {}
+    explicit Sampler1D(etl::span<SAMPLE> buf) : mBuffer(buf) {}
 
     SAMPLE Read(int32_t index) const {
+        size_t size = mBuffer.size();
         if (SHOULD_LOOP) {
-            return mBuffer[index % mSize];
+            return mBuffer[index % size];
         } else {
-            return index < 0 || index >= mSize ? SAMPLE(0) : mBuffer[index];
+            return index < 0 || index >= size ? SAMPLE(0) : mBuffer[index];
         }
     }
 
@@ -39,11 +41,10 @@ class Sampler1D {
             };
         }
     }
-    size_t size() const { return mSize; }
+    size_t size() const { return mBuffer.size(); }
 
    private:
-    SAMPLE* mBuffer;
-    size_t mSize;
+    etl::span<SAMPLE> mBuffer;
 };
 
 }  // namespace kitdsp

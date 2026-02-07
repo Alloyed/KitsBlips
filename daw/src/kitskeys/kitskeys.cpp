@@ -59,14 +59,8 @@ enum class PolyChordType {
     Maj7,
     Min7,
 };
-const std::vector<std::vector<int32_t>> kChordNotes {
-    {},
-    {0},
-    {0, 7},
-    {0, 4, 7},
-    {0, 3, 7},
-    {0, 4, 7, 10},
-    {0, 3, 7, 10},
+const std::vector<std::vector<int32_t>> kChordNotes{
+    {}, {0}, {0, 7}, {0, 4, 7}, {0, 3, 7}, {0, 4, 7, 10}, {0, 3, 7, 10},
 };
 constexpr size_t cMaxVoices = 16;
 using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
@@ -181,14 +175,14 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
        public:
         template <typename T>
         void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity, T callback) {
-            for(auto noteOffset : mChord) {
+            for (auto noteOffset : mChord) {
                 clapeze::NoteTuple tmp = note;
                 tmp = note;
                 // TODO: we need to reassign ids. to have N voices per id they
                 // each need a new id, but this also means we need maintain a
                 // mapping from host ids <-> processor ids, and also apply the
                 // new IDs to modulations/anything else that wants them
-                tmp.id = -1; // TODO
+                tmp.id = -1;  // TODO
                 tmp.key += noteOffset;
                 callback(tmp, velocity);
             }
@@ -196,9 +190,9 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
 
         template <typename T>
         void ProcessNoteOff(const clapeze::NoteTuple& note, T callback) {
-            for(auto noteOffset : mChord) {
+            for (auto noteOffset : mChord) {
                 clapeze::NoteTuple tmp = note;
-                tmp.id = -1; // TODO
+                tmp.id = -1;  // TODO
                 tmp.key += noteOffset;
                 callback(tmp);
             }
@@ -206,24 +200,24 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
 
         template <typename T>
         void ProcessNoteChoke(const clapeze::NoteTuple& note, T callback) {
-            for(auto noteOffset : mChord) {
+            for (auto noteOffset : mChord) {
                 clapeze::NoteTuple tmp = note;
-                tmp.id = -1; // TODO
+                tmp.id = -1;  // TODO
                 tmp.key += noteOffset;
                 callback(tmp);
             }
         }
 
         bool SetChordType(PolyChordType chordType, int32_t numVoices) {
-            if(chordType != mChordType || numVoices != mNumVoices) {
+            if (chordType != mChordType || numVoices != mNumVoices) {
                 mChord.clear();
-                if(chordType == PolyChordType::None || numVoices == 1) {
+                if (chordType == PolyChordType::None || numVoices == 1) {
                     // chord mode off
                     mChord.push_back(0);
                 } else {
                     // chord mode on
                     auto& offsets = kChordNotes[static_cast<size_t>(chordType)];
-                    for(int32_t idx = 0; idx < numVoices; ++idx) {
+                    for (int32_t idx = 0; idx < numVoices; ++idx) {
                         int32_t x = idx % offsets.size();
                         int32_t y = idx / offsets.size();
                         mChord.push_back(y * 12 + offsets[x]);
@@ -274,7 +268,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
 
             // filter
             // range from 8hz to 12.5khz
-            float filterNote = kitdsp::lerpf(0.0f, 127.0f, params.Get<Params::FilterCutoff>());
+            float filterNote = kitdsp::lerp(0.0f, 127.0f, params.Get<Params::FilterCutoff>());
             float res = params.Get<Params::FilterResonance>() * 0.89f;  // 0.85 acts as cap, experimentally determined
             float filterSteepness = 0.5f;  // steeper means "achieves self-oscillation quicker"
             float filterQ = 0.5f * std::exp(filterSteepness * (res / (1 - res)));  // [0, 1] -> [0.5, inf]
@@ -300,13 +294,13 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
                 // modulation
                 float lfoTri = mLfo.Process();  // [-1, 1]
                 float lfoSquare = lfoTri > 0.0f ? -1.0f : 1.0f;
-                float lfo = kitdsp::lerpf(lfoTri, lfoSquare, lfoShape);
+                float lfo = kitdsp::lerp(lfoTri, lfoSquare, lfoShape);
                 float env = mEnv.Process();          // [0, 1]
                 float gateEnv = mGateEnv.Process();  // [0, 1]
 
-                float oscMod = kitdsp::lerpf(lfo, env, oscModMix) * oscModAmount;
-                float filterMod = kitdsp::lerpf(lfo, env, filterModMix) * filterModAmount;
-                float vcaMod = kitdsp::lerpf(env, gateEnv, vcaEnvDisabled) * (1.0f - (-lfo * vcaModAmount));
+                float oscMod = kitdsp::lerp(lfo, env, oscModMix) * oscModAmount;
+                float filterMod = kitdsp::lerp(lfo, env, filterModMix) * filterModAmount;
+                float vcaMod = kitdsp::lerp(env, gateEnv, vcaEnvDisabled) * (1.0f - (-lfo * vcaModAmount));
                 vcaMod = vcaMod * vcaMod * vcaMod;  // approximate db curve (not really but yknow)
 
                 mOsc.SetFrequency(kitdsp::midiToFrequency(oscNote + oscMod), sampleRate);
@@ -344,7 +338,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
         int32_t polyCount = mParams.Get<Params::PolyCount>();
         mVoices.SetNumVoices(polyCount);
         mVoices.SetStrategy(polyCount > 1 ? clapeze::VoiceStrategy::Poly : clapeze::VoiceStrategy::MonoLast);
-        if(mNoteProcessor.SetChordType(mParams.Get<Params::PolyChordType>(), polyCount)) {
+        if (mNoteProcessor.SetChordType(mParams.Get<Params::PolyChordType>(), polyCount)) {
             mVoices.StopAllVoices();
         }
         return mVoices.ProcessAudio(out);
@@ -357,15 +351,12 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
     }
 
     void ProcessNoteOff(const clapeze::NoteTuple& note) override {
-        mNoteProcessor.ProcessNoteOff(note, [this](const clapeze::NoteTuple& inote) {
-            mVoices.ProcessNoteOff(inote);
-        });
-     }
+        mNoteProcessor.ProcessNoteOff(note, [this](const clapeze::NoteTuple& inote) { mVoices.ProcessNoteOff(inote); });
+    }
 
     void ProcessNoteChoke(const clapeze::NoteTuple& note) override {
-        mNoteProcessor.ProcessNoteChoke(note, [this](const clapeze::NoteTuple& inote) {
-            mVoices.ProcessNoteChoke(inote);
-        });
+        mNoteProcessor.ProcessNoteChoke(note,
+                                        [this](const clapeze::NoteTuple& inote) { mVoices.ProcessNoteChoke(inote); });
     }
 
     void ProcessReset() override { mVoices.StopAllVoices(); }
@@ -504,8 +495,8 @@ class GuiApp : public kitgui::BaseApp {
             }
             auto normalizedValue = kitdsp::clamp((raw - knob->mMin) / (knob->mMax - knob->mMin), 0.0, 1.0);
             constexpr float maxTurn = kitdsp::kPi * 2.0f * 0.75f;
-            mScene->SetObjectRotationByName(knob->GetSceneNode(),
-                                            (static_cast<float>(normalizedValue) - 0.5f) * -maxTurn, kitgui::Scene::Axis::Y);
+            mScene->SetObjectRotationByName(
+                knob->GetSceneNode(), (static_cast<float>(normalizedValue) - 0.5f) * -maxTurn, kitgui::Scene::Axis::Y);
         }
 
         for (auto& knob : mToggles) {
@@ -525,7 +516,7 @@ class GuiApp : public kitgui::BaseApp {
     void OnGuiUpdate() override {
         if (ImGui::BeginMainMenuBar()) {
             ImGui::MenuItem("Help/About", NULL, &mShowHelpWindow);
-            if(ImGui::MenuItem("Reset All")) {
+            if (ImGui::MenuItem("Reset All")) {
                 mParams.ResetAllParamsToDefault();
             }
             ImGui::MenuItem("Debug", NULL, &mShowDebugWindow);
@@ -538,7 +529,9 @@ class GuiApp : public kitgui::BaseApp {
 
         if (mShowHelpWindow) {
             if (ImGui::Begin("Help", &mShowHelpWindow)) {
-                ImGui::TextWrapped("KitsKeys is an intentionally simple-ish virtual analog polysynth. This is the first one I'm really dumping effort into the UI for so extra feedback there is very appreciated :)");
+                ImGui::TextWrapped(
+                    "KitsKeys is an intentionally simple-ish virtual analog polysynth. This is the first one I'm "
+                    "really dumping effort into the UI for so extra feedback there is very appreciated :)");
                 ImGui::BulletText("Shift-click for fine adjustment");
                 ImGui::BulletText("double-click to reset to default");
                 ImGui::BulletText("right-click to get a text input");

@@ -46,8 +46,8 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
         float left = psxLeft * 2.0f;
         float right = psxRight * 2.0f;
 
-        OUT_L[i] = lerpf(IN_L[i], left, wetDry);
-        OUT_R[i] = lerpf(IN_R[i], right, wetDry);
+        OUT_L[i] = lerp(IN_L[i], left, wetDry);
+        OUT_R[i] = lerp(IN_R[i], right, wetDry);
     }
 }
 

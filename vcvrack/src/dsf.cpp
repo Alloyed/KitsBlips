@@ -1,7 +1,7 @@
+#include "SvgHelper.hpp"
 #include "kitdsp/math/util.h"
 #include "kitdsp/osc/dsfOscillator.h"
 #include "plugin.hpp"
-#include "SvgHelper.hpp"
 
 using namespace kitdsp;
 using float4 = simd::float_4;
@@ -23,17 +23,17 @@ struct NKK2 : app::SvgSwitch {
 };
 
 struct Davies1900hForestKnob : Davies1900hKnob {
-	Davies1900hForestKnob() {
-		setSvg(Svg::load(asset::plugin(pluginInstance,"res/Davies1900hForest.svg")));
-		bg->setSvg(Svg::load(asset::plugin(pluginInstance,"res/Davies1900hForest_bg.svg")));
-	}
+    Davies1900hForestKnob() {
+        setSvg(Svg::load(asset::plugin(pluginInstance, "res/Davies1900hForest.svg")));
+        bg->setSvg(Svg::load(asset::plugin(pluginInstance, "res/Davies1900hForest_bg.svg")));
+    }
 };
 
 struct Davies1900hChocoKnob : Davies1900hKnob {
-	Davies1900hChocoKnob() {
-		setSvg(Svg::load(asset::plugin(pluginInstance,"res/Davies1900hChoco.svg")));
-		bg->setSvg(Svg::load(asset::plugin(pluginInstance,"res/Davies1900hChoco_bg.svg")));
-	}
+    Davies1900hChocoKnob() {
+        setSvg(Svg::load(asset::plugin(pluginInstance, "res/Davies1900hChoco.svg")));
+        bg->setSvg(Svg::load(asset::plugin(pluginInstance, "res/Davies1900hChoco_bg.svg")));
+    }
 };
 
 // we need one secret -1 and +1 ratio for the fine tune knob
@@ -154,11 +154,11 @@ struct Dsf : Module {
                 if (ratioFine < 0.0f) {
                     float4 ratio0 = lookupRatio(ratioIndex - 1);
                     float4 ratio1 = lookupRatio(ratioIndex);
-                    ratio = lerpf<float4>(ratio0, ratio1, simd::fabs(ratioFine));
+                    ratio = lerp<float4>(ratio0, ratio1, simd::fabs(ratioFine));
                 } else {
                     float4 ratio0 = lookupRatio(ratioIndex);
                     float4 ratio1 = lookupRatio(ratioIndex + 1);
-                    ratio = lerpf<float4>(ratio0, ratio1, ratioFine);
+                    ratio = lerp<float4>(ratio0, ratio1, ratioFine);
                 }
                 float4 modfm =
                     params[MOD_FM_PARAM].getValue() * inputs[MOD_FM_INPUT].getPolyVoltageSimd<float4>(c) * dsp::FREQ_C4;
@@ -217,23 +217,23 @@ struct DsfWidget : ModuleWidget, SvgHelper<DsfWidget> {
         addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
         bindParam<NKK2>("switch-modmode", Dsf::MOD_MODE_PARAM);
-        bindParam<Davies1900hChocoKnob>("knob-modcoarse",Dsf::MOD_COARSE_PARAM);
-        bindParam<Davies1900hForestKnob>("knob-coarse",Dsf::COARSE_PARAM);
-        bindParam<Davies1900hChocoKnob>("knob-modfine",Dsf::MOD_FINE_PARAM);
-        bindParam<Davies1900hChocoKnob>("knob-modlevel",Dsf::LEVEL_PARAM);
-        bindParam<Davies1900hForestKnob>("knob-fine",Dsf::FINE_PARAM);
-        bindParam<Trimpot>("trimpot-fm",Dsf::FM_PARAM);
-        bindParam<Trimpot>("trimpot-modfm",Dsf::MOD_FM_PARAM);
-        bindParam<Trimpot>("trimpot-modlevel",Dsf::LEVEL_CV_PARAM);
+        bindParam<Davies1900hChocoKnob>("knob-modcoarse", Dsf::MOD_COARSE_PARAM);
+        bindParam<Davies1900hForestKnob>("knob-coarse", Dsf::COARSE_PARAM);
+        bindParam<Davies1900hChocoKnob>("knob-modfine", Dsf::MOD_FINE_PARAM);
+        bindParam<Davies1900hChocoKnob>("knob-modlevel", Dsf::LEVEL_PARAM);
+        bindParam<Davies1900hForestKnob>("knob-fine", Dsf::FINE_PARAM);
+        bindParam<Trimpot>("trimpot-fm", Dsf::FM_PARAM);
+        bindParam<Trimpot>("trimpot-modfm", Dsf::MOD_FM_PARAM);
+        bindParam<Trimpot>("trimpot-modlevel", Dsf::LEVEL_CV_PARAM);
 
-        bindInput<PJ301MPort>("in-fm",Dsf::FM_INPUT);
-        bindInput<PJ301MPort>("in-modfm",Dsf::MOD_FM_INPUT);
-        bindInput<PJ301MPort>("in-modlevel",Dsf::LEVEL_INPUT);
-        bindInput<PJ301MPort>("in-pitch",Dsf::PITCH_INPUT);
-        bindInput<PJ301MPort>("in-modpitch",Dsf::MOD_PITCH_INPUT);
+        bindInput<PJ301MPort>("in-fm", Dsf::FM_INPUT);
+        bindInput<PJ301MPort>("in-modfm", Dsf::MOD_FM_INPUT);
+        bindInput<PJ301MPort>("in-modlevel", Dsf::LEVEL_INPUT);
+        bindInput<PJ301MPort>("in-pitch", Dsf::PITCH_INPUT);
+        bindInput<PJ301MPort>("in-modpitch", Dsf::MOD_PITCH_INPUT);
 
-        bindOutput<PJ301MPort>("out-main",Dsf::OUT_MAIN_OUTPUT);
-        bindOutput<PJ301MPort>("out-aux",Dsf::OUT_AUX_OUTPUT);
+        bindOutput<PJ301MPort>("out-main", Dsf::OUT_MAIN_OUTPUT);
+        bindOutput<PJ301MPort>("out-aux", Dsf::OUT_AUX_OUTPUT);
     }
 };
 

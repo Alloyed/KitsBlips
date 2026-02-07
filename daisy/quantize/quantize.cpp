@@ -48,7 +48,7 @@ void CvCallback() {
     hw.ProcessAllControls();
     Controls();
 
-    float inputNote = kitdsp::lerpf(0.0f, 60.0f, state.input);
+    float inputNote = kitdsp::lerp(0.0f, 60.0f, state.input);
     /*
     float transposeNote = fmap(state.transpose, 0.0f, 60.0f)
                           - fmap(state.transposeRoot, 0.0f, 60.0f);

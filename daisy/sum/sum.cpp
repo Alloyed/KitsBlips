@@ -21,7 +21,7 @@ using namespace patch_sm;
 DaisyPatchSM hw;
 Switch button, toggle;
 
-inline constexpr float lerpf(float a, float b, float t) {
+inline constexpr float lerp(float a, float b, float t) {
     return a + (b - a) * t;
 }
 
@@ -42,10 +42,10 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
     button.Debounce();
     toggle.Debounce();
 
-    float cv1 = lerpf(-1.0f, 1.0f, knobValue(CV_1)) * jackValue(CV_5);
-    float cv2 = lerpf(-1.0f, 1.0f, knobValue(CV_2)) * jackValue(CV_6);
-    float cv3 = lerpf(-1.0f, 1.0f, knobValue(CV_3)) * jackValue(CV_7);
-    float cv4 = lerpf(-1.0f, 1.0f, knobValue(CV_4)) * jackValue(CV_8);
+    float cv1 = lerp(-1.0f, 1.0f, knobValue(CV_1)) * jackValue(CV_5);
+    float cv2 = lerp(-1.0f, 1.0f, knobValue(CV_2)) * jackValue(CV_6);
+    float cv3 = lerp(-1.0f, 1.0f, knobValue(CV_3)) * jackValue(CV_7);
+    float cv4 = lerp(-1.0f, 1.0f, knobValue(CV_4)) * jackValue(CV_8);
 
     bool gate_or = hw.gate_in_1.State() || hw.gate_in_2.State();
     bool gate_and = hw.gate_in_1.State() && hw.gate_in_2.State();

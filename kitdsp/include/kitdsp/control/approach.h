@@ -47,7 +47,7 @@ class Approach {
         mH = CalculateHalfLifeFromSettleTime(settleTimeMs, sampleRate, cSettlePrecision, desiredChange);
     }
     inline float Process() {
-        current = lerpf(current, target, mH);
+        current = lerp(current, target, mH);
         return current;
     }
     inline bool IsChanging() const { return fabsf(target - current) > cSettlePrecision; }

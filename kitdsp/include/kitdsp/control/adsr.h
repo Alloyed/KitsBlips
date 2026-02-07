@@ -41,7 +41,8 @@ class ApproachAdsr {
         mSustain = sustainValue;
         // sustain -> 0
         // sustain needs to at least be a little bit above 0 to avoid infinities
-        mReleaseH = Approach::CalculateHalfLifeFromSettleTime(releaseMs, sampleRate, cSettlePrecision, kitdsp::max(sustainValue, 0.001f));
+        mReleaseH = Approach::CalculateHalfLifeFromSettleTime(releaseMs, sampleRate, cSettlePrecision,
+                                                              kitdsp::max(sustainValue, 0.001f));
         // any -> 0
         // Chokes just need to end "pretty soon" to sound correct
         mChokeH = Approach::CalculateHalfLifeFromSettleTime(1.0f, sampleRate, cSettlePrecision, 1.0f);
@@ -115,7 +116,7 @@ class ApproachAdsr {
         }
 
         if (isProcessing) {
-            mCurrent = lerpf(mCurrent, target, targetH);
+            mCurrent = lerp(mCurrent, target, targetH);
         }
 
         if (fabsf(target - mCurrent) < cSettlePrecision) {

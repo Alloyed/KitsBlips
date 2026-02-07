@@ -28,8 +28,8 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
 
     float basegain1 = powf(GetKnobN(hw.controls[CV_1]), 2);
     float basegain2 = powf(GetKnobN(hw.controls[CV_2]), 2);
-    float vcgain1 = powf(kitdsp::lerpf(-1.f, 1.f, GetKnobN(hw.controls[CV_3])), 2);
-    float vcgain2 = powf(kitdsp::lerpf(-1.f, 1.f, GetKnobN(hw.controls[CV_4])), 2);
+    float vcgain1 = powf(kitdsp::lerp(-1.f, 1.f, GetKnobN(hw.controls[CV_3])), 2);
+    float vcgain2 = powf(kitdsp::lerp(-1.f, 1.f, GetKnobN(hw.controls[CV_4])), 2);
     float vc1 = GetJackN(hw.controls[CV_5]);
     float vc2 = GetJackN(hw.controls[CV_7]);
     float gain1 = basegain1 + (vc1 * vcgain1);

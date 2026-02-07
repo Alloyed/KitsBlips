@@ -98,7 +98,7 @@ class ToneFilter {
         // needs to be 2 at 0.5 and 1 at 0, 1, in between is a matter of taste
         float gain = sinf(tone * kitdsp::kPi) + 1.0f;
 
-        return kitdsp::lerpf(lowpass, highpass, tone) * gain;
+        return kitdsp::lerp(lowpass, highpass, tone) * gain;
     }
     void Reset() { mPole1.Reset(); }
     kitdsp::OnePole mPole1;
@@ -123,7 +123,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessorHandle> {
             float right = in.right[idx];
 
             // strong pre tone
-            float preTone = kitdsp::lerpf(0.1f, 0.9f, tonef);
+            float preTone = kitdsp::lerp(0.1f, 0.9f, tonef);
             float leftPre = tonePreLeft.Process(left, preTone);
             float rightPre = tonePreRight.Process(right, preTone);
 
@@ -132,13 +132,13 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessorHandle> {
             float distortedRight = distort(algorithm, rightPre * gain);
 
             // weak post tone
-            float postTone = kitdsp::lerpf(0.4f, 0.6f, tonef);
+            float postTone = kitdsp::lerp(0.4f, 0.6f, tonef);
             float processedLeft = dcLeft.Process(tonePostLeft.Process(distortedLeft, postTone)) * makeup;
             float processedRight = dcRight.Process(tonePostRight.Process(distortedRight, postTone)) * makeup;
 
             // outputs
-            out.left[idx] = kitdsp::lerpf(left, processedLeft, mixf);
-            out.right[idx] = kitdsp::lerpf(right, processedRight, mixf);
+            out.left[idx] = kitdsp::lerp(left, processedLeft, mixf);
+            out.right[idx] = kitdsp::lerp(right, processedRight, mixf);
         }
 
         return ProcessStatus::Continue;

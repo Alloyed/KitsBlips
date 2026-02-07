@@ -37,8 +37,8 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
     hw.ProcessAllControls();
 
     // units are ms until half life, exponential curve
-    float rise = lerpf(0.1f, 5.0f, powf(riseCv.Get(), 2.0f));
-    float fall = lerpf(0.1f, 5000.0f, powf(fallCv.Get(), 2.0f));
+    float rise = lerp(0.1f, 5.0f, powf(riseCv.Get(), 2.0f));
+    float fall = lerp(0.1f, 5000.0f, powf(fallCv.Get(), 2.0f));
     float gain = dbToRatio(gainCv.Get());
 
     for (size_t i = 0; i < size; i++) {

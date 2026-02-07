@@ -8,7 +8,7 @@
 namespace kitdsp {
 /**
  * Implements storage for delay-line based effects. Write() once per sample, and Read() as much as you'd like. read
- * delays are always relative to the write head.
+ * delays are always relative to the write head, eg 0 is the last sample, 1 is the sample before that, etc
  * Note that power-of-two SIZE values will usually be more efficient
  */
 template <typename TSample>
@@ -35,9 +35,7 @@ class DelayLine {
         return mBuffer[(mWriteIndex + delayIndex) % size];
     }
 
-    inline size_t Size() const {
-        return mBuffer.size();
-    }
+    inline size_t Size() const { return mBuffer.size(); }
 
     template <interpolate::InterpolationStrategy strategy>
     inline const TSample Read(float delay) const {
@@ -62,6 +60,9 @@ class DelayLine {
         }
     }
 
+    /**
+     * This is a shorcut if you're planning to use your delay as part of an allpass filter.
+     */
     inline const TSample Allpass(const TSample sample, size_t delay, const TSample coefficient) {
         TSample read = Read(delay);
         TSample write = sample + coefficient * read;

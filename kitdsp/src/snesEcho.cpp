@@ -135,7 +135,7 @@ float SNES::Echo::Process(float input) {
     // shift echo buffer from 15-bit -> 16-bit
     int16_t delayedSample = narrow_cast<int16_t>(mEchoBuffer[delayIndex] << 1);
     int16_t filteredSample = ProcessFIR(delayedSample);
-    int16_t filterMixedSample = lerpf(delayedSample, filteredSample, filterMix);
+    int16_t filterMixedSample = lerp(delayedSample, filteredSample, filterMix);
 
     // bit-reduced to emulate EFB register
     int8_t feedbackInt = static_cast<int8_t>(feedback * INT8_MAX);
@@ -155,7 +155,7 @@ size_t SNES::Echo::GetDelaySamples(float delay) const {
     size_t increment = cfg.echoBufferIncrementSamples;
     size_t minSamples = max(increment, cfg.echoBufferRangeMinSamples);
     size_t maxSamples = min(mEchoBufferCapacity, cfg.echoBufferRangeMaxSamples);
-    return clamp<size_t>(roundTo(lerpf(minSamples, maxSamples, delay), increment), minSamples, maxSamples);
+    return clamp<size_t>(roundTo(lerp(minSamples, maxSamples, delay), increment), minSamples, maxSamples);
 }
 
 size_t SNES::Echo::GetDelayModSamples(float delayMod) const {

@@ -88,7 +88,7 @@ class LinearControl {
         float jack = GetJackN(mJack);
         float joined = kitdsp::clamp(knob + jack, 0.0f, 1.0f);
 
-        return kitdsp::lerpf(mMin, mMax, joined);
+        return kitdsp::lerp(mMin, mMax, joined);
     }
 
    private:
@@ -110,10 +110,10 @@ class AttenuvertedControl {
     float Get() {
         float knob = GetKnobN(mKnob);
         float jack = GetJackN(mJack);
-        float attenuvert = kitdsp::lerpf(-1.0f, 1.0f, GetKnobN(mAttenuverter));
+        float attenuvert = kitdsp::lerp(-1.0f, 1.0f, GetKnobN(mAttenuverter));
         float joined = kitdsp::clamp(knob + (jack * attenuvert), 0.0f, 1.0f);
 
-        return kitdsp::lerpf(mMin, mMax, joined);
+        return kitdsp::lerp(mMin, mMax, joined);
     }
 
    private:

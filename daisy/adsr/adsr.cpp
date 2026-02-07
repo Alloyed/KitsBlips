@@ -9,7 +9,7 @@ using namespace patch_sm;
 
 const float cEpsilon = 0.005f;
 float lerpPowf(float a, float b, float curve, float t) {
-    return lerpf(a, b, clamp(powf(t, curve), 0.0f, 1.0f));
+    return lerp(a, b, clamp(powf(t, curve), 0.0f, 1.0f));
 }
 
 /**
@@ -97,7 +97,7 @@ class ApproachAdsr {
         }
 
         // mLastLevel = targetLevel;
-        mLastLevel = lerpf(mLastLevel, targetLevel, targetApproach);
+        mLastLevel = lerp(mLastLevel, targetLevel, targetApproach);
         return mLastLevel;
     }
 
@@ -149,7 +149,7 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
 
     float a = lerpPowf(3.0f, 10000.0f, 2.0f, knobValue(CV_1) + jackValue(CV_5));
     float d = lerpPowf(3.0f, 10000.0f, 2.0f, knobValue(CV_2) + jackValue(CV_6));
-    float s = lerpf(0.0f, 1.0f, clamp(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f));
+    float s = lerp(0.0f, 1.0f, clamp(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f));
     float r = lerpPowf(3.0f, 10000.0f, 2.0f, knobValue(CV_4) + jackValue(CV_8));
 
     adsr.Set(ApproachAdsr::State::Attack, a);
@@ -164,7 +164,7 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
     }
 
     // visualize
-    hw.WriteCvOut(CV_OUT_2, lerpf(0.0f, 5.0f, -OUT_L[size - 1]));
+    hw.WriteCvOut(CV_OUT_2, lerp(0.0f, 5.0f, -OUT_L[size - 1]));
 
     // stage gates!
     // A+D and S+R combined for lack of open jacks

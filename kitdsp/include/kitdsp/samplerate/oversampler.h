@@ -13,7 +13,6 @@ class OversamplerGeneric {
     void Reset() {
         mFilterUp.Reset();
         mFilterDown.Reset();
-        SetSampleRate(48000.0f);
     }
 
     void SetSampleRate(float sourceRate) {
@@ -70,10 +69,6 @@ class OversamplerGeneric {
 
    private:
     float mSampleRate{};
-    // TODO: smarter filters than these should be used
-    // These are IIR filters with a relatively shallow slope, which means to cut off most high frequency content they
-    // need to cut off some audible content as well.
-    // Ideally we could make a dedicated HalfBandFilter type
     rbj::BiquadFilter<rbj::BiquadFilterMode::LowPass> mFilterUp;
     rbj::BiquadFilter<rbj::BiquadFilterMode::LowPass> mFilterDown;
 };

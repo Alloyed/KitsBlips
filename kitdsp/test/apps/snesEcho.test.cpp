@@ -8,14 +8,13 @@
 using namespace kitdsp;
 
 namespace {
-    void CopyOut(const std::vector<float>& in, AudioFile<float>& f) {
-        f.setAudioBufferSize(1, in.size());
-        for (size_t i = 0; i < in.size(); ++i) {
-            f.samples[0][i] = in[i];
-        }
+void CopyOut(const std::vector<float>& in, AudioFile<float>& f) {
+    f.setAudioBufferSize(1, in.size());
+    for (size_t i = 0; i < in.size(); ++i) {
+        f.samples[0][i] = in[i];
     }
+}
 }  // namespace
-
 
 TEST(snesEcho, works) {
     constexpr size_t snesBufferSize = 7680UL;
@@ -113,7 +112,7 @@ TEST(snesEchoFilter, works) {
 
             float out = snes.Process(in);
 
-            float mixed = lerpf(in, out, 0.5f);
+            float mixed = lerp(in, out, 0.5f);
             ASSERT_GE(mixed, -1.0f);
             ASSERT_LE(mixed, 1.0f);
             buf.push_back(mixed);

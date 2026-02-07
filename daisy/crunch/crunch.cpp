@@ -64,7 +64,7 @@ class ToneFilter {
         // needs to be 2 at 0.5 and 1 at 0, 1, in between is a matter of taste
         float gain = sinf(tone * kPi) + 1.0f;
 
-        return lerpf(lowpass, highpass, tone) * gain;
+        return lerp(lowpass, highpass, tone) * gain;
     }
     kitdsp::OnePole mPole1;
 };
@@ -114,7 +114,7 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
         }
 
         // strong pre tone
-        float preTone = lerpf(0.1f, 0.9f, tonef);
+        float preTone = lerp(0.1f, 0.9f, tonef);
         float leftPre = tonePreLeft.Process(left, preTone);
         float rightPre = tonePreRight.Process(right, preTone);
 
@@ -123,12 +123,12 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
         float crunchedRight = crunch(rightPre * gain);
 
         // weak post tone
-        float postTone = lerpf(0.4f, 0.6f, tonef);
+        float postTone = lerp(0.4f, 0.6f, tonef);
         float processedLeft = dcLeft.Process(tonePostLeft.Process(crunchedLeft, postTone)) * makeup;
         float processedRight = dcRight.Process(tonePostRight.Process(crunchedRight, postTone)) * makeup;
 
-        outleft = lerpf(left, processedLeft, mixf);
-        outright = lerpf(right, processedRight, mixf);
+        outleft = lerp(left, processedLeft, mixf);
+        outright = lerp(right, processedRight, mixf);
     }
 }
 

@@ -52,7 +52,7 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
         float delayed = snesSampler.Process<interpolate::InterpolationStrategy::Linear>(
             IN_L[i] * 0.5f, [](float in, float& out) { out = snes.Process(in); });
 
-        OUT_L[i] = lerpf(IN_L[i], delayed * 2.0f, wetDry);
+        OUT_L[i] = lerp(IN_L[i], delayed * 2.0f, wetDry);
         OUT_R[i] = -OUT_L[i];
     }
 }

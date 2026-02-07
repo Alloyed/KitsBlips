@@ -182,7 +182,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessorHandle> {
                     drySignal, [this](float in, float& out) { out = snes1.Process(in * 0.5f) * 2.0f; });
 
                 // outputs
-                out[idx] = kitdsp::lerpf(drySignal, wetSignal, wetDryMix);
+                out[idx] = kitdsp::lerp(drySignal, wetSignal, wetDryMix);
             }
         }
 

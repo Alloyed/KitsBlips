@@ -5,14 +5,14 @@
 #include "kitdsp/sampler.h"
 
 namespace kitdsp {
-template <typename SAMPLE, size_t SIZE, interpolate::InterpolationStrategy STRATEGY>
+template <typename SAMPLE, interpolate::InterpolationStrategy STRATEGY>
 class WavetableOscillator : public Phasor {
    public:
-    explicit WavetableOscillator(SAMPLE* buffer) : mPlayer(buffer, SIZE) {}
+    explicit WavetableOscillator(etl::span<SAMPLE> buffer) : mPlayer(buffer) {}
     float Process() {
         Advance();
         // assumption: sample is exactly one period long
-        float sampleIndex = mPhase * SIZE;
+        float sampleIndex = mPhase * mPlayer.size();
         return mPlayer.Read(sampleIndex);
     }
 

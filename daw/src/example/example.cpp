@@ -42,8 +42,8 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessorHandle> {
             float processedRight = 0.0f;
 
             // outputs
-            out.left[idx] = kitdsp::lerpf(left, processedLeft, mixf);
-            out.right[idx] = kitdsp::lerpf(right, processedRight, mixf);
+            out.left[idx] = kitdsp::lerp(left, processedLeft, mixf);
+            out.right[idx] = kitdsp::lerp(right, processedRight, mixf);
         }
         return ProcessStatus::Continue;
     }

@@ -1,7 +1,7 @@
-#include "kitdsp/dbMeter.h"
-#include "kitdsp/samplerate/resampler.h"
 #include "kitdsp/apps/snesEcho.h"
 #include "kitdsp/apps/snesEchoFilterPresets.h"
+#include "kitdsp/dbMeter.h"
+#include "kitdsp/samplerate/resampler.h"
 #include "plugin.hpp"
 
 #define SAMPLE_RATE 32000
@@ -163,8 +163,8 @@ struct Snecho : Module {
             drySignal, [this](float in, float& out) { out = snes1.Process(in * 0.5f) * 2.0f; });
 
         // outputs
-        outputs[AUDIO_L_OUTPUT].setVoltage(5.0f * lerpf(drySignal, wetSignal, wetDryMix));
-        outputs[AUDIO_R_OUTPUT].setVoltage(-5.0f * lerpf(drySignal, wetSignal, wetDryMix));
+        outputs[AUDIO_L_OUTPUT].setVoltage(5.0f * lerp(drySignal, wetSignal, wetDryMix));
+        outputs[AUDIO_R_OUTPUT].setVoltage(-5.0f * lerp(drySignal, wetSignal, wetDryMix));
     }
 };
 

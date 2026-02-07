@@ -52,13 +52,13 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessorHandle> {
         for (size_t idx = 0; idx < in.left.size(); ++idx) {
             float left = in.left[idx];
             float processedLeft = mLeft->Process(left);
-            out.left[idx] = kitdsp::lerpf(left, processedLeft, mixf);
+            out.left[idx] = kitdsp::lerp(left, processedLeft, mixf);
         }
 
         for (size_t idx = 0; idx < in.right.size(); ++idx) {
             float right = in.right[idx];
             float processedRight = mRight->Process(right);
-            out.right[idx] = kitdsp::lerpf(right, processedRight, mixf);
+            out.right[idx] = kitdsp::lerp(right, processedRight, mixf);
         }
         return ProcessStatus::Continue;
     }

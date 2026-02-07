@@ -56,8 +56,8 @@ struct PSXVerb : Module {
         out = psxSampler.Process<kitdsp::interpolate::InterpolationStrategy::Cubic>(
             in, [this](float_2 in, float_2& out) { out = psx.Process(in); });
 
-        outputs[AUDIO_L_OUTPUT].setVoltage(5.0f * lerpf(in.left, out.left, wetDryMix));
-        outputs[AUDIO_R_OUTPUT].setVoltage(5.0f * lerpf(in.right, out.right, wetDryMix));
+        outputs[AUDIO_L_OUTPUT].setVoltage(5.0f * lerp(in.left, out.left, wetDryMix));
+        outputs[AUDIO_R_OUTPUT].setVoltage(5.0f * lerp(in.right, out.right, wetDryMix));
     }
 };
 
