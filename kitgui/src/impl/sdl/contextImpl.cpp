@@ -19,8 +19,8 @@
 #include "kitgui/kitgui.h"
 #include "log.h"
 
-#define LOG_SDL_ERROR_STATIC(ctx) do kitgui::log::defaultLogger(ctx, SDL_GetError())
-#define LOG_SDL_ERROR(ctx) kitgui::log::error(ctx, SDL_GetError())
+#define LOG_SDL_ERROR_STATIC(ctx) do {kitgui::log::defaultLogger(SDL_GetError());} while(0)
+#define LOG_SDL_ERROR(ctx) do{kitgui::log::error(ctx, SDL_GetError());} while(0)
 
 // linux-specific platform details
 #ifdef __linux__
@@ -111,7 +111,7 @@ void checkSupportedApis_(bool& outHasX11, bool& outHasWayland) {
                 hasWayland = true;
             }
         }
-        kitgui::log::info(fmt::format("Checking supported video drivers. x11: {}, wayland: {}", hasX11, hasWayland));
+        //kitgui::log::info(fmt::format("Checking supported video drivers. x11: {}, wayland: {}", hasX11, hasWayland));
         hasChecked = true;
     }
     outHasX11 = hasX11;
@@ -353,7 +353,7 @@ bool ContextImpl::GetSizeInPixels(uint32_t& widthOut, uint32_t& heightOut) const
     return success;
 }
 bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
-    kitgui::log::TimeRegion r("ContextImpl::SetSizeDirectly()");
+    kitgui::log::TimeRegion r(mContext, "ContextImpl::SetSizeDirectly()");
     if (!SDL_SetWindowResizable(mWindow, resizable)) {
         LOG_SDL_ERROR(mContext);
         return false;

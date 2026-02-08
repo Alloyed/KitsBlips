@@ -53,6 +53,10 @@ target_sources(KitsBlips PRIVATE
     src/snecho/snecho.cpp
 )
 
+if(WIN32)
+    target_compile_definitions(KitsBlips PUBLIC NOMINMAX)
+endif()
+
 if(KITSBLIPS_RETAIL)
     target_compile_definitions(KitsBlips PUBLIC KITSBLIPS_RETAIL=1)
 else()

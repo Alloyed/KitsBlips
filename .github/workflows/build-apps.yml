@@ -38,7 +38,7 @@ jobs:
             extra-flags:
           - name: Windows-sentry
             os: windows-2025
-            extra-flags: -DKITSBLIPS_ENABLE_SENTRY="ON"
+            extra-flags: -DKITSBLIPS_ENABLE_SENTRY="ON" -DKITSBLIPS_RETAIL="ON"
 
     steps:
       - name: Set up Linux deps
@@ -55,6 +55,7 @@ jobs:
       - uses: ./.github/actions/cmake
         env:
           KITSBLIPS_SENTRY_DSN: ${{ secrets.KITSBLIPS_SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         with:
           source: ${{github.workspace}}/daw
           build: ${{github.workspace}}/build

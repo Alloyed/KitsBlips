@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include "kitdsp/macros.h"
 
 namespace kitdsp {

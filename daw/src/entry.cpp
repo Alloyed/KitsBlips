@@ -9,7 +9,7 @@ extern "C" const clap_plugin_entry_t clap_entry = CLAPEZE_CREATE_ENTRY_POINT();
 #include <sentry.h>
 #include <filesystem>
 #if _WIN32
-#include <windows.h>
+#include <processenv.h>
 #endif
 
 namespace {
@@ -48,12 +48,12 @@ bool initSentry(const char* path) {
     sentry_options_set_dsn(opts, KITSBLIPS_SENTRY_DSN);
     sentry_options_set_release(opts, PRODUCT_ID "@" PRODUCT_VERSION);
     sentry_options_set_debug(opts, 1);
+    sentry_options_set_enable_logs(opts, 1);
 
     auto pluginPath = std::filesystem::path(path);
     auto dbPath = getSentryDbPath(PRODUCT_NAME).generic_string();
 #if _WIN32
-    auto crashpadPath =
-        std::filesystem::absolute(pluginPath.parent_path() / "./crashpad_handler.exe").generic_string();
+    auto crashpadPath = std::filesystem::absolute(pluginPath.parent_path() / "./crashpad_handler.exe").generic_string();
 #else
     auto crashpadPath = std::filesystem::absolute(pluginPath.parent_path() / "./crashpad_handler").generic_string();
 #endif
@@ -67,7 +67,7 @@ bool initSentry(const char* path) {
 extern "C" const clap_plugin_entry_t clap_entry = (clap_plugin_entry_t{
     CLAP_VERSION_INIT,
     [](const char* path) -> bool {
-        if(!initSentry(path)) {
+        if (!initSentry(path)) {
             return false;
         }
         return clapeze::EntryPoint::_init(path);
