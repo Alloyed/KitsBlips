@@ -34,12 +34,13 @@ void Context::deinit() {
 
 Context::Context(Context::AppFactory fn)
     : mCreateAppFn(std::move(fn)),
+      mLogger(log::defaultLogger),
       mFileContext(std::make_unique<FileContext>()),
       mImpl(std::make_unique<Impl>(*this)),
       mApp(nullptr) {}
 
 bool Context::Create(bool isFloating) {
-    kitgui::log::TimeRegion r("Context::Create()");
+    kitgui::log::TimeRegion r(*this, "Context::Create()");
     mSizeConfigChanged = false;
     if (!mImpl->Create(isFloating)) {
         return false;
@@ -58,7 +59,7 @@ bool Context::Destroy() {
         // nothing to do
         return true;
     }
-    kitgui::log::TimeRegion r("Context::Destroy()");
+    kitgui::log::TimeRegion r(*this, "Context::Destroy()");
     MakeCurrent();
     mApp.reset();
 
@@ -82,7 +83,11 @@ void Context::SetFileLoader(Context::FileLoader fn) {
 }
 
 void Context::SetLogger(Context::Logger fn) {
-    log::sLogFn() = std::move(fn);
+    mLogger = std::move(fn);
+}
+
+const Context::Logger& Context::GetLogger() const {
+    return mLogger;
 }
 
 bool Context::SetUIScale(double scale) {
@@ -163,7 +168,7 @@ bool Context::GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut) {
 }
 
 void Context::OnActivate() {
-    kitgui::log::TimeRegion r("Context::OnActivate()");
+    kitgui::log::TimeRegion r(*this, "Context::OnActivate()");
     if (mApp) {
         mApp->OnActivate();
     }
@@ -177,7 +182,7 @@ void Context::OnActivate() {
 }
 
 void Context::OnDeactivate() {
-    kitgui::log::TimeRegion r("Context::OnDeactivate()");
+    kitgui::log::TimeRegion r(*this, "Context::OnDeactivate()");
     if (mApp) {
         mApp->OnDeactivate();
     }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -158,7 +159,8 @@ class Context {
     /**
      * Sets the mechanism that kitgui uses to log info. the default mechanism uses stdout.
      */
-    static void SetLogger(Logger fn);
+    void SetLogger(Logger fn);
+    const Logger& GetLogger() const;
 
    protected:
     // app events. forwards otherwise hidden events to impl
@@ -184,6 +186,7 @@ class Context {
 #endif
 
     AppFactory mCreateAppFn;
+    Logger mLogger;
     SizeConfig mSizeConfig{};
     bool mSizeConfigChanged{false};
     std::unique_ptr<FileContext> mFileContext;

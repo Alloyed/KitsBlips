@@ -19,7 +19,8 @@
 #include "kitgui/kitgui.h"
 #include "log.h"
 
-#define LOG_SDL_ERROR() kitgui::log::error(SDL_GetError())
+#define LOG_SDL_ERROR_STATIC(ctx) do kitgui::log::defaultLogger(ctx, SDL_GetError())
+#define LOG_SDL_ERROR(ctx) kitgui::log::error(ctx, SDL_GetError())
 
 // linux-specific platform details
 #ifdef __linux__
@@ -30,7 +31,7 @@ using X11Display = Display;
 void getX11Handles(SDL_Window* sdlWindow, X11Window& xWindow, X11Display*& xDisplay) {
     SDL_PropertiesID windowProps = SDL_GetWindowProperties(sdlWindow);
     if (windowProps == 0) {
-        LOG_SDL_ERROR();
+        LOG_SDL_ERROR_STATIC();
         return;
     }
     xWindow = SDL_GetNumberProperty(windowProps, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
@@ -179,7 +180,7 @@ void ContextImpl::init(kitgui::WindowApi api, std::string_view appName) {
     // uncomment to see verbose event logs
     // SDL_SetHint(SDL_HINT_EVENT_LOGGING, "1");
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) {
-        LOG_SDL_ERROR();
+        LOG_SDL_ERROR_STATIC();
         return;
     }
 
@@ -196,7 +197,7 @@ void ContextImpl::deinit() {
     if (sSdlGl) {
         sGl.reset();
         if (!SDL_GL_DestroyContext(sSdlGl)) {
-            LOG_SDL_ERROR();
+            LOG_SDL_ERROR_STATIC();
         }
         sSdlGl = nullptr;
     }
@@ -208,7 +209,7 @@ ContextImpl::ContextImpl(kitgui::Context& ctx) : mContext(ctx) {}
 bool ContextImpl::Create(bool isFloating) {
     mWindowProps = SDL_CreateProperties();
     if (mWindowProps == 0) {
-        LOG_SDL_ERROR();
+        LOG_SDL_ERROR(mContext);
         return false;
     }
 
@@ -227,7 +228,7 @@ bool ContextImpl::Create(bool isFloating) {
     mWindow = SDL_CreateWindowWithProperties(mWindowProps);
 
     if (mWindow == nullptr) {
-        LOG_SDL_ERROR();
+        LOG_SDL_ERROR(mContext);
         return false;
     }
 
@@ -246,7 +247,7 @@ bool ContextImpl::Create(bool isFloating) {
     // apply highdpi scale
     float scale = SDL_GetWindowDisplayScale(mWindow);
     if (scale == 0.0f) {
-        LOG_SDL_ERROR();
+        LOG_SDL_ERROR(mContext);
         return false;
     } else if (scale > 1.0f) {
         SetUIScale(scale);
@@ -259,12 +260,12 @@ bool ContextImpl::Create(bool isFloating) {
         // create context on first use
         SDL_GLContext gl_context = SDL_GL_CreateContext(mWindow);
         if (gl_context == nullptr) {
-            LOG_SDL_ERROR();
+            LOG_SDL_ERROR(mContext);
             return false;
         }
         sSdlGl = gl_context;
         if (!SDL_GL_MakeCurrent(mWindow, sSdlGl)) {
-            LOG_SDL_ERROR();
+            LOG_SDL_ERROR(mContext);
             return false;
         }
         Magnum::Platform::GLContext::makeCurrent(nullptr);
@@ -354,7 +355,7 @@ bool ContextImpl::GetSizeInPixels(uint32_t& widthOut, uint32_t& heightOut) const
 bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
     kitgui::log::TimeRegion r("ContextImpl::SetSizeDirectly()");
     if (!SDL_SetWindowResizable(mWindow, resizable)) {
-        LOG_SDL_ERROR();
+        LOG_SDL_ERROR(mContext);
         return false;
     }
     double scale = GetUIScale();
@@ -362,7 +363,7 @@ bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizabl
     int32_t targetWidth = static_cast<int32_t>(usesLogicalPixels ? width : width * scale);
     int32_t targetHeight = static_cast<int32_t>(usesLogicalPixels ? height : height * scale);
     if (!SDL_SetWindowSize(mWindow, targetWidth, targetHeight)) {
-        LOG_SDL_ERROR();
+        LOG_SDL_ERROR(mContext);
         return false;
     }
     return true;
@@ -376,12 +377,12 @@ bool ContextImpl::SetTransient(const kitgui::WindowRef& transientWindowRef) {
 void ContextImpl::SuggestTitle(std::string_view title) {
     std::string titleTemp(title);
     if (!SDL_SetWindowTitle(mWindow, titleTemp.c_str())) {
-        LOG_SDL_ERROR();
+        LOG_SDL_ERROR(mContext);
     }
 }
 bool ContextImpl::Show() {
     if (!SDL_ShowWindow(mWindow)) {
-        LOG_SDL_ERROR();
+        LOG_SDL_ERROR(mContext);
         return false;
     }
     AddActiveInstance(this);
@@ -389,7 +390,7 @@ bool ContextImpl::Show() {
 }
 bool ContextImpl::Hide() {
     if (!SDL_HideWindow(mWindow)) {
-        LOG_SDL_ERROR();
+        LOG_SDL_ERROR(mContext);
         return false;
     }
     mActive = false;  // will be removed
@@ -404,7 +405,7 @@ bool ContextImpl::Close() {
 void ContextImpl::MakeCurrent() {
     if (sSdlGl) {
         if (!SDL_GL_MakeCurrent(mWindow, sSdlGl)) {
-            LOG_SDL_ERROR();
+            LOG_SDL_ERROR(mContext);
         }
     }
     if (mImgui) {
@@ -510,7 +511,7 @@ void ContextImpl::RunSingleFrame() {
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         if (!SDL_GL_SwapWindow(instance->mWindow)) {
-            LOG_SDL_ERROR();
+            LOG_SDL_ERROR(instance->mContext);
         }
         if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
             ImGui::UpdatePlatformWindows();

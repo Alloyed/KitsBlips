@@ -151,7 +151,7 @@ bool ContextImpl::Create(bool isFloating) {
         // param
         nullptr);
     if (mWindow == nullptr) {
-        kitgui::log::error(GetLastWinError());
+        kitgui::log::error(mContext, GetLastWinError());
         return false;
     }
     ::SetWindowLongPtr(mWindow, 0, reinterpret_cast<LONG_PTR>(this));
@@ -251,7 +251,7 @@ bool ContextImpl::SetParent(const kitgui::WindowRef& parentWindowRef) {
 bool ContextImpl::SetTransient([[maybe_unused]] const kitgui::WindowRef& transientWindowRef) {
     // TODO
     // return setTransient(mApi, mWindow, transientWindowRef);
-    kitgui::log::error("SetTransient NYI");
+    kitgui::log::error(mContext, "SetTransient NYI");
     return false;
 }
 void ContextImpl::SuggestTitle(std::string_view title) {
@@ -413,7 +413,7 @@ ContextImpl* ContextImpl::FindContextImplForWindow(HWND win) {
 bool ContextImpl::CreateWglContext() {
     mDeviceContext = ::GetDC(mWindow);
     if (mDeviceContext == nullptr) {
-        kitgui::log::error(GetLastWinError());
+        kitgui::log::error(mContext, GetLastWinError());
         return false;
     }
     PIXELFORMATDESCRIPTOR pfd = {0};
@@ -425,7 +425,7 @@ bool ContextImpl::CreateWglContext() {
 
     const int pf = ::ChoosePixelFormat(mDeviceContext, &pfd);
     if (pf == 0 || ::SetPixelFormat(mDeviceContext, pf, &pfd) == false) {
-        kitgui::log::error(GetLastWinError());
+        kitgui::log::error(mContext, GetLastWinError());
         return false;
     }
 

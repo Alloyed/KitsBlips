@@ -18,14 +18,14 @@ using namespace Magnum;
 namespace kitgui {
 void AnimationCache::LoadAnimations(Magnum::Trade::AbstractImporter& importer, std::vector<ObjectInfo>& sceneObjects) {
     /* Load all animations. Animations that fail to load will be NullOpt. */
-    kitgui::log::info(fmt::format("Loading {} animations...", importer.animationCount()));
+    //kitgui::log::info(fmt::format("Loading {} animations...", importer.animationCount()));
     mAnimations.clear();
     mAnimations.reserve(importer.animationCount());
     for (uint32_t i = 0; i != importer.animationCount(); ++i) {
-        kitgui::log::info(fmt::format("loading: {}/animation:{}:{}", "", i, importer.animationName(i)));
+        //kitgui::log::info(fmt::format("loading: {}/animation:{}:{}", "", i, importer.animationName(i)));
         auto animation = importer.animation(i);
         if (!animation) {
-            kitgui::log::error(fmt::format("cannot load: {}/animation:{}:{}", "", i, importer.animationName(i)));
+            //kitgui::log::error(fmt::format("cannot load: {}/animation:{}:{}", "", i, importer.animationName(i)));
             continue;
         }
         mAnimations.push_back(

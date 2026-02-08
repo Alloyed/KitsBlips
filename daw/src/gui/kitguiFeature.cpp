@@ -72,6 +72,10 @@ KitguiFeature::KitguiFeature(PluginHost& mPluginHost,
                              const kitgui::SizeConfig& cfg)
     : mHost(mPluginHost), mCtx(std::move(createAppFn)) {
     mCtx.SetSizeConfig(cfg);
+    mCtx.SetLogger([this](std::string_view message) {
+        std::string tmp{message};
+        mHost.Log(LogSeverity::Info, tmp);
+    });
 }
 
 void KitguiFeature::Configure(BasePlugin& self) {
@@ -110,11 +114,6 @@ bool KitguiFeature::Create(ClapWindowApi api, bool isFloating) {
     sInitCount++;
     if (sInitCount == 1) {
         sInitApi = api;
-        // TODO: this needs to be instance specific, so that we can keep an mHost around per plugin type
-        //kitgui::Context::SetLogger([this](std::string_view message) {
-        //    std::string tmp{message};
-        //    mHost.Log(LogSeverity::Info, tmp);
-        //});
         kitgui::Context::init(toKitGui(api), PRODUCT_NAME);
         if (kitgui::Context::NeedsUpdateLoopIntegration()) {
             sTimerId = mHost.AddTimer(32, []() { kitgui::Context::RunSingleFrame(); });

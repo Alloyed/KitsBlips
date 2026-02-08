@@ -27,6 +27,7 @@
 #include <Magnum/Trade/SceneData.h>
 #include <fmt/format.h>
 #include <imgui.h>
+#include <algorithm>
 #include <cassert>
 #include <chrono>
 #include <optional>
@@ -127,10 +128,10 @@ void Scene::Impl::Load(std::string_view path) {
 }
 
 void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName) {
-    kitgui::log::TimeRegion r1("Scene::Impl::LoadImpl()");
+    //kitgui::log::TimeRegion r1("Scene::Impl::LoadImpl()");
 
     {
-        kitgui::log::TimeRegion r2("Scene::Impl::LoadImpl()::mMaterialCache");
+        //kitgui::log::TimeRegion r2("Scene::Impl::LoadImpl()::mMaterialCache");
         mMaterialCache.LoadTextures(importer);
         mMaterialCache.LoadMaterials(importer);
     }
@@ -140,7 +141,7 @@ void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::strin
     /* Load the scene. Save the object pointers in an array for easier mapping
        of animations later. */
     uint32_t id = importer.defaultScene() == -1 ? 0 : importer.defaultScene();
-    Debug{} << "Loading " << debugName.data() << "scene:" << id << importer.sceneName(id);
+    //Debug{} << "Loading " << debugName.data() << "scene:" << id << importer.sceneName(id);
 
     auto scene = std::optional<Trade::SceneData>(importer.scene(id));
     if (!scene || !scene->is3D() || !scene->hasField(Trade::SceneField::Parent)) {

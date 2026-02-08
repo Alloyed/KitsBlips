@@ -267,9 +267,11 @@ Magnum::SceneGraph::Drawable3D* DrawableCache::CreateDrawableFromMesh(MaterialCa
                black. Ignore the normal map in that case. */
             /** @todo generate tangents instead once we have the algo */
             if (!meshInfo.hasTangents) {
+                /*
                 kitgui::log::error(
                     fmt::format("Mesh {} doesn't have tangents, auto-generation NYI, so ignoring normal map for now",
                                 meshInfo.debugName));
+                */
             } else if (texture) {
                 normalTexture = &*texture;
                 normalTextureScale = material.normalTextureScale();

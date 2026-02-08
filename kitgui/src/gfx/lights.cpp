@@ -73,7 +73,7 @@ void LightCache::CreateSceneLights(const Trade::SceneData& scene,
 void LightCache::LoadLights(Trade::AbstractImporter& importer) {
     /* Load all lights. Lights that fail to load will be NullOpt, saving the
        whole imported data so we can populate the selection info later. */
-    Debug{} << "Loading" << importer.lightCount() << "lights";
+    //Debug{} << "Loading" << importer.lightCount() << "lights";
     mLights.clear();
     mLights.reserve(importer.lightCount());
     for (uint32_t i = 0; i != importer.lightCount(); ++i) {
@@ -85,7 +85,7 @@ void LightCache::LoadLights(Trade::AbstractImporter& importer) {
 
         lightInfo.light = std::optional<Trade::LightData>{importer.light(i)};
         if (!lightInfo.light) {
-            kitgui::log::error(fmt::format("Cannot load light {} {}", i, importer.lightName(i)));
+            //kitgui::log::error(fmt::format("Cannot load light {} {}", i, importer.lightName(i)));
             continue;
         }
         mLights.push_back(std::move(lightInfo));
