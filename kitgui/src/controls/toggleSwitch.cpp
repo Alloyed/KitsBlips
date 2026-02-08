@@ -33,8 +33,8 @@ bool ToggleSwitch::Update(bool& rawValueInOut) {
     if (mShowDebug) {
         // Drawing using imgui primitives
 
-        /*
         auto* colors = ImGui::GetStyle().Colors;
+        /*
         ImColor base = colors[ImGuiCol_ButtonActive];
         ImColor hovered = colors[ImGuiCol_ButtonHovered];
         ImColor active = colors[ImGuiCol_ButtonHovered];
@@ -46,11 +46,11 @@ bool ToggleSwitch::Update(bool& rawValueInOut) {
                 colors[ImGuiCol_ButtonHovered].z * 0.5f, colors[ImGuiCol_ButtonHovered].w);
         */
 
-        ImU32 col_bg;
+        ImColor col_bg;
         if (ImGui::IsItemHovered())
-            col_bg = rawValueInOut ? IM_COL32(145+20, 211, 68+20, 255) : IM_COL32(218-20, 218-20, 218-20, 255);
+            col_bg = colors[ImGuiCol_ButtonHovered];
         else
-            col_bg = rawValueInOut ? IM_COL32(145, 211, 68, 255) : IM_COL32(218, 218, 218, 255);
+            col_bg = rawValueInOut ? colors[ImGuiCol_Button] : colors[ImGuiCol_ButtonActive];
 
         ImGui::GetWindowDrawList()->AddRectFilled(screen_pos, ImVec2(screen_pos.x + itemWidth, screen_pos.y + itemWidth), col_bg, 0.0f);
         //draw_list->AddCircleFilled(ImVec2(rawValueInOut ? (p.x + width - radius) : (p.x + radius), p.y + radius), radius - 1.5f, IM_COL32(255, 255, 255, 255));

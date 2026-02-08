@@ -398,7 +398,7 @@ class GuiApp : public kitgui::BaseApp {
         uint32_t h{};
         GetContext().GetSizeInPixels(w, h);
         mScene->SetViewport({static_cast<float>(w), static_cast<float>(h)});
-        mScene->SetBrightness(0.0070f);  // idk why magnum is so intense by default, to investigate
+        mScene->SetBrightness(0.00125f);  // idk why magnum is so intense by default, to investigate
 
         struct KnobSetupInfo {
             Params param;
@@ -407,24 +407,24 @@ class GuiApp : public kitgui::BaseApp {
 
         // TODO: data-driven
         const std::vector<KnobSetupInfo> knobs{
-            {Params::PolyCount, "knob-mid-Davies-1900h.001"},
-            {Params::PolyChordType, "knob-mid-Davies-1900h.002"},
-            {Params::OscOctave, "knob-mid-Davies-1900h.003"},
-            {Params::OscTune, "knob-mid-Davies-1900h.004"},
-            {Params::OscModMix, "knob-small-trimpot-R-0904N-L-25KC"},
-            {Params::OscModAmount, "knob-small-trimpot-R-0904N-L-25KC.001"},
-            {Params::FilterCutoff, "knob-mid-Davies-1900h.006"},
-            {Params::FilterResonance, "knob-mid-Davies-1900h.005"},
-            {Params::FilterModMix, "knob-small-trimpot-R-0904N-L-25KC.002"},
-            {Params::FilterModAmount, "knob-small-trimpot-R-0904N-L-25KC.003"},
-            {Params::LfoRate, "knob-mid-Davies-1900h.008"},
-            {Params::LfoShape, "knob-mid-Davies-1900h.009"},
-            {Params::EnvAttack, "knob-mid-Davies-1900h.010"},
-            {Params::EnvDecay, "knob-mid-Davies-1900h.011"},
-            {Params::EnvSustain, "knob-mid-Davies-1900h.012"},
-            {Params::EnvRelease, "knob-mid-Davies-1900h.013"},
-            {Params::VcaGain, "knob-mid-Davies-1900h.007"},
-            {Params::VcaLfoAmount, "knob-small-trimpot-R-0904N-L-25KC.004"},
+            {Params::PolyCount, "PolyCount"},
+            {Params::PolyChordType, "PolyChordType"},
+            {Params::OscOctave, "OscOctave"},
+            {Params::OscTune, "OscTune"},
+            {Params::OscModMix, "OscModMix"},
+            {Params::OscModAmount, "OscModAmount"},
+            {Params::FilterCutoff, "FilterCutoff"},
+            {Params::FilterResonance, "FilterResonance"},
+            {Params::FilterModMix, "FilterModMix"},
+            {Params::FilterModAmount, "FilterModAmount"},
+            {Params::LfoRate, "LfoRate"},
+            {Params::LfoShape, "LfoShape"},
+            {Params::EnvAttack, "EnvAttack"},
+            {Params::EnvDecay, "EnvDecay"},
+            {Params::EnvSustain, "EnvSustain"},
+            {Params::EnvRelease, "EnvRelease"},
+            {Params::VcaGain, "VcaGain"},
+            {Params::VcaLfoAmount, "VcaLfoAmount"},
         };
         for (const auto& knobInfo : knobs) {
             clap_id id = static_cast<clap_id>(knobInfo.param);
@@ -442,7 +442,7 @@ class GuiApp : public kitgui::BaseApp {
         }
 
         const std::vector<KnobSetupInfo> toggles{
-            {Params::VcaEnvDisabled, "lever"},
+            {Params::VcaEnvDisabled, "VcaEnvDisabled"},
         };
         for (const auto& knobInfo : toggles) {
             clap_id id = static_cast<clap_id>(knobInfo.param);
@@ -453,7 +453,7 @@ class GuiApp : public kitgui::BaseApp {
                 // corners of that into screen positions. for now, hardcoded.
                 float w = 40.0f * scale;
                 float hw = w * 0.5f;
-                mKnobs.back()->mPos = {objectInfo->pos.x() - hw, objectInfo->pos.y() - hw};
+                mToggles.back()->mPos = {objectInfo->pos.x() - hw, objectInfo->pos.y() - hw};
                 mToggles.back()->mWidth = w;
                 mToggles.back()->mShowDebug = false;
             }

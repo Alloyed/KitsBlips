@@ -75,6 +75,10 @@ class TomlStateFeature : public BaseFeature {
         params.FlushFromAudio();  // empty queue so changes apply on top
         auto& handle = params.GetMainHandle();
 
+        // Sometimes useful in development to throw away old format files
+        bool kError = false; // normal
+        //bool kError = true; // ignore errors
+
         // TODO we can't use clap_istream_streambuf because it doesn't implement random seek, and toml::parse() expects
         // that. full example at https://stackoverflow.com/a/79746417
         std::string file;
@@ -85,7 +89,7 @@ class TomlStateFeature : public BaseFeature {
         }
         if (size == -1) {
             // read error
-            return false;
+            return kError;
         }
 
         host.Log(clapeze::LogSeverity::Debug, "loading file");
@@ -96,7 +100,7 @@ class TomlStateFeature : public BaseFeature {
             ss << result.error().source();
             host.LogFmt(clapeze::LogSeverity::Warning, "loading, could not parse toml: {}\nsrc: {}",
                         result.error().description(), ss.str());
-            return false;
+            return kError;
         }
 
         // TODO validate meta
@@ -104,7 +108,7 @@ class TomlStateFeature : public BaseFeature {
         if (!savedParams) {
             // no params
             host.Log(clapeze::LogSeverity::Warning, "loading, no params table (malformed preset?)");
-            return false;
+            return kError;
         }
 
         auto parseNumberFromText = [](std::string_view input, double& out) -> bool {
