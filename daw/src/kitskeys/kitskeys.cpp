@@ -41,7 +41,6 @@ enum class Params : clap_id {
     FilterModAmount,
     LfoRate,
     LfoShape,
-    LfoSync,
     EnvAttack,
     EnvDecay,
     EnvSustain,
@@ -113,36 +112,11 @@ struct ParamTraits<Params, Params::FilterModAmount> : public clapeze::NumericPar
 template <>
 struct ParamTraits<Params, Params::LfoRate> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("Rate", 0.0f) {}
-
-    // TODO
-    /*
-    bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
-        if (mSync) {
-        } else {
-        }
-    }
-    bool FromText(std::string_view text, double& outRawValue) const override {
-        if (mSync) {
-        } else {
-        }
-    }
-    */
-
-    void SetSync(bool sync) { mSync = sync; }
-    bool GetSync() const { return mSync; }
-
-   private:
-    bool mSync{};
 };
 
 template <>
 struct ParamTraits<Params, Params::LfoShape> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("LFO Shape", 0.0f) {}
-};
-
-template <>
-struct ParamTraits<Params, Params::LfoSync> : public clapeze::OnOffParam {
-    ParamTraits() : clapeze::OnOffParam("LFO Sync", clapeze::OnOff::Off) {}
 };
 
 template <>
@@ -316,16 +290,8 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
                            params.Get<Params::EnvSustain>(), params.Get<Params::EnvRelease>(), sampleRate);
 
             // lfo
-            bool lfoSync = params.Get<Params::LfoSync>() == OnOff::On;
             float lfoRate = params.Get<Params::LfoRate>();
-            if (lfoSync) {
-                // for now, sync to 16th notes (1/6 of a beat)
-                float kSixteenth = 1.0f / 16.0f;
-                float beats = kitdsp::roundTo(kitdsp::lerp(4.0f, kSixteenth, lfoRate), kSixteenth);
-                mLfo.SetPeriod(mProcessor.GetTransport().BeatsToMs(beats), sampleRate);
-            } else {
-                mLfo.SetFrequency(kitdsp::lerp(0.001f, 20.0f, lfoRate), sampleRate);
-            }
+            mLfo.SetFrequency(kitdsp::lerp(0.001f, 20.0f, lfoRate), sampleRate);
             float lfoShape = params.Get<Params::LfoShape>();
             mLfoSmooth.SetFrequency(1800.0f, sampleRate);
 
@@ -350,11 +316,15 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
                 vcaMod = vcaMod * vcaMod * vcaMod;  // approximate db curve (not really but yknow)
 
                 mOsc.SetFrequency(kitdsp::midiToFrequency(oscNote + oscMod), sampleRate);
-                mFilter.SetFrequency(kitdsp::midiToFrequency(filterNote + filterMod), sampleRate, filterQ);
+                mFilter.SetFrequency(kitdsp::midiToFrequency(filterNote + filterMod), sampleRate * 2.0f, filterQ);
 
                 // audio
                 float oscOut = mOsc.Process();
-                float filterOut = mFilter.Process<kitdsp::SvfFilterMode::LowPass>(oscOut);
+
+                // 2x oversampling the filter to make resonant sweeps a little nicer
+                mFilter.Process<kitdsp::SvfFilterMode::LowPass>(oscOut);
+                float filterOut = mFilter.Process<kitdsp::SvfFilterMode::LowPass>(0.0f);
+
                 float vcaOut = filterOut * vcaMod * vcaGain;
 
                 out.left[index] += vcaOut;
