@@ -19,7 +19,7 @@ struct ObjectScreenPosition {
  */
 class Scene {
    public:
-    enum class Axis {X, Y, Z};
+    enum class Axis { X, Y, Z };
     explicit Scene(kitgui::Context& mContext);
     ~Scene();
     /** Synchronously loads the scene, including all transitive resources. */
@@ -28,6 +28,8 @@ class Scene {
     void Update();
     /** Draws the scene. */
     void Draw();
+    /** Show debug UI elements for scene */
+    void ImGui();
     /** Sets the viewport size, recalculating any cameras as needed. */
     void SetViewport(const kitgui::Vector2& size);
     /** Sets scene overall brightness, from 0-1+. nullopt means fullbright. */
@@ -36,6 +38,7 @@ class Scene {
     // These methods are added as needed, so no rhyme or reason to what's supported really
     void PlayAnimationByName(std::string_view name);
     void SetObjectRotationByName(std::string_view name, float angleRadians, Axis axis);
+    void SetLightBrightnessByName(std::string_view name, float emission);
     std::optional<ObjectScreenPosition> GetObjectScreenPositionByName(std::string_view name);
 
    private:

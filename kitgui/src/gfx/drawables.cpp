@@ -8,6 +8,7 @@
 #include <Magnum/Trade/PhongMaterialData.h>
 #include <fmt/format.h>
 #include <vector>
+#include <imgui.h>
 
 #include "gfx/materials.h"
 #include "gfx/sceneGraph.h"
@@ -26,7 +27,7 @@ FlatDrawable::FlatDrawable(Object3D& object,
                            const Color4& color,
                            const Vector3& scale,
                            SceneGraph::DrawableGroup3D& group)
-    : SceneGraph::Drawable3D{object, &group},
+    : BaseDrawable{object, &group},
       mShader(shader),
       mMesh(mesh),
       mObjectId{objectId},
@@ -40,6 +41,7 @@ void FlatDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera3
         transformation = Matrix4::from(transformationMatrix.rotationShear(), transformationMatrix.translation()) *
                          Matrix4::scaling(Vector3{mScale});
     } else {
+        // NaN
         transformation = transformationMatrix;
     }
 
@@ -48,6 +50,16 @@ void FlatDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera3
         .setObjectId(mObjectId);
 
     mShader.draw(mMesh);
+}
+
+void FlatDrawable::ImGui() {
+    if(ImGui::TreeNode(this, "%d", mObjectId)) {
+        ImGui::Text("Flat");
+        ImVec4 c = {mColor.r(), mColor.g(), mColor.b(), mColor.a()};
+        ImGui::ColorButton("color", c);
+        ImGui::LabelText("scale", "%f, %f, %f", mScale.x(), mScale.y(), mScale.z());
+        ImGui::TreePop();
+    }
 }
 
 PhongDrawable::PhongDrawable(Object3D& object,
@@ -62,7 +74,7 @@ PhongDrawable::PhongDrawable(Object3D& object,
                              const Matrix3& textureMatrix,
                              const bool& shadeless,
                              SceneGraph::DrawableGroup3D& group)
-    : SceneGraph::Drawable3D{object, &group},
+    : BaseDrawable{object, &group},
       mShader(shader),
       mMesh(mesh),
       mObjectId{objectId},
@@ -81,7 +93,7 @@ PhongDrawable::PhongDrawable(Object3D& object,
                              const Color4& color,
                              const bool& shadeless,
                              SceneGraph::DrawableGroup3D& group)
-    : SceneGraph::Drawable3D{object, &group},
+    : BaseDrawable{object, &group},
       mShader(shader),
       mMesh(mesh),
       mObjectId{objectId},
@@ -130,16 +142,33 @@ void PhongDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera
     }
 }
 
+void PhongDrawable::ImGui() {
+    if(ImGui::TreeNode(this, "%d", mObjectId)) {
+        ImGui::Text("PhongGL");
+        ImVec4 c = {mColor.r(), mColor.g(), mColor.b(), mColor.a()};
+        ImGui::ColorButton("color", c);
+        ImGui::LabelText("hasDiffuse", "%s", mDiffuseTexture == nullptr ? "false" : "true");
+        ImGui::LabelText("hasNormal", "%s", mNormalTexture == nullptr ? "false" : "true");
+        ImGui::LabelText("normalTextureScale", "%f", mNormalTextureScale);
+        ImGui::LabelText("alphamask", "%f", mAlphaMask);
+        ImGui::LabelText("shadeless", "%s", mShadeless ? "true":"false");
+        ImGui::TreePop();
+    }
+}
+
 LightDrawable::LightDrawable(Object3D& object,
                              bool directional,
                              std::vector<Vector4>& positions,
                              SceneGraph::DrawableGroup3D& group)
-    : SceneGraph::Drawable3D{object, &group}, mDirectional{directional}, mPositions(positions) {}
+    : BaseDrawable{object, &group}, mDirectional{directional}, mPositions(positions) {}
 
 void LightDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera3D&) {
     mPositions.push_back(mDirectional ? Vector4{transformationMatrix.backward(), 0.0f}
                                       : Vector4{transformationMatrix.translation(), 1.0f});
 }
+void LightDrawable::ImGui() {
+}
+
 
 Shaders::FlatGL3D& DrawableCache::FlatShader(Shaders::FlatGL3D::Flags flags) {
     auto found = mFlatShaders.find(enumCastUnderlyingType(flags));
@@ -181,10 +210,12 @@ Magnum::SceneGraph::Drawable3D* DrawableCache::CreateDrawableFromMesh(MaterialCa
     }
 
     Shaders::PhongGL::Flags flags;
-    if (meshInfo.hasVertexColors)
+    if (meshInfo.hasVertexColors) {
         flags |= Shaders::PhongGL::Flag::VertexColor;
-    if (meshInfo.hasSeparateBitangents)
+    }
+    if (meshInfo.hasSeparateBitangents) {
         flags |= Shaders::PhongGL::Flag::Bitangent;
+    }
 
     /* Material not available / not loaded. If the mesh has vertex
        colors, use that, otherwise apply a default material; use a flat
@@ -210,8 +241,9 @@ Magnum::SceneGraph::Drawable3D* DrawableCache::CreateDrawableFromMesh(MaterialCa
     } else {
         const Trade::PhongMaterialData& material = *mMaterialCache.mMaterials[materialId].Phong();
 
-        if (material.isDoubleSided())
+        if (material.isDoubleSided()) {
             flags |= Shaders::PhongGL::Flag::DoubleSided;
+        }
 
         /* Textured material. If the texture failed to load, again just
            use a default-colored material. */
@@ -250,9 +282,9 @@ Magnum::SceneGraph::Drawable3D* DrawableCache::CreateDrawableFromMesh(MaterialCa
             }
         }
 
+        Magnum::SceneGraph::DrawableGroup3D* group = &mOpaqueDrawables;
         if (material.alphaMode() == Trade::MaterialAlphaMode::Blend) {
-            // todo, transparent materials
-            return nullptr;
+            group = &mTransparentDrawables;
         }
 
         return new PhongDrawable{*object,
@@ -266,7 +298,7 @@ Magnum::SceneGraph::Drawable3D* DrawableCache::CreateDrawableFromMesh(MaterialCa
                                  material.alphaMask(),
                                  material.commonTextureMatrix(),
                                  shadeless,
-                                 mOpaqueDrawables};
+                                 *group};
     }
 }
 

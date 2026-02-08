@@ -3,9 +3,9 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <misc/cpp/imgui_stdlib.h>
+#include <algorithm>
 #include <cmath>
 #include <string>
-#include <algorithm>
 
 namespace kitgui {
 bool Knob::Update(double& rawValueInOut) {
@@ -23,18 +23,18 @@ bool Knob::Update(double& rawValueInOut) {
     ImGui::InvisibleButton("button", {itemWidth, itemWidth});
     auto gid = ImGui::GetID("button");
 
-    ImGuiSliderFlags drag_behaviour_flags =
-        static_cast<ImGuiSliderFlags>(ImGuiSliderFlags_Vertical) | ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_NoSpeedTweaks;
+    ImGuiSliderFlags drag_behaviour_flags = static_cast<ImGuiSliderFlags>(ImGuiSliderFlags_Vertical) |
+                                            ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_NoSpeedTweaks;
 
     // manually inlining speed logic so we can make shift the "go slow" option
     ImGuiContext& g = *ImGui::GetCurrentContext();
-    float v_speed = (float)((mMax - mMin) * g.DragSpeedDefaultRatio);
+    float v_speed = (float)((mMax - mMin) * g.DragSpeedDefaultRatio) * 0.25f;
     if (g.IO.KeyShift) {
         v_speed *= 0.1f;
     }
 
-    auto value_changed =
-        ImGui::DragBehavior(gid, ImGuiDataType_Double, &rawValueInOut, v_speed, &mMin, &mMax, "%.2f", drag_behaviour_flags);
+    auto value_changed = ImGui::DragBehavior(gid, ImGuiDataType_Double, &rawValueInOut, v_speed, &mMin, &mMax, "%.2f",
+                                             drag_behaviour_flags);
 
     auto is_active = ImGui::IsItemActive();
     auto is_hovered = ImGui::IsItemHovered();
@@ -44,11 +44,11 @@ bool Knob::Update(double& rawValueInOut) {
         // tooltip counts as a window! so this works
         float view_width = ImGui::GetMainViewport()->Size.x;
         bool pivot_left = screen_pos.x > view_width * 0.70f;
-        if(pivot_left) {
+        if (pivot_left) {
             ImGui::SetNextWindowPos({screen_pos.x, screen_pos.y + (itemWidth * 0.5f)}, ImGuiCond_Always, {1.0, 0.0});
-        }
-        else {
-            ImGui::SetNextWindowPos({screen_pos.x + itemWidth, screen_pos.y + (itemWidth * 0.5f)}, ImGuiCond_Always, {0.0, 0.0});
+        } else {
+            ImGui::SetNextWindowPos({screen_pos.x + itemWidth, screen_pos.y + (itemWidth * 0.5f)}, ImGuiCond_Always,
+                                    {0.0, 0.0});
         }
         ImGui::SetNextWindowSize({0.0f, 0.0f}, ImGuiCond_Always);
         ImGui::SetTooltip("%s: %s", GetName().c_str(), ToValueText(rawValueInOut).c_str());
@@ -67,11 +67,10 @@ bool Knob::Update(double& rawValueInOut) {
         sPopupOpened = true;
     }
 
-    ImGui::SetNextWindowSize({160.0f*scale, 0.0f});
-    if (ImGui::BeginPopup("editknob"))
-    {
-        if(ImGui::InputText("##", &sValueText, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            if(FromValueText(sValueText, rawValueInOut)) {
+    ImGui::SetNextWindowSize({160.0f * scale, 0.0f});
+    if (ImGui::BeginPopup("editknob")) {
+        if (ImGui::InputText("##", &sValueText, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            if (FromValueText(sValueText, rawValueInOut)) {
                 // TODO validation
                 value_changed = true;
             }
@@ -79,7 +78,7 @@ bool Knob::Update(double& rawValueInOut) {
         }
         if (sPopupOpened) {
             // doesn't seem to work :/
-            //ImGui::SetKeyboardFocusHere(-1);
+            // ImGui::SetKeyboardFocusHere(-1);
             sPopupOpened = false;
         }
         ImGui::EndPopup();

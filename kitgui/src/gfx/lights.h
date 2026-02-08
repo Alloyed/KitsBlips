@@ -22,7 +22,8 @@ namespace kitgui {
 
 struct LightInfo {
     std::optional<Magnum::Trade::LightData> light;
-    std::string debugName;
+    float brightness = 0.0f;
+    std::string debugName {};
 };
 
 struct LightCache {
@@ -31,7 +32,6 @@ struct LightCache {
     bool mShadeless{false};
     float mBrightness{0.0025f};
     std::vector<Magnum::Vector4> mLightPositions;
-    std::vector<Magnum::Color3> mLightColors;
 
     Magnum::Containers::Array<Magnum::Color3> CalculateLightColors();
     void CreateDefaultLightsIfNecessary(Object3D* mCameraObject, Magnum::SceneGraph::DrawableGroup3D& mLightDrawables);

@@ -49,10 +49,7 @@ class MyApp : public kitgui::BaseApp {
                 if(ImGui::DragFloat("brightness", &mBrightness, 0.0001, 0.0f, 1.0f, "%.6f")) {
                     mScene->SetBrightness(mBrightness);
                 }
-
-                if (ImGui::ColorEdit4("bgcolor", reinterpret_cast<float*>(&mClearColor))) {
-                    GetContext().SetClearColor(mClearColor);
-                }
+                mScene->ImGui();
             }
             ImGui::End();
         }
@@ -72,7 +69,7 @@ int main() {
 
     {
         kitgui::Context ctx1([](kitgui::Context& ctx) { return std::make_unique<MyApp>(ctx); });
-        ctx1.SetSizeConfig({600, 400, true, false});
+        ctx1.SetSizeConfig({900, 600, true, false});
         ctx1.Create(true);
         ctx1.Show();
 

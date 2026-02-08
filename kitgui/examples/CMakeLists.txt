@@ -21,8 +21,8 @@ target_link_libraries(imguiDemo kitgui)
 add_executable(multiwindow multiwindow.cpp)
 target_link_libraries(multiwindow kitgui)
 
-add_executable(3dscene 3dscene.cpp)
-target_link_libraries(3dscene kitgui)
+add_executable(3dviewer 3dviewer.cpp)
+target_link_libraries(3dviewer kitgui)
 
 add_executable(customControls customControls.cpp)
 target_link_libraries(customControls kitgui)

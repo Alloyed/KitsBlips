@@ -26,7 +26,13 @@ struct MaterialCache;
 
 namespace kitgui {
 
-class FlatDrawable : public Magnum::SceneGraph::Drawable3D {
+class BaseDrawable : public Magnum::SceneGraph::Drawable3D {
+    public:
+    explicit BaseDrawable(Object3D& object, Magnum::SceneGraph::DrawableGroup3D* group): Magnum::SceneGraph::Drawable3D(object, group) {}
+    virtual void ImGui() = 0;
+};
+
+class FlatDrawable : public BaseDrawable {
    public:
     explicit FlatDrawable(Object3D& object,
                           Magnum::Shaders::FlatGL3D& shader,
@@ -38,6 +44,7 @@ class FlatDrawable : public Magnum::SceneGraph::Drawable3D {
 
    private:
     void draw(const Magnum::Matrix4& transformationMatrix, Magnum::SceneGraph::Camera3D& camera) override;
+    void ImGui() override;
 
     Magnum::Shaders::FlatGL3D& mShader;
     Magnum::GL::Mesh& mMesh;
@@ -46,7 +53,7 @@ class FlatDrawable : public Magnum::SceneGraph::Drawable3D {
     Magnum::Vector3 mScale;
 };
 
-class PhongDrawable : public Magnum::SceneGraph::Drawable3D {
+class PhongDrawable : public BaseDrawable {
    public:
     explicit PhongDrawable(Object3D& object,
                            Magnum::Shaders::PhongGL& shader,
@@ -71,6 +78,7 @@ class PhongDrawable : public Magnum::SceneGraph::Drawable3D {
 
    private:
     void draw(const Magnum::Matrix4& transformationMatrix, Magnum::SceneGraph::Camera3D& camera) override;
+    void ImGui() override;
 
     Magnum::Shaders::PhongGL& mShader;
     Magnum::GL::Mesh& mMesh;
@@ -84,7 +92,7 @@ class PhongDrawable : public Magnum::SceneGraph::Drawable3D {
     bool mShadeless;
 };
 
-class LightDrawable : public Magnum::SceneGraph::Drawable3D {
+class LightDrawable : public BaseDrawable {
    public:
     explicit LightDrawable(Object3D& object,
                            bool directional,
@@ -93,6 +101,7 @@ class LightDrawable : public Magnum::SceneGraph::Drawable3D {
 
    private:
     void draw(const Magnum::Matrix4& transformationMatrix, Magnum::SceneGraph::Camera3D&) override;
+    void ImGui() override;
 
     bool mDirectional;
     std::vector<Magnum::Vector4>& mPositions;
@@ -130,6 +139,8 @@ struct DrawableCache {
     std::unordered_map<uint32_t, Magnum::Shaders::MeshVisualizerGL3D> mMeshVisualizerShaders;
 
     Magnum::SceneGraph::DrawableGroup3D mOpaqueDrawables;
+    Magnum::SceneGraph::DrawableGroup3D mTransparentDrawables;
+    Magnum::SceneGraph::DrawableGroup3D mLightDrawables;
 };
 
 }  // namespace kitgui

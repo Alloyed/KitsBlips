@@ -26,31 +26,14 @@ using namespace Magnum::Math::Literals::ColorLiterals;
 namespace kitgui {
 
 Containers::Array<Color3> LightCache::CalculateLightColors() {
-    Containers::Array<Color3> lightColorsBrightness{NoInit, mLightColors.size()};
-    for (size_t i = 0; i != lightColorsBrightness.size(); ++i) {
-        lightColorsBrightness[i] = mLightColors[i] * mBrightness;
+    size_t numLights = mLights.size();
+    Containers::Array<Color3> lightColorsBrightness{NoInit, numLights};
+    for (size_t i = 0; i < numLights; ++i) {
+        const auto& info = mLights[i];
+        const auto& light = info.light;
+        lightColorsBrightness[i] = light->color() * light->intensity() * info.brightness * mBrightness;
     }
     return lightColorsBrightness;
-}
-
-void LightCache::CreateDefaultLightsIfNecessary(Object3D* mCameraObject, SceneGraph::DrawableGroup3D& mLightDrawables) {
-    if (mLightCount == 0) {
-        mLightCount = 3;
-
-        Object3D* first = new Object3D{mCameraObject};
-        first->translate({10.0f, 10.0f, 10.0f});
-        new LightDrawable{*first, true, mLightPositions, mLightDrawables};
-
-        Object3D* second = new Object3D{mCameraObject};
-        first->translate(Vector3{-5.0f, -5.0f, 10.0f} * 100.0f);
-        new LightDrawable{*second, true, mLightPositions, mLightDrawables};
-
-        Object3D* third = new Object3D{mCameraObject};
-        third->translate(Vector3{0.0f, 10.0f, -10.0f} * 100.0f);
-        new LightDrawable{*third, true, mLightPositions, mLightDrawables};
-
-        mLightColors = {0xffffff_rgbf, 0xffcccc_rgbf, 0xccccff_rgbf};
-    }
 }
 
 void LightCache::CreateSceneLights(const Trade::SceneData& scene,
@@ -80,7 +63,6 @@ void LightCache::CreateSceneLights(const Trade::SceneData& scene,
                add that directly. */
             new LightDrawable{*object, light->type() == Trade::LightType::Directional ? true : false, mLightPositions,
                               mLightDrawables};
-            mLightColors.push_back(light->color() * light->intensity());
         }
     }
 }

@@ -1,8 +1,8 @@
+#include <clap/ext/params.h>
 #include <clapeze/entryPoint.h>
 #include <clapeze/instrumentPlugin.h>
 #include <clapeze/params/enumParametersFeature.h>
 #include <clapeze/params/parameterTypes.h>
-#include <clapeze/state/noopStateFeature.h>
 #include <clapeze/state/tomlStateFeature.h>
 #include <clapeze/voice.h>
 #include <etl/vector.h>
@@ -15,7 +15,6 @@
 #include <memory>
 
 #include "descriptor.h"
-#include "kitdsp/control/approach.h"
 #include "kitdsp/filters/onePole.h"
 #include "kitdsp/math/util.h"
 #include "kitgui/context.h"
@@ -41,6 +40,8 @@ enum class Params : clap_id {
     FilterModAmount,
     LfoRate,
     LfoShape,
+    LfoSync,
+    LfoOut,
     EnvAttack,
     EnvDecay,
     EnvSustain,
@@ -117,6 +118,16 @@ struct ParamTraits<Params, Params::LfoRate> : public clapeze::PercentParam {
 template <>
 struct ParamTraits<Params, Params::LfoShape> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("LFO Shape", 0.0f) {}
+};
+
+template <>
+struct ParamTraits<Params, Params::LfoSync> : public clapeze::OnOffParam {
+    ParamTraits() : clapeze::OnOffParam("LFO Sync", OnOff::Off) {}
+};
+
+template <>
+struct ParamTraits<Params, Params::LfoOut> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("LFO Out", cLinearCurve, -1.0f, 1.0f, 0.0f) { mFlags = CLAP_PARAM_IS_READONLY; }
 };
 
 template <>
@@ -260,8 +271,6 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
             mOsc.Reset();
             mGateEnv.Reset();
             mFilter.Reset();
-            mLfo.Reset();
-            mLfoSmooth.Reset();
             mEnv.Reset();
         }
         bool ProcessAudio(clapeze::StereoAudioBuffer& out) {
@@ -284,16 +293,12 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
             float filterQ = 0.5f * std::exp(filterSteepness * (res / (1 - res)));  // [0, 1] -> [0.5, inf]
             float filterModMix = params.Get<Params::FilterModMix>();
             float filterModAmount = params.Get<Params::FilterModAmount>() * 64.0f;
+            
+            float lfo = params.Get<Params::LfoOut>();
 
             // env
             mEnv.SetParams(params.Get<Params::EnvAttack>(), params.Get<Params::EnvDecay>(),
                            params.Get<Params::EnvSustain>(), params.Get<Params::EnvRelease>(), sampleRate);
-
-            // lfo
-            float lfoRate = params.Get<Params::LfoRate>();
-            mLfo.SetFrequency(kitdsp::lerp(0.001f, 20.0f, lfoRate), sampleRate);
-            float lfoShape = params.Get<Params::LfoShape>();
-            mLfoSmooth.SetFrequency(1800.0f, sampleRate);
 
             // vca
             // We know this will usually be used polyphonically, so let's get some headroom
@@ -303,10 +308,6 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
             float vcaEnvDisabled = params.Get<Params::VcaEnvDisabled>() == OnOff::On ? 1.0f : 0.0f;  // TODO: xfade
 
             for (uint32_t index = 0; index < out.left.size(); index++) {
-                // modulation
-                float lfoTri = mLfo.Process();  // [-1, 1]
-                float lfoSquare = lfoTri > 0.0f ? -1.0f : 1.0f;
-                float lfo = mLfoSmooth.Process(kitdsp::lerp(lfoTri, lfoSquare, lfoShape));
                 float env = mEnv.Process();          // [0, 1]
                 float gateEnv = mGateEnv.Process();  // [0, 1]
 
@@ -342,8 +343,6 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
         kitdsp::Gate mGateEnv{};
         // TODO: paraphony, maybe
         kitdsp::EmileSvf mFilter{};
-        kitdsp::lfo::TriangleOscillator mLfo{};
-        kitdsp::OnePole mLfoSmooth{};
         kitdsp::ApproachAdsr mEnv{};
     };
 
@@ -358,7 +357,26 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
         if (mNoteProcessor.SetChordType(mParams.Get<Params::PolyChordType>(), polyCount)) {
             mVoices.StopAllVoices();
         }
-        return mVoices.ProcessAudio(out);
+
+        // lfo
+        float sampleRate = static_cast<float>(GetSampleRate());
+        float lfoRate = mParams.Get<Params::LfoRate>();
+        mLfo.SetFrequency(kitdsp::lerp(0.001f, 20.0f, lfoRate), sampleRate);
+        float lfoShape = mParams.Get<Params::LfoShape>();
+        mLfoSmooth.SetFrequency(1800.0f, sampleRate);
+
+        auto status = mVoices.ProcessAudio(out);
+
+        // TODO: this probably doesn't need to be a full loop
+        float lfoOut{};
+        for (uint32_t index = 0; index < out.left.size(); index++) {
+            float lfoTri = mLfo.Process();  // [-1, 1]
+            float lfoSquare = lfoTri > 0.0f ? -1.0f : 1.0f;
+            lfoOut = mLfoSmooth.Process(kitdsp::lerp(lfoTri, lfoSquare, lfoShape));
+        }
+        mParams.Send<Params::LfoOut>(lfoOut);
+
+        return status;
     }
 
     void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) override {
@@ -381,6 +399,8 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
    private:
     clapeze::VoicePool<Processor, Voice, cMaxVoices> mVoices;
     NoteProcessor mNoteProcessor{};
+    kitdsp::lfo::TriangleOscillator mLfo{};
+    kitdsp::OnePole mLfoSmooth{};
 };
 
 #if KITSBLIPS_ENABLE_GUI
@@ -407,24 +427,15 @@ class GuiApp : public kitgui::BaseApp {
 
         // TODO: data-driven
         const std::vector<KnobSetupInfo> knobs{
-            {Params::PolyCount, "PolyCount"},
-            {Params::PolyChordType, "PolyChordType"},
-            {Params::OscOctave, "OscOctave"},
-            {Params::OscTune, "OscTune"},
-            {Params::OscModMix, "OscModMix"},
-            {Params::OscModAmount, "OscModAmount"},
-            {Params::FilterCutoff, "FilterCutoff"},
-            {Params::FilterResonance, "FilterResonance"},
-            {Params::FilterModMix, "FilterModMix"},
-            {Params::FilterModAmount, "FilterModAmount"},
-            {Params::LfoRate, "LfoRate"},
-            {Params::LfoShape, "LfoShape"},
-            {Params::EnvAttack, "EnvAttack"},
-            {Params::EnvDecay, "EnvDecay"},
-            {Params::EnvSustain, "EnvSustain"},
-            {Params::EnvRelease, "EnvRelease"},
-            {Params::VcaGain, "VcaGain"},
-            {Params::VcaLfoAmount, "VcaLfoAmount"},
+            {Params::PolyCount, "PolyCount"},       {Params::PolyChordType, "PolyChordType"},
+            {Params::OscOctave, "OscOctave"},       {Params::OscTune, "OscTune"},
+            {Params::OscModMix, "OscModMix"},       {Params::OscModAmount, "OscModAmount"},
+            {Params::FilterCutoff, "FilterCutoff"}, {Params::FilterResonance, "FilterResonance"},
+            {Params::FilterModMix, "FilterModMix"}, {Params::FilterModAmount, "FilterModAmount"},
+            {Params::LfoRate, "LfoRate"},           {Params::LfoShape, "LfoShape"},
+            {Params::EnvAttack, "EnvAttack"},       {Params::EnvDecay, "EnvDecay"},
+            {Params::EnvSustain, "EnvSustain"},     {Params::EnvRelease, "EnvRelease"},
+            {Params::VcaGain, "VcaGain"},           {Params::VcaLfoAmount, "VcaLfoAmount"},
         };
         for (const auto& knobInfo : knobs) {
             clap_id id = static_cast<clap_id>(knobInfo.param);
@@ -443,6 +454,7 @@ class GuiApp : public kitgui::BaseApp {
 
         const std::vector<KnobSetupInfo> toggles{
             {Params::VcaEnvDisabled, "VcaEnvDisabled"},
+            {Params::LfoSync, "LfoSync"},
         };
         for (const auto& knobInfo : toggles) {
             clap_id id = static_cast<clap_id>(knobInfo.param);
@@ -483,6 +495,8 @@ class GuiApp : public kitgui::BaseApp {
         ImGui::TextWrapped("MOD A: Low frequency Oscillator");
         kitgui::DebugParam<ParamsFeature, Params::LfoRate>(mParams);
         kitgui::DebugParam<ParamsFeature, Params::LfoShape>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::LfoSync>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::LfoOut>(mParams);
 
         ImGui::TextWrapped("MOD B: Envelope");
         kitgui::DebugParam<ParamsFeature, Params::EnvAttack>(mParams);
@@ -603,6 +617,8 @@ class Plugin : public InstrumentPlugin {
                                     .Module("LFO")
                                     .Parameter<Params::LfoRate>()
                                     .Parameter<Params::LfoShape>()
+                                    .Parameter<Params::LfoSync>()
+                                    .Parameter<Params::LfoOut>()
                                     .Module("ADSR")
                                     .Parameter<Params::EnvAttack>()
                                     .Parameter<Params::EnvDecay>()
@@ -617,7 +633,7 @@ class Plugin : public InstrumentPlugin {
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<clapeze::AssetsFeature>(GetHost());
         // aspect ratio 1.5
-        kitgui::SizeConfig cfg{600, 400, false, true};
+        kitgui::SizeConfig cfg{750, 500, false, true};
         ConfigFeature<KitguiFeature>(
             GetHost(), [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); }, cfg);
 #endif

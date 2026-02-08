@@ -30,6 +30,7 @@
 #include <chrono>
 #include <optional>
 #include <string>
+#include <imgui.h>
 #include "Magnum/Magnum.h"
 #include "fileContext.h"
 #include "gfx/animations.h"
@@ -59,12 +60,14 @@ struct Scene::Impl {
     void Load(std::string_view path);
     void LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName);
     void Update();
+    void ImGui();
     void Draw();
     void SetViewport(const kitgui::Vector2& size);
     void SetBrightness(std::optional<float> brightness);
 
     void PlayAnimationByName(std::string_view name);
     void SetObjectRotationByName(std::string_view name, float angleRadians, Scene::Axis axis);
+    void SetLightBrightnessByName(std::string_view name, float emission);
     std::optional<ObjectScreenPosition> GetObjectScreenPositionByName(std::string_view name);
 
    public:
@@ -73,7 +76,6 @@ struct Scene::Impl {
     bool mLoadError = false;
 
     MeshCache mMeshCache;
-    Magnum::SceneGraph::DrawableGroup3D mLightDrawables;
 
     MaterialCache mMaterialCache;
     LightCache mLightCache;
@@ -200,7 +202,7 @@ void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::strin
     }
 
     /* Import all lights so we know which shaders to instantiate */
-    mLightCache.CreateSceneLights(*scene, mSceneObjects, mLightDrawables);
+    mLightCache.CreateSceneLights(*scene, mSceneObjects, mDrawableCache.mLightDrawables);
 
     /* Import camera references, the first camera will be treated as the
        default one */
@@ -229,10 +231,6 @@ void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::strin
     if (importer.cameraCount()) {
         mCameraData = std::optional<Trade::CameraData>(importer.camera(0));
     }
-
-    /* Create default camera-relative lights in case they weren't present in
-       the scene already. Don't add any visualization for those. */
-    mLightCache.CreateDefaultLightsIfNecessary(mCameraObject, mLightDrawables);
 
     /* Add drawables for objects that have a mesh, again ignoring objects
        that are not part of the hierarchy. There can be multiple mesh
@@ -292,7 +290,7 @@ void Scene::SetBrightness(std::optional<float> brightness) {
 }
 
 void Scene::Impl::SetBrightness(std::optional<float> brightness) {
-    if(brightness) {
+    if (brightness) {
         mLightCache.mBrightness = *brightness;
         mLightCache.mShadeless = false;
     } else {
@@ -301,7 +299,6 @@ void Scene::Impl::SetBrightness(std::optional<float> brightness) {
     const auto lightColorsBrightness = mLightCache.CalculateLightColors();
     mDrawableCache.SetLightColors(lightColorsBrightness);
 }
-
 
 void Scene::PlayAnimationByName(std::string_view name) {
     mImpl->PlayAnimationByName(name);
@@ -323,12 +320,31 @@ void Scene::SetObjectRotationByName(std::string_view name, float angleRadians, S
 void Scene::Impl::SetObjectRotationByName(std::string_view name, float angleRadians, Scene::Axis axis) {
     for (auto& info : mSceneObjects) {
         if (info.name == name) {
-            Vector3 axisVector {};
-            if (axis == Axis::X) { axisVector = Vector3::xAxis(); }
-            if (axis == Axis::Y) { axisVector = Vector3::yAxis(); }
-            if (axis == Axis::Z) { axisVector = Vector3::zAxis(); }
+            Vector3 axisVector{};
+            if (axis == Axis::X) {
+                axisVector = Vector3::xAxis();
+            }
+            if (axis == Axis::Y) {
+                axisVector = Vector3::yAxis();
+            }
+            if (axis == Axis::Z) {
+                axisVector = Vector3::zAxis();
+            }
             auto rot = Quaternion::rotation(Rad(angleRadians), axisVector);
             info.object->setRotation(rot);
+        }
+    }
+}
+
+void Scene::SetLightBrightnessByName(std::string_view name, float emission) {
+    mImpl->SetLightBrightnessByName(name, emission);
+}
+
+void Scene::Impl::SetLightBrightnessByName(std::string_view name, float emission) {
+    // TODO
+    for (auto& info : mLightCache.mLights) {
+        if(info.debugName == name) {
+            return;
         }
     }
 }
@@ -339,9 +355,9 @@ std::optional<ObjectScreenPosition> Scene::GetObjectScreenPositionByName(std::st
 
 std::optional<ObjectScreenPosition> Scene::Impl::GetObjectScreenPositionByName(std::string_view name) {
     Vector2 viewportSize = Vector2{mCamera->viewport()};
-    auto pointToScreen = [this, &viewportSize] (const auto& object, const Vector3& pos) -> std::optional<Vector2> {
-        const Matrix4 viewProjection =
-            mCamera->projectionMatrix() * mCamera->cameraMatrix() * object->absoluteTransformationMatrix() * Matrix4::translation(pos);
+    auto pointToScreen = [this, &viewportSize](const auto& object, const Vector3& pos) -> std::optional<Vector2> {
+        const Matrix4 viewProjection = mCamera->projectionMatrix() * mCamera->cameraMatrix() *
+                                       object->absoluteTransformationMatrix() * Matrix4::translation(pos);
         const Vector4 clip = viewProjection * Vector4{0.0f, 0.0f, 0.0f, 1.0f};
         if (clip.w() <= 0.0f) {
             // behind camera or invalid
@@ -357,11 +373,12 @@ std::optional<ObjectScreenPosition> Scene::Impl::GetObjectScreenPositionByName(s
     };
     for (auto& info : mSceneObjects) {
         if (info.name == name) {
-            // TODO: get bounding volume. with the current data as is that's a jump from object <- drawable -> mesh -> boundingBox
-            //auto start = pointToScreen(info.object, ...);
-            //auto end = pointToScreen(info.object, ...);
+            // TODO: get bounding volume. with the current data as is that's a jump from object <- drawable -> mesh ->
+            // boundingBox
+            // auto start = pointToScreen(info.object, ...);
+            // auto end = pointToScreen(info.object, ...);
             auto pos = pointToScreen(info.object, Vector3{});
-            if(pos) {
+            if (pos) {
                 return ObjectScreenPosition{.pos = *pos, .size = Vector2{}};
             }
         }
@@ -390,50 +407,133 @@ void Scene::Impl::Draw() {
     if (!mLoaded) {
         return;
     }
-    /* Another FB could be bound from a depth / object ID read (moreover with
-       color output disabled), set it back to the default framebuffer */
-    GL::defaultFramebuffer.bind(); /** @todo mapForDraw() should bind implicitly */
+    GL::defaultFramebuffer.bind();
     GL::defaultFramebuffer.mapForDraw({{Shaders::PhongGL::ColorOutput, GL::DefaultFramebuffer::DrawAttachment::Back}});
     GL::defaultFramebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
 
+    GL::Renderer::enable(GL::Renderer::Feature::FramebufferSrgb);
+
     GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
+    GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
+    GL::Renderer::enable(GL::Renderer::Feature::Multisampling);
 
     auto size = GL::defaultFramebuffer.viewport().size();
     const Magnum::Vector2 sizef = {static_cast<float>(size.x()), static_cast<float>(size.y())};
     SetViewport(sizef);
 
-    /* Calculate light positions first, upload them to all shaders -- all
-       of them are there only if they are actually used, so it's not doing
-       any wasteful work */
+    /* Upload light positions to each subsequent shader call */
     mLightCache.mLightPositions.clear();
-    mCamera->draw(mLightDrawables);
+    mCamera->draw(mDrawableCache.mLightDrawables); // calculates light positions as a side effect
     mDrawableCache.SetLightPositions(mLightCache.mLightPositions);
 
     /* Draw opaque stuff as usual */
     mCamera->draw(mDrawableCache.mOpaqueDrawables);
 
-/* Draw transparent stuff back-to-front with blending enabled */
-#if 0
-        if (!_data->transparentDrawables.isEmpty()) {
-            GL::Renderer::setDepthMask(false);
-            GL::Renderer::enable(GL::Renderer::Feature::Blending);
-            /* Ugh non-premultiplied alpha */
-            GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::SourceAlpha,
-                                           GL::Renderer::BlendFunction::OneMinusSourceAlpha);
+    /* Draw transparent stuff back-to-front with blending enabled */
+    if (!mDrawableCache.mTransparentDrawables.isEmpty()) {
+        GL::Renderer::setDepthMask(false);
+        GL::Renderer::enable(GL::Renderer::Feature::Blending);
+        /* Ugh non-premultiplied alpha */
+        GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::SourceAlpha,
+                                       GL::Renderer::BlendFunction::OneMinusSourceAlpha);
 
-            std::vector<std::pair<std::reference_wrapper<SceneGraph::Drawable3D>, Matrix4>> drawableTransformations =
-                _data->camera->drawableTransformations(_data->transparentDrawables);
-            std::sort(drawableTransformations.begin(), drawableTransformations.end(),
-                      [](const std::pair<std::reference_wrapper<SceneGraph::Drawable3D>, Matrix4>& a,
-                         const std::pair<std::reference_wrapper<SceneGraph::Drawable3D>, Matrix4>& b) {
-                          return a.second.translation().z() > b.second.translation().z();
-                      });
-            _data->camera->draw(drawableTransformations);
+        auto drawableTransformations = mCamera->drawableTransformations(mDrawableCache.mTransparentDrawables);
+        std::sort(drawableTransformations.begin(), drawableTransformations.end(),
+                  [](const auto& a, const auto& b) { return a.second.translation().z() > b.second.translation().z(); });
+        mCamera->draw(drawableTransformations);
 
-            GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::One, GL::Renderer::BlendFunction::Zero);
-            GL::Renderer::disable(GL::Renderer::Feature::Blending);
-            GL::Renderer::setDepthMask(true);
-        }
-#endif
+        GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::One, GL::Renderer::BlendFunction::Zero);
+        GL::Renderer::disable(GL::Renderer::Feature::Blending);
+        GL::Renderer::setDepthMask(true);
+    }
+
+    GL::Renderer::disable(GL::Renderer::Feature::FramebufferSrgb);
 }
+
+void Scene::ImGui() {
+    mImpl->ImGui();
+}
+
+void Scene::Impl::ImGui() {
+    if(mLoadError) {
+        ImGui::Text("Load Error");
+        return;
+    }
+    if(!mLoaded) {
+        ImGui::Text("Loading...");
+        return;
+    }
+    size_t numDrawables = mDrawableCache.mOpaqueDrawables.size() +
+        mDrawableCache.mTransparentDrawables.size() +
+        mDrawableCache.mLightDrawables.size();
+    if(ImGui::CollapsingHeader(fmt::format("{} Drawables", numDrawables).c_str())) {
+        Magnum::SceneGraph::DrawableGroup3D* drawables{};
+        drawables = &mDrawableCache.mOpaqueDrawables;
+        ImGui::Text("opaque: %ld", drawables->size());
+        for(size_t idx = 0; idx < drawables->size(); ++idx) {
+            BaseDrawable& d = dynamic_cast<BaseDrawable&>((*drawables)[idx]);
+            d.ImGui();
+        }
+
+        drawables = &mDrawableCache.mTransparentDrawables;
+        ImGui::Text("transparent: %ld", drawables->size());
+        for(size_t idx = 0; idx < drawables->size(); ++idx) {
+            BaseDrawable& d = dynamic_cast<BaseDrawable&>((*drawables)[idx]);
+            d.ImGui();
+        }
+
+        drawables = &mDrawableCache.mLightDrawables;
+        ImGui::Text("light: %ld", drawables->size());
+        for(size_t idx = 0; idx < drawables->size(); ++idx) {
+            BaseDrawable& d = dynamic_cast<BaseDrawable&>((*drawables)[idx]);
+            d.ImGui();
+        }
+
+    }
+    if(ImGui::CollapsingHeader(fmt::format("{} Meshes", mMeshCache.mMeshes.size()).c_str())) {
+        for(const auto& info : mMeshCache.mMeshes) {
+            if(ImGui::TreeNode(&info, "%s", info.debugName.c_str())) {
+                ImGui::Text("objectIdCount: %d", info.objectIdCount);
+                ImGui::Text("size: %ld", info.size);
+                ImGui::Text("hasTangents: %s", info.hasTangents ? "true" : "false");
+                ImGui::Text("hasSeparateBitangents: %s", info.hasTangents ? "true" : "false");
+                ImGui::Text("hasVertexColors: %s", info.hasTangents ? "true" : "false");
+                ImGui::TreePop();
+            }
+        }
+    }
+    ImGui::Text("%ld materials", mMaterialCache.mMaterials.size());
+    ImGui::Text("%ld textures", mMaterialCache.mTextures.size());
+    if(ImGui::CollapsingHeader(fmt::format("{} Lights", mLightCache.mLightCount).c_str())) {
+        ImGui::Text("shadeless: %s", mLightCache.mShadeless ? "true" : "false");
+        ImGui::Text("brightness: %f", mLightCache.mBrightness);
+        for(const auto& info : mLightCache.mLights) {
+            if(ImGui::TreeNode(&info, "%s", info.debugName.c_str())) {
+                ImGui::Text("brightness: %f", info.brightness);
+                ImGui::TreePop();
+            }
+        }
+    }
+    // drawable cache
+    if(ImGui::CollapsingHeader(fmt::format("{} Objects", mSceneObjects.size()).c_str())) {
+        for(const auto& info : mSceneObjects) {
+            if(ImGui::TreeNode(&info, "%u: %s", info.id, info.name.c_str())) {
+                ImGui::Text("lightId: %u", info.lightId);
+                ImGui::TreePop();
+            }
+        }
+    }
+    if(ImGui::CollapsingHeader("Camera")) {
+        auto viewport = mCamera->viewport();
+        ImGui::Text("viewport: %d, %d", viewport.x(), viewport.y());
+    }
+    if(ImGui::CollapsingHeader(fmt::format("{} Animations", mAnimationCache.mAnimations.size()).c_str())) {
+        for(const auto& info : mAnimationCache.mAnimations) {
+            if(ImGui::TreeNode(&info, "%s", info.name.c_str())) {
+                ImGui::TreePop();
+            }
+        }
+    }
+}
+
 }  // namespace kitgui
