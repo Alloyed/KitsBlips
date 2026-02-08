@@ -108,8 +108,13 @@ int main(int argc, char* argv[]) {
     auto clap_plugin_timer_support =
         static_cast<const clap_plugin_timer_support_t*>(plugin->get_extension(plugin, CLAP_EXT_TIMER_SUPPORT));
     assert(clap_plugin_timer_support);
+    #ifdef _WIN32
+    const char* api = "win32";
+    bool isFloating = false;
+    #else
     const char* api = "x11";
     bool isFloating = true;
+    #endif
 
     ok = clap_plugin_gui->is_api_supported(plugin, api, isFloating);
     assert(ok);

@@ -9,8 +9,13 @@ include(CMakeDependentOption)
 option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
 option(KITSBLIPS_ENABLE_VST "build VSTs" ON)
 option(KITSBLIPS_ENABLE_SENTRY "Enable sentry error reporting" OFF)
+option(KITSBLIPS_RETAIL "Enable if this build is intended for end-users" OFF)
 if(APPLE)
     option(KITSBLIPS_ENABLE_AUDIOUNIT "build Audio Units" OFF)
+endif()
+
+if(KITSBLIPS_RETAIL)
+    message(STATUS "KITSBLIPS - Building For Retail")
 endif()
 
 # TODO: needed for clap-wrapper, who should really be doing this for us
@@ -39,14 +44,26 @@ target_enable_warnings(KitsBlips)
 
 target_sources(KitsBlips PRIVATE
     src/entry.cpp
-    src/chorus/chorus.cpp
-    src/distort/distort.cpp
-    src/freqshift/freqshift.cpp
     src/gui/kitguiFeature.cpp
-    src/harmonizer/harmonizer.cpp
+)
+
+# public modules
+target_sources(KitsBlips PRIVATE
     src/kitskeys/kitskeys.cpp
     src/snecho/snecho.cpp
 )
+
+if(KITSBLIPS_RETAIL)
+    target_compile_definitions(KitsBlips PUBLIC KITSBLIPS_RETAIL=1)
+else()
+    # pre-alpha modules
+    target_sources(KitsBlips PRIVATE
+        src/chorus/chorus.cpp
+        src/distort/distort.cpp
+        src/freqshift/freqshift.cpp
+        src/harmonizer/harmonizer.cpp
+    )
+endif()
 
 target_include_directories(KitsBlips PUBLIC src)
 
@@ -64,22 +81,17 @@ if(KITSBLIPS_ENABLE_GUI)
 endif()
 
 if(KITSBLIPS_ENABLE_SENTRY)
-    message(STATUS "Building with sentry.io telemetry enabled...")
-    # TODO: move into clapeze?
-    FetchContent_MakeAvailable(sentry-native)
-    if(NOT DEFINED ENV{KITSBLIPS_SENTRY_DSN})
-        message(FATAL_ERROR "Sentry requires the environment variable KITSBLIPS_SENTRY_DSN to be defined")
-    endif()
+    include(cmake/sentry.cmake)
     target_compile_definitions(KitsBlips PUBLIC
         KITSBLIPS_ENABLE_SENTRY=1
         KITSBLIPS_SENTRY_DSN="$ENV{KITSBLIPS_SENTRY_DSN}"
     )
     target_link_libraries(KitsBlips PRIVATE sentry)
-    # dummy target used to re-add the handler to the default build without pulling in the rest of sentry
-    add_custom_target(handler-dist ALL
-        COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:crashpad_handler>"  "${CMAKE_CURRENT_BINARY_DIR}/dist"
-    )
-    add_dependencies(handler-dist crashpad_handler)
+    list(APPEND DEBUGGABLE_TARGETS KitsBlips-clap)
+    if(KITSBLIPS_ENABLE_VST)
+        list(APPEND DEBUGGABLE_TARGETS KitsBlips-vst3)
+    endif()
+    enable_sentry(${DEBUGGABLE_TARGETS})
 endif()
 
 
