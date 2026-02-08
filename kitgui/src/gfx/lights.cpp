@@ -14,6 +14,7 @@
 #include <fmt/format.h>
 #include <optional>
 #include <string>
+#include <imgui.h>
 
 #include "gfx/drawables.h"
 #include "gfx/sceneGraph.h"
@@ -24,6 +25,12 @@ using namespace Magnum::Math::Literals;
 using namespace Magnum::Math::Literals::ColorLiterals;
 
 namespace kitgui {
+void LightInfo::ImGui() const {
+    if(ImGui::TreeNode(this, "Light: %s", debugName.c_str())) {
+        ImGui::Text("brightness: %f", brightness);
+        ImGui::TreePop();
+    }
+}
 
 Containers::Array<Color3> LightCache::CalculateLightColors() {
     size_t numLights = mLights.size();
@@ -52,11 +59,7 @@ void LightCache::CreateSceneLights(const Trade::SceneData& scene,
 
             ++mLightCount;
 
-            /* Save the light pointer as well, so we know what to print for
-               object selection. Lights have their own info text, so not
-               setting the type. */
-            /** @todo this doesn't handle multi-light objects */
-            objectInfo.lightId = lightId;
+            objectInfo.lightIds.push_back(lightId);
 
             /* Add a light drawable, which puts correct camera-relative
                position to lightPositions. Light colors don't change so

@@ -127,7 +127,9 @@ struct ParamTraits<Params, Params::LfoSync> : public clapeze::OnOffParam {
 
 template <>
 struct ParamTraits<Params, Params::LfoOut> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("LFO Out", cLinearCurve, -1.0f, 1.0f, 0.0f) { mFlags = CLAP_PARAM_IS_READONLY; }
+    ParamTraits() : clapeze::NumericParam("LFO Out", cLinearCurve, -1.0f, 1.0f, 0.0f) {
+        mFlags = CLAP_PARAM_IS_READONLY;
+    }
 };
 
 template <>
@@ -293,7 +295,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
             float filterQ = 0.5f * std::exp(filterSteepness * (res / (1 - res)));  // [0, 1] -> [0.5, inf]
             float filterModMix = params.Get<Params::FilterModMix>();
             float filterModAmount = params.Get<Params::FilterModAmount>() * 64.0f;
-            
+
             float lfo = params.Get<Params::LfoOut>();
 
             // env
@@ -442,9 +444,8 @@ class GuiApp : public kitgui::BaseApp {
             mKnobs.push_back(std::make_unique<kitgui::BaseParamKnob>(*mParams.GetBaseParam(id), id, knobInfo.node));
             auto objectInfo = mScene->GetObjectScreenPositionByName(knobInfo.node);
             if (objectInfo) {
-                // TODO: to size the knob appropriately we need the bounding range of the object and then transform the
-                // corners of that into screen positions. for now, hardcoded.
-                float w = 40.0f * scale;
+                float slop = 16.0f * scale;  // to allow imprecise clicking
+                float w = kitdsp::max(objectInfo->size.x(), objectInfo->size.y()) + slop;
                 float hw = w * 0.5f;
                 mKnobs.back()->mPos = {objectInfo->pos.x() - hw, objectInfo->pos.y() - hw};
                 mKnobs.back()->mWidth = w;
@@ -461,9 +462,8 @@ class GuiApp : public kitgui::BaseApp {
             mToggles.push_back(std::make_unique<kitgui::BaseParamToggle>(*mParams.GetBaseParam(id), id, knobInfo.node));
             auto objectInfo = mScene->GetObjectScreenPositionByName(knobInfo.node);
             if (objectInfo) {
-                // TODO: to size the knob appropriately we need the bounding range of the object and then transform the
-                // corners of that into screen positions. for now, hardcoded.
-                float w = 40.0f * scale;
+                float slop = 32.0f * scale;  // to allow imprecise clicking
+                float w = kitdsp::max(objectInfo->size.x(), objectInfo->size.y()) + slop;
                 float hw = w * 0.5f;
                 mToggles.back()->mPos = {objectInfo->pos.x() - hw, objectInfo->pos.y() - hw};
                 mToggles.back()->mWidth = w;

@@ -15,6 +15,7 @@ class AbstractImporter;
 namespace kitgui {
 struct MeshInfo {
     std::optional<Magnum::GL::Mesh> mesh;
+    uint32_t id{};
     uint32_t attributes{};
     uint32_t vertices{};
     uint32_t primitives{};
@@ -25,6 +26,8 @@ struct MeshInfo {
     bool hasTangents{};
     bool hasSeparateBitangents{};
     bool hasVertexColors{};
+
+    void ImGui() const;
 };
 
 struct MeshCache {

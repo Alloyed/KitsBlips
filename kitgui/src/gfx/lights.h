@@ -24,6 +24,7 @@ struct LightInfo {
     std::optional<Magnum::Trade::LightData> light;
     float brightness = 0.0f;
     std::string debugName {};
+    void ImGui() const;
 };
 
 struct LightCache {

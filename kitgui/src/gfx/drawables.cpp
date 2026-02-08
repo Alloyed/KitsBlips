@@ -194,7 +194,7 @@ Shaders::PhongGL& DrawableCache::PhongShader(Shaders::PhongGL::Flags flags, uint
 
 Magnum::SceneGraph::Drawable3D* DrawableCache::CreateDrawableFromMesh(MaterialCache& mMaterialCache,
                                                                       MeshInfo& meshInfo,
-                                                                      const ObjectInfo& objectInfo,
+                                                                      ObjectInfo& objectInfo,
                                                                       int32_t materialId,
                                                                       uint32_t lightCount,
                                                                       bool shadeless) {
@@ -208,6 +208,8 @@ Magnum::SceneGraph::Drawable3D* DrawableCache::CreateDrawableFromMesh(MaterialCa
     if (!object || !mesh) {
         return nullptr;
     }
+
+    objectInfo.meshIds.push_back(meshInfo.id);
 
     Shaders::PhongGL::Flags flags;
     if (meshInfo.hasVertexColors) {

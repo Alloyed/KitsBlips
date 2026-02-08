@@ -26,11 +26,11 @@
 #include <Magnum/Trade/PhongMaterialData.h>
 #include <Magnum/Trade/SceneData.h>
 #include <fmt/format.h>
+#include <imgui.h>
 #include <cassert>
 #include <chrono>
 #include <optional>
 #include <string>
-#include <imgui.h>
 #include "Magnum/Magnum.h"
 #include "fileContext.h"
 #include "gfx/animations.h"
@@ -83,6 +83,7 @@ struct Scene::Impl {
 
     Scene3D mScene;
     std::vector<ObjectInfo> mSceneObjects;
+    std::vector<uint32_t> mRootObjectIds;
     Object3D* mCameraObject{};
     Magnum::SceneGraph::Camera3D* mCamera;
     std::optional<Magnum::Trade::CameraData> mCameraData;
@@ -170,7 +171,15 @@ void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::strin
         const uint32_t objectId = parent.first();
         auto& objectInfo = mSceneObjects[objectId];
 
-        objectInfo.object->setParent(parent.second() == -1 ? &mScene : mSceneObjects[parent.second()].object);
+        int32_t parentId = parent.second();
+        if (parentId == -1) {
+            objectInfo.object->setParent(&mScene);
+            mRootObjectIds.push_back(objectInfo.id);
+        } else {
+            objectInfo.parentIds.push_back(parentId);
+            mSceneObjects[parentId].childIds.push_back(objectInfo.id);
+            objectInfo.object->setParent(mSceneObjects[parentId].object);
+        }
     }
 
     /* Set transformations. Objects that are not part of the hierarchy are
@@ -209,11 +218,12 @@ void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::strin
     if (scene->hasField(Trade::SceneField::Camera)) {
         for (const auto& cameraReference : scene->camerasAsArray()) {
             const uint32_t objectId = cameraReference.first();
-            const auto& objectInfo = mSceneObjects[objectId];
+            auto& objectInfo = mSceneObjects[objectId];
             Object3D* const object = objectInfo.object;
             if (!object) {
                 continue;
             }
+            objectInfo.cameraIds.push_back(cameraReference.second());
 
             if (cameraReference.second() == 0) {
                 mCameraObject = object;
@@ -343,7 +353,7 @@ void Scene::SetLightBrightnessByName(std::string_view name, float emission) {
 void Scene::Impl::SetLightBrightnessByName(std::string_view name, float emission) {
     // TODO
     for (auto& info : mLightCache.mLights) {
-        if(info.debugName == name) {
+        if (info.debugName == name) {
             return;
         }
     }
@@ -377,9 +387,21 @@ std::optional<ObjectScreenPosition> Scene::Impl::GetObjectScreenPositionByName(s
             // boundingBox
             // auto start = pointToScreen(info.object, ...);
             // auto end = pointToScreen(info.object, ...);
-            auto pos = pointToScreen(info.object, Vector3{});
-            if (pos) {
-                return ObjectScreenPosition{.pos = *pos, .size = Vector2{}};
+            if (info.meshIds.size() >= 1) {
+                // use bounding box
+                const auto& mesh = mMeshCache.mMeshes[info.meshIds[0]];
+                const auto& a = pointToScreen(info.object, mesh.boundingBox.frontTopLeft());
+                const auto& b = pointToScreen(info.object, mesh.boundingBox.backBottomRight());
+
+                if (b && a) {
+                    return ObjectScreenPosition{.pos = Vector2{(*a + *b) * 0.5f}, .size = Vector2{*b - *a}};
+                }
+            } else {
+                // 0-sized point as fallback
+                auto pos = pointToScreen(info.object, Vector3{});
+                if (pos) {
+                    return ObjectScreenPosition{.pos = *pos, .size = Vector2{}};
+                }
             }
         }
     }
@@ -423,7 +445,7 @@ void Scene::Impl::Draw() {
 
     /* Upload light positions to each subsequent shader call */
     mLightCache.mLightPositions.clear();
-    mCamera->draw(mDrawableCache.mLightDrawables); // calculates light positions as a side effect
+    mCamera->draw(mDrawableCache.mLightDrawables);  // calculates light positions as a side effect
     mDrawableCache.SetLightPositions(mLightCache.mLightPositions);
 
     /* Draw opaque stuff as usual */
@@ -455,81 +477,72 @@ void Scene::ImGui() {
 }
 
 void Scene::Impl::ImGui() {
-    if(mLoadError) {
+    if (mLoadError) {
         ImGui::Text("Load Error");
         return;
     }
-    if(!mLoaded) {
+    if (!mLoaded) {
         ImGui::Text("Loading...");
         return;
     }
-    size_t numDrawables = mDrawableCache.mOpaqueDrawables.size() +
-        mDrawableCache.mTransparentDrawables.size() +
-        mDrawableCache.mLightDrawables.size();
-    if(ImGui::CollapsingHeader(fmt::format("{} Drawables", numDrawables).c_str())) {
+
+    if (ImGui::CollapsingHeader(fmt::format("{} Objects", mSceneObjects.size()).c_str())) {
+        for (const auto id : mRootObjectIds) {
+            mSceneObjects[id].ImGui(mSceneObjects, mMeshCache.mMeshes, mLightCache.mLights);
+        }
+    }
+
+    if (ImGui::CollapsingHeader(fmt::format("{} Meshes", mMeshCache.mMeshes.size()).c_str())) {
+        for (const auto& info : mMeshCache.mMeshes) {
+            info.ImGui();
+        }
+    }
+    ImGui::Text("%ld materials", mMaterialCache.mMaterials.size());
+    ImGui::Text("%ld textures", mMaterialCache.mTextures.size());
+    if (ImGui::CollapsingHeader(fmt::format("{} Lights", mLightCache.mLightCount).c_str())) {
+        ImGui::Text("shadeless: %s", mLightCache.mShadeless ? "true" : "false");
+        ImGui::Text("brightness: %f", mLightCache.mBrightness);
+        for (const auto& info : mLightCache.mLights) {
+            if (ImGui::TreeNode(&info, "%s", info.debugName.c_str())) {
+                ImGui::Text("brightness: %f", info.brightness);
+                ImGui::TreePop();
+            }
+        }
+    }
+
+    size_t numDrawables = mDrawableCache.mOpaqueDrawables.size() + mDrawableCache.mTransparentDrawables.size() +
+                          mDrawableCache.mLightDrawables.size();
+    if (ImGui::CollapsingHeader(fmt::format("{} Drawables", numDrawables).c_str())) {
         Magnum::SceneGraph::DrawableGroup3D* drawables{};
         drawables = &mDrawableCache.mOpaqueDrawables;
         ImGui::Text("opaque: %ld", drawables->size());
-        for(size_t idx = 0; idx < drawables->size(); ++idx) {
+        for (size_t idx = 0; idx < drawables->size(); ++idx) {
             BaseDrawable& d = dynamic_cast<BaseDrawable&>((*drawables)[idx]);
             d.ImGui();
         }
 
         drawables = &mDrawableCache.mTransparentDrawables;
         ImGui::Text("transparent: %ld", drawables->size());
-        for(size_t idx = 0; idx < drawables->size(); ++idx) {
+        for (size_t idx = 0; idx < drawables->size(); ++idx) {
             BaseDrawable& d = dynamic_cast<BaseDrawable&>((*drawables)[idx]);
             d.ImGui();
         }
 
         drawables = &mDrawableCache.mLightDrawables;
         ImGui::Text("light: %ld", drawables->size());
-        for(size_t idx = 0; idx < drawables->size(); ++idx) {
+        for (size_t idx = 0; idx < drawables->size(); ++idx) {
             BaseDrawable& d = dynamic_cast<BaseDrawable&>((*drawables)[idx]);
             d.ImGui();
         }
+    }
 
-    }
-    if(ImGui::CollapsingHeader(fmt::format("{} Meshes", mMeshCache.mMeshes.size()).c_str())) {
-        for(const auto& info : mMeshCache.mMeshes) {
-            if(ImGui::TreeNode(&info, "%s", info.debugName.c_str())) {
-                ImGui::Text("objectIdCount: %d", info.objectIdCount);
-                ImGui::Text("size: %ld", info.size);
-                ImGui::Text("hasTangents: %s", info.hasTangents ? "true" : "false");
-                ImGui::Text("hasSeparateBitangents: %s", info.hasTangents ? "true" : "false");
-                ImGui::Text("hasVertexColors: %s", info.hasTangents ? "true" : "false");
-                ImGui::TreePop();
-            }
-        }
-    }
-    ImGui::Text("%ld materials", mMaterialCache.mMaterials.size());
-    ImGui::Text("%ld textures", mMaterialCache.mTextures.size());
-    if(ImGui::CollapsingHeader(fmt::format("{} Lights", mLightCache.mLightCount).c_str())) {
-        ImGui::Text("shadeless: %s", mLightCache.mShadeless ? "true" : "false");
-        ImGui::Text("brightness: %f", mLightCache.mBrightness);
-        for(const auto& info : mLightCache.mLights) {
-            if(ImGui::TreeNode(&info, "%s", info.debugName.c_str())) {
-                ImGui::Text("brightness: %f", info.brightness);
-                ImGui::TreePop();
-            }
-        }
-    }
-    // drawable cache
-    if(ImGui::CollapsingHeader(fmt::format("{} Objects", mSceneObjects.size()).c_str())) {
-        for(const auto& info : mSceneObjects) {
-            if(ImGui::TreeNode(&info, "%u: %s", info.id, info.name.c_str())) {
-                ImGui::Text("lightId: %u", info.lightId);
-                ImGui::TreePop();
-            }
-        }
-    }
-    if(ImGui::CollapsingHeader("Camera")) {
+    if (ImGui::CollapsingHeader("Camera")) {
         auto viewport = mCamera->viewport();
         ImGui::Text("viewport: %d, %d", viewport.x(), viewport.y());
     }
-    if(ImGui::CollapsingHeader(fmt::format("{} Animations", mAnimationCache.mAnimations.size()).c_str())) {
-        for(const auto& info : mAnimationCache.mAnimations) {
-            if(ImGui::TreeNode(&info, "%s", info.name.c_str())) {
+    if (ImGui::CollapsingHeader(fmt::format("{} Animations", mAnimationCache.mAnimations.size()).c_str())) {
+        for (const auto& info : mAnimationCache.mAnimations) {
+            if (ImGui::TreeNode(&info, "%s", info.name.c_str())) {
                 ImGui::TreePop();
             }
         }

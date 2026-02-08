@@ -33,6 +33,7 @@ target_sources(kitgui PRIVATE
     src/gfx/animations.cpp
     src/gfx/drawables.cpp
     src/gfx/scene.cpp
+    src/gfx/sceneGraph.cpp
     src/gfx/lights.cpp
     src/gfx/materials.cpp
     src/gfx/meshes.cpp

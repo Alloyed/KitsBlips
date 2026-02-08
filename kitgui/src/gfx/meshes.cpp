@@ -14,11 +14,22 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <imgui.h>
 #include "log.h"
 
 using namespace Magnum;
 
 namespace kitgui {
+void MeshInfo::ImGui() const {
+        if(ImGui::TreeNode(this, "Mesh: %s", debugName.c_str())) {
+            ImGui::Text("objectIdCount: %d", objectIdCount);
+            ImGui::Text("size: %ld", size);
+            ImGui::Text("hasTangents: %s", hasTangents ? "true" : "false");
+            ImGui::Text("hasSeparateBitangents: %s", hasSeparateBitangents ? "true" : "false");
+            ImGui::Text("hasVertexColors: %s", hasVertexColors ? "true" : "false");
+            ImGui::TreePop();
+        }
+}
 void MeshCache::LoadMeshes(Magnum::Trade::AbstractImporter& importer) {
     /* Load all meshes. Meshes that fail to load will be NullOpt. Remember
        which have vertex colors, so in case there's no material we can use that
@@ -29,6 +40,7 @@ void MeshCache::LoadMeshes(Magnum::Trade::AbstractImporter& importer) {
     for (uint32_t i = 0; i != importer.meshCount(); ++i) {
         mMeshes.push_back({});
         MeshInfo& mesh = mMeshes.back();
+        mesh.id = i;
         auto meshData = std::optional<Trade::MeshData>(importer.mesh(i));
         if (!meshData) {
             log::error(fmt::format("cannot load mesh {}: {} ", i, importer.meshName(i)));

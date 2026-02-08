@@ -112,7 +112,7 @@ struct DrawableCache {
     Magnum::Shaders::PhongGL& PhongShader(Magnum::Shaders::PhongGL::Flags flags, uint32_t lightCount);
     Magnum::SceneGraph::Drawable3D* CreateDrawableFromMesh(MaterialCache& mMaterialCache,
                                                            MeshInfo& meshInfo,
-                                                           const ObjectInfo& objectInfo,
+                                                           ObjectInfo& objectInfo,
                                                            int32_t materialId,
                                                            uint32_t lightCount,
                                                            bool shadeless);
