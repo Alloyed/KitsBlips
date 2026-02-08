@@ -12,9 +12,9 @@
 #include <Magnum/Trade/SceneData.h>
 
 #include <fmt/format.h>
+#include <imgui.h>
 #include <optional>
 #include <string>
-#include <imgui.h>
 
 #include "gfx/drawables.h"
 #include "gfx/sceneGraph.h"
@@ -26,21 +26,22 @@ using namespace Magnum::Math::Literals::ColorLiterals;
 
 namespace kitgui {
 void LightInfo::ImGui() const {
-    if(ImGui::TreeNode(this, "Light: %s", debugName.c_str())) {
+    if (ImGui::TreeNode(this, "Light: %s", debugName.c_str())) {
         ImGui::Text("brightness: %f", brightness);
         ImGui::TreePop();
     }
 }
 
 Containers::Array<Color3> LightCache::CalculateLightColors() {
+    // https://doc.magnum.graphics/magnum/classMagnum_1_1Shaders_1_1PhongGL.html#Shaders-PhongGL-lights
     size_t numLights = mLights.size();
-    Containers::Array<Color3> lightColorsBrightness{NoInit, numLights};
+    Containers::Array<Color3> finalLightColors{NoInit, numLights};
     for (size_t i = 0; i < numLights; ++i) {
         const auto& info = mLights[i];
         const auto& light = info.light;
-        lightColorsBrightness[i] = light->color() * light->intensity() * info.brightness * mBrightness;
+        finalLightColors[i] = light->color() * light->intensity() * info.brightness * mBrightness;
     }
-    return lightColorsBrightness;
+    return finalLightColors;
 }
 
 void LightCache::CreateSceneLights(const Trade::SceneData& scene,
@@ -57,9 +58,8 @@ void LightCache::CreateSceneLights(const Trade::SceneData& scene,
             if (!object || !light)
                 continue;
 
-            ++mLightCount;
-
             objectInfo.lightIds.push_back(lightId);
+            mLightRanges.push_back(light->range());
 
             /* Add a light drawable, which puts correct camera-relative
                position to lightPositions. Light colors don't change so

@@ -16,6 +16,8 @@ struct ObjectScreenPosition {
  * A scene represents a drawable instance of a loaded gltf/glb scene.
  * gltf scenes include drawable geometry, like 3d models, as well as camera and lighting information.
  * you can even use gltf to represent a complex 2d scene: just set it in orthographic mode!
+ *
+ * The built-in shader is Magnum::Shaders::PhongGL, which is notably _not_ PBR. We do our best, anyways.
  */
 class Scene {
    public:

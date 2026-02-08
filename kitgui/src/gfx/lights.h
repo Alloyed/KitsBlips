@@ -22,20 +22,20 @@ namespace kitgui {
 
 struct LightInfo {
     std::optional<Magnum::Trade::LightData> light;
-    float brightness = 0.0f;
-    std::string debugName {};
+    float brightness = 1.0f;
+    std::string debugName{};
     void ImGui() const;
 };
 
 struct LightCache {
     std::vector<LightInfo> mLights;
-    size_t mLightCount{};
     bool mShadeless{false};
     float mBrightness{0.0025f};
+    // calculated externally, in LightDrawable
     std::vector<Magnum::Vector4> mLightPositions;
+    std::vector<float> mLightRanges;
 
     Magnum::Containers::Array<Magnum::Color3> CalculateLightColors();
-    void CreateDefaultLightsIfNecessary(Object3D* mCameraObject, Magnum::SceneGraph::DrawableGroup3D& mLightDrawables);
     void CreateSceneLights(const Magnum::Trade::SceneData& scene,
                            std::vector<ObjectInfo>& mSceneObjects,
                            Magnum::SceneGraph::DrawableGroup3D& mLightDrawables);

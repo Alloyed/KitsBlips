@@ -7,8 +7,8 @@
 #include <Magnum/Trade/MaterialData.h>
 #include <Magnum/Trade/PhongMaterialData.h>
 #include <fmt/format.h>
-#include <vector>
 #include <imgui.h>
+#include <vector>
 
 #include "gfx/materials.h"
 #include "gfx/sceneGraph.h"
@@ -27,12 +27,7 @@ FlatDrawable::FlatDrawable(Object3D& object,
                            const Color4& color,
                            const Vector3& scale,
                            SceneGraph::DrawableGroup3D& group)
-    : BaseDrawable{object, &group},
-      mShader(shader),
-      mMesh(mesh),
-      mObjectId{objectId},
-      mColor{color},
-      mScale{scale} {}
+    : BaseDrawable{object, &group}, mShader(shader), mMesh(mesh), mObjectId{objectId}, mColor{color}, mScale{scale} {}
 
 void FlatDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera3D& camera) {
     /* Override the inherited scale, if requested */
@@ -53,7 +48,7 @@ void FlatDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera3
 }
 
 void FlatDrawable::ImGui() {
-    if(ImGui::TreeNode(this, "%d", mObjectId)) {
+    if (ImGui::TreeNode(this, "%d", mObjectId)) {
         ImGui::Text("Flat");
         ImVec4 c = {mColor.r(), mColor.g(), mColor.b(), mColor.a()};
         ImGui::ColorButton("color", c);
@@ -122,7 +117,11 @@ void PhongDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera
     if (mShadeless) {
         mShader.setAmbientColor(mColor).setDiffuseColor(0x00000000_rgbaf).setSpecularColor(0x00000000_rgbaf);
     } else {
-        mShader.setAmbientColor(mColor * 0.06f).setDiffuseColor(mColor).setSpecularColor(0x11111100_rgbaf);
+        // TODO: expose these parameters as tweakables
+        mShader.setAmbientColor(mColor * 0.05f)
+            .setDiffuseColor(mColor)
+            .setSpecularColor(0xffffff00_rgbaf * 0.4f)
+            .setShininess(80.0f);
     }
 
     if (mShader.flags() & Shaders::PhongGL::Flag::TextureTransformation) {
@@ -143,7 +142,7 @@ void PhongDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera
 }
 
 void PhongDrawable::ImGui() {
-    if(ImGui::TreeNode(this, "%d", mObjectId)) {
+    if (ImGui::TreeNode(this, "%d", mObjectId)) {
         ImGui::Text("PhongGL");
         ImVec4 c = {mColor.r(), mColor.g(), mColor.b(), mColor.a()};
         ImGui::ColorButton("color", c);
@@ -151,7 +150,7 @@ void PhongDrawable::ImGui() {
         ImGui::LabelText("hasNormal", "%s", mNormalTexture == nullptr ? "false" : "true");
         ImGui::LabelText("normalTextureScale", "%f", mNormalTextureScale);
         ImGui::LabelText("alphamask", "%f", mAlphaMask);
-        ImGui::LabelText("shadeless", "%s", mShadeless ? "true":"false");
+        ImGui::LabelText("shadeless", "%s", mShadeless ? "true" : "false");
         ImGui::TreePop();
     }
 }
@@ -166,9 +165,7 @@ void LightDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera
     mPositions.push_back(mDirectional ? Vector4{transformationMatrix.backward(), 0.0f}
                                       : Vector4{transformationMatrix.translation(), 1.0f});
 }
-void LightDrawable::ImGui() {
-}
-
+void LightDrawable::ImGui() {}
 
 Shaders::FlatGL3D& DrawableCache::FlatShader(Shaders::FlatGL3D::Flags flags) {
     auto found = mFlatShaders.find(enumCastUnderlyingType(flags));
@@ -186,8 +183,6 @@ Shaders::PhongGL& DrawableCache::PhongShader(Shaders::PhongGL::Flags flags, uint
         Shaders::PhongGL::Configuration configuration;
         configuration.setFlags(Shaders::PhongGL::Flag::ObjectId | flags).setLightCount(lightCount);
         found = mPhongShaders.emplace(enumCastUnderlyingType(flags), Shaders::PhongGL{configuration}).first;
-
-        found->second.setSpecularColor(0x11111100_rgbaf).setShininess(80.0f);
     }
     return found->second;
 }

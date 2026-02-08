@@ -27,8 +27,9 @@ struct MaterialCache;
 namespace kitgui {
 
 class BaseDrawable : public Magnum::SceneGraph::Drawable3D {
-    public:
-    explicit BaseDrawable(Object3D& object, Magnum::SceneGraph::DrawableGroup3D* group): Magnum::SceneGraph::Drawable3D(object, group) {}
+   public:
+    explicit BaseDrawable(Object3D& object, Magnum::SceneGraph::DrawableGroup3D* group)
+        : Magnum::SceneGraph::Drawable3D(object, group) {}
     virtual void ImGui() = 0;
 };
 
@@ -121,21 +122,28 @@ struct DrawableCache {
         const Corrade::Containers::ArrayView<const Magnum::Color3> colorsView(colors.data(), colors.size());
         for (auto& pair : mPhongShaders) {
             pair.second.setLightColors(colorsView);
+            pair.second.setLightSpecularColors(colorsView);
         }
     }
 
-    void SetLightPositions(const std ::span<const Magnum::Vector4>& positions) {
+    void SetLightPositions(const std::span<const Magnum::Vector4>& positions) {
         const Corrade::Containers::ArrayView<const Magnum::Vector4> positionsView(positions.data(), positions.size());
         for (auto& pair : mPhongShaders) {
             pair.second.setLightPositions(positionsView);
         }
     }
+    void SetLightRanges(const std::span<const float>& ranges) {
+        const Corrade::Containers::ArrayView<const float> rangesView(ranges.data(), ranges.size());
+        for (auto& pair : mPhongShaders) {
+            pair.second.setLightRanges(rangesView);
+        }
+    }
 
-    /* Indexed by Shaders::FlatGL3D::Flags, PhongGL::Flags or
-   MeshVisualizerGL3D::Flags but cast to an UnsignedInt because I
-   refuse to deal with the std::hash crap. */
+    // uint32_t = Shaders::FlatGL3D::Flags
     std::unordered_map<uint32_t, Magnum::Shaders::FlatGL3D> mFlatShaders;
+    // uint32_t = Shaders::PhongGL::Flags
     std::unordered_map<uint32_t, Magnum::Shaders::PhongGL> mPhongShaders;
+    // uint32_t = Shaders::MeshVisualizer3D::Flags
     std::unordered_map<uint32_t, Magnum::Shaders::MeshVisualizerGL3D> mMeshVisualizerShaders;
 
     Magnum::SceneGraph::DrawableGroup3D mOpaqueDrawables;

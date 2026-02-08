@@ -252,7 +252,7 @@ void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::strin
             const uint32_t meshId = meshMaterial.second().first();
             const int32_t materialId = meshMaterial.second().second();
             mDrawableCache.CreateDrawableFromMesh(mMaterialCache, mMeshCache.mMeshes[meshId], mSceneObjects[objectId],
-                                                  materialId, static_cast<uint32_t>(mLightCache.mLightCount),
+                                                  materialId, static_cast<uint32_t>(mLightCache.mLights.size()),
                                                   mLightCache.mShadeless);
         }
     }
@@ -306,8 +306,8 @@ void Scene::Impl::SetBrightness(std::optional<float> brightness) {
     } else {
         mLightCache.mShadeless = true;
     }
-    const auto lightColorsBrightness = mLightCache.CalculateLightColors();
-    mDrawableCache.SetLightColors(lightColorsBrightness);
+    const auto finalLightColors = mLightCache.CalculateLightColors();
+    mDrawableCache.SetLightColors(finalLightColors);
 }
 
 void Scene::PlayAnimationByName(std::string_view name) {
@@ -447,6 +447,7 @@ void Scene::Impl::Draw() {
     mLightCache.mLightPositions.clear();
     mCamera->draw(mDrawableCache.mLightDrawables);  // calculates light positions as a side effect
     mDrawableCache.SetLightPositions(mLightCache.mLightPositions);
+    mDrawableCache.SetLightRanges(mLightCache.mLightRanges);
 
     /* Draw opaque stuff as usual */
     mCamera->draw(mDrawableCache.mOpaqueDrawables);
@@ -499,7 +500,7 @@ void Scene::Impl::ImGui() {
     }
     ImGui::Text("%ld materials", mMaterialCache.mMaterials.size());
     ImGui::Text("%ld textures", mMaterialCache.mTextures.size());
-    if (ImGui::CollapsingHeader(fmt::format("{} Lights", mLightCache.mLightCount).c_str())) {
+    if (ImGui::CollapsingHeader(fmt::format("{} Lights", mLightCache.mLights.size()).c_str())) {
         ImGui::Text("shadeless: %s", mLightCache.mShadeless ? "true" : "false");
         ImGui::Text("brightness: %f", mLightCache.mBrightness);
         for (const auto& info : mLightCache.mLights) {
