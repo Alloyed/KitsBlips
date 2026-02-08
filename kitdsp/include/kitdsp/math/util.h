@@ -35,7 +35,7 @@ F fade(F a, F b, float t) {
     // this looks like lerp, but it's designed to more precisely replicate the
     // input a/b signals. it does not behave monotonically outside of the 0-1
     // range, which may be annoying in some cases.
-    float tInv = (F(1) - t);
+    float tInv = 1.0f - t;
     return (a * tInv) + (b * t);
 }
 

@@ -106,10 +106,17 @@ class VoicePool {
         }
     }
 
+    void Reset() {
+        for (VoiceIndex idx = 0; idx < mVoices.size(); idx++) {
+            StopVoice(idx);
+            mVoices[idx].voice.Reset();
+        }
+    }
+
     size_t CountNumActiveVoices() {
         size_t count = 0;
         for (VoiceIndex idx = 0; idx < mVoices.size(); idx++) {
-            if(mVoices[idx].activeNote) {
+            if (mVoices[idx].activeNote) {
                 count++;
             }
         }
@@ -174,7 +181,7 @@ class VoicePool {
                     return 1;
                 }
                 // tiebreaker: least recently used
-                if(left.age != right.age) {
+                if (left.age != right.age) {
                     return left.age < right.age ? -1 : 1;
                 }
                 return 0;
@@ -188,13 +195,13 @@ class VoicePool {
                     break;
                 } else if (nextVoiceIndex == SIZE_MAX) {
                     nextVoiceIndex = idx;
-                } else if(compare(pool.mVoices[idx], pool.mVoices[nextVoiceIndex]) == -1) {
+                } else if (compare(pool.mVoices[idx], pool.mVoices[nextVoiceIndex]) == -1) {
                     nextVoiceIndex = idx;
                 }
             }
 
             auto& nextVoiceData = pool.mVoices[nextVoiceIndex];
-            if(nextVoiceData.activeNote) {
+            if (nextVoiceData.activeNote) {
                 pool.SendNoteEnd(*(nextVoiceData.activeNote));
             }
             nextVoiceData.activeNote = note;
@@ -213,7 +220,7 @@ class VoicePool {
             }
         }
 
-        int32_t mNextAge=0;
+        int32_t mNextAge = 0;
     } mPolyVoiceStrategy{};
 
     struct MonoLastVoiceStrategy {

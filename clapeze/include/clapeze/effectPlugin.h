@@ -1,8 +1,10 @@
 #pragma once
 
+#include "clap/events.h"
 #include "clapeze/basePlugin.h"
 #include "clapeze/common.h"
 #include "clapeze/ext/audioPorts.h"
+#include "clapeze/transport.h"
 
 namespace clapeze {
 
@@ -16,12 +18,33 @@ class EffectProcessor : public BaseProcessor {
         if (mParams.ProcessEvent(event)) {
             return;
         }
+
+        if (event.space_id == CLAP_CORE_EVENT_SPACE_ID) {
+            // clap events
+            switch (event.type) {
+                case CLAP_EVENT_TRANSPORT: {
+                    const auto& transport = reinterpret_cast<const clap_event_transport_t&>(event);
+                    mTransport.ProcessEvent(transport);
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
+        }
     }
 
     virtual ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) = 0;
 
+    const Transport& GetTransport() const { return mTransport; }
+
     // impl
-    void ProcessFlush(const clap_process_t& process) final { mParams.FlushEventsFromMain(*this, process.out_events); }
+    void ProcessFlush(const clap_process_t& process) final {
+        if (process.transport) {
+            mTransport.ProcessEvent(*process.transport);
+        }
+        mParams.FlushEventsFromMain(*this, process.out_events);
+    }
     ProcessStatus ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) final {
         size_t numSamples = rangeStop - rangeStart;
         const StereoAudioBuffer in{
@@ -48,6 +71,7 @@ class EffectProcessor : public BaseProcessor {
     }
 
     ParamsType& mParams;
+    Transport mTransport{};
 };
 
 /* pre-configured for simple stereo effects */

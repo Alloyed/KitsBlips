@@ -4,9 +4,9 @@
 
 #include "clapeze/basePlugin.h"
 #include "clapeze/common.h"
-
 #include "clapeze/ext/audioPorts.h"
 #include "clapeze/ext/notePorts.h"
+#include "clapeze/transport.h"
 
 namespace clapeze {
 
@@ -25,28 +25,32 @@ class InstrumentProcessor : public BaseProcessor {
             // clap events
             switch (event.type) {
                 case CLAP_EVENT_NOTE_ON: {
-                    const clap_event_note_t& noteChange = reinterpret_cast<const clap_event_note_t&>(event);
+                    const auto& noteChange = reinterpret_cast<const clap_event_note_t&>(event);
                     NoteTuple note{noteChange.note_id, noteChange.port_index, noteChange.channel, noteChange.key};
                     ProcessNoteOn(note, static_cast<float>(noteChange.velocity));
                     break;
                 }
                 case CLAP_EVENT_NOTE_OFF: {
-                    const clap_event_note_t& noteChange = reinterpret_cast<const clap_event_note_t&>(event);
+                    const auto& noteChange = reinterpret_cast<const clap_event_note_t&>(event);
                     NoteTuple note{noteChange.note_id, noteChange.port_index, noteChange.channel, noteChange.key};
                     ProcessNoteOff(note);
                     break;
                 }
                 case CLAP_EVENT_NOTE_CHOKE: {
-                    const clap_event_note_t& noteChange = reinterpret_cast<const clap_event_note_t&>(event);
+                    const auto& noteChange = reinterpret_cast<const clap_event_note_t&>(event);
                     NoteTuple note{noteChange.note_id, noteChange.port_index, noteChange.channel, noteChange.key};
                     ProcessNoteChoke(note);
                     break;
                 }
                 case CLAP_EVENT_NOTE_EXPRESSION: {
-                    const clap_event_note_expression_t& noteChange =
-                        reinterpret_cast<const clap_event_note_expression_t&>(event);
+                    const auto& noteChange = reinterpret_cast<const clap_event_note_expression_t&>(event);
                     NoteTuple note{noteChange.note_id, noteChange.port_index, noteChange.channel, noteChange.key};
                     ProcessNoteExpression(note, noteChange.expression_id, static_cast<float>(noteChange.value));
+                    break;
+                }
+                case CLAP_EVENT_TRANSPORT: {
+                    const auto& transport = reinterpret_cast<const clap_event_transport_t&>(event);
+                    mTransport.ProcessEvent(transport);
                     break;
                 }
                 default: {
@@ -55,6 +59,8 @@ class InstrumentProcessor : public BaseProcessor {
             }
         }
     }
+
+    const Transport& GetTransport() const { return mTransport; }
 
    protected:
     // API
@@ -65,7 +71,12 @@ class InstrumentProcessor : public BaseProcessor {
     virtual void ProcessNoteExpression(const NoteTuple& note, clap_note_expression expression, float value) {}
 
     // impl
-    void ProcessFlush(const clap_process_t& process) final { mParams.FlushEventsFromMain(*this, process.out_events); }
+    void ProcessFlush(const clap_process_t& process) final {
+        if (process.transport) {
+            mTransport.ProcessEvent(*process.transport);
+        }
+        mParams.FlushEventsFromMain(*this, process.out_events);
+    }
     ProcessStatus ProcessAudio(const clap_process_t& process, size_t rangeStart, size_t rangeStop) final {
         // BaseParamsFeature::AudioParameters& params =
         // BaseParamsFeature::GetFromPlugin<BaseParamsFeature>(*this).GetStateForAudioThread();
@@ -84,6 +95,7 @@ class InstrumentProcessor : public BaseProcessor {
         return ProcessAudio(out);
     }
     ParamsType& mParams;
+    Transport mTransport{};
 };
 
 /* pre-configured for simple stereo instruments */

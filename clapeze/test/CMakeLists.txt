@@ -21,3 +21,10 @@ target_link_libraries(instrument-test
     gtest_main
 )
 add_test(NAME instrument-test COMMAND instrument-test)
+
+add_executable(transport-test transport.test.cpp)
+target_link_libraries(transport-test
+    clapeze
+    gtest_main
+)
+add_test(NAME transport-test COMMAND transport-test)

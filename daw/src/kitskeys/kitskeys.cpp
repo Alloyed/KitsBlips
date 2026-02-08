@@ -15,6 +15,8 @@
 #include <memory>
 
 #include "descriptor.h"
+#include "kitdsp/control/approach.h"
+#include "kitdsp/filters/onePole.h"
 #include "kitdsp/math/util.h"
 #include "kitgui/context.h"
 
@@ -39,6 +41,7 @@ enum class Params : clap_id {
     FilterModAmount,
     LfoRate,
     LfoShape,
+    LfoSync,
     EnvAttack,
     EnvDecay,
     EnvSustain,
@@ -59,7 +62,7 @@ enum class PolyChordType {
     Maj7,
     Min7,
 };
-const std::vector<std::vector<int32_t>> kChordNotes{
+const std::vector<std::vector<int16_t>> kChordNotes{
     {}, {0}, {0, 7}, {0, 4, 7}, {0, 3, 7}, {0, 4, 7, 10}, {0, 3, 7, 10},
 };
 constexpr size_t cMaxVoices = 16;
@@ -108,13 +111,38 @@ struct ParamTraits<Params, Params::FilterModAmount> : public clapeze::NumericPar
 };
 
 template <>
-struct ParamTraits<Params, Params::LfoRate> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Rate", cLinearCurve, 0.001f, 20.0f, 0.2f, "hz") {}
+struct ParamTraits<Params, Params::LfoRate> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("Rate", 0.0f) {}
+
+    // TODO
+    /*
+    bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
+        if (mSync) {
+        } else {
+        }
+    }
+    bool FromText(std::string_view text, double& outRawValue) const override {
+        if (mSync) {
+        } else {
+        }
+    }
+    */
+
+    void SetSync(bool sync) { mSync = sync; }
+    bool GetSync() const { return mSync; }
+
+   private:
+    bool mSync{};
 };
 
 template <>
 struct ParamTraits<Params, Params::LfoShape> : public clapeze::PercentParam {
     ParamTraits() : clapeze::PercentParam("LFO Shape", 0.0f) {}
+};
+
+template <>
+struct ParamTraits<Params, Params::LfoSync> : public clapeze::OnOffParam {
+    ParamTraits() : clapeze::OnOffParam("LFO Sync", clapeze::OnOff::Off) {}
 };
 
 template <>
@@ -234,7 +262,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
        private:
         PolyChordType mChordType{};
         int32_t mNumVoices{};
-        etl::vector<int32_t, 4> mChord{};
+        etl::vector<int16_t, 4> mChord{};
     };
 
     class Voice {
@@ -253,6 +281,14 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
         void ProcessChoke() {
             mEnv.TriggerChoke();
             mGateEnv.TriggerChoke();
+        }
+        void Reset() {
+            mOsc.Reset();
+            mGateEnv.Reset();
+            mFilter.Reset();
+            mLfo.Reset();
+            mLfoSmooth.Reset();
+            mEnv.Reset();
         }
         bool ProcessAudio(clapeze::StereoAudioBuffer& out) {
             const float sampleRate = static_cast<float>(mProcessor.GetSampleRate());
@@ -280,8 +316,18 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
                            params.Get<Params::EnvSustain>(), params.Get<Params::EnvRelease>(), sampleRate);
 
             // lfo
-            mLfo.SetFrequency(params.Get<Params::LfoRate>(), sampleRate);
+            bool lfoSync = params.Get<Params::LfoSync>() == OnOff::On;
+            float lfoRate = params.Get<Params::LfoRate>();
+            if (lfoSync) {
+                // for now, sync to 16th notes (1/6 of a beat)
+                float kSixteenth = 1.0f / 16.0f;
+                float beats = kitdsp::roundTo(kitdsp::lerp(4.0f, kSixteenth, lfoRate), kSixteenth);
+                mLfo.SetPeriod(mProcessor.GetTransport().BeatsToMs(beats), sampleRate);
+            } else {
+                mLfo.SetFrequency(kitdsp::lerp(0.001f, 20.0f, lfoRate), sampleRate);
+            }
             float lfoShape = params.Get<Params::LfoShape>();
+            mLfoSmooth.SetFrequency(1800.0f, sampleRate);
 
             // vca
             // We know this will usually be used polyphonically, so let's get some headroom
@@ -294,7 +340,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
                 // modulation
                 float lfoTri = mLfo.Process();  // [-1, 1]
                 float lfoSquare = lfoTri > 0.0f ? -1.0f : 1.0f;
-                float lfo = kitdsp::lerp(lfoTri, lfoSquare, lfoShape);
+                float lfo = mLfoSmooth.Process(kitdsp::lerp(lfoTri, lfoSquare, lfoShape));
                 float env = mEnv.Process();          // [0, 1]
                 float gateEnv = mGateEnv.Process();  // [0, 1]
 
@@ -327,6 +373,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
         // TODO: paraphony, maybe
         kitdsp::EmileSvf mFilter{};
         kitdsp::lfo::TriangleOscillator mLfo{};
+        kitdsp::OnePole mLfoSmooth{};
         kitdsp::ApproachAdsr mEnv{};
     };
 
@@ -359,7 +406,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
                                         [this](const clapeze::NoteTuple& inote) { mVoices.ProcessNoteChoke(inote); });
     }
 
-    void ProcessReset() override { mVoices.StopAllVoices(); }
+    void ProcessReset() override { mVoices.Reset(); }
 
    private:
     clapeze::VoicePool<Processor, Voice, cMaxVoices> mVoices;
