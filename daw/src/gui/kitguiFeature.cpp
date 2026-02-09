@@ -143,7 +143,30 @@ bool KitguiFeature::SetScale(double scale) {
 }
 
 bool KitguiFeature::GetSize(uint32_t& widthOut, uint32_t& heightOut) {
-    return mCtx.GetSize(widthOut, heightOut);
+    uint32_t width{};
+    uint32_t height{};
+    if (!mCtx.GetSize(width, height)) {
+        return false;
+    }
+    // logical pixels on mac/wayland, physical pixels on win/X11
+    widthOut = width;
+    heightOut = height;
+
+    if (sInitApi == ClapWindowApi::X11) {
+        // hack for x11 highdpi
+        std::string_view name = mHost.GetName();
+        if (name == "Clap Test Host"             // bad news for standardization...
+            || name == "renoise (CLAP-as-VST3)"  //
+            || name == "REAPER"                  // but not the VST wrapper?
+        ) {
+            // note that the output of mCtx is already in physical pixels, so I'm not sure why these platforms need the
+            // scale factor. in effect they must be dividing by scale internally to get the actual size....
+            double scale = mCtx.GetUIScale();
+            widthOut = static_cast<uint32_t>(static_cast<double>(width) * scale);
+            heightOut = static_cast<uint32_t>(static_cast<double>(height) * scale);
+        }
+    }
+    return true;
 }
 
 bool KitguiFeature::CanResize() {

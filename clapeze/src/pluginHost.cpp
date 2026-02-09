@@ -24,6 +24,14 @@ bool PluginHost::HostSupportsExtension(const char* extensionName) const {
     return ext != nullptr;
 }
 
+std::string_view PluginHost::GetName() const {
+    return mHost->name;
+}
+
+std::string_view PluginHost::GetVersion() const {
+    return mHost->version;
+}
+
 bool PluginHost::IsMainThread() const {
     return mThreadCheck && mThreadCheck->is_main_thread(mHost);
 }

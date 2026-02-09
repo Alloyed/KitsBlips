@@ -40,6 +40,11 @@ class PluginHost {
 
     void LogSupportMatrix() const;
 
+    /** Returns a user-friendly display string for the host's name */
+    std::string_view GetName() const;
+    /** Returns an arbitrary version number representing the host. may or may not be semver, up to the host! */
+    std::string_view GetVersion() const;
+
     /** Returns true if we are currently on the main thread */
     bool IsMainThread() const;
     /** Returns true if we are currently on the audio thread */
