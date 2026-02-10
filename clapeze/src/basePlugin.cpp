@@ -3,6 +3,7 @@
 #include <chrono>
 #include <memory>
 #include "clap/ext/latency.h"
+#include "clap/plugin.h"
 #include "clap/process.h"
 #include "clapeze/baseProcessor.h"
 #include "clapeze/ext/latency.h"
@@ -10,19 +11,10 @@
 
 namespace clapeze {
 
-BasePlugin::BasePlugin(const clap_plugin_descriptor_t& meta)
-    : mPlugin{&meta,
-              this,
-              &_init,
-              &_destroy,
-              &_activate,
-              &_deactivate,
-              &_start_processing,
-              &_stop_processing,
-              &_reset,
-              &_process,
-              &_get_extension,
-              &_on_main_thread} {}
+BasePlugin::BasePlugin(const clap_plugin_descriptor_t& descriptor)
+    : mPlugin{&descriptor,       this,    &_init,    &_destroy,       &_activate,      &_deactivate, &_start_processing,
+              &_stop_processing, &_reset, &_process, &_get_extension, &_on_main_thread},
+      mDescriptor(descriptor) {}
 
 BaseFeature* BasePlugin::TryGetFeature(const char* name) {
     if (auto search = mFeatures.find(name); search != mFeatures.end()) {
@@ -64,6 +56,10 @@ const PluginHost& BasePlugin::GetHost() const {
     return *mHost;
 }
 
+const clap_plugin_descriptor_t& BasePlugin::GetDescriptor() const {
+    return mDescriptor;
+}
+
 bool BasePlugin::Init() {
     Config();
     return ValidateConfig();
@@ -72,7 +68,7 @@ bool BasePlugin::Init() {
 bool BasePlugin::ValidateConfig() {
     if (mProcessor == nullptr) {
         mHost->Log(LogSeverity::Fatal,
-                  "mProcessor is null. did you forget to call ConfigProcessor() in your Config method?");
+                   "mProcessor is null. did you forget to call ConfigProcessor() in your Config method?");
         return false;
     }
     for (const auto& [_, feature] : mFeatures) {

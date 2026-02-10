@@ -89,9 +89,12 @@ class BasePlugin {
     PluginHost& GetHost();
     const PluginHost& GetHost() const;
 
+    const clap_plugin_descriptor_t& GetDescriptor() const;
+
     /* internal implementation*/
    private:
     clap_plugin_t mPlugin;
+    const clap_plugin_descriptor_t& mDescriptor;
     std::unordered_map<std::string, std::unique_ptr<BaseFeature>> mFeatures{};
     std::unordered_map<std::string, const void*> mExtensions{};
     std::unique_ptr<PluginHost> mHost{};

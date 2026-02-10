@@ -5,8 +5,8 @@
 #include <clapeze/effectPlugin.h>
 #include <clapeze/entryPoint.h>
 #include <clapeze/params/enumParametersFeature.h>
-#include <clapeze/state/binaryStateFeature.h>
 #include <clapeze/params/parameterTypes.h>
+#include <clapeze/state/binaryStateFeature.h>
 
 /**
  * This is the clapeze interpretation of "AGain", a classic short example plugin.
@@ -143,7 +143,6 @@ class MyPlugin : public clapeze::EffectPlugin {
         // Here we configure our parameters. if you have special requirements, you can create your own implementation of
         // ParametersFeature, and config it here.
         MyParamsFeature& params = ConfigFeature<MyParamsFeature>(GetHost(), MyParams::Count)
-                                      .Module("AGain")  // applies to subsequent parameters
                                       .Parameter<MyParams::Gain>()
                                       .Parameter<MyParams::VuPPM>()
                                       .Parameter<MyParams::Bypass>();

@@ -4,6 +4,7 @@
 #include "clapeze/baseProcessor.h"
 #include "clapeze/effectPlugin.h"
 #include "clapeze/state/binaryStateFeature.h"
+#include "clapeze/state/tomlStateFeature.h"
 #include "descriptor.h"
 
 #include <etl/memory.h>
@@ -245,21 +246,21 @@ class Plugin : public EffectPlugin {
         EffectPlugin::Config();
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
-                                    .Module("Original")
+                                    // original
                                     .Parameter<Params::Mix>()
                                     .Parameter<Params::Size>()
                                     .Parameter<Params::Feedback>()
                                     .Parameter<Params::FilterPreset>()
                                     .Parameter<Params::FreezeEcho>()
                                     .Parameter<Params::ResetHead>()
-                                    .Module("Extensions")
+                                    // extensions
                                     .Parameter<Params::Bypass>()
                                     .Parameter<Params::StereoMode>()
                                     .Parameter<Params::SizeRange>()
                                     .Parameter<Params::EchoDelayMod>()
                                     .Parameter<Params::FilterMix>()
                                     .Parameter<Params::ClearBuffer>();
-        ConfigFeature<BinaryStateFeature<ParamsFeature>>();
+        ConfigFeature<TomlStateFeature<ParamsFeature>>();
 
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>(GetHost(),

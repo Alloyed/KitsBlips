@@ -1,13 +1,13 @@
 #pragma once
 
-#include <string_view>
 #include <clap/ext/params.h>
 #include <clapeze/params/baseParameter.h>
 #include <clapeze/params/parameterTypes.h>
+#include <string_view>
 #if KITSBLIPS_ENABLE_GUI
+#include <imgui.h>
 #include <kitgui/controls/knob.h>
 #include <kitgui/controls/toggleSwitch.h>
-#include <imgui.h>
 
 namespace kitgui {
 inline bool DebugParam(const clapeze::NumericParam& param, double& inOutRawValue) {
@@ -75,12 +75,10 @@ class BaseParamKnob : public kitgui::Knob {
     explicit BaseParamKnob(const clapeze::BaseParam& param, clap_id id, std::string_view sceneNode)
         : mParam(param), mId(id), mSceneNode(sceneNode) {
         // TODO: we'll need to listen for rescans if names can ever change
-        clap_param_info_t info;
-        mParam.FillInformation(id, &info);
-        mName = info.name;
-        mMin = info.min_value;
-        mMax = info.max_value;
-        mIsStepped = (info.flags & CLAP_PARAM_IS_STEPPED) > 0;
+        mName = mParam.GetName();
+        mMin = mParam.GetRawMin();
+        mMax = mParam.GetRawMax();
+        mIsStepped = (mParam.GetFlags() & CLAP_PARAM_IS_STEPPED) > 0;
     }
     ~BaseParamKnob() override = default;
     clap_id GetParamId() const { return mId; }
@@ -97,9 +95,7 @@ class BaseParamKnob : public kitgui::Knob {
         buf = buf.c_str();
         return buf;
     }
-    bool FromValueText(std::string_view text, double& value) const override {
-        return mParam.FromText(text, value);
-    }
+    bool FromValueText(std::string_view text, double& value) const override { return mParam.FromText(text, value); }
 
    private:
     const clapeze::BaseParam& mParam;
@@ -114,9 +110,7 @@ class BaseParamToggle : public kitgui::ToggleSwitch {
     explicit BaseParamToggle(const clapeze::BaseParam& param, clap_id id, std::string_view sceneNode)
         : mParam(param), mId(id), mSceneNode(sceneNode) {
         // TODO: we'll need to listen for rescans if names can ever change
-        clap_param_info_t info;
-        mParam.FillInformation(id, &info);
-        mName = info.name;
+        mName = mParam.GetName();
     }
     ~BaseParamToggle() override = default;
     clap_id GetParamId() const { return mId; }

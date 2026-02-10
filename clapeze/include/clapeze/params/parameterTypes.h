@@ -9,18 +9,7 @@
 #include <cstring>
 #include <string_view>
 #include "clapeze/params/baseParameter.h"
-
-namespace clapeze_impl {
-/* safe alternative to strcpy when the buffer size is known at compile time. assumes the buffer is zero'd out in
- * advance*/
-template <size_t BUFFER_SIZE>
-void stringCopy(char (&buffer)[BUFFER_SIZE], std::string_view src) {
-    static_assert(BUFFER_SIZE > 0);
-    // copy at most BUFFER_SIZE-1 bytes. the last byte is reserved for the null terminator
-    // NOLINTNEXTLINE
-    std::memcpy(buffer, src.data(), std::min(src.length(), BUFFER_SIZE - 1));
-}
-}  // namespace clapeze_impl
+#include "clapeze/stringUtils.h"
 
 namespace clapeze {
 struct ParamCurve {
@@ -56,14 +45,17 @@ struct NumericParam : public BaseParam {
                  float mDefaultValue,
                  std::string_view mUnit = "")
         : mName(mName), mCurve(curve), mMin(mMin), mMax(mMax), mDefaultValue(mDefaultValue), mUnit(mUnit) {}
-    bool FillInformation(clap_id id, clap_param_info_t* information) const override;
-    const std::string& GetName() const override { return mName; }
-    const std::string& GetTooltip() const override { static const std::string kEmpty = ""; return kEmpty; }
+    clap_param_info_flags GetFlags() const override { return mFlags; }
+    double GetRawMin() const override { return 0.0; }
+    double GetRawMax() const override { return 1.0; }
     double GetRawDefault() const override;
+    const std::string& GetName() const override { return mName; }
+
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override;
     bool FromText(std::string_view text, double& outRawValue) const override;
     bool ToValue(double rawValue, float& out) const;
     bool FromValue(float in, double& outRaw) const;
+    const std::string& GetKey() const override { return mName; }
 
     const std::string mName;
     const ParamCurve mCurve;
@@ -109,12 +101,16 @@ struct IntegerParam : public BaseParam {
           mUnit(mUnit),
           mUnitSingular(mUnitSingular) {}
 
-    bool FillInformation(clap_id id, clap_param_info_t* information) const override;
+    clap_param_info_flags GetFlags() const override { return mFlags; }
+    double GetRawMin() const override { return mMin; }
+    double GetRawMax() const override { return mMax; }
+    double GetRawDefault() const override { return mDefaultValue; }
     const std::string& GetName() const override { return mName; }
-    const std::string& GetTooltip() const override { static const std::string kEmpty = ""; return kEmpty; }
-    double GetRawDefault() const override;
+
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override;
     bool FromText(std::string_view text, double& outRawValue) const override;
+    const std::string& GetKey() const override { return mName; }
+
     bool ToValue(double rawValue, int32_t& out) const;
     bool FromValue(int32_t in, double& outRaw) const;
 
@@ -136,25 +132,15 @@ struct EnumParam : public BaseParam {
     using _valuetype = TEnum;
     EnumParam(std::string_view mName, const std::vector<std::string>& mLabels, TEnum mDefaultValue)
         : mName(mName), mLabels(mLabels), mDefaultValue(mDefaultValue) {}
-    bool FillInformation(clap_id id, clap_param_info_t* information) const override {
-        memset(information, 0, sizeof(clap_param_info_t));
-        information->id = id;
-        information->flags = mFlags;
-        information->min_value = 0;
-        information->max_value = static_cast<double>(mLabels.size() - 1);
-        information->default_value = GetRawDefault();
-        clapeze_impl::stringCopy(information->name, mName);
-        clapeze_impl::stringCopy(information->module, GetModule());
 
-        return true;
-    }
+    clap_param_info_flags GetFlags() const override { return mFlags; }
+    double GetRawMin() const override { return 0.0; }
+    double GetRawMax() const override { return static_cast<double>(mLabels.size() - 1); }
+    double GetRawDefault() const override { return static_cast<double>(mDefaultValue); }
     const std::string& GetName() const override { return mName; }
-    const std::string& GetTooltip() const override { static const std::string kEmpty = ""; return kEmpty; }
-    double GetRawDefault() const override {
-        double rawDefault{};
-        FromValue(mDefaultValue, rawDefault);
-        return rawDefault;
-    }
+
+    const std::string& GetKey() const override { return mName; }
+
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
         size_t index = static_cast<size_t>(rawValue);
         if (index < mLabels.size()) {
@@ -197,4 +183,5 @@ struct OnOffParam : public EnumParam<OnOff> {
    public:
     OnOffParam(std::string_view name, OnOff defaultValue) : EnumParam(name, {"Off", "On"}, defaultValue) {}
 };
+
 }  // namespace clapeze

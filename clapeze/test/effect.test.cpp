@@ -43,7 +43,6 @@ TEST_F(EffectPlugin, hasParameters) {
     ASSERT_TRUE(params->get_info(plugin, 0, &info));
     EXPECT_EQ(info.id, static_cast<clap_id>(MyParams::Gain));
     EXPECT_STREQ(info.name, "Gain");
-    EXPECT_STREQ(info.module, "AGain");
     // numeric param, 0-1
     EXPECT_DOUBLE_EQ(info.min_value, 0.0);
     EXPECT_DOUBLE_EQ(info.max_value, 1.0);

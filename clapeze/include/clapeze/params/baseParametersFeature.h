@@ -6,6 +6,7 @@
 #include <cstdint>
 #include "clapeze/basePlugin.h"
 #include "clapeze/params/baseParameter.h"
+#include "clapeze/stringUtils.h"
 
 namespace clapeze::params {
 enum class ChangeType : uint8_t { SetValue, SetModulation, StartGesture, StopGesture };
@@ -185,9 +186,9 @@ size_t BaseParametersFeature<TMainHandle, TAudioHandle>::GetNumParams() const {
 }
 template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 void BaseParametersFeature<TMainHandle, TAudioHandle>::ResetAllParamsToDefault() {
-    for(clap_id id = 0; id < mNumParams; ++id) {
+    for (clap_id id = 0; id < mNumParams; ++id) {
         mMain.SetRawValue(id, GetBaseParam(id)->GetRawDefault());
-        //RequestClear(id); // resets automation? idk if necessary
+        // RequestClear(id); // resets automation? idk if necessary
     }
     RequestRescan(CLAP_PARAM_RESCAN_VALUES);
 }
@@ -205,7 +206,15 @@ template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 
     const BaseParam* param = self.GetBaseParam(index);
     if (param != nullptr) {
-        return param->FillInformation(index, information);
+        memset(information, 0, sizeof(clap_param_info_t));
+        information->id = index;
+        information->flags = param->GetFlags();
+        information->min_value = param->GetRawMin();
+        information->max_value = param->GetRawMax();
+        information->default_value = param->GetRawDefault();
+        stringCopy(information->name, param->GetName());
+        stringCopy(information->module, param->GetModule());
+        return information;
     }
     return false;
 }

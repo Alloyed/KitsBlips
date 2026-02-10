@@ -8,7 +8,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
-#include <string_view>
 
 #include "clap/events.h"
 #include "clapeze/params/baseParametersFeature.h"
@@ -68,18 +67,10 @@ class DynamicParametersFeature : public BaseParametersFeature<DynamicMainHandle,
     DynamicParametersFeature(PluginHost& host, clap_id numParams) : BaseParametersFeature(host, numParams) {}
 
     DynamicParametersFeature& Parameter(clap_id id, BaseParam* param) {
-        param->SetModule(mNextModule);
         mParams[id].reset(param);
         mMain.SetRawValue(id, mParams[id]->GetRawDefault());
         return *this;
     }
-
-    DynamicParametersFeature& Module(std::string_view moduleName) {
-        mNextModule = moduleName;
-        return *this;
-    }
-
-    std::string_view mNextModule = "";
 };
 
 // impl

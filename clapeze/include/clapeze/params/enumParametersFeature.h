@@ -108,14 +108,8 @@ class EnumParametersFeature : public BaseParametersFeature<EnumMainHandle, EnumP
         using ParamType = ParamTraits<TParamId, id>;
         clap_id index = static_cast<clap_id>(id);
         ParamType* param = new ParamType();
-        param->SetModule(mNextModule);
         BaseType::mParams[index].reset(param);
         BaseType::mMain.SetRawValue(index, param->GetRawDefault());
-        return *this;
-    }
-
-    EnumParametersFeature& Module(std::string_view moduleName) {
-        mNextModule = moduleName;
         return *this;
     }
 
@@ -125,8 +119,6 @@ class EnumParametersFeature : public BaseParametersFeature<EnumMainHandle, EnumP
         clap_id index = static_cast<clap_id>(id);
         return static_cast<const TParam*>(BaseType::GetBaseParam(index));
     }
-
-    std::string_view mNextModule = "";
 };
 
 // impl

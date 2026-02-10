@@ -46,8 +46,8 @@ class NoopStateFeature : public BaseFeature {
         auto& host = BasePlugin::GetFromPluginObject(plugin).GetHost();
 
         params.FlushFromAudio();  // empty queue so changes apply on top
-        // TODO we can't use clap_istream_streambuf because it doesn't implement random seek, and toml::parse() expects
-        // that. full example at https://stackoverflow.com/a/79746417
+
+        // loading file just to ensure we can, and log the results
         std::string file;
         std::string chunk(256, '\0');
         int64_t size{};

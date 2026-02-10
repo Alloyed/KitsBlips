@@ -1,47 +1,8 @@
 #include "clapeze/params/parameterTypes.h"
 
-#include <charconv>
-#include <cstring>
 #include <string_view>
-#include "clap/ext/params.h"
-#include "fmt/base.h"
 
 using namespace clapeze;
-using namespace clapeze_impl;
-
-bool parseNumberFromText(std::string_view input, double& out) {
-#ifdef __APPLE__
-    // Apple doesn't support charconv properly yet (2026/1/7, apple clang 14)
-    std::string tmp;
-    out = std::strtod(tmp.c_str(), nullptr);
-    return true;
-#else
-    const char* first = input.data();
-    const char* last = input.data() + input.size();
-    const auto [ptr, ec] = std::from_chars(first, last, out);
-    return ec == std::errc{} && ptr == last;
-#endif
-}
-
-template <typename... Args>
-void formatToSpan(etl::span<char>& buf, fmt::format_string<Args...> fmt, Args&&... args) {
-    // -1 to save space for null terminator
-    auto result = fmt::format_to_n(buf.data(), buf.size() - 1, fmt, std::forward<Args>(args)...);
-    // now, actually null terminate
-    *result.out = '\0';
-}
-
-bool NumericParam::FillInformation(clap_id id, clap_param_info_t* information) const {
-    memset(information, 0, sizeof(clap_param_info_t));
-    information->id = id;
-    information->flags = mFlags;
-    information->min_value = 0.0;
-    information->max_value = 1.0;
-    information->default_value = GetRawDefault();
-    stringCopy(information->name, mName);
-    stringCopy(information->module, GetModule());
-    return true;
-}
 
 double NumericParam::GetRawDefault() const {
     double rawDefault{};
@@ -100,23 +61,6 @@ bool PercentParam::FromText(std::string_view text, double& outRawValue) const {
         return false;
     }
     return FromValue(static_cast<float>(in) / 100.0f, outRawValue);
-}
-
-bool IntegerParam::FillInformation(clap_id id, clap_param_info_t* information) const {
-    memset(information, 0, sizeof(clap_param_info_t));
-    information->id = id;
-    information->flags = mFlags;
-    information->min_value = static_cast<double>(mMin);
-    information->max_value = static_cast<double>(mMax);
-    information->default_value = GetRawDefault();
-    stringCopy(information->name, mName);
-    return true;
-}
-
-double IntegerParam::GetRawDefault() const {
-    double rawDefault{};
-    FromValue(mDefaultValue, rawDefault);
-    return rawDefault;
 }
 
 bool IntegerParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {

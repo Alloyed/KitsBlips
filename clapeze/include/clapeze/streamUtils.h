@@ -1,11 +1,19 @@
 #pragma once
 
 #include <clap/clap.h>
+#include <istream>
+#include <ostream>
 #include <streambuf>
+#include "clap/stream.h"
 
 namespace clapeze {
-/** wraps a clap_istream_t into a std::streambuf for use with iostream-based APIs. */
+/**
+ * Wraps a clap_istream_t into a std::streambuf for use with iostream-based APIs.
+ *
+ * if your api expects seeking, this won't work! instead use clap_istream_tostring.
+ */
 class clap_istream_streambuf : public std::streambuf {
+    // TODO: seek support. full example at https://stackoverflow.com/a/79746417
    public:
     explicit clap_istream_streambuf(const clap_istream_t* in) : mIn(in) {}
 
@@ -34,7 +42,21 @@ class clap_istream_streambuf : public std::streambuf {
     char mBuffer[kBufferSize];
 };
 
-/** wraps a clap_ostream_t into a std::streambuf for use with iostream-based APIs. */
+class clap_istream : public std::basic_istream<char> {
+    clap_istream_streambuf mBuf;
+
+   public:
+    explicit clap_istream(const clap_istream_t* out) : basic_istream(nullptr), mBuf(out) { this->init(&mBuf); }
+};
+
+inline std::string clap_istream_tostring(const clap_istream_t* in) {
+    clap_istream stream(in);
+    return std::string((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+}
+
+/**
+ * wraps a clap_ostream_t into a std::streambuf for use with iostream-based APIs.
+ */
 class clap_ostream_streambuf : public std::streambuf {
    public:
     explicit clap_ostream_streambuf(const clap_ostream_t* out) : mOut(out) {}
@@ -60,6 +82,13 @@ class clap_ostream_streambuf : public std::streambuf {
 
    private:
     const clap_ostream_t* mOut;
+};
+
+class clap_ostream : public std::basic_ostream<char> {
+    clap_ostream_streambuf mBuf;
+
+   public:
+    explicit clap_ostream(const clap_ostream_t* out) : basic_ostream(nullptr), mBuf(out) { this->init(&mBuf); }
 };
 
 }  // namespace clapeze

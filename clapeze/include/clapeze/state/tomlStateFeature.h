@@ -2,15 +2,17 @@
 
 #include <clap/clap.h>
 #include <clap/ext/params.h>
-#include <charconv>
 #include <cstdio>
-#include <sstream>
+#include <cwchar>
 #include <toml++/toml.hpp>
 
+#include "clap/plugin.h"
 #include "clapeze/basePlugin.h"
+#include "clapeze/ext/baseFeature.h"
 #include "clapeze/params/baseParameter.h"
 #include "clapeze/pluginHost.h"
-#include "clapeze/state/stateUtils.h"
+#include "clapeze/streamUtils.h"
+#include "clapeze/stringUtils.h"
 
 namespace clapeze {
 
@@ -26,6 +28,7 @@ namespace clapeze {
 template <class TParamsFeature>
 class TomlStateFeature : public BaseFeature {
    public:
+    explicit TomlStateFeature() {}
     static constexpr auto NAME = CLAP_EXT_STATE;
     const char* Name() const override { return NAME; }
     void Configure(BasePlugin& self) override {
@@ -39,27 +42,30 @@ class TomlStateFeature : public BaseFeature {
     bool Validate(const BasePlugin& plugin) const override { return true; }
 
    private:
-    static bool _save(const clap_plugin_t* plugin, const clap_ostream_t* out) {
-        TParamsFeature& feature = TParamsFeature::template GetFromPluginObject<TParamsFeature>(plugin);
+    // TODO: you should subclass to get migration functionality i think
+    uint32_t mSaveVersion = 0;
+    static bool _save(const clap_plugin_t* _plugin, const clap_ostream_t* out) {
+        BasePlugin& plugin = BasePlugin::GetFromPluginObject(_plugin);
+        TParamsFeature& params = BaseFeature::GetFromPlugin<TParamsFeature>(plugin);
+        TomlStateFeature<TParamsFeature>& self = BaseFeature::GetFromPlugin<TomlStateFeature<TParamsFeature>>(plugin);
+        const clap_plugin_descriptor_t& desc = plugin.GetDescriptor();
 
-        feature.FlushFromAudio();  // empty queue to ensure newest changes
-        auto& handle = feature.GetMainHandle();
+        params.FlushFromAudio();  // empty queue to ensure newest changes
+        auto& handle = params.GetMainHandle();
 
         toml::table paramkv{};
-        size_t numParams = feature.GetNumParams();
+        size_t numParams = params.GetNumParams();
         for (clap_id id = 0; id < numParams; ++id) {
-            const BaseParam* param = feature.GetBaseParam(id);
-            clap_param_info_t info;
-            param->FillInformation(id, &info);
-            // TODO: obviously wrong, each param should have a computer-safe key associated
-            std::string key = fmt::format("{:03d}/{}", id, info.name);
+            const BaseParam* param = params.GetBaseParam(id);
+            // TODO: remove id
+            std::string key = fmt::format("{:03d}/{}", id, param->GetKey());
 
             double raw = handle.GetRawValue(id);
             paramkv.insert(key, raw);
         }
 
-        // TODO meta
-        toml::table file{{"_meta", toml::table{{"version", 0}, {"plugin", "halp"}}}, {"params", paramkv}};
+        toml::table file{{"_meta", toml::table{{"version", self.mSaveVersion}, {"plugin", desc.id}}},
+                         {"params", paramkv}};
 
         clap_ostream_streambuf buf(out);
         std::ostream stream(&buf);
@@ -68,62 +74,54 @@ class TomlStateFeature : public BaseFeature {
         return stream.good();
     }
 
-    static bool _load(const clap_plugin_t* plugin, const clap_istream_t* in) {
-        TParamsFeature& params = TParamsFeature::template GetFromPluginObject<TParamsFeature>(plugin);
-        auto& host = BasePlugin::GetFromPluginObject(plugin).GetHost();
+    static bool _load(const clap_plugin_t* _plugin, const clap_istream_t* in) {
+        BasePlugin& plugin = BasePlugin::GetFromPluginObject(_plugin);
+        TParamsFeature& params = BaseFeature::GetFromPlugin<TParamsFeature>(plugin);
+        // TomlStateFeature<TParamsFeature>& self =
+        // BaseFeature::GetFromPlugin<TomlStateFeature<TParamsFeature>>(plugin);
+        const clap_plugin_descriptor_t& desc = plugin.GetDescriptor();
+        PluginHost& host = plugin.GetHost();
 
         params.FlushFromAudio();  // empty queue so changes apply on top
         auto& handle = params.GetMainHandle();
 
-        // Sometimes useful in development to throw away old format files
-        bool kError = false; // normal
-        //bool kError = true; // ignore errors
-
         // TODO we can't use clap_istream_streambuf because it doesn't implement random seek, and toml::parse() expects
-        // that. full example at https://stackoverflow.com/a/79746417
-        std::string file;
-        std::string chunk(256, '\0');
-        int64_t size{};
-        while (size = in->read(in, chunk.data(), chunk.size()), size > 0) {
-            file.append(chunk.begin(), chunk.begin() + size);
-        }
-        if (size == -1) {
-            // read error
-            return kError;
-        }
-
+        // that.
         host.Log(clapeze::LogSeverity::Debug, "loading file");
+        std::string file = clap_istream_tostring(in);
         auto result = toml::parse(file);
         if (!result) {
             // parse error
-            std::stringstream ss;
-            ss << result.error().source();
-            host.LogFmt(clapeze::LogSeverity::Warning, "loading, could not parse toml: {}\nsrc: {}",
-                        result.error().description(), ss.str());
-            return kError;
-        }
-
-        // TODO validate meta
-        auto savedParams = result.table()["params"].as_table();
-        if (!savedParams) {
-            // no params
-            host.Log(clapeze::LogSeverity::Warning, "loading, no params table (malformed preset?)");
-            return kError;
-        }
-
-        auto parseNumberFromText = [](std::string_view input, double& out) -> bool {
-#ifdef __APPLE__
-            // Apple doesn't support charconv properly yet (2026/1/7, apple clang 14)
-            std::string tmp;
-            out = std::strtod(tmp.c_str(), nullptr);
+            host.LogFmt(clapeze::LogSeverity::Warning, "loading, could not parse toml: {}",
+                        result.error().description());
             return true;
-#else
-            const char* first = input.data();
-            const char* last = input.data() + input.size();
-            const auto [ptr, ec] = std::from_chars(first, last, out);
-            return ec == std::errc{} && ptr == last;
-#endif
-        };
+        }
+
+        auto& table = result.table();
+        auto meta = table["_meta"].as_table();
+        if (!meta) {
+            host.Log(clapeze::LogSeverity::Warning, "loading, no _meta table (malformed preset?)");
+            return true;
+        }
+
+        if (auto s = meta->get_as<std::string>("plugin"); !s || **s != desc.id) {
+            host.LogFmt(clapeze::LogSeverity::Warning, "loading, wrong plugin id (expected '{}', got '{}')", desc.id,
+                        s ? **s : "nullptr");
+            return true;
+        }
+
+        // if (auto v = meta->get("version")->value_or(0u); v != self.mSaveVersion) {
+        //     if (!self.mMigrator(table, v)) {
+        //         host.LogFmt(clapeze::LogSeverity::Warning, "loading, migration failed");
+        //         return true;
+        //     }
+        // }
+
+        auto savedParams = table["params"].as_table();
+        if (!savedParams) {
+            host.Log(clapeze::LogSeverity::Warning, "loading, no params table (malformed preset?)");
+            return true;
+        }
 
         // TODO: obviously wrong, each param should have a computer-safe key associated
         for (const auto& [k, v] : *savedParams) {

@@ -628,35 +628,28 @@ class Plugin : public InstrumentPlugin {
         InstrumentPlugin::Config();
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
-                                    .Module("Voicing")
                                     .Parameter<Params::PolyCount>()
                                     .Parameter<Params::PolyChordType>()
-                                    .Module("Oscillator")
                                     .Parameter<Params::OscOctave>()
                                     .Parameter<Params::OscTune>()
                                     .Parameter<Params::OscModMix>()
                                     .Parameter<Params::OscModAmount>()
-                                    .Module("Filter")
                                     .Parameter<Params::FilterCutoff>()
                                     .Parameter<Params::FilterResonance>()
                                     .Parameter<Params::FilterModAmount>()
                                     .Parameter<Params::FilterModMix>()
-                                    .Module("LFO")
                                     .Parameter<Params::LfoRate>()
                                     .Parameter<Params::LfoShape>()
                                     .Parameter<Params::LfoSync>()
                                     .Parameter<Params::LfoOut>()
-                                    .Module("ADSR")
                                     .Parameter<Params::EnvAttack>()
                                     .Parameter<Params::EnvDecay>()
                                     .Parameter<Params::EnvSustain>()
                                     .Parameter<Params::EnvRelease>()
-                                    .Module("VCA")
                                     .Parameter<Params::VcaGain>()
                                     .Parameter<Params::VcaEnvDisabled>()
                                     .Parameter<Params::VcaLfoAmount>();
-        ConfigFeature<clapeze::TomlStateFeature<ParamsFeature>>();
-        // ConfigFeature<clapeze::NoopStateFeature<ParamsFeature>>();
+        ConfigFeature<TomlStateFeature<ParamsFeature>>();
 
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<clapeze::AssetsFeature>(GetHost());
