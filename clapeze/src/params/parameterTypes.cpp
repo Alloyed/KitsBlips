@@ -45,6 +45,25 @@ bool NumericParam::FromValue(float in, double& outRaw) const {
     return true;
 }
 
+/* static */ double NumericParam::ConvertToRange(double inRaw,
+                                                 float fromMin,
+                                                 float fromMax,
+                                                 const ParamCurve& fromCurve,
+                                                 float toMin,
+                                                 float toMax,
+                                                 const ParamCurve& toCurve) {
+    NumericParam tmpFrom("", "", fromMin, fromMax, 0.0f);
+    tmpFrom.mCurve = fromCurve;
+    NumericParam tmpTo("", "", toMin, toMax, 0.0f);
+    tmpFrom.mCurve = toCurve;
+
+    float realValue{};
+    double outRaw{};
+    tmpFrom.ToValue(inRaw, realValue);
+    tmpTo.FromValue(realValue, outRaw);
+    return outRaw;
+}
+
 bool PercentParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
     float displayValue = 0.0f;
     if (!ToValue(rawValue, displayValue)) {

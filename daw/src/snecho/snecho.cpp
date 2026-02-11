@@ -3,7 +3,6 @@
 #include <clapeze/params/parameterTypes.h>
 #include "clapeze/baseProcessor.h"
 #include "clapeze/effectPlugin.h"
-#include "clapeze/state/binaryStateFeature.h"
 #include "clapeze/state/tomlStateFeature.h"
 #include "descriptor.h"
 

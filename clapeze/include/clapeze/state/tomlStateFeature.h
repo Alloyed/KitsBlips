@@ -12,23 +12,13 @@
 #include "clapeze/params/baseParameter.h"
 #include "clapeze/pluginHost.h"
 #include "clapeze/streamUtils.h"
-#include "clapeze/stringUtils.h"
 
 namespace clapeze {
 
-/*
- * Saves and loads parameter state. Depends on ParametersFeature.
- * TODO:
- *  - plain text format (xml? toml?)
- *  - migrations/versioning
- *  - non-parameter state
- *  - samples/wavetables?
- *  - presets?
- */
 template <class TParamsFeature>
 class TomlStateFeature : public BaseFeature {
    public:
-    explicit TomlStateFeature() {}
+    explicit TomlStateFeature(uint32_t saveVersion = 0) : mSaveVersion(saveVersion) {}
     static constexpr auto NAME = CLAP_EXT_STATE;
     const char* Name() const override { return NAME; }
     void Configure(BasePlugin& self) override {
@@ -41,9 +31,13 @@ class TomlStateFeature : public BaseFeature {
 
     bool Validate(const BasePlugin& plugin) const override { return true; }
 
+    // customization points
+    virtual bool OnMigrate(toml::table& t, uint32_t currentVersion, uint32_t targetVersion) const { return true; }
+    virtual bool OnSave(toml::table& t) const { return true; }
+    virtual bool OnLoad(const toml::table& t) { return true; }
+
    private:
-    // TODO: you should subclass to get migration functionality i think
-    uint32_t mSaveVersion = 0;
+    uint32_t mSaveVersion;
     static bool _save(const clap_plugin_t* _plugin, const clap_ostream_t* out) {
         BasePlugin& plugin = BasePlugin::GetFromPluginObject(_plugin);
         TParamsFeature& params = BaseFeature::GetFromPlugin<TParamsFeature>(plugin);
@@ -63,6 +57,10 @@ class TomlStateFeature : public BaseFeature {
         toml::table file{{"_meta", toml::table{{"version", self.mSaveVersion}, {"plugin", desc.id}}},
                          {"params", paramkv}};
 
+        if (!self.OnSave(file)) {
+            return false;
+        }
+
         clap_ostream_streambuf buf(out);
         std::ostream stream(&buf);
         stream << file;
@@ -73,16 +71,13 @@ class TomlStateFeature : public BaseFeature {
     static bool _load(const clap_plugin_t* _plugin, const clap_istream_t* in) {
         BasePlugin& plugin = BasePlugin::GetFromPluginObject(_plugin);
         TParamsFeature& params = BaseFeature::GetFromPlugin<TParamsFeature>(plugin);
-        // TomlStateFeature<TParamsFeature>& self =
-        // BaseFeature::GetFromPlugin<TomlStateFeature<TParamsFeature>>(plugin);
+        TomlStateFeature<TParamsFeature>& self = BaseFeature::GetFromPlugin<TomlStateFeature<TParamsFeature>>(plugin);
         const clap_plugin_descriptor_t& desc = plugin.GetDescriptor();
         PluginHost& host = plugin.GetHost();
 
         params.FlushFromAudio();  // empty queue so changes apply on top
         auto& handle = params.GetMainHandle();
 
-        // TODO we can't use clap_istream_streambuf because it doesn't implement random seek, and toml::parse() expects
-        // that.
         host.Log(clapeze::LogSeverity::Debug, "loading file");
         std::string file = clap_istream_tostring(in);
         auto result = toml::parse(file);
@@ -106,12 +101,12 @@ class TomlStateFeature : public BaseFeature {
             return true;
         }
 
-        // if (auto v = meta->get("version")->value_or(0u); v != self.mSaveVersion) {
-        //     if (!self.mMigrator(table, v)) {
-        //         host.LogFmt(clapeze::LogSeverity::Warning, "loading, migration failed");
-        //         return true;
-        //     }
-        // }
+        if (auto v = meta->get("version")->value_or(0u); v != self.mSaveVersion) {
+            if (!self.OnMigrate(table, v, self.mSaveVersion)) {
+                host.LogFmt(clapeze::LogSeverity::Warning, "loading, migration failed");
+                return true;
+            }
+        }
 
         auto savedParams = table["params"].as_table();
         if (!savedParams) {
@@ -119,7 +114,6 @@ class TomlStateFeature : public BaseFeature {
             return true;
         }
 
-        // TODO: obviously wrong, each param should have a computer-safe key associated
         for (const auto& [keyNode, valueNode] : *savedParams) {
             if (auto id = params.GetIdFromKey(keyNode.str())) {
                 double value = valueNode.value_or(0.0);
@@ -127,6 +121,10 @@ class TomlStateFeature : public BaseFeature {
             } else {
                 host.LogFmt(clapeze::LogSeverity::Warning, "loading, skipping unknown key: {}", keyNode.str());
             }
+        }
+
+        if (!self.OnLoad(table)) {
+            return false;
         }
 
         return true;

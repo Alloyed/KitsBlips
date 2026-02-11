@@ -16,10 +16,10 @@ struct ParamCurve {
     float (*fromCurved)(float);
 };
 constexpr ParamCurve cLinearCurve{[](float x) { return x; }, [](float x) { return x; }};
-template <auto K>
+template <float K>
 constexpr ParamCurve cPowCurve{[](float x) { return std::clamp(std::exp2(K * std::log2(x)), 0.0f, 1.0f); },
                                [](float x) { return std::clamp(std::exp2(std::log2(x) / K), 0.0f, 1.0f); }};
-template <auto K>
+template <float K>
 constexpr ParamCurve cPowBipolarCurve{[](float x) {
                                           float xb = 2.0f * (x - 0.5f);  // to -1, 1
                                           float xexp = std::copysign(std::exp2(K * std::log2(std::abs(xb))), xb);
@@ -55,6 +55,15 @@ struct NumericParam : public BaseParam {
     bool ToValue(double rawValue, float& out) const;
     bool FromValue(float in, double& outRaw) const;
     const std::string& GetKey() const override { return mKey; }
+
+    /** Primarily intended for save migrating: if you change the range use this to change old saved values, too */
+    static double ConvertToRange(double inRaw,
+                                 float fromMin,
+                                 float fromMax,
+                                 const ParamCurve& fromCurve,
+                                 float toMin,
+                                 float toMax,
+                                 const ParamCurve& toCurve);
 
     const std::string mKey;
     std::string mName;

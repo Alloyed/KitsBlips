@@ -14,7 +14,6 @@
 #include <kitdsp/osc/blepOscillator.h>
 #include <memory>
 
-#include "clapeze/pluginHost.h"
 #include "descriptor.h"
 #include "kitdsp/filters/onePole.h"
 #include "kitdsp/math/util.h"
@@ -198,7 +197,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
        public:
         template <typename T>
         void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity, T callback) {
-            for (auto noteOffset : mChord) {
+            for (int16_t noteOffset : mChord) {
                 clapeze::NoteTuple tmp = note;
                 tmp = note;
                 // TODO: we need to reassign ids. to have N voices per id they
@@ -206,7 +205,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
                 // mapping from host ids <-> processor ids, and also apply the
                 // new IDs to modulations/anything else that wants them
                 tmp.id = -1;  // TODO
-                tmp.key += noteOffset;
+                tmp.key = static_cast<int16_t>(note.key + noteOffset);
                 callback(tmp, velocity);
             }
         }
@@ -216,7 +215,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
             for (auto noteOffset : mChord) {
                 clapeze::NoteTuple tmp = note;
                 tmp.id = -1;  // TODO
-                tmp.key += noteOffset;
+                tmp.key = static_cast<int16_t>(note.key + noteOffset);
                 callback(tmp);
             }
         }
@@ -226,7 +225,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
             for (auto noteOffset : mChord) {
                 clapeze::NoteTuple tmp = note;
                 tmp.id = -1;  // TODO
-                tmp.key += noteOffset;
+                tmp.key = static_cast<int16_t>(note.key + noteOffset);
                 callback(tmp);
             }
         }
@@ -241,9 +240,10 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
                     // chord mode on
                     auto& offsets = kChordNotes[static_cast<size_t>(chordType)];
                     for (int32_t idx = 0; idx < numVoices; ++idx) {
-                        int32_t x = idx % offsets.size();
-                        int32_t y = idx / offsets.size();
-                        mChord.push_back(y * 12 + offsets[x]);
+                        int32_t size = static_cast<int32_t>(offsets.size());
+                        int32_t x = idx % size;
+                        int32_t y = idx / size;
+                        mChord.push_back(static_cast<int16_t>(y * 12 + offsets[x]));
                     }
                 }
                 mChordType = chordType;

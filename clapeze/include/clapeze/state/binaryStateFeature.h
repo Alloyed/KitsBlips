@@ -10,13 +10,7 @@
 namespace clapeze {
 
 /*
- * Saves and loads parameter state. Depends on ParametersFeature.
- * TODO:
- *  - plain text format (xml? toml?)
- *  - migrations/versioning
- *  - non-parameter state
- *  - samples/wavetables?
- *  - presets?
+ * Saves and loads parameter state. This works(tm), but you should probably prefer TomlStateFeature.
  */
 template <class TParamsFeature>
 class BinaryStateFeature : public BaseFeature {

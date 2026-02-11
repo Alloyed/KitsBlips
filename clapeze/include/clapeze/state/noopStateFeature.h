@@ -3,7 +3,6 @@
 #include <clap/clap.h>
 #include <clap/ext/params.h>
 #include <cstdint>
-#include <cstdio>
 
 #include "clapeze/basePlugin.h"
 
