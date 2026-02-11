@@ -23,27 +23,27 @@ using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 namespace clapeze::params {
 template <>
 struct ParamTraits<Params, Params::Rate> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Rate", cLinearCurve, 0.0f, 5.0f, 1.0f, "hz") {}
+    ParamTraits() : clapeze::NumericParam("Rate", "Rate", 0.0f, 5.0f, 1.0f, "hz") {}
 };
 
 template <>
 struct ParamTraits<Params, Params::Depth> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Depth", 0.2f) {}
+    ParamTraits() : clapeze::PercentParam("Depth", "Depth", 0.2f) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::Delay> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Delay", cPowCurve<2>, 2.0f, 20.0f, 8.0f, "ms") {}
+    ParamTraits() : clapeze::NumericParam("Delay", "Delay", 2.0f, 20.0f, 8.0f, "ms") { mCurve = cPowCurve<2>; }
 };
 
 template <>
 struct ParamTraits<Params, Params::Feedback> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Feedback", cLinearCurve, -0.95f, 0.95f, 0.0f) {}
+    ParamTraits() : clapeze::NumericParam("Feedback", "Feedback", -0.95f, 0.95f, 0.0f) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Mix", 0.5f) {}
+    ParamTraits() : clapeze::PercentParam("Mix", "Mix", 0.5f) {}
 };
 }  // namespace clapeze::params
 

@@ -109,6 +109,7 @@ class EnumParametersFeature : public BaseParametersFeature<EnumMainHandle, EnumP
         clap_id index = static_cast<clap_id>(id);
         ParamType* param = new ParamType();
         BaseType::mParams[index].reset(param);
+        BaseType::mParamKeyToId.insert_or_assign(param->GetKey(), index);
         BaseType::mMain.SetRawValue(index, param->GetRawDefault());
         return *this;
     }

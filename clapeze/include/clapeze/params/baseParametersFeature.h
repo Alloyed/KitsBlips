@@ -4,6 +4,8 @@
 #include <clap/id.h>
 #include <etl/queue_spsc_atomic.h>
 #include <cstdint>
+#include <optional>
+#include <unordered_map>
 #include "clapeze/basePlugin.h"
 #include "clapeze/params/baseParameter.h"
 #include "clapeze/stringUtils.h"
@@ -64,12 +66,14 @@ class BaseParametersFeature : public BaseFeature {
     TMainHandle& GetMainHandle();
 
     size_t GetNumParams() const;
+    std::optional<clap_id> GetIdFromKey(std::string_view) const;
     void ResetAllParamsToDefault();
 
    protected:
     PluginHost& mHost;
     const size_t mNumParams;
     std::vector<std::unique_ptr<const BaseParam>> mParams;
+    std::unordered_map<std::string, clap_id> mParamKeyToId{};
     Queue mAudioToMain;
     Queue mMainToAudio;
     TMainHandle mMain;
@@ -183,6 +187,14 @@ TMainHandle& BaseParametersFeature<TMainHandle, TAudioHandle>::GetMainHandle() {
 template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 size_t BaseParametersFeature<TMainHandle, TAudioHandle>::GetNumParams() const {
     return mNumParams;
+}
+template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
+std::optional<clap_id> BaseParametersFeature<TMainHandle, TAudioHandle>::GetIdFromKey(std::string_view key) const {
+    auto iter = mParamKeyToId.find(std::string(key));
+    if (iter != mParamKeyToId.end()) {
+        return iter->second;
+    }
+    return std::nullopt;
 }
 template <BaseMainHandle TMainHandle, BaseAudioHandle TAudioHandle>
 void BaseParametersFeature<TMainHandle, TAudioHandle>::ResetAllParamsToDefault() {

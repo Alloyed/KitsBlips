@@ -24,12 +24,12 @@ using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 namespace clapeze::params {
 template <>
 struct ParamTraits<Params, Params::Shift> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Shift", cPowBipolarCurve<2>, -1000, 1000, 0, "hz") {}
+    ParamTraits() : clapeze::NumericParam("Shift", "Shift", -1000, 1000, 0, "hz") { mCurve = cPowBipolarCurve<2>; }
 };
 
 template <>
 struct ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Mix", 1.0f) {}
+    ParamTraits() : clapeze::PercentParam("Mix", "Mix", 1.0f) {}
 };
 }  // namespace clapeze::params
 

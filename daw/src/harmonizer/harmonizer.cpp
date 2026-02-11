@@ -25,32 +25,34 @@ using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 namespace clapeze::params {
 template <>
 struct ParamTraits<Params, Params::Transpose> : public clapeze::IntegerParam {
-    ParamTraits() : clapeze::IntegerParam("Transpose", -12, 12, 12, "semis") {}
+    ParamTraits() : clapeze::IntegerParam("Transpose", "Transpose", -12, 12, 12, "semis") {}
 };
 
 template <>
 struct ParamTraits<Params, Params::Finetune> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Fine Tune", cLinearCurve, -100, 100, 0, "cents") {}
+    ParamTraits() : clapeze::NumericParam("Finetune", "Fine Tune", -100, 100, 0, "cents") {}
 };
 
 template <>
 struct ParamTraits<Params, Params::BaseDelay> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Base Delay", cPowCurve<2>, 0.0f, 1000.0f, 0.0f, "ms") {}
+    ParamTraits() : clapeze::NumericParam("BaseDelay", "Base Delay", 0.0f, 1000.0f, 0.0f, "ms") {
+        mCurve = cPowCurve<2>;
+    }
 };
 
 template <>
 struct ParamTraits<Params, Params::GrainSize> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Grain Size", cLinearCurve, 10.0f, 100.0f, 30.0f, "ms") {}
+    ParamTraits() : clapeze::NumericParam("GrainSize", "Grain Size", 10.0f, 100.0f, 30.0f, "ms") {}
 };
 
 template <>
 struct ParamTraits<Params, Params::Feedback> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Feedback", 0.0f) {}
+    ParamTraits() : clapeze::PercentParam("Feedback", "Feedback", 0.0f) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Mix", 1.0f) {}
+    ParamTraits() : clapeze::PercentParam("Mix", "Mix", 1.0f) {}
 };
 }  // namespace clapeze::params
 

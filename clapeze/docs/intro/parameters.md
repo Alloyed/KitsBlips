@@ -3,7 +3,7 @@
 Parameters and plugin parameterization is where a bulk of clapeze's weirdness comes in. In Clapeze:
 
 - Parameters are state. For most plugins, you can just define parameters, and you will automatically get a way to serialize that plugin's state and presets.
-- Parameters are declarative. You specify the bulk of how a parameter works when you declare it, using the Traits[^traits] pattern. template.
+- Parameters are declarative. You specify the bulk of how a parameter works when you declare it, using the Traits[^traits] pattern.
 - Parameters are static. You cannot add or remove parameters at runtime, only hide them.
 
 This adds up to a process where you'll need to do a lot of work up front to create a parameter, but once it exists, it's very easy and efficient to use in DSP code.
@@ -24,24 +24,24 @@ Next, let's declare what each parameter does, using traits. Each trait, under th
 ```cpp
 template <>
 struct clapeze::ParamTraits<Params, Params::Gain> : public clapeze::DbParam {
-    /*parameters are name, min, max, default*/
-    ParamTraits() : clapeze::DbParam("Gain", 0.0f, 32.0f, 0.0f) {}
+    /*parameters are key, name, min, max, default*/
+    ParamTraits() : clapeze::DbParam("gain", "Gain", 0.0f, 32.0f, 0.0f) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params, Params::Makeup> : public clapeze::DbParam {
-    /*parameters are name, min, max, default*/
-    ParamTraits() : clapeze::DbParam("Makeup", -9.0f, 9.0f, 0.0f) {}
+    /*parameters are key, name, min, max, default*/
+    ParamTraits() : clapeze::DbParam("makeup", "Makeup", -9.0f, 9.0f, 0.0f) {}
 };
 
 template <>
 struct clapeze::ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
-    /*parameters are name, default (min and max are always 0)*/
-    ParamTraits() : clapeze::PercentParam("Mix", 1.0f) {}
+    /*parameters are key, name, default (min and max are always 0)*/
+    ParamTraits() : clapeze::PercentParam("mix", "Mix", 1.0f) {}
 };
 ```
 
-Finally, we just need to declare an order and grouping for them in the DAW, and pass our final parameters object to the audio processor.
+Finally, we just need to declare an order for them in the DAW, and pass our final parameters object to the audio processor.
 
 ```cpp
     void Config() override {
@@ -49,7 +49,6 @@ Finally, we just need to declare an order and grouping for them in the DAW, and 
 
         // This is where ::Count is needed, by the way
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
-                                    .Module("Main")
                                     .Parameter<Params::Gain>()
                                     .Parameter<Params::Makeup>()
                                     .Parameter<Params::Mix>();
@@ -80,5 +79,7 @@ Tricky, but done! The most common parameter type is probably percent, but to get
 - OnOffParam (boolean)
 
 [^src]: [source](/clapeze/examples/effectExample.cpp)
+
 [^traits]: https://www.cs.rpi.edu/~musser/design/blitz/traits1.html
+
 [^paramConfigs]: [source](/clapeze/include/clapeze/ext/parameterConfigs.h)

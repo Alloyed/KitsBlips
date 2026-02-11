@@ -57,11 +57,7 @@ class TomlStateFeature : public BaseFeature {
         size_t numParams = params.GetNumParams();
         for (clap_id id = 0; id < numParams; ++id) {
             const BaseParam* param = params.GetBaseParam(id);
-            // TODO: remove id
-            std::string key = fmt::format("{:03d}/{}", id, param->GetKey());
-
-            double raw = handle.GetRawValue(id);
-            paramkv.insert(key, raw);
+            paramkv.insert(param->GetKey(), handle.GetRawValue(id));
         }
 
         toml::table file{{"_meta", toml::table{{"version", self.mSaveVersion}, {"plugin", desc.id}}},
@@ -124,13 +120,12 @@ class TomlStateFeature : public BaseFeature {
         }
 
         // TODO: obviously wrong, each param should have a computer-safe key associated
-        for (const auto& [k, v] : *savedParams) {
-            double id{};
-            if (parseNumberFromText(k.str().substr(0, 3), id)) {
-                double value = v.value_or(0.0);
-                handle.SetRawValue(static_cast<clap_id>(id), value);
+        for (const auto& [keyNode, valueNode] : *savedParams) {
+            if (auto id = params.GetIdFromKey(keyNode.str())) {
+                double value = valueNode.value_or(0.0);
+                handle.SetRawValue(*id, value);
             } else {
-                host.LogFmt(clapeze::LogSeverity::Warning, "loading, could not parse key: {}", k.str());
+                host.LogFmt(clapeze::LogSeverity::Warning, "loading, skipping unknown key: {}", keyNode.str());
             }
         }
 

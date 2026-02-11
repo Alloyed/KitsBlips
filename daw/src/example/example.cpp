@@ -16,10 +16,12 @@ enum class Params : clap_id { Mix, Count };
 using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 }  // namespace
 
+namespace clapeze::params {
 template <>
-struct clapeze::params::ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Mix", 1.0f) {}
+struct ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("Mix", "Mix", 1.0f) {}
 };
+}  // namespace clapeze::params
 
 using namespace clapeze;
 

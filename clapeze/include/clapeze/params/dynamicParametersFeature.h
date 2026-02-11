@@ -68,6 +68,7 @@ class DynamicParametersFeature : public BaseParametersFeature<DynamicMainHandle,
 
     DynamicParametersFeature& Parameter(clap_id id, BaseParam* param) {
         mParams[id].reset(param);
+        mParamKeyToId.insert_or_assign(param->GetKey(), id);
         mMain.SetRawValue(id, mParams[id]->GetRawDefault());
         return *this;
     }

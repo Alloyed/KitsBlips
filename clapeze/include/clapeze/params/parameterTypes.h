@@ -9,7 +9,6 @@
 #include <cstring>
 #include <string_view>
 #include "clapeze/params/baseParameter.h"
-#include "clapeze/stringUtils.h"
 
 namespace clapeze {
 struct ParamCurve {
@@ -38,13 +37,13 @@ constexpr ParamCurve cPowBipolarCurve{[](float x) {
 struct NumericParam : public BaseParam {
    public:
     using _valuetype = float;
-    NumericParam(std::string_view mName,
-                 const ParamCurve& curve,
-                 float mMin,
-                 float mMax,
-                 float mDefaultValue,
-                 std::string_view mUnit = "")
-        : mName(mName), mCurve(curve), mMin(mMin), mMax(mMax), mDefaultValue(mDefaultValue), mUnit(mUnit) {}
+    NumericParam(std::string_view key,
+                 std::string_view name,
+                 float min,
+                 float max,
+                 float defaultValue,
+                 std::string_view unit = "")
+        : mKey(key), mName(name), mMin(min), mMax(max), mDefaultValue(defaultValue), mUnit(unit) {}
     clap_param_info_flags GetFlags() const override { return mFlags; }
     double GetRawMin() const override { return 0.0; }
     double GetRawMax() const override { return 1.0; }
@@ -55,22 +54,24 @@ struct NumericParam : public BaseParam {
     bool FromText(std::string_view text, double& outRawValue) const override;
     bool ToValue(double rawValue, float& out) const;
     bool FromValue(float in, double& outRaw) const;
-    const std::string& GetKey() const override { return mName; }
+    const std::string& GetKey() const override { return mKey; }
 
-    const std::string mName;
-    const ParamCurve mCurve;
+    const std::string mKey;
+    std::string mName;
     const float mMin;
     const float mMax;
     const float mDefaultValue;
     const std::string mUnit;
+
+    ParamCurve mCurve = cLinearCurve;
     clap_param_info_flags mFlags = CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_MODULATABLE;
 };
 
 struct PercentParam : public NumericParam {
    public:
     using _valuetype = float;
-    PercentParam(std::string_view mName, float mDefaultValue)
-        : NumericParam(mName, cLinearCurve, 0.0f, 1.0f, mDefaultValue) {}
+    PercentParam(std::string_view key, std::string_view mName, float mDefaultValue)
+        : NumericParam(key, mName, 0.0f, 1.0f, mDefaultValue) {}
 
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override;
     bool FromText(std::string_view text, double& outRawValue) const override;
@@ -78,8 +79,8 @@ struct PercentParam : public NumericParam {
 
 struct DbParam : public NumericParam {
    public:
-    DbParam(std::string_view name, float minValue, float maxValue, float mDefaultValue)
-        : NumericParam(name, cLinearCurve, minValue, maxValue, mDefaultValue, "db") {}
+    DbParam(std::string_view key, std::string_view name, float minValue, float maxValue, float mDefaultValue)
+        : NumericParam(key, name, minValue, maxValue, mDefaultValue, "db") {}
 };
 
 /**
@@ -88,13 +89,15 @@ struct DbParam : public NumericParam {
 struct IntegerParam : public BaseParam {
    public:
     using _valuetype = int32_t;
-    IntegerParam(std::string_view mName,
+    IntegerParam(std::string_view mKey,
+                 std::string_view mName,
                  int32_t mMin,
                  int32_t mMax,
                  int32_t mDefaultValue,
                  std::string_view mUnit = "",
                  std::string_view mUnitSingular = "")
-        : mName(mName),
+        : mKey(mKey),
+          mName(mName),
           mMin(mMin),
           mMax(mMax),
           mDefaultValue(mDefaultValue),
@@ -114,6 +117,7 @@ struct IntegerParam : public BaseParam {
     bool ToValue(double rawValue, int32_t& out) const;
     bool FromValue(int32_t in, double& outRaw) const;
 
+    const std::string mKey;
     const std::string mName;
     const int32_t mMin;
     const int32_t mMax;
@@ -130,8 +134,11 @@ template <typename TEnum>
 struct EnumParam : public BaseParam {
    public:
     using _valuetype = TEnum;
-    EnumParam(std::string_view mName, const std::vector<std::string>& mLabels, TEnum mDefaultValue)
-        : mName(mName), mLabels(mLabels), mDefaultValue(mDefaultValue) {}
+    EnumParam(std::string_view mKey,
+              std::string_view mName,
+              const std::vector<std::string>& mLabels,
+              TEnum mDefaultValue)
+        : mKey(mKey), mName(mName), mLabels(mLabels), mDefaultValue(mDefaultValue) {}
 
     clap_param_info_flags GetFlags() const override { return mFlags; }
     double GetRawMin() const override { return 0.0; }
@@ -169,6 +176,7 @@ struct EnumParam : public BaseParam {
         return true;
     }
 
+    const std::string mKey;
     const std::string mName;
     const std::vector<std::string> mLabels;
     const TEnum mDefaultValue;
@@ -181,7 +189,8 @@ enum class OnOff : uint8_t { Off, On };
  */
 struct OnOffParam : public EnumParam<OnOff> {
    public:
-    OnOffParam(std::string_view name, OnOff defaultValue) : EnumParam(name, {"Off", "On"}, defaultValue) {}
+    OnOffParam(std::string_view mKey, std::string_view name, OnOff defaultValue)
+        : EnumParam(mKey, name, {"Off", "On"}, defaultValue) {}
 };
 
 }  // namespace clapeze

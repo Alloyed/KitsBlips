@@ -42,20 +42,20 @@ using namespace effectExample;
 // convenient ones built-in. see `clapeze/ext/parameterConfigs.h` for more.
 template <>
 struct ParamTraits<MyParams, MyParams::Gain> : public DbParam {
-    //                       name    min    max    default
-    ParamTraits() : DbParam("Gain", -60.0f, 30.0f, 0.0f) {}
+    //                       key    name    min    max    default
+    ParamTraits() : DbParam("gain", "Gain", -60.0f, 30.0f, 0.0f) {}
 };
 
 template <>
 struct ParamTraits<MyParams, MyParams::VuPPM> : public NumericParam {
-    //                           name    curve         min   max   default
-    ParamTraits() : NumericParam("Peak", cLinearCurve, 0.0f, 1.0f, 0.0f) { mFlags |= CLAP_PARAM_IS_READONLY; }
+    //                           key      name    min   max   default
+    ParamTraits() : NumericParam("vuppm", "Peak", 0.0f, 1.0f, 0.0f) { mFlags |= CLAP_PARAM_IS_READONLY; }
 };
 
 template <>
 struct ParamTraits<MyParams, MyParams::Bypass> : public OnOffParam {
-    //                         name      default
-    ParamTraits() : OnOffParam("Bypass", OnOff::Off) { mFlags |= CLAP_PARAM_IS_BYPASS; }
+    //                         key       name      default
+    ParamTraits() : OnOffParam("bypass", "Bypass", OnOff::Off) { mFlags |= CLAP_PARAM_IS_BYPASS; }
 };
 static_assert(static_cast<clap_id>(MyParams::Count) == 3, "update parameter traits");
 }  // namespace clapeze::params

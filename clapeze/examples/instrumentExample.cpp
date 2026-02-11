@@ -17,11 +17,11 @@ using ParamsHandle = ParamsFeature::ProcessorHandle;
 }  // namespace
 
 struct FallTraits : public clapeze::NumericParam {
-    FallTraits() : clapeze::NumericParam("Fall", clapeze::cLinearCurve, 0.0001f, 1.f, .01f) {}
+    FallTraits() : clapeze::NumericParam("fall", "Fall", 0.0001f, 1.f, .01f) {}
 };
 
 struct PolyphonyTraits : public clapeze::IntegerParam {
-    PolyphonyTraits() : clapeze::IntegerParam("Polyphony", 1, 16, 8, "voices", "voice") {}
+    PolyphonyTraits() : clapeze::IntegerParam("polyphony", "Polyphony", 1, 16, 8, "voices", "voice") {}
 };
 
 namespace instrumentExample {

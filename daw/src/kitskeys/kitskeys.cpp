@@ -77,110 +77,113 @@ using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 namespace clapeze::params {
 template <>
 struct ParamTraits<Params, Params::OscOctave> : public clapeze::IntegerParam {
-    ParamTraits() : clapeze::IntegerParam("Octave", -2, 2, 0) {}
+    ParamTraits() : clapeze::IntegerParam("OscOctave", "Octave", -2, 2, 0) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::OscTune> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Tune", cPowBipolarCurve<2>, -12.0f, 12.0f, 0.0f) {}
+    ParamTraits() : clapeze::NumericParam("OscTune", "Tune", -12.0f, 12.0f, 0.0f) { mCurve = cPowBipolarCurve<2>; }
 };
 
 template <>
 struct ParamTraits<Params, Params::OscModMix> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("OSC ModMix (LFO <-> EG)", 0.5f) {}
+    ParamTraits() : clapeze::PercentParam("OscModMix", "OSC ModMix (LFO <-> EG)", 0.5f) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::OscModAmount> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("OSC Mod Amount", cPowBipolarCurve<2>, -1.0f, 1.0f, 0.0f) {}
-};
-
-template <>
-struct ParamTraits<Params, Params::FilterCutoff> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Cutoff", 1.0f) {}
-};
-
-template <>
-struct ParamTraits<Params, Params::FilterResonance> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Resonance", 0.0f) {}
-};
-
-template <>
-struct ParamTraits<Params, Params::FilterModMix> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("VCF ModMix (LFO <-> EG)", 0.5f) {}
-};
-
-template <>
-struct ParamTraits<Params, Params::FilterModAmount> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("VCF Mod Amount", cLinearCurve, -1.0f, 1.0f, 0.0f) {}
-};
-
-template <>
-struct ParamTraits<Params, Params::LfoRate> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Rate", 0.0f) {}
-};
-
-template <>
-struct ParamTraits<Params, Params::LfoShape> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("LFO Shape", 0.0f) {}
-};
-
-template <>
-struct ParamTraits<Params, Params::LfoSync> : public clapeze::OnOffParam {
-    ParamTraits() : clapeze::OnOffParam("LFO Sync", OnOff::Off) {}
-};
-
-template <>
-struct ParamTraits<Params, Params::LfoOut> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("LFO Out", cLinearCurve, -1.0f, 1.0f, 0.0f) {
-        mFlags = CLAP_PARAM_IS_READONLY;
+    ParamTraits() : clapeze::NumericParam("OscModAmount", "OSC Mod Amount", -1.0f, 1.0f, 0.0f) {
+        mCurve = cPowBipolarCurve<2>;
     }
 };
 
 template <>
+struct ParamTraits<Params, Params::FilterCutoff> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("FilterCutoff", "Cutoff", 1.0f) {}
+};
+
+template <>
+struct ParamTraits<Params, Params::FilterResonance> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("FilterResonance", "Resonance", 0.0f) {}
+};
+
+template <>
+struct ParamTraits<Params, Params::FilterModMix> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("FilterModMix", "VCF ModMix (LFO <-> EG)", 0.5f) {}
+};
+
+template <>
+struct ParamTraits<Params, Params::FilterModAmount> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("FilterModAmount", "VCF Mod Amount", -1.0f, 1.0f, 0.0f) {}
+};
+
+template <>
+struct ParamTraits<Params, Params::LfoRate> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("LfoRate", "Rate", 0.0f) {}
+};
+
+template <>
+struct ParamTraits<Params, Params::LfoShape> : public clapeze::PercentParam {
+    ParamTraits() : clapeze::PercentParam("LfoShape", "LFO Shape", 0.0f) {}
+};
+
+template <>
+struct ParamTraits<Params, Params::LfoSync> : public clapeze::OnOffParam {
+    ParamTraits() : clapeze::OnOffParam("LfoSync", "LFO Sync", OnOff::Off) {}
+};
+
+template <>
+struct ParamTraits<Params, Params::LfoOut> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("LfoOut", "LFO Out", -1.0f, 1.0f, 0.0f) { mFlags = CLAP_PARAM_IS_READONLY; }
+};
+
+template <>
 struct ParamTraits<Params, Params::EnvAttack> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Attack", cPowCurve<2>, 1.0f, 1000.0f, 1.0f, "ms") {}
+    ParamTraits() : clapeze::NumericParam("EnvAttack", "Attack", 1.0f, 1000.0f, 1.0f, "ms") { mCurve = cPowCurve<2>; }
 };
 
 template <>
 struct ParamTraits<Params, Params::EnvDecay> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Decay", cPowCurve<2>, 10.0f, 30000.0f, 10.0f, "ms") {}
+    ParamTraits() : clapeze::NumericParam("EnvDecay", "Decay", 10.0f, 30000.0f, 10.0f, "ms") { mCurve = cPowCurve<2>; }
 };
 
 template <>
 struct ParamTraits<Params, Params::EnvSustain> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Sustain", 1.0f) {}
+    ParamTraits() : clapeze::PercentParam("EnvSustain", "Sustain", 1.0f) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::EnvRelease> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Release", cPowCurve<2>, 10.0f, 30000.0f, 10.0f, "ms") {}
+    ParamTraits() : clapeze::NumericParam("EnvRelease", "Release", 10.0f, 30000.0f, 10.0f, "ms") {
+        mCurve = cPowCurve<2>;
+    }
 };
 
 template <>
 struct ParamTraits<Params, Params::VcaGain> : public clapeze::DbParam {
-    ParamTraits() : clapeze::DbParam("VCA Volume", -80.0f, 12.0f, 0.0f) {}
+    ParamTraits() : clapeze::DbParam("VcaGain", "VCA Volume", -80.0f, 12.0f, 0.0f) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::VcaEnvDisabled> : public clapeze::OnOffParam {
-    ParamTraits() : clapeze::OnOffParam("VCA Env/Gate", OnOff::Off) {}
+    ParamTraits() : clapeze::OnOffParam("VcaEnvDisabled", "VCA Env/Gate", OnOff::Off) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::VcaLfoAmount> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("VCA LFO Amount", cLinearCurve, -1.0f, 1.0f, 0.0f) {}
+    ParamTraits() : clapeze::NumericParam("VcaLfoAmount", "VCA LFO Amount", -1.0f, 1.0f, 0.0f) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::PolyCount> : public clapeze::IntegerParam {
-    ParamTraits() : clapeze::IntegerParam("Voice Count", 1, cMaxVoices, 4) {}
+    ParamTraits() : clapeze::IntegerParam("PolyCount", "Voice Count", 1, cMaxVoices, 4) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::PolyChordType> : public clapeze::EnumParam<PolyChordType> {
     ParamTraits()
-        : clapeze::EnumParam<PolyChordType>("Chord",
+        : clapeze::EnumParam<PolyChordType>("PolyChordType",
+                                            "Chord",
                                             {"None", "Octave", "5th", "Major", "Minor", "Major 7th", "Minor 7th"},
                                             PolyChordType::None) {}
 };

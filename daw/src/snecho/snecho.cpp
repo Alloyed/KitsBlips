@@ -42,62 +42,62 @@ using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 namespace clapeze::params {
 template <>
 struct ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Mix", 0.5f) {}
+    ParamTraits() : clapeze::PercentParam("Mix", "Mix", 0.5f) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::Bypass> : public clapeze::OnOffParam {
-    ParamTraits() : clapeze::OnOffParam("Bypass", OnOff::Off) {}
+    ParamTraits() : clapeze::OnOffParam("Bypass", "Bypass", OnOff::Off) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::Size> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Size", 0.5f) {}
+    ParamTraits() : clapeze::PercentParam("Size", "Size", 0.5f) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::Feedback> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Feedback", 0.5f) {}
+    ParamTraits() : clapeze::PercentParam("Feedback", "Feedback", 0.5f) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::FilterPreset> : public clapeze::IntegerParam {
-    ParamTraits() : clapeze::IntegerParam("Filter Preset", 0, kitdsp::SNES::kNumFilterPresets, 0) {}
+    ParamTraits() : clapeze::IntegerParam("FilterPreset", "Filter Preset", 0, kitdsp::SNES::kNumFilterPresets, 0) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::FreezeEcho> : public clapeze::OnOffParam {
-    ParamTraits() : clapeze::OnOffParam("Freeze Echo", OnOff::Off) {}
+    ParamTraits() : clapeze::OnOffParam("FreezeEcho", "Freeze Echo", OnOff::Off) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::ResetHead> : public clapeze::OnOffParam {
-    ParamTraits() : clapeze::OnOffParam("Reset Playhead", OnOff::Off) {}
+    ParamTraits() : clapeze::OnOffParam("ResetHead", "Reset Playhead", OnOff::Off) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::SizeRange> : public clapeze::IntegerParam {
-    ParamTraits() : clapeze::IntegerParam("Size Range", 0, 2, 0) {}
+    ParamTraits() : clapeze::IntegerParam("SizeRange", "Size Range", 0, 2, 0) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::EchoDelayMod> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Echo Mod", 1.0f) {}
+    ParamTraits() : clapeze::PercentParam("EchoDelayMod", "Echo Mod", 1.0f) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::FilterMix> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Filter Mix", 1.0f) {}
+    ParamTraits() : clapeze::PercentParam("FilterMix", "Filter Mix", 1.0f) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::ClearBuffer> : public clapeze::OnOffParam {
-    ParamTraits() : clapeze::OnOffParam("Clear Buffer", OnOff::Off) {}
+    ParamTraits() : clapeze::OnOffParam("ClearBuffer", "Clear Buffer", OnOff::Off) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::StereoMode> : public clapeze::OnOffParam {
-    ParamTraits() : clapeze::OnOffParam("Stereo Mode", OnOff::Off) {}
+    ParamTraits() : clapeze::OnOffParam("SteroMode", "Stereo Mode", OnOff::Off) {}
 };
 }  // namespace clapeze::params
 

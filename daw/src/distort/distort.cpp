@@ -35,27 +35,30 @@ namespace clapeze::params {
 template <>
 struct ParamTraits<Params, Params::Algorithm> : public clapeze::EnumParam<Algorithm> {
     ParamTraits()
-        : clapeze::EnumParam<Algorithm>("Algorithm", {"Clip", "Saturate", "Fold", "Rectify"}, Algorithm::HardClip) {}
+        : clapeze::EnumParam<Algorithm>("Algorithm",
+                                        "Algorithm",
+                                        {"Clip", "Saturate", "Fold", "Rectify"},
+                                        Algorithm::HardClip) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::Gain> : public clapeze::DbParam {
-    ParamTraits() : clapeze::DbParam("Gain", 0.0f, 32.0f, 0.0f) {}
+    ParamTraits() : clapeze::DbParam("Gain", "Gain", 0.0f, 32.0f, 0.0f) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::Tone> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Tone", 0.5f) {}
+    ParamTraits() : clapeze::PercentParam("Tone", "Tone", 0.5f) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::Makeup> : public clapeze::DbParam {
-    ParamTraits() : clapeze::DbParam("Makeup", -9.0f, 9.0f, 0.0f) {}
+    ParamTraits() : clapeze::DbParam("Makeup", "Makeup", -9.0f, 9.0f, 0.0f) {}
 };
 
 template <>
 struct ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Mix", 1.0f) {}
+    ParamTraits() : clapeze::PercentParam("Mix", "Mix", 1.0f) {}
 };
 }  // namespace clapeze::params
 
