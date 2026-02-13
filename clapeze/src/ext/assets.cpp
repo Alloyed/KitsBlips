@@ -5,7 +5,7 @@
 #include <miniz_zip.h>
 #include <fstream>
 #include "clapeze/entryPoint.h"
-#include "clapeze/pluginHost.h"
+#include "clapeze/streamUtils.h"
 
 namespace clapeze {
 
@@ -15,7 +15,7 @@ mz_zip_archive sZip{};
 int32_t sInstances{};
 }  // namespace
 
-AssetsFeature::AssetsFeature(PluginHost& host) : mHost(host) {
+AssetsFeature::AssetsFeature() {
     sInstances++;
     if (sInstances == 1) {
         sArchivePath = getPluginPath();
@@ -32,37 +32,16 @@ AssetsFeature::~AssetsFeature() {
 
 void AssetsFeature::Configure(BasePlugin& self) {}
 
-bool AssetsFeature::LoadFromPlugin(const char* path, std::string& out) {
-    out.clear();
-    size_t uncomp_size{};
-    char* p = nullptr;
-    // Try to extract all the files to the heap.
-    p = static_cast<char*>(mz_zip_reader_extract_file_to_heap(&sZip, path, &uncomp_size, 0));
-    if (!p) {
-        auto* errorText = mz_zip_get_error_string(mz_zip_get_last_error(&sZip));
-        mHost.Log(LogSeverity::Error, fmt::format("reading {} from archive failed: {}", path, errorText));
-        return false;
-    }
-    out.assign(p, p + uncomp_size);
-    mz_free(p);
-    return true;
+miniz_istream AssetsFeature::OpenFromPlugin(const char* path) {
+    return miniz_istream(&sZip, path);
 }
-bool AssetsFeature::LoadFromFilesystem(const char* path, std::string& out) {
-    out.clear();
-    constexpr auto read_size = std::size_t(4096);
-    auto stream = std::ifstream(std::string(path), std::ios::binary);
-    stream.exceptions(std::ios_base::badbit);
 
-    if (!stream) {
-        mHost.Log(LogSeverity::Error, fmt::format("reading {} from filesystem failed", path));
-        return false;
-    }
-
-    auto buf = std::string(read_size, '\0');
-    while (stream.read(&buf[0], read_size)) {
-        out.append(buf, 0, stream.gcount());
-    }
-    out.append(buf, 0, stream.gcount());
-    return true;
+std::ifstream AssetsFeature::OpenFromFilesystem(const char* path) {
+    return std::ifstream(std::string(path), std::ios::binary);
 }
+
+std::ofstream AssetsFeature::OpenFromFilesystemOut(const char* path) {
+    return std::ofstream(std::string(path), std::ios::binary);
+}
+
 }  // namespace clapeze

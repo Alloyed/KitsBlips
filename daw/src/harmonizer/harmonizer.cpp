@@ -36,7 +36,7 @@ struct ParamTraits<Params, Params::Finetune> : public clapeze::NumericParam {
 template <>
 struct ParamTraits<Params, Params::BaseDelay> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("BaseDelay", "Base Delay", 0.0f, 1000.0f, 0.0f, "ms") {
-        mCurve = cPowCurve<2>;
+        mCurve = cPowCurve<2.0f>;
     }
 };
 

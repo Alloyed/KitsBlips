@@ -1,4 +1,6 @@
+#include <clap/ext/timer-support.h>
 #include <string_view>
+#include "clapeze/streamUtils.h"
 #if KITSBLIPS_ENABLE_GUI
 #include "gui/kitguiFeature.h"
 
@@ -81,21 +83,26 @@ KitguiFeature::KitguiFeature(PluginHost& mPluginHost,
 void KitguiFeature::Configure(BasePlugin& self) {
     GuiFeature::Configure(self);
     mCtx.SetFileLoader([&self](std::string_view path) -> std::optional<std::string> {
-        // TODO: what if no such feature?
         auto& assets = clapeze::AssetsFeature::GetFromPlugin<clapeze::AssetsFeature>(self);
-        std::string out;
         std::string pathstr{path};
-        bool ok = assets.LoadFromPlugin(pathstr.c_str(), out);
-        if (ok) {
-            return out;
-        } else {
-            return std::nullopt;
-        }
+        miniz_istream stream = assets.OpenFromPlugin(pathstr.c_str());
+        std::string out = clapeze::istream_tostring(stream);
+        return out;
     });
 }
 
 bool KitguiFeature::Validate(const BasePlugin& plugin) const {
-    // TODO: ensure we have timer support on linux
+    if (plugin.TryGetFeature(AssetsFeature::NAME) == nullptr) {
+        plugin.GetHost().Log(LogSeverity::Fatal, "Gui needs AssetsFeature. Please add it");
+        return false;
+    }
+#ifdef __linux__
+    if (plugin.GetHost().HostSupportsExtension(CLAP_EXT_TIMER_SUPPORT)) {
+        plugin.GetHost().Log(LogSeverity::Fatal, "Can't run gui on hosts without timer support");
+        return false;
+    }
+#endif
+
     return true;
 }
 

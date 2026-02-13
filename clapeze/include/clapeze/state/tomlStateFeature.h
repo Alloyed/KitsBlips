@@ -7,18 +7,28 @@
 #include <toml++/toml.hpp>
 
 #include "clap/plugin.h"
+#include "clap/stream.h"
 #include "clapeze/basePlugin.h"
 #include "clapeze/ext/baseFeature.h"
+#include "clapeze/ext/presets.h"
 #include "clapeze/params/baseParameter.h"
 #include "clapeze/pluginHost.h"
 #include "clapeze/streamUtils.h"
 
 namespace clapeze {
+struct Metadata {
+    std::string pluginId;
+    PresetInfo preset;
+
+    static void LoadPresetInfo(toml::table* presetkv, PresetInfo& preset);
+    /* Used for filesystem scanning */
+    static std::optional<Metadata> loadMetadata(std::istream& in);
+};
 
 template <class TParamsFeature>
 class TomlStateFeature : public BaseFeature {
    public:
-    explicit TomlStateFeature(uint32_t saveVersion = 0) : mSaveVersion(saveVersion) {}
+    explicit TomlStateFeature(BasePlugin& self, uint32_t saveVersion = 0) : mPlugin(self), mSaveVersion(saveVersion) {}
     static constexpr auto NAME = CLAP_EXT_STATE;
     const char* Name() const override { return NAME; }
     void Configure(BasePlugin& self) override {
@@ -36,51 +46,52 @@ class TomlStateFeature : public BaseFeature {
     virtual bool OnSave(toml::table& t) const { return true; }
     virtual bool OnLoad(const toml::table& t) { return true; }
 
-   private:
-    uint32_t mSaveVersion;
-    static bool _save(const clap_plugin_t* _plugin, const clap_ostream_t* out) {
-        BasePlugin& plugin = BasePlugin::GetFromPluginObject(_plugin);
-        TParamsFeature& params = BaseFeature::GetFromPlugin<TParamsFeature>(plugin);
-        TomlStateFeature<TParamsFeature>& self = BaseFeature::GetFromPlugin<TomlStateFeature<TParamsFeature>>(plugin);
-        const clap_plugin_descriptor_t& desc = plugin.GetDescriptor();
+    bool Save(std::ostream& out) {
+        TParamsFeature& params = BaseFeature::GetFromPlugin<TParamsFeature>(mPlugin);
+        PresetFeature* presets = static_cast<PresetFeature*>(mPlugin.TryGetFeature(PresetFeature::NAME));
+        const clap_plugin_descriptor_t& desc = mPlugin.GetDescriptor();
 
-        params.FlushFromAudio();  // empty queue to ensure newest changes
-        auto& handle = params.GetMainHandle();
+        toml::table file{};
+        file.insert("_meta", toml::table{{"version", mSaveVersion}, {"plugin", desc.id}});
+
+        if (presets) {
+            const PresetInfo& info = presets->GetPresetInfo();
+            toml::table presetkv{
+                {"name", info.name},
+                {"creator", info.creator},
+                {"description", info.description},
+                //{"features", info.features}
+            };
+            file.insert("preset", presetkv);
+        }
 
         toml::table paramkv{};
+        params.FlushFromAudio();  // empty queue to ensure newest changes
+        auto& handle = params.GetMainHandle();
         size_t numParams = params.GetNumParams();
         for (clap_id id = 0; id < numParams; ++id) {
             const BaseParam* param = params.GetBaseParam(id);
             paramkv.insert(param->GetKey(), handle.GetRawValue(id));
         }
+        file.insert("params", paramkv);
 
-        toml::table file{{"_meta", toml::table{{"version", self.mSaveVersion}, {"plugin", desc.id}}},
-                         {"params", paramkv}};
-
-        if (!self.OnSave(file)) {
+        if (!OnSave(file)) {
             return false;
         }
 
-        clap_ostream_streambuf buf(out);
-        std::ostream stream(&buf);
-        stream << file;
-
-        return stream.good();
+        out << file;
+        return out.good();
     }
 
-    static bool _load(const clap_plugin_t* _plugin, const clap_istream_t* in) {
-        BasePlugin& plugin = BasePlugin::GetFromPluginObject(_plugin);
-        TParamsFeature& params = BaseFeature::GetFromPlugin<TParamsFeature>(plugin);
-        TomlStateFeature<TParamsFeature>& self = BaseFeature::GetFromPlugin<TomlStateFeature<TParamsFeature>>(plugin);
-        const clap_plugin_descriptor_t& desc = plugin.GetDescriptor();
-        PluginHost& host = plugin.GetHost();
-
-        params.FlushFromAudio();  // empty queue so changes apply on top
-        auto& handle = params.GetMainHandle();
+    bool Load(std::istream& in) {
+        TParamsFeature& params = BaseFeature::GetFromPlugin<TParamsFeature>(mPlugin);
+        PresetFeature* presets = static_cast<PresetFeature*>(mPlugin.TryGetFeature(PresetFeature::NAME));
+        PluginHost& host = mPlugin.GetHost();
+        const clap_plugin_descriptor_t& desc = mPlugin.GetDescriptor();
 
         host.Log(clapeze::LogSeverity::Debug, "loading file");
-        std::string file = clap_istream_tostring(in);
-        auto result = toml::parse(file);
+        std::string fileText = istream_tostring(in);
+        auto result = toml::parse(fileText);
         if (!result) {
             // parse error
             host.LogFmt(clapeze::LogSeverity::Warning, "loading, could not parse toml: {}",
@@ -88,46 +99,121 @@ class TomlStateFeature : public BaseFeature {
             return true;
         }
 
-        auto& table = result.table();
-        auto meta = table["_meta"].as_table();
-        if (!meta) {
-            host.Log(clapeze::LogSeverity::Warning, "loading, no _meta table (malformed preset?)");
-            return true;
-        }
+        auto& file = result.table();
 
-        if (auto s = meta->get_as<std::string>("plugin"); !s || **s != desc.id) {
-            host.LogFmt(clapeze::LogSeverity::Warning, "loading, wrong plugin id (expected '{}', got '{}')", desc.id,
-                        s ? **s : "nullptr");
-            return true;
-        }
-
-        if (auto v = meta->get("version")->value_or(0u); v != self.mSaveVersion) {
-            if (!self.OnMigrate(table, v, self.mSaveVersion)) {
-                host.LogFmt(clapeze::LogSeverity::Warning, "loading, migration failed");
+        // Meta
+        {
+            auto metakv = file["_meta"].as_table();
+            if (!metakv) {
+                host.Log(clapeze::LogSeverity::Warning, "loading, no _meta table (malformed preset?)");
                 return true;
             }
-        }
 
-        auto savedParams = table["params"].as_table();
-        if (!savedParams) {
-            host.Log(clapeze::LogSeverity::Warning, "loading, no params table (malformed preset?)");
-            return true;
-        }
+            if (auto s = metakv->get_as<std::string>("plugin"); !s || **s != desc.id) {
+                host.LogFmt(clapeze::LogSeverity::Warning, "loading, wrong plugin id (expected '{}', got '{}')",
+                            desc.id, s ? **s : "nullptr");
+                return true;
+            }
 
-        for (const auto& [keyNode, valueNode] : *savedParams) {
-            if (auto id = params.GetIdFromKey(keyNode.str())) {
-                double value = valueNode.value_or(0.0);
-                handle.SetRawValue(*id, value);
-            } else {
-                host.LogFmt(clapeze::LogSeverity::Warning, "loading, skipping unknown key: {}", keyNode.str());
+            if (auto v = metakv->get("version")->value_or(0u); v != mSaveVersion) {
+                if (!OnMigrate(file, v, mSaveVersion)) {
+                    host.LogFmt(clapeze::LogSeverity::Warning, "loading, migration failed");
+                    return true;
+                }
             }
         }
 
-        if (!self.OnLoad(table)) {
+        // Preset Info (optional)
+        {
+            auto presetkv = file["preset"].as_table();
+            if (presetkv && presets) {
+                PresetInfo& preset = presets->GetPresetInfo();
+                Metadata::LoadPresetInfo(presetkv, preset);
+            }
+        }
+
+        // Params
+        {
+            auto paramskv = file["params"].as_table();
+            if (!paramskv) {
+                host.Log(clapeze::LogSeverity::Warning, "loading, no params table (malformed preset?)");
+                return true;
+            }
+            params.FlushFromAudio();  // empty queue so changes apply on top
+            auto& handle = params.GetMainHandle();
+            for (const auto& [keyNode, valueNode] : *paramskv) {
+                if (auto id = params.GetIdFromKey(keyNode.str())) {
+                    double value = valueNode.value_or(0.0);
+                    handle.SetRawValue(*id, value);
+                } else {
+                    host.LogFmt(clapeze::LogSeverity::Warning, "loading, skipping unknown key: {}", keyNode.str());
+                }
+            }
+        }
+
+        if (!OnLoad(file)) {
             return false;
         }
 
         return true;
     }
+
+   private:
+    BasePlugin& mPlugin;
+    uint32_t mSaveVersion;
+    static bool _save(const clap_plugin_t* plugin, const clap_ostream_t* out) {
+        TomlStateFeature<TParamsFeature>& self =
+            BaseFeature::GetFromPluginObject<TomlStateFeature<TParamsFeature>>(plugin);
+        clap_ostream stream(out);
+        return self.Save(stream);
+    }
+
+    static bool _load(const clap_plugin_t* plugin, const clap_istream_t* in) {
+        TomlStateFeature<TParamsFeature>& self =
+            BaseFeature::GetFromPluginObject<TomlStateFeature<TParamsFeature>>(plugin);
+        clap_istream stream(in);
+        return self.Load(stream);
+    }
 };
+
+inline void Metadata::LoadPresetInfo(toml::table* presetkv, PresetInfo& preset) {
+    auto nameNode = presetkv->get("name");
+    preset.name = nameNode ? nameNode->value_or("") : "";
+    auto creatorNode = presetkv->get("creator");
+    preset.creator = creatorNode ? creatorNode->value_or("") : "";
+    auto descriptionNode = presetkv->get("description");
+    preset.description = descriptionNode ? descriptionNode->value_or("") : "";
+    auto featuresNode = presetkv->get_as<toml::array>("features");
+    if (featuresNode) {
+        preset.features.clear();
+        featuresNode->visit([&preset](toml::value<std::string>& s) { preset.features.push_back(*s); });
+    }
+}
+/* Used for filesystem scanning */
+inline std::optional<Metadata> Metadata::loadMetadata(std::istream& in) {
+    Metadata data;
+
+    std::string fileText = istream_tostring(in);
+    auto result = toml::parse(fileText);
+    if (!result) {
+        return std::nullopt;
+    }
+    auto& file = result.table();
+
+    auto metakv = file["_meta"].as_table();
+    if (!metakv) {
+        return std::nullopt;
+    }
+    auto pluginId = metakv->get_as<std::string>("plugin");
+    if (!pluginId) {
+        return std::nullopt;
+    }
+    data.pluginId = **pluginId;
+
+    auto presetkv = file["presetInfo"].as_table();
+    if (presetkv) {
+        LoadPresetInfo(presetkv, data.preset);
+    }
+    return data;
+}
 }  // namespace clapeze

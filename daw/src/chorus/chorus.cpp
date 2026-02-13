@@ -33,7 +33,7 @@ struct ParamTraits<Params, Params::Depth> : public clapeze::PercentParam {
 
 template <>
 struct ParamTraits<Params, Params::Delay> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Delay", "Delay", 2.0f, 20.0f, 8.0f, "ms") { mCurve = cPowCurve<2>; }
+    ParamTraits() : clapeze::NumericParam("Delay", "Delay", 2.0f, 20.0f, 8.0f, "ms") { mCurve = cPowCurve<2.0f>; }
 };
 
 template <>

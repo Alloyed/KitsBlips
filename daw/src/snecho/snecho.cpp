@@ -259,7 +259,7 @@ class Plugin : public EffectPlugin {
                                     .Parameter<Params::EchoDelayMod>()
                                     .Parameter<Params::FilterMix>()
                                     .Parameter<Params::ClearBuffer>();
-        ConfigFeature<TomlStateFeature<ParamsFeature>>();
+        ConfigFeature<TomlStateFeature<ParamsFeature>>(*this);
 
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<KitguiFeature>(GetHost(),

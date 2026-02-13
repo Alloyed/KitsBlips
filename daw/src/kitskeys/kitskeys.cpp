@@ -81,7 +81,7 @@ struct ParamTraits<Params, Params::OscOctave> : public clapeze::IntegerParam {
 
 template <>
 struct ParamTraits<Params, Params::OscTune> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("OscTune", "Tune", -12.0f, 12.0f, 0.0f) { mCurve = cPowBipolarCurve<2>; }
+    ParamTraits() : clapeze::NumericParam("OscTune", "Tune", -12.0f, 12.0f, 0.0f) { mCurve = cPowBipolarCurve<2.0f>; }
 };
 
 template <>
@@ -92,7 +92,7 @@ struct ParamTraits<Params, Params::OscModMix> : public clapeze::PercentParam {
 template <>
 struct ParamTraits<Params, Params::OscModAmount> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("OscModAmount", "OSC Mod Amount", -1.0f, 1.0f, 0.0f) {
-        mCurve = cPowBipolarCurve<2>;
+        mCurve = cPowBipolarCurve<2.0f>;
     }
 };
 
@@ -138,12 +138,16 @@ struct ParamTraits<Params, Params::LfoOut> : public clapeze::NumericParam {
 
 template <>
 struct ParamTraits<Params, Params::EnvAttack> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("EnvAttack", "Attack", 1.0f, 1000.0f, 1.0f, "ms") { mCurve = cPowCurve<2>; }
+    ParamTraits() : clapeze::NumericParam("EnvAttack", "Attack", 1.0f, 1000.0f, 1.0f, "ms") {
+        mCurve = cPowCurve<2.0f>;
+    }
 };
 
 template <>
 struct ParamTraits<Params, Params::EnvDecay> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("EnvDecay", "Decay", 10.0f, 30000.0f, 10.0f, "ms") { mCurve = cPowCurve<2>; }
+    ParamTraits() : clapeze::NumericParam("EnvDecay", "Decay", 10.0f, 30000.0f, 10.0f, "ms") {
+        mCurve = cPowCurve<2.0f>;
+    }
 };
 
 template <>
@@ -154,7 +158,7 @@ struct ParamTraits<Params, Params::EnvSustain> : public clapeze::PercentParam {
 template <>
 struct ParamTraits<Params, Params::EnvRelease> : public clapeze::NumericParam {
     ParamTraits() : clapeze::NumericParam("EnvRelease", "Release", 10.0f, 30000.0f, 10.0f, "ms") {
-        mCurve = cPowCurve<2>;
+        mCurve = cPowCurve<2.0f>;
     }
 };
 
@@ -652,10 +656,10 @@ class Plugin : public InstrumentPlugin {
                                     .Parameter<Params::VcaGain>()
                                     .Parameter<Params::VcaEnvDisabled>()
                                     .Parameter<Params::VcaLfoAmount>();
-        ConfigFeature<TomlStateFeature<ParamsFeature>>();
+        ConfigFeature<TomlStateFeature<ParamsFeature>>(*this);
 
 #if KITSBLIPS_ENABLE_GUI
-        ConfigFeature<clapeze::AssetsFeature>(GetHost());
+        ConfigFeature<clapeze::AssetsFeature>();
         // aspect ratio 1.5
         kitgui::SizeConfig cfg{750, 500, false, true};
         ConfigFeature<KitguiFeature>(

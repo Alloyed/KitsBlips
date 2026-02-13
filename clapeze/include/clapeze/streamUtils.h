@@ -7,11 +7,6 @@
 #include "clap/stream.h"
 
 namespace clapeze {
-/**
- * Wraps a clap_istream_t into a std::streambuf for use with iostream-based APIs.
- *
- * if your api expects seeking, this won't work! instead use clap_istream_tostring.
- */
 class clap_istream_streambuf : public std::streambuf {
     // TODO: seek support. full example at https://stackoverflow.com/a/79746417
    public:
@@ -42,6 +37,11 @@ class clap_istream_streambuf : public std::streambuf {
     char mBuffer[kBufferSize];
 };
 
+/**
+ * Wraps a clap_istream_t into a std::streambuf for use with iostream-based APIs.
+ *
+ * if your api expects seeking, this won't work! instead use istream_tostring.
+ */
 class clap_istream : public std::basic_istream<char> {
     clap_istream_streambuf mBuf;
 
@@ -49,8 +49,7 @@ class clap_istream : public std::basic_istream<char> {
     explicit clap_istream(const clap_istream_t* out) : basic_istream(nullptr), mBuf(out) { this->init(&mBuf); }
 };
 
-inline std::string clap_istream_tostring(const clap_istream_t* in) {
-    clap_istream stream(in);
+inline std::string istream_tostring(std::istream& stream) {
     return std::string((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
 }
 

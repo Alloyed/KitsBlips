@@ -8,6 +8,7 @@ FetchContent_MakeAvailable(clap etl miniz fmt tomlplusplus)
 add_library(clapeze STATIC)
 set_target_properties(clapeze PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(miniz PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(clapeze PRIVATE cxx_std_20)
 target_enable_warnings(clapeze)
 target_disable_warnings(miniz)
@@ -17,6 +18,7 @@ target_sources(clapeze PRIVATE
     src/pluginHost.cpp
     src/entryPoint.cpp
     src/ext/assets.cpp
+    src/ext/presets.cpp
     src/params/dynamicParametersFeature.cpp
     src/params/enumParametersFeature.cpp
     src/params/parameterTypes.cpp
