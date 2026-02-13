@@ -1,4 +1,4 @@
-#include "clapeze/params/enumParametersFeature.h"
+#include "clapeze/features/params/enumParametersFeature.h"
 
 namespace clapeze::params {
 

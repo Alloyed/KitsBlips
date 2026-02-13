@@ -4,8 +4,8 @@
 
 #include "clapeze/basePlugin.h"
 #include "clapeze/common.h"
-#include "clapeze/ext/audioPorts.h"
-#include "clapeze/ext/notePorts.h"
+#include "clapeze/features/notePortsFeature.h"
+#include "clapeze/features/stereoAudioPortsFeature.h"
 #include "clapeze/transport.h"
 
 namespace clapeze {

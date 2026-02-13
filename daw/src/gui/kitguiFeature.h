@@ -6,7 +6,7 @@
 #include <kitgui/kitgui.h>
 #include <cassert>
 #include <string_view>
-#include "clapeze/ext/gui.h"
+#include "clapeze/features/baseGuiFeature.h"
 
 namespace clapeze {
 

@@ -5,7 +5,7 @@
 #include <cstdio>
 
 #include "clapeze/basePlugin.h"
-#include "clapeze/ext/baseFeature.h"
+#include "clapeze/features/baseFeature.h"
 
 namespace clapeze {
 

@@ -1,9 +1,9 @@
 #include <clapeze/baseProcessor.h>
 #include <clapeze/effectPlugin.h>
-#include <clapeze/params/enumParametersFeature.h>
-#include <clapeze/params/parameterTypes.h>
+#include <clapeze/features/params/enumParametersFeature.h>
+#include <clapeze/features/params/parameterTypes.h>
 #include <kitdsp/math/util.h>
-#include "clapeze/state/binaryStateFeature.h"
+#include "clapeze/features/state/binaryStateFeature.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>

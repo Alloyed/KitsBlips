@@ -3,7 +3,7 @@
 Clapeze doesn't come with any gui framework by default. Instead, you can subclass `clapeze::BaseGuiFeature`. This is a thin wrapper around the clap `EXT_GUI` extension.
 
 ```c++
-#include "clapeze/ext/gui.h"
+#include "clapeze/features/baseGuiFeature.h"
 
 class MyGuiFeature : public clapeze::BaseGuiFeature {
     bool IsApiSupported(ClapWindowApi api, bool isFloating) override;

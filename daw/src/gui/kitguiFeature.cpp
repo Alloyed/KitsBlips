@@ -5,8 +5,8 @@
 #include "gui/kitguiFeature.h"
 
 #include "clapeze/basePlugin.h"
-#include "clapeze/ext/assets.h"
-#include "clapeze/ext/gui.h"
+#include "clapeze/features/assetsFeature.h"
+#include "clapeze/features/baseGuiFeature.h"
 #include "clapeze/pluginHost.h"
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"

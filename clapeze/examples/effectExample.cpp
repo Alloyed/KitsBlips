@@ -4,9 +4,9 @@
 #include <clapeze/baseProcessor.h>
 #include <clapeze/effectPlugin.h>
 #include <clapeze/entryPoint.h>
-#include <clapeze/params/enumParametersFeature.h>
-#include <clapeze/params/parameterTypes.h>
-#include <clapeze/state/binaryStateFeature.h>
+#include <clapeze/features/params/enumParametersFeature.h>
+#include <clapeze/features/params/parameterTypes.h>
+#include <clapeze/features/state/binaryStateFeature.h>
 
 /**
  * This is the clapeze interpretation of "AGain", a classic short example plugin.
@@ -39,7 +39,7 @@ using MyParamsHandle = MyParamsFeature::ProcessorHandle;
 namespace clapeze::params {
 using namespace effectExample;
 // a ParamTraits implementation should inherit from clapeze::BaseParam. they can do anything, but there are a number of
-// convenient ones built-in. see `clapeze/ext/parameterConfigs.h` for more.
+// convenient ones built-in. see `clapeze/features/parameterConfigs.h` for more.
 template <>
 struct ParamTraits<MyParams, MyParams::Gain> : public DbParam {
     //                       key    name    min    max    default

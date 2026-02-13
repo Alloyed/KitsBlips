@@ -1,8 +1,8 @@
 #pragma once
 
 #include <clap/ext/params.h>
-#include <clapeze/params/baseParameter.h>
-#include <clapeze/params/parameterTypes.h>
+#include <clapeze/features/params/baseParameter.h>
+#include <clapeze/features/params/parameterTypes.h>
 #include <string_view>
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>

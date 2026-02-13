@@ -7,7 +7,7 @@
 #include <optional>
 #include <unordered_map>
 #include "clapeze/basePlugin.h"
-#include "clapeze/params/baseParameter.h"
+#include "clapeze/features/params/baseParameter.h"
 #include "clapeze/stringUtils.h"
 
 namespace clapeze::params {

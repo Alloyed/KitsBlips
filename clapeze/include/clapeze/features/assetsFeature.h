@@ -1,10 +1,10 @@
 // Loads files from either from disk directly, or from a virtual filesystem embedded within the plugin.
 #pragma once
 
+#include <miniz.h>
 #include <ios>
 #include <istream>
-#include "clapeze/ext/baseFeature.h"
-#include "miniz.h"
+#include "clapeze/features/baseFeature.h"
 
 namespace clapeze {
 class PluginHost;

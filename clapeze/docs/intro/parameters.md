@@ -82,4 +82,4 @@ Tricky, but done! The most common parameter type is probably percent, but to get
 
 [^traits]: https://www.cs.rpi.edu/~musser/design/blitz/traits1.html
 
-[^paramConfigs]: [source](/clapeze/include/clapeze/ext/parameterConfigs.h)
+[^paramConfigs]: [source](/clapeze/include/clapeze/features/parameterConfigs.h)

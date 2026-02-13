@@ -1,9 +1,9 @@
 #include <clap/ext/params.h>
 #include <clapeze/entryPoint.h>
+#include <clapeze/features/params/enumParametersFeature.h>
+#include <clapeze/features/params/parameterTypes.h>
+#include <clapeze/features/state/tomlStateFeature.h>
 #include <clapeze/instrumentPlugin.h>
-#include <clapeze/params/enumParametersFeature.h>
-#include <clapeze/params/parameterTypes.h>
-#include <clapeze/state/tomlStateFeature.h>
 #include <clapeze/voice.h>
 #include <etl/vector.h>
 #include <kitdsp/control/adsr.h>
@@ -22,7 +22,7 @@
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>
 #include <kitgui/app.h>
-#include "clapeze/ext/assets.h"
+#include "clapeze/features/assetsFeature.h"
 #include "gui/debugui.h"
 #include "gui/kitguiFeature.h"
 #include "kitgui/gfx/scene.h"

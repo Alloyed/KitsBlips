@@ -6,8 +6,8 @@
 #include <clap/ext/preset-load.h>
 #include <clap/factory/preset-discovery.h>
 #include "clapeze/basePlugin.h"
-#include "clapeze/ext/assets.h"
-#include "clapeze/ext/baseFeature.h"
+#include "clapeze/features/assetsFeature.h"
+#include "clapeze/features/baseFeature.h"
 
 namespace clapeze {
 

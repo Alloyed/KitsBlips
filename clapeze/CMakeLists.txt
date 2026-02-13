@@ -17,12 +17,12 @@ target_sources(clapeze PRIVATE
     src/basePlugin.cpp
     src/pluginHost.cpp
     src/entryPoint.cpp
-    src/ext/assets.cpp
-    src/ext/presets.cpp
-    src/params/dynamicParametersFeature.cpp
-    src/params/enumParametersFeature.cpp
-    src/params/parameterTypes.cpp
-    src/state/tomlImplementation.cpp
+    src/features/assets.cpp
+    src/features/presets.cpp
+    src/features/params/dynamicParametersFeature.cpp
+    src/features/params/enumParametersFeature.cpp
+    src/features/params/parameterTypes.cpp
+    src/features/state/tomlImplementation.cpp
 )
 
 target_include_directories(clapeze PUBLIC include)

@@ -7,7 +7,7 @@
 #include <unordered_map>
 
 #include "clapeze/baseProcessor.h"
-#include "clapeze/ext/baseFeature.h"
+#include "clapeze/features/baseFeature.h"
 #include "clapeze/pluginHost.h"
 
 namespace clapeze {

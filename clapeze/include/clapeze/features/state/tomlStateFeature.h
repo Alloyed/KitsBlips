@@ -9,9 +9,9 @@
 #include "clap/plugin.h"
 #include "clap/stream.h"
 #include "clapeze/basePlugin.h"
-#include "clapeze/ext/baseFeature.h"
-#include "clapeze/ext/presets.h"
-#include "clapeze/params/baseParameter.h"
+#include "clapeze/features/baseFeature.h"
+#include "clapeze/features/params/baseParameter.h"
+#include "clapeze/features/presetFeature.h"
 #include "clapeze/pluginHost.h"
 #include "clapeze/streamUtils.h"
 

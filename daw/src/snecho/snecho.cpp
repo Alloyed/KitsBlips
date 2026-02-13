@@ -1,9 +1,9 @@
 #include <clapeze/entryPoint.h>
-#include <clapeze/params/enumParametersFeature.h>
-#include <clapeze/params/parameterTypes.h>
+#include <clapeze/features/params/enumParametersFeature.h>
+#include <clapeze/features/params/parameterTypes.h>
 #include "clapeze/baseProcessor.h"
 #include "clapeze/effectPlugin.h"
-#include "clapeze/state/tomlStateFeature.h"
+#include "clapeze/features/state/tomlStateFeature.h"
 #include "descriptor.h"
 
 #include <etl/memory.h>

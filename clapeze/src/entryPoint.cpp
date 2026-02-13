@@ -1,7 +1,7 @@
 #include "clapeze/entryPoint.h"
 
 #include <clap/factory/preset-discovery.h>
-#include "clapeze/ext/presets.h"
+#include "clapeze/features/presetFeature.h"
 
 namespace clapeze {
 

@@ -1,9 +1,9 @@
 // combines preset loading and preset discovery into a single feature, using the same serialization/deserialization that
 // the state feature provides.
 
-#include "clapeze/ext/presets.h"
 #include <fstream>
-#include "clapeze/state/tomlStateFeature.h"
+#include "clapeze/features/presetFeature.h"
+#include "clapeze/features/state/tomlStateFeature.h"
 
 namespace clapeze {
 

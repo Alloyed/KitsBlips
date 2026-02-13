@@ -1,12 +1,12 @@
 #include <clapeze/effectPlugin.h>
 #include <clapeze/entryPoint.h>
-#include <clapeze/params/enumParametersFeature.h>
-#include <clapeze/params/parameterTypes.h>
+#include <clapeze/features/params/enumParametersFeature.h>
+#include <clapeze/features/params/parameterTypes.h>
 #include <kitdsp/frequencyShifter.h>
 #include <kitdsp/math/util.h>
 
 #include "clapeze/baseProcessor.h"
-#include "clapeze/state/binaryStateFeature.h"
+#include "clapeze/features/state/binaryStateFeature.h"
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI

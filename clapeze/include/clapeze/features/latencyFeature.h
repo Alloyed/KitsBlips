@@ -8,7 +8,7 @@
 #include <clap/factory/preset-discovery.h>
 #include "clap/ext/latency.h"
 #include "clapeze/basePlugin.h"
-#include "clapeze/ext/baseFeature.h"
+#include "clapeze/features/baseFeature.h"
 
 namespace clapeze {
 class LatencyFeature : public BaseFeature {

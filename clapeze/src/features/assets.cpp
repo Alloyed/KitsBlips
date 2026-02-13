@@ -1,4 +1,4 @@
-#include "clapeze/ext/assets.h"
+#include "clapeze/features/assetsFeature.h"
 
 #include <fmt/format.h>
 #include <miniz.h>

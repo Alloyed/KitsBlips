@@ -1,4 +1,4 @@
-#include "clapeze/params/dynamicParametersFeature.h"
+#include "clapeze/features/params/dynamicParametersFeature.h"
 
 namespace clapeze::params {
 

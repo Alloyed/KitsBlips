@@ -8,7 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string_view>
-#include "clapeze/params/baseParameter.h"
+#include "clapeze/features/params/baseParameter.h"
 
 namespace clapeze {
 struct ParamCurve {

@@ -10,7 +10,7 @@
 #include <memory>
 
 #include "clap/events.h"
-#include "clapeze/params/baseParametersFeature.h"
+#include "clapeze/features/params/baseParametersFeature.h"
 #include "clapeze/pluginHost.h"
 
 namespace clapeze::params {
