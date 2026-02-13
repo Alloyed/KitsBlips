@@ -1,6 +1,6 @@
+#include <clapeze/entryPoint.h>
 #include <gtest/gtest.h>
 #include <array>
-#include "clapeze/entryPoint.h"
 #include "mockHost.h"
 
 // evil trick

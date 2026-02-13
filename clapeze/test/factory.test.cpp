@@ -1,9 +1,9 @@
+#include <clapeze/basePlugin.h>
+#include <clapeze/entryPoint.h>
 #include <gtest/gtest.h>
 #include "clap/factory/plugin-factory.h"
 #include "clap/plugin.h"
 #include "clap/version.h"
-#include "clapeze/basePlugin.h"
-#include "clapeze/entryPoint.h"
 
 extern "C" const clap_plugin_entry_t clap_entry = CLAPEZE_CREATE_ENTRY_POINT();
 

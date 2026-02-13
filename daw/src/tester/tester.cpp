@@ -6,7 +6,7 @@
 #include <etl/queue_spsc_atomic.h>
 #include <etl/string.h>
 
-#include "clapeze/pluginHost.h"
+#include <clapeze/pluginHost.h>
 #include "descriptor.h"
 #include "fmt/base.h"
 #include "kitgui/context.h"

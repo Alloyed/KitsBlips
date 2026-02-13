@@ -1,5 +1,5 @@
 
-#include "clapeze/entryPoint.h"
+#include <clapeze/entryPoint.h>
 
 // your program or build system may provide a version of this macro already! if so, use that.
 #ifdef _WIN32

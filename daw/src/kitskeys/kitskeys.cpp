@@ -20,9 +20,9 @@
 #include "kitgui/context.h"
 
 #if KITSBLIPS_ENABLE_GUI
+#include <clapeze/features/assetsFeature.h>
 #include <imgui.h>
 #include <kitgui/app.h>
-#include "clapeze/features/assetsFeature.h"
 #include "gui/debugui.h"
 #include "gui/kitguiFeature.h"
 #include "kitgui/gfx/scene.h"

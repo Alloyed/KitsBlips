@@ -7,7 +7,7 @@ The CLAP format supports multiple plugins from a single binary, so we do too[^sr
 Add an entrypoint.cpp file (name does not matter), and include the following:
 
 ```cpp
-#include "clapeze/entryPoint.h"
+#include <clapeze/entryPoint.h>
 
 // your program or build system may provide a version of this macro already! if so, use that.
 #if defined _WIN32
@@ -37,7 +37,7 @@ WARNING: Notably, this trick will fail for projects that use static targets. Thi
 Add an entrypoint.cpp file (name does not matter), and include the following:
 
 ```cpp
-#include "clapeze/entryPoint.h"
+#include <clapeze/entryPoint.h>
 
 extern "C" const clap_plugin_entry_t clap_entry = CLAPEZE_CREATE_ENTRY_POINT();
 
@@ -51,7 +51,7 @@ You will now also need a header to declare the existence of the plugin.
 
 ```cpp
 #pragma once
-#include "clapeze/basePlugin.h"
+#include <clapeze/basePlugin.h>
 
 namespace MyPlugin{
     class Plugin : public clapeze::BasePlugin {/*...*/};

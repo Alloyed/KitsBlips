@@ -2,11 +2,11 @@
 
 #if KITSBLIPS_ENABLE_GUI
 
+#include <clapeze/features/baseGuiFeature.h>
 #include <kitgui/context.h>
 #include <kitgui/kitgui.h>
 #include <cassert>
 #include <string_view>
-#include "clapeze/features/baseGuiFeature.h"
 
 namespace clapeze {
 

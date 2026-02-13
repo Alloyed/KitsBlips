@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 
+#include <clapeze/entryPoint.h>
 #include <array>
 #include <cstddef>
 #include "clap/audio-buffer.h"
 #include "clap/events.h"
 #include "clap/ext/params.h"
 #include "clap/process.h"
-#include "clapeze/entryPoint.h"
 #include "mockHost.h"
 
 // evil trick

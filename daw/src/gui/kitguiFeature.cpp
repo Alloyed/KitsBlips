@@ -1,13 +1,13 @@
 #include <clap/ext/timer-support.h>
+#include <clapeze/streamUtils.h>
 #include <string_view>
-#include "clapeze/streamUtils.h"
 #if KITSBLIPS_ENABLE_GUI
 #include "gui/kitguiFeature.h"
 
-#include "clapeze/basePlugin.h"
-#include "clapeze/features/assetsFeature.h"
-#include "clapeze/features/baseGuiFeature.h"
-#include "clapeze/pluginHost.h"
+#include <clapeze/basePlugin.h>
+#include <clapeze/features/assetsFeature.h>
+#include <clapeze/features/baseGuiFeature.h>
+#include <clapeze/pluginHost.h>
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
 
