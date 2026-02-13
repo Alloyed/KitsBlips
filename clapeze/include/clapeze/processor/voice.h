@@ -8,8 +8,8 @@
 #include <cstdio>
 #include <optional>
 #include "clap/events.h"
-#include "clapeze/baseProcessor.h"
 #include "clapeze/common.h"
+#include "clapeze/processor/baseProcessor.h"
 
 namespace clapeze {
 

@@ -1,12 +1,12 @@
 #include <clap/ext/params.h>
 #include <clap/plugin-features.h>
 #include <clap/plugin.h>
-#include <clapeze/baseProcessor.h>
 #include <clapeze/effectPlugin.h>
 #include <clapeze/entryPoint.h>
 #include <clapeze/features/params/enumParametersFeature.h>
 #include <clapeze/features/params/parameterTypes.h>
 #include <clapeze/features/state/binaryStateFeature.h>
+#include <clapeze/processor/baseProcessor.h>
 
 /**
  * This is the clapeze interpretation of "AGain", a classic short example plugin.

@@ -4,8 +4,8 @@
 #include <clapeze/features/params/parameterTypes.h>
 #include <kitdsp/apps/chorus.h>
 
-#include "clapeze/baseProcessor.h"
 #include "clapeze/features/state/binaryStateFeature.h"
+#include "clapeze/processor/baseProcessor.h"
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI

@@ -1,8 +1,8 @@
 #include <clap/events.h>
 #include <clap/process.h>
 #include <clapeze/basePlugin.h>
-#include <clapeze/baseProcessor.h>
 #include <clapeze/entryPoint.h>
+#include <clapeze/processor/baseProcessor.h>
 #include <etl/queue_spsc_atomic.h>
 #include <etl/string.h>
 

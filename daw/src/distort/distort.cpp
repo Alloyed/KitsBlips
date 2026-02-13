@@ -7,8 +7,8 @@
 #include <kitdsp/math/units.h>
 #include <kitdsp/math/util.h>
 
-#include "clapeze/baseProcessor.h"
 #include "clapeze/features/state/binaryStateFeature.h"
+#include "clapeze/processor/baseProcessor.h"
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI

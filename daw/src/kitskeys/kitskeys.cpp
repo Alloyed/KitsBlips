@@ -4,7 +4,7 @@
 #include <clapeze/features/params/parameterTypes.h>
 #include <clapeze/features/state/tomlStateFeature.h>
 #include <clapeze/instrumentPlugin.h>
-#include <clapeze/voice.h>
+#include <clapeze/processor/voice.h>
 #include <etl/vector.h>
 #include <kitdsp/control/adsr.h>
 #include <kitdsp/control/gate.h>

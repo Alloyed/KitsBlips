@@ -6,9 +6,9 @@
 #include <memory>
 #include <unordered_map>
 
-#include "clapeze/baseProcessor.h"
 #include "clapeze/features/baseFeature.h"
 #include "clapeze/pluginHost.h"
+#include "clapeze/processor/baseProcessor.h"
 
 namespace clapeze {
 

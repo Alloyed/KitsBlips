@@ -4,7 +4,7 @@
 #include <clapeze/features/params/parameterTypes.h>
 #include <clapeze/features/state/tomlStateFeature.h>
 #include <clapeze/instrumentPlugin.h>
-#include <clapeze/voice.h>
+#include <clapeze/processor/voice.h>
 
 #include <cmath>
 #include <numbers>

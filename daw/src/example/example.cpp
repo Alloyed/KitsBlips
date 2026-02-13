@@ -1,7 +1,7 @@
-#include <clapeze/baseProcessor.h>
 #include <clapeze/effectPlugin.h>
 #include <clapeze/features/params/enumParametersFeature.h>
 #include <clapeze/features/params/parameterTypes.h>
+#include <clapeze/processor/baseProcessor.h>
 #include <kitdsp/math/util.h>
 #include "clapeze/features/state/binaryStateFeature.h"
 

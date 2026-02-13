@@ -17,8 +17,8 @@ target_sources(clapeze PRIVATE
     src/basePlugin.cpp
     src/pluginHost.cpp
     src/entryPoint.cpp
-    src/features/assets.cpp
-    src/features/presets.cpp
+    src/features/assetsFeature.cpp
+    src/features/presetFeature.cpp
     src/features/params/dynamicParametersFeature.cpp
     src/features/params/enumParametersFeature.cpp
     src/features/params/parameterTypes.cpp

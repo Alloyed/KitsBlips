@@ -5,9 +5,9 @@
 #include "clap/ext/latency.h"
 #include "clap/plugin.h"
 #include "clap/process.h"
-#include "clapeze/baseProcessor.h"
 #include "clapeze/features/latencyFeature.h"
 #include "clapeze/pluginHost.h"
+#include "clapeze/processor/baseProcessor.h"
 
 namespace clapeze {
 

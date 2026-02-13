@@ -11,5 +11,7 @@ Simple instruments can use the `clapeze::InstrumentPlugin` base class to provide
 Is currently unimplemented. I definitely want it, though!
 
 [^src]: [source](/clapeze/include/clapeze/instrumentPlugin.h)
+
 [^example]: [source](/clapeze/examples/instrumentExample.cpp)
-[^voices-src]: [source](/clapeze/include/clapeze/voice.h)
+
+[^voices-src]: [source](/clapeze/include/clapeze/processor/voice.h)

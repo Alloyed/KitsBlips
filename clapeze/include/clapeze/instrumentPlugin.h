@@ -6,7 +6,7 @@
 #include "clapeze/common.h"
 #include "clapeze/features/notePortsFeature.h"
 #include "clapeze/features/stereoAudioPortsFeature.h"
-#include "clapeze/transport.h"
+#include "clapeze/processor/transport.h"
 
 namespace clapeze {
 
