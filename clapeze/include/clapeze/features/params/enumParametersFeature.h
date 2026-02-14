@@ -8,7 +8,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
-#include <string_view>
 
 #include "clap/events.h"
 #include "clapeze/features/params/baseParametersFeature.h"
@@ -24,7 +23,7 @@ template <ParamEnum TParamId, TParamId id>
 struct ParamTraits;
 
 template <ParamEnum TParamId>
-class EnumProcessorHandle {
+class EnumProcessorHandle : public BaseProcessorHandle {
    public:
     EnumProcessorHandle(std::vector<std::unique_ptr<const BaseParam>>& ref,
                         size_t numParams,
@@ -74,7 +73,7 @@ class EnumProcessorHandle {
     Queue& mAudioToMain;
 };
 
-class EnumMainHandle {
+class EnumMainHandle : public BaseMainHandle {
    public:
     EnumMainHandle(size_t numParams, Queue& mainToAudio, Queue& audioToMain);
 
@@ -94,14 +93,19 @@ class EnumMainHandle {
 };
 
 template <ParamEnum TParamId>
-class EnumParametersFeature : public BaseParametersFeature<EnumMainHandle, EnumProcessorHandle<TParamId>> {
+class EnumParametersFeature : public BaseParametersFeature {
     // Reminder: to use Base anything you need to prefix with BaseType::!
     // yeah it's annoying sorry
-    using BaseType = BaseParametersFeature<EnumMainHandle, EnumProcessorHandle<TParamId>>;
+    using BaseType = BaseParametersFeature;
 
    public:
+    using ProcessorHandle = EnumProcessorHandle<TParamId>;
+    using MainHandle = EnumMainHandle;
     using Id = TParamId;
-    EnumParametersFeature(PluginHost& host, TParamId numParams) : BaseType(host, static_cast<clap_id>(numParams)) {}
+    EnumParametersFeature(PluginHost& host, TParamId numParams) : BaseType(host, static_cast<clap_id>(numParams)) {
+        mAudio.reset(new ProcessorHandle(mParams, mNumParams, mMainToAudio, mAudioToMain));
+        mMain.reset(new MainHandle(mNumParams, mMainToAudio, mAudioToMain));
+    }
 
     template <TParamId id>
     EnumParametersFeature& Parameter() {
@@ -110,7 +114,7 @@ class EnumParametersFeature : public BaseParametersFeature<EnumMainHandle, EnumP
         ParamType* param = new ParamType();
         BaseType::mParams[index].reset(param);
         BaseType::mParamKeyToId.insert_or_assign(param->GetKey(), index);
-        BaseType::mMain.SetRawValue(index, param->GetRawDefault());
+        BaseType::mMain->SetRawValue(index, param->GetRawDefault());
         return *this;
     }
 

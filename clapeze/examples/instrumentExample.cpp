@@ -115,7 +115,7 @@ class Plugin : public clapeze::InstrumentPlugin {
                                     .Parameter(static_cast<clap_id>(Params::Fall), new FallTraits())
                                     .Parameter(static_cast<clap_id>(Params::Polyphony), new PolyphonyTraits());
         ConfigFeature<clapeze::TomlStateFeature<ParamsFeature>>(*this);
-        ConfigProcessor<Processor>(params.GetProcessorHandle());
+        ConfigProcessor<Processor>(params.GetProcessorHandle<ParamsFeature::ProcessorHandle>());
     }
 };
 

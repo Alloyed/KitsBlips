@@ -8,10 +8,10 @@
 
 namespace clapeze {
 
-template <typename ParamsType>
+template <typename TParametersFeature>
 class EffectProcessor : public BaseProcessor {
    public:
-    explicit EffectProcessor(ParamsType& params) : BaseProcessor(), mParams(params) {}
+    explicit EffectProcessor(TParametersFeature& params) : BaseProcessor(), mParams(params) {}
     ~EffectProcessor() = default;
 
     void ProcessEvent(const clap_event_header_t& event) final {
@@ -70,7 +70,7 @@ class EffectProcessor : public BaseProcessor {
         return ProcessAudio(in, out);
     }
 
-    ParamsType& mParams;
+    TParametersFeature& mParams;
     Transport mTransport{};
 };
 

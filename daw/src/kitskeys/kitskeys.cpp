@@ -665,7 +665,7 @@ class Plugin : public InstrumentPlugin {
         ConfigFeature<KitguiFeature>(
             GetHost(), [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); }, cfg);
 #endif
-        ConfigProcessor<Processor>(params.GetProcessorHandle());
+        ConfigProcessor<Processor>(params.GetProcessorHandle<ParamsFeature::ProcessorHandle>());
     }
 };
 

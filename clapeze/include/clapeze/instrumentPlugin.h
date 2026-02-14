@@ -10,10 +10,10 @@
 
 namespace clapeze {
 
-template <typename ParamsType>
+template <typename TParametersFeature>
 class InstrumentProcessor : public BaseProcessor {
    public:
-    explicit InstrumentProcessor(ParamsType& params) : BaseProcessor(), mParams(params) {}
+    explicit InstrumentProcessor(TParametersFeature& params) : BaseProcessor(), mParams(params) {}
     ~InstrumentProcessor() override = default;
 
     void ProcessEvent(const clap_event_header_t& event) final {
@@ -94,7 +94,7 @@ class InstrumentProcessor : public BaseProcessor {
         // process audio from this frame
         return ProcessAudio(out);
     }
-    ParamsType& mParams;
+    TParametersFeature& mParams;
     Transport mTransport{};
 };
 

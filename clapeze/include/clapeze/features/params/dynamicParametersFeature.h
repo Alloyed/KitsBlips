@@ -16,7 +16,7 @@
 namespace clapeze::params {
 class DynamicParametersFeature;
 
-class DynamicProcessorHandle {
+class DynamicProcessorHandle : public BaseProcessorHandle {
    public:
     DynamicProcessorHandle(std::vector<std::unique_ptr<const BaseParam>>& ref,
                            size_t numParams,
@@ -26,8 +26,8 @@ class DynamicProcessorHandle {
     template <class TParam>
     typename TParam::_valuetype Get(clap_id id) const;
 
-    bool ProcessEvent(const clap_event_header_t& event);
-    void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out);
+    bool ProcessEvent(const clap_event_header_t& event) override;
+    void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) override;
 
    private:
     double GetRawValue(clap_id id) const;
@@ -43,17 +43,17 @@ class DynamicProcessorHandle {
     Queue& mAudioToMain;
 };
 
-class DynamicMainHandle {
+class DynamicMainHandle : public BaseMainHandle {
    public:
     DynamicMainHandle(size_t numParams, Queue& mainToAudio, Queue& audioToMain);
 
-    double GetRawValue(clap_id id) const;
-    void SetRawValue(clap_id id, double newValue);
+    double GetRawValue(clap_id id) const override;
+    void SetRawValue(clap_id id, double newValue) override;
 
-    void StartGesture(clap_id id);
-    void StopGesture(clap_id id);
+    void StartGesture(clap_id id) override;
+    void StopGesture(clap_id id) override;
 
-    void FlushFromAudio();
+    void FlushFromAudio() override;
 
    private:
     std::vector<double> mValues;
@@ -62,14 +62,19 @@ class DynamicMainHandle {
     Queue& mAudioToMain;
 };
 
-class DynamicParametersFeature : public BaseParametersFeature<DynamicMainHandle, DynamicProcessorHandle> {
+class DynamicParametersFeature : public BaseParametersFeature {
    public:
-    DynamicParametersFeature(PluginHost& host, clap_id numParams) : BaseParametersFeature(host, numParams) {}
+    using ProcessorHandle = DynamicProcessorHandle;
+    using MainHandle = DynamicMainHandle;
+    DynamicParametersFeature(PluginHost& host, clap_id numParams) : BaseParametersFeature(host, numParams) {
+        mAudio.reset(new DynamicProcessorHandle(mParams, mNumParams, mMainToAudio, mAudioToMain));
+        mMain.reset(new DynamicMainHandle(mNumParams, mMainToAudio, mAudioToMain));
+    }
 
     DynamicParametersFeature& Parameter(clap_id id, BaseParam* param) {
         mParams[id].reset(param);
         mParamKeyToId.insert_or_assign(param->GetKey(), id);
-        mMain.SetRawValue(id, mParams[id]->GetRawDefault());
+        mMain->SetRawValue(id, mParams[id]->GetRawDefault());
         return *this;
     }
 };

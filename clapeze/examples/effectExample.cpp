@@ -151,7 +151,7 @@ class MyPlugin : public clapeze::EffectPlugin {
 
         // we are opting into audio processing using the Processor object defined before, and using the params object as
         // our communication channel.
-        ConfigProcessor<MyProcessor>(params.GetProcessorHandle());
+        ConfigProcessor<MyProcessor>(params.GetProcessorHandle<MyParamsFeature::ProcessorHandle>());
     }
 };
 
