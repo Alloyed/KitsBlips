@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "clapeze/features/baseFeature.h"
+#include "clapeze/impl/casts.h"
 #include "clapeze/pluginHost.h"
 #include "clapeze/processor/baseProcessor.h"
 
@@ -137,13 +138,13 @@ TFeature* BasePlugin::TryConfigFeature(TArgs&&... args) {
 template <typename TProcessor, typename... TArgs>
 TProcessor& BasePlugin::ConfigProcessor(TArgs&&... args) {
     mProcessor = std::make_unique<TProcessor>(std::forward<TArgs>(args)...);
-    return static_cast<TProcessor&>(*mProcessor);
+    return impl::down_cast<TProcessor&>(*mProcessor);
 }
 
 template <typename TPlugin>
 TPlugin& BasePlugin::GetFromPluginObject(const clap_plugin_t* plugin) {
-    BasePlugin* self = static_cast<BasePlugin*>(plugin->plugin_data);
-    return static_cast<TPlugin&>(*self);
+    BasePlugin* self = impl::userdata_cast<BasePlugin*>(plugin->plugin_data);
+    return impl::down_cast<TPlugin&>(*self);
 }
 
 template <typename TFeature>
@@ -151,14 +152,14 @@ TFeature& BaseFeature::GetFromPluginObject(const clap_plugin_t* plugin) {
     BasePlugin& self = BasePlugin::GetFromPluginObject(plugin);
     BaseFeature* ext = self.TryGetFeature(TFeature::NAME);
     assert(ext);
-    return static_cast<TFeature&>(*ext);
+    return impl::down_cast<TFeature&>(*ext);
 }
 
 template <typename TFeature>
 TFeature& BaseFeature::GetFromPlugin(BasePlugin& self) {
     BaseFeature* ext = self.TryGetFeature(TFeature::NAME);
     assert(ext);
-    return static_cast<TFeature&>(*ext);
+    return impl::down_cast<TFeature&>(*ext);
 }
 
 }  // namespace clapeze

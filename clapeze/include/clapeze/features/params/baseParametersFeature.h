@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include "clapeze/basePlugin.h"
 #include "clapeze/features/params/baseParameter.h"
-#include "clapeze/stringUtils.h"
+#include "clapeze/impl/stringUtils.h"
 
 namespace clapeze::params {
 enum class ChangeType : uint8_t { SetValue, SetModulation, StartGesture, StopGesture };
@@ -61,11 +61,11 @@ class BaseParametersFeature : public BaseFeature {
 
     template <std::derived_from<BaseProcessorHandle> THandle = BaseProcessorHandle>
     THandle& GetProcessorHandle() {
-        return static_cast<THandle&>(*mAudio);
+        return impl::down_cast<THandle&>(*mAudio);
     }
     template <std::derived_from<BaseMainHandle> THandle = BaseMainHandle>
     THandle& GetMainHandle() {
-        return static_cast<THandle&>(*mMain);
+        return impl::down_cast<THandle&>(*mMain);
     }
 
     size_t GetNumParams() const;
@@ -199,8 +199,8 @@ inline void BaseParametersFeature::ResetAllParamsToDefault() {
         information->min_value = param->GetRawMin();
         information->max_value = param->GetRawMax();
         information->default_value = param->GetRawDefault();
-        stringCopy(information->name, param->GetName());
-        stringCopy(information->module, param->GetModule());
+        impl::stringCopy(information->name, param->GetName());
+        impl::stringCopy(information->module, param->GetModule());
         return information;
     }
     return false;

@@ -10,14 +10,17 @@
 #include <sstream>
 #include <utility>
 #include "clapeze/basePlugin.h"
+#include "clapeze/impl/casts.h"
 
 namespace clapeze {
 
 PluginHost::PluginHost(const clap_host_t* host)
     : mHost(host),
-      mThreadCheck(static_cast<const clap_host_thread_check_t*>(host->get_extension(host, CLAP_EXT_THREAD_CHECK))),
-      mLog(static_cast<const clap_host_log_t*>(host->get_extension(host, CLAP_EXT_LOG))),
-      mTimer(static_cast<const clap_host_timer_support_t*>(host->get_extension(host, CLAP_EXT_TIMER_SUPPORT))) {}
+      mThreadCheck(
+          impl::userdata_cast<const clap_host_thread_check_t*>(host->get_extension(host, CLAP_EXT_THREAD_CHECK))),
+      mLog(impl::userdata_cast<const clap_host_log_t*>(host->get_extension(host, CLAP_EXT_LOG))),
+      mTimer(impl::userdata_cast<const clap_host_timer_support_t*>(host->get_extension(host, CLAP_EXT_TIMER_SUPPORT))) {
+}
 
 bool PluginHost::HostSupportsExtension(const char* extensionName) const {
     const void* ext = mHost->get_extension(mHost, extensionName);

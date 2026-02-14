@@ -1,17 +1,14 @@
-#include <clap/ext/timer-support.h>
-#include <clapeze/streamUtils.h>
-#include <string_view>
 #if KITSBLIPS_ENABLE_GUI
 #include "gui/kitguiFeature.h"
 
+#include <clap/ext/timer-support.h>
 #include <clapeze/basePlugin.h>
 #include <clapeze/features/assetsFeature.h>
 #include <clapeze/features/baseGuiFeature.h>
+#include <clapeze/impl/streamUtils.h>
 #include <clapeze/pluginHost.h>
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
-
-#include <utility>
 
 namespace {
 
@@ -86,7 +83,7 @@ void KitguiFeature::Configure(BasePlugin& self) {
         auto& assets = clapeze::AssetsFeature::GetFromPlugin<clapeze::AssetsFeature>(self);
         std::string pathstr{path};
         miniz_istream stream = assets.OpenFromPlugin(pathstr.c_str());
-        std::string out = clapeze::istream_tostring(stream);
+        std::string out = clapeze::impl::istream_tostring(stream);
         return out;
     });
 }

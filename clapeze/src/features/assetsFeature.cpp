@@ -5,7 +5,7 @@
 #include <miniz_zip.h>
 #include <fstream>
 #include "clapeze/entryPoint.h"
-#include "clapeze/streamUtils.h"
+#include "clapeze/impl/streamUtils.h"
 
 namespace clapeze {
 

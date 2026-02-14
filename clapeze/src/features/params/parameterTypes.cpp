@@ -1,7 +1,7 @@
 #include "clapeze/features/params/parameterTypes.h"
 
 #include <string_view>
-#include "clapeze/stringUtils.h"
+#include "clapeze/impl/stringUtils.h"
 
 using namespace clapeze;
 
@@ -17,16 +17,16 @@ bool NumericParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
         return false;
     }
     if (mUnit.empty()) {
-        formatToSpan(outTextBuf, "{:.3f}", displayValue);
+        impl::formatToSpan(outTextBuf, "{:.3f}", displayValue);
     } else {
-        formatToSpan(outTextBuf, "{:.3f} {}", displayValue, mUnit);
+        impl::formatToSpan(outTextBuf, "{:.3f} {}", displayValue, mUnit);
     }
     return true;
 }
 
 bool NumericParam::FromText(std::string_view text, double& outRawValue) const {
     double in{};
-    if (!parseNumberFromText(text, in)) {
+    if (!impl::parseNumberFromText(text, in)) {
         return false;
     }
     return FromValue(static_cast<float>(in), outRawValue);
@@ -71,13 +71,13 @@ bool PercentParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
     }
     displayValue *= 100.0f;
 
-    formatToSpan(outTextBuf, "{:.2f}%", displayValue);
+    impl::formatToSpan(outTextBuf, "{:.2f}%", displayValue);
     return true;
 }
 
 bool PercentParam::FromText(std::string_view text, double& outRawValue) const {
     double in{};
-    if (!parseNumberFromText(text, in)) {
+    if (!impl::parseNumberFromText(text, in)) {
         return false;
     }
     return FromValue(static_cast<float>(in) / 100.0f, outRawValue);
@@ -94,17 +94,17 @@ bool IntegerParam::ToText(double rawValue, etl::span<char>& outTextBuf) const {
         if (rawValue == 1.0 && !mUnitSingular.empty()) {
             unit = mUnitSingular;
         }
-        formatToSpan(outTextBuf, "{} {}", value, unit);
+        impl::formatToSpan(outTextBuf, "{} {}", value, unit);
         return true;
     }
 
-    formatToSpan(outTextBuf, "{}", value);
+    impl::formatToSpan(outTextBuf, "{}", value);
     return true;
 }
 
 bool IntegerParam::FromText(std::string_view text, double& outRawValue) const {
     double in{};
-    if (!parseNumberFromText(text, in)) {
+    if (!impl::parseNumberFromText(text, in)) {
         return false;
     }
     return FromValue(static_cast<int32_t>(in), outRawValue);

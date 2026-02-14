@@ -6,7 +6,7 @@
 #include <streambuf>
 #include "clap/stream.h"
 
-namespace clapeze {
+namespace clapeze::impl {
 class clap_istream_streambuf : public std::streambuf {
     // TODO: seek support. full example at https://stackoverflow.com/a/79746417
    public:
@@ -90,4 +90,4 @@ class clap_ostream : public std::basic_ostream<char> {
     explicit clap_ostream(const clap_ostream_t* out) : basic_ostream(nullptr), mBuf(out) { this->init(&mBuf); }
 };
 
-}  // namespace clapeze
+}  // namespace clapeze::impl

@@ -11,6 +11,7 @@
 
 #include "clap/events.h"
 #include "clapeze/features/params/baseParametersFeature.h"
+#include "clapeze/impl/casts.h"
 #include "clapeze/pluginHost.h"
 
 namespace clapeze::params {
@@ -36,17 +37,17 @@ class EnumProcessorHandle : public BaseProcessorHandle {
     template <TParamId id>
     typename ParamTraits<TParamId, id>::_valuetype Get() const {
         using ParamType = ParamTraits<TParamId, id>;
-        clap_id index = static_cast<clap_id>(id);
+        clap_id index = clapeze::impl::integral_cast<clap_id>(id);
         return Get<ParamType>(index);
     }
 
     template <TParamId id>
     void Send(typename ParamTraits<TParamId, id>::_valuetype in) {
         using ParamType = ParamTraits<TParamId, id>;
-        clap_id index = static_cast<clap_id>(id);
+        clap_id index = clapeze::impl::integral_cast<clap_id>(id);
         double raw{};
         if (index < mValues.size()) {
-            if (static_cast<const ParamType*>(mParamsRef[index].get())->FromValue(in, raw)) {
+            if (impl::down_cast<const ParamType*>(mParamsRef[index].get())->FromValue(in, raw)) {
                 SetRawValue(index, raw);
                 // tricksy: we're sending our own update from the audio thread to be processed in
                 // FlushEventsFromMain. probably smarter to ask for the event queue and push ourselves in there
@@ -56,8 +57,8 @@ class EnumProcessorHandle : public BaseProcessorHandle {
         }
     }
 
-    bool ProcessEvent(const clap_event_header_t& event);
-    void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out);
+    bool ProcessEvent(const clap_event_header_t& event) override;
+    void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) override;
 
    private:
     double GetRawValue(clap_id id) const;
@@ -77,13 +78,13 @@ class EnumMainHandle : public BaseMainHandle {
    public:
     EnumMainHandle(size_t numParams, Queue& mainToAudio, Queue& audioToMain);
 
-    double GetRawValue(clap_id id) const;
-    void SetRawValue(clap_id id, double newValue);
+    double GetRawValue(clap_id id) const override;
+    void SetRawValue(clap_id id, double newValue) override;
 
-    void StartGesture(clap_id id);
-    void StopGesture(clap_id id);
+    void StartGesture(clap_id id) override;
+    void StopGesture(clap_id id) override;
 
-    void FlushFromAudio();
+    void FlushFromAudio() override;
 
    private:
     std::vector<double> mValues;
@@ -110,7 +111,7 @@ class EnumParametersFeature : public BaseParametersFeature {
     template <TParamId id>
     EnumParametersFeature& Parameter() {
         using ParamType = ParamTraits<TParamId, id>;
-        clap_id index = static_cast<clap_id>(id);
+        clap_id index = clapeze::impl::integral_cast<clap_id>(id);
         ParamType* param = new ParamType();
         BaseType::mParams[index].reset(param);
         BaseType::mParamKeyToId.insert_or_assign(param->GetKey(), index);
@@ -121,8 +122,8 @@ class EnumParametersFeature : public BaseParametersFeature {
     template <TParamId id>
     const ParamTraits<TParamId, id>* GetSpecificParam() const {
         using TParam = ParamTraits<TParamId, id>;
-        clap_id index = static_cast<clap_id>(id);
-        return static_cast<const TParam*>(BaseType::GetBaseParam(index));
+        clap_id index = impl::integral_cast<clap_id>(id);
+        return impl::down_cast<const TParam*>(BaseType::GetBaseParam(index));
     }
 };
 
@@ -131,11 +132,11 @@ template <ParamEnum TParamId>
 template <class TParam>
 typename TParam::_valuetype EnumProcessorHandle<TParamId>::Get(clap_id id) const {
     typename TParam::_valuetype out{};
-    clap_id index = static_cast<clap_id>(id);
+    clap_id index = id;
     if (index < mValues.size()) {
         double raw = GetRawValue(id);
         double mod = GetRawModulation(id);
-        static_cast<const TParam*>(mParamsRef[index].get())->ToValue(raw + mod, out);
+        impl::down_cast<const TParam*>(mParamsRef[index].get())->ToValue(raw + mod, out);
     }
     return out;
 }
@@ -192,12 +193,12 @@ void EnumProcessorHandle<TParamId>::FlushEventsFromMain(BaseProcessor& processor
                     static_cast<uint16_t>(change.type == ChangeType::StartGesture ? CLAP_EVENT_PARAM_GESTURE_BEGIN
                                                                                   : CLAP_EVENT_PARAM_GESTURE_END);
                 event.header.flags = 0;
-                event.param_id = static_cast<clap_id>(change.id);
+                event.param_id = change.id;
                 out->try_push(out, &event.header);
                 break;
             }
             case ChangeType::SetValue: {
-                clap_id index = static_cast<clap_id>(change.id);
+                clap_id index = change.id;
                 mValues[index] = change.value;
 
                 clap_event_param_value_t event = {};
@@ -227,7 +228,7 @@ void EnumProcessorHandle<TParamId>::FlushEventsFromMain(BaseProcessor& processor
 }
 template <ParamEnum TParamId>
 double EnumProcessorHandle<TParamId>::GetRawValue(clap_id id) const {
-    clap_id index = static_cast<clap_id>(id);
+    clap_id index = id;
     if (index < mValues.size()) {
         return mValues[index];
     }
@@ -235,7 +236,7 @@ double EnumProcessorHandle<TParamId>::GetRawValue(clap_id id) const {
 }
 template <ParamEnum TParamId>
 void EnumProcessorHandle<TParamId>::SetRawValue(clap_id id, double newValue) {
-    clap_id index = static_cast<clap_id>(id);
+    clap_id index = id;
     if (index < mValues.size()) {
         mValues[index] = newValue;
         mAudioToMain.push({ChangeType::SetValue, id, newValue});
@@ -244,7 +245,7 @@ void EnumProcessorHandle<TParamId>::SetRawValue(clap_id id, double newValue) {
 
 template <ParamEnum TParamId>
 double EnumProcessorHandle<TParamId>::GetRawModulation(clap_id id) const {
-    clap_id index = static_cast<clap_id>(id);
+    clap_id index = id;
     if (index < mModulations.size()) {
         return mModulations[index];
     }
@@ -252,7 +253,7 @@ double EnumProcessorHandle<TParamId>::GetRawModulation(clap_id id) const {
 }
 template <ParamEnum TParamId>
 void EnumProcessorHandle<TParamId>::SetRawModulation(clap_id id, double newModulation) {
-    clap_id index = static_cast<clap_id>(id);
+    clap_id index = id;
     if (index < mModulations.size()) {
         mModulations[index] = newModulation;
         mAudioToMain.push({ChangeType::SetModulation, id, newModulation});

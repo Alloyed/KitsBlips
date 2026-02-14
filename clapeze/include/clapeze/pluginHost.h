@@ -4,6 +4,7 @@
 #include <functional>
 #include <string>
 #include <utility>
+#include "clapeze/impl/casts.h"
 #include "fmt/base.h"
 #include "fmt/format.h"
 
@@ -90,7 +91,7 @@ template <typename THostExtension>
 bool PluginHost::TryGetExtension(const char* extensionName,
                                  const clap_host_t*& hostOut,
                                  const THostExtension*& extOut) const {
-    extOut = static_cast<const THostExtension*>(mHost->get_extension(mHost, extensionName));
+    extOut = impl::userdata_cast<const THostExtension*>(mHost->get_extension(mHost, extensionName));
     if (extOut) {
         hostOut = mHost;
         return true;

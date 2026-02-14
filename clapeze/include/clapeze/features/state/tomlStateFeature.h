@@ -12,8 +12,8 @@
 #include "clapeze/features/baseFeature.h"
 #include "clapeze/features/params/baseParameter.h"
 #include "clapeze/features/presetFeature.h"
+#include "clapeze/impl/streamUtils.h"
 #include "clapeze/pluginHost.h"
-#include "clapeze/streamUtils.h"
 
 namespace clapeze {
 struct Metadata {
@@ -90,7 +90,7 @@ class TomlStateFeature : public BaseFeature {
         const clap_plugin_descriptor_t& desc = mPlugin.GetDescriptor();
 
         host.Log(clapeze::LogSeverity::Debug, "loading file");
-        std::string fileText = istream_tostring(in);
+        std::string fileText = impl::istream_tostring(in);
         auto result = toml::parse(fileText);
         if (!result) {
             // parse error
@@ -164,14 +164,14 @@ class TomlStateFeature : public BaseFeature {
     static bool _save(const clap_plugin_t* plugin, const clap_ostream_t* out) {
         TomlStateFeature<TParamsFeature>& self =
             BaseFeature::GetFromPluginObject<TomlStateFeature<TParamsFeature>>(plugin);
-        clap_ostream stream(out);
+        impl::clap_ostream stream(out);
         return self.Save(stream);
     }
 
     static bool _load(const clap_plugin_t* plugin, const clap_istream_t* in) {
         TomlStateFeature<TParamsFeature>& self =
             BaseFeature::GetFromPluginObject<TomlStateFeature<TParamsFeature>>(plugin);
-        clap_istream stream(in);
+        impl::clap_istream stream(in);
         return self.Load(stream);
     }
 };
@@ -193,7 +193,7 @@ inline void Metadata::LoadPresetInfo(toml::table* presetkv, PresetInfo& preset) 
 inline std::optional<Metadata> Metadata::loadMetadata(std::istream& in) {
     Metadata data;
 
-    std::string fileText = istream_tostring(in);
+    std::string fileText = impl::istream_tostring(in);
     auto result = toml::parse(fileText);
     if (!result) {
         return std::nullopt;

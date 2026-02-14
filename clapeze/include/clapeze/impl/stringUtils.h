@@ -7,7 +7,7 @@
 #include <cstring>
 #include <string_view>
 
-namespace clapeze {
+namespace clapeze::impl {
 
 /* safe alternative to strcpy when the buffer size is known at compile time. assumes the buffer is zero'd out in
  * advance*/

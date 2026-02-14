@@ -86,7 +86,7 @@ typename TParam::_valuetype DynamicProcessorHandle::Get(clap_id id) const {
     if (id < mValues.size()) {
         double raw = GetRawValue(id);
         double mod = GetRawModulation(id);
-        static_cast<const TParam*>(mParamsRef[id].get())->ToValue(raw + mod, out);
+        impl::down_cast<const TParam*>(mParamsRef[id].get())->ToValue(raw + mod, out);
     }
     return out;
 }
