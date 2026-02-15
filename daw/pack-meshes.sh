@@ -8,5 +8,5 @@ while IFS= read -r -d '' file; do
   # -mi use mesh instancing
   # -mm merge instances of the same mesh
   #gltfpack -v -cc -tc -mi -i "$file" -o "${file%.glb}.packed.glb"
-  gltfpack -v -tc -mm -i "$file" -o "${file%.glb}.packed.glb"
+  gltfpack -v -tc -i "$file" -o "${file%.glb}.packed.glb"
 done

@@ -1,26 +1,39 @@
 # Use to add a bundled output to your library/executable target
-function(target_add_bundle TARGET_NAME ASSETS_DIR OUT_FILE)
+function(target_add_bundle TARGET_NAME OUT_FILE)
     if (NOT TARGET ${TARGET_NAME})
         message(FATAL_ERROR "Target '${TARGET_NAME}' does not exist")
     endif()
-    if (NOT IS_DIRECTORY ${ASSETS_DIR})
-        message(FATAL_ERROR "Directory '${ASSETS_DIR}' does not exist")
-    endif()
+    set(SOURCES ${ARGN})
 
     # make zip
     set(ZIP_DIR "${CMAKE_CURRENT_BINARY_DIR}/tmp")
     set(ZIP_FILE "${ZIP_DIR}/${TARGET_NAME}_assets.zip")
-    cmake_path(GET ASSETS_DIR PARENT_PATH WORKING_DIR)
-    file(GLOB_RECURSE GLOBBED_ASSETS CONFIGURE_DEPENDS "${ASSETS_DIR}/*")
-    add_custom_command(
-        OUTPUT ${ZIP_FILE}
-        DEPENDS ${GLOBBED_ASSETS}
-        WORKING_DIRECTORY "${WORKING_DIR}" # use so final zip looks like project dir
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${ZIP_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E tar c "${ZIP_FILE}" --format=zip "${ASSETS_DIR}"
-        COMMENT "creating zip file: ${ZIP_FILE}"
-        VERBATIM
-    )
+
+    # this command would work, except for the fact that we want STORE compression (aka, none).
+    #COMMAND ${CMAKE_COMMAND} -E tar c "${ZIP_FILE}" --format=zip "${ASSETS_DIR}"
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        # windows includes tar but not other programs
+        add_custom_command(
+            OUTPUT ${ZIP_FILE}
+            DEPENDS ${SOURCES}
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}" # use so final zip looks like project dir
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${ZIP_DIR}"
+            COMMAND tar.exe -cf "${ZIP_FILE}" --format zip --options="zip:compression=store" ${SOURCES}
+            COMMENT "creating zip file: ${ZIP_FILE}"
+            VERBATIM
+        )
+    else()
+        # every other platform can use info-zip
+        add_custom_command(
+            OUTPUT ${ZIP_FILE}
+            DEPENDS ${SOURCES}
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}" # use so final zip looks like project dir
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${ZIP_DIR}"
+            COMMAND zip -0 -r "${ZIP_FILE}" ${SOURCES}
+            COMMENT "creating zip file: ${ZIP_FILE}"
+            VERBATIM
+        )
+    endif()
 
     # make bundle
     set(TARGET_FILE "$<TARGET_FILE:${TARGET_NAME}>")

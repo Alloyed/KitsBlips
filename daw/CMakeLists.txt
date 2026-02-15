@@ -98,6 +98,9 @@ if(KITSBLIPS_ENABLE_SENTRY)
     enable_sentry(${DEBUGGABLE_TARGETS})
 endif()
 
+set(ASSETS
+    assets/kitskeys.glb
+)
 
 # as shrimple as that!
 add_library(KitsBlips-clap MODULE)
@@ -108,7 +111,7 @@ target_add_clap_configuration(TARGET KitsBlips-clap
     BUNDLE_VERSION "${PROJECT_VERSION}"
 )
 if(NOT APPLE) # TODO: mac support
-    target_add_bundle(KitsBlips-clap "${CMAKE_CURRENT_LIST_DIR}/assets" "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.clap")
+    target_add_bundle(KitsBlips-clap "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.clap" ${ASSETS})
 endif()
 
 if(KITSBLIPS_ENABLE_VST)
@@ -124,7 +127,7 @@ if(KITSBLIPS_ENABLE_VST)
         WINDOWS_FOLDER_VST3 FALSE
     )
     if(NOT APPLE) # TODO: mac support
-        target_add_bundle(KitsBlips-vst3 "${CMAKE_CURRENT_LIST_DIR}/assets" "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.vst3")
+        target_add_bundle(KitsBlips-vst3 "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.vst3" ${ASSETS})
     endif()
 endif()
 
