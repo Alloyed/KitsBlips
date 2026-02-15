@@ -432,7 +432,7 @@ class GuiApp : public kitgui::BaseApp {
         uint32_t h{};
         GetContext().GetSizeInPixels(w, h);
         mScene->SetViewport({static_cast<float>(w), static_cast<float>(h)});
-        mScene->SetBrightness(0.00125f);  // idk why magnum is so intense by default, to investigate
+        mScene->SetBrightness(0.0005f);  // idk why magnum is so intense by default, to investigate
 
         struct KnobSetupInfo {
             Params param;
