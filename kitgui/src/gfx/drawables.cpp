@@ -2,17 +2,14 @@
 
 #include <Magnum/GL/Renderer.h>
 #include <Magnum/SceneGraph/Camera.h>
-#include <Magnum/Shaders/FlatGL.h>
 #include <Magnum/Shaders/PhongGL.h>
 #include <Magnum/Trade/MaterialData.h>
 #include <Magnum/Trade/PhongMaterialData.h>
-#include <fmt/format.h>
 #include <imgui.h>
 #include <vector>
 
 #include "gfx/materials.h"
 #include "gfx/sceneGraph.h"
-#include "log.h"
 
 using namespace Magnum;
 using namespace Magnum::Math::Literals;
@@ -20,83 +17,35 @@ using namespace Magnum::Math::Literals::ColorLiterals;
 
 namespace kitgui {
 
-FlatDrawable::FlatDrawable(Object3D& object,
-                           Shaders::FlatGL3D& shader,
-                           GL::Mesh& mesh,
-                           uint32_t objectId,
-                           const Color4& color,
-                           const Vector3& scale,
-                           SceneGraph::DrawableGroup3D& group)
-    : BaseDrawable{object, &group}, mShader(shader), mMesh(mesh), mObjectId{objectId}, mColor{color}, mScale{scale} {}
-
-void FlatDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera3D& camera) {
-    /* Override the inherited scale, if requested */
-    Matrix4 transformation;
-    if (mScale == mScale) {
-        transformation = Matrix4::from(transformationMatrix.rotationShear(), transformationMatrix.translation()) *
-                         Matrix4::scaling(Vector3{mScale});
-    } else {
-        // NaN
-        transformation = transformationMatrix;
-    }
-
-    mShader.setColor(mColor)
-        .setTransformationProjectionMatrix(camera.projectionMatrix() * transformation)
-        .setObjectId(mObjectId);
-
-    mShader.draw(mMesh);
-}
-
-void FlatDrawable::ImGui() {
-    if (ImGui::TreeNode(this, "%d", mObjectId)) {
-        ImGui::Text("Flat");
-        ImVec4 c = {mColor.r(), mColor.g(), mColor.b(), mColor.a()};
-        ImGui::ColorButton("color", c);
-        ImGui::LabelText("scale", "%f, %f, %f", mScale.x(), mScale.y(), mScale.z());
-        ImGui::TreePop();
-    }
-}
-
-PhongDrawable::PhongDrawable(Object3D& object,
-                             Shaders::PhongGL& shader,
-                             GL::Mesh& mesh,
+PhongDrawable::PhongDrawable(const SharedDrawableState& state,
+                             Object3D& object,
                              uint32_t objectId,
+                             GL::Mesh& mesh,
+                             Shaders::PhongGL& shader,
                              const Color4& color,
                              GL::Texture2D* diffuseTexture,
                              GL::Texture2D* normalTexture,
                              Float normalTextureScale,
                              Float alphaMask,
                              const Matrix3& textureMatrix,
-                             const bool& shadeless,
+                             float ambientFactor,
+                             float specularFactor,
+                             float shininess,
                              SceneGraph::DrawableGroup3D& group)
     : BaseDrawable{object, &group},
+      mTextureMatrix(textureMatrix),
+      mShared(state),
       mShader(shader),
       mMesh(mesh),
-      mObjectId{objectId},
-      mColor{color},
-      mDiffuseTexture{diffuseTexture},
-      mNormalTexture{normalTexture},
-      mNormalTextureScale{normalTextureScale},
-      mAlphaMask{alphaMask},
-      mTextureMatrix{textureMatrix},
-      mShadeless{shadeless} {}
-
-PhongDrawable::PhongDrawable(Object3D& object,
-                             Shaders::PhongGL& shader,
-                             GL::Mesh& mesh,
-                             uint32_t objectId,
-                             const Color4& color,
-                             const bool& shadeless,
-                             SceneGraph::DrawableGroup3D& group)
-    : BaseDrawable{object, &group},
-      mShader(shader),
-      mMesh(mesh),
-      mObjectId{objectId},
-      mColor{color},
-      mDiffuseTexture{nullptr},
-      mNormalTexture{nullptr},
-      mAlphaMask{0.5f},
-      mShadeless{shadeless} {}
+      mObjectId(objectId),
+      mColor(color),
+      mDiffuseTexture(diffuseTexture),
+      mNormalTexture(normalTexture),
+      mNormalTextureScale(normalTextureScale),
+      mAlphaMask(alphaMask),
+      mAmbientFactor(ambientFactor),
+      mSpecularFactor(specularFactor),
+      mShininess(shininess) {}
 
 void PhongDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera3D& camera) {
     Matrix4 usedTransformationMatrix{NoInit};
@@ -114,14 +63,14 @@ void PhongDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera
         mShader.bindNormalTexture(*mNormalTexture).setNormalTextureScale(mNormalTextureScale);
     }
 
-    if (mShadeless) {
+    if (mShadeless || mShared.shadeless) {
+        // 100% ambient, 0% diffuse means lights will have no contribution to the final color
         mShader.setAmbientColor(mColor).setDiffuseColor(0x00000000_rgbaf).setSpecularColor(0x00000000_rgbaf);
     } else {
-        // TODO: expose these parameters as tweakables
-        mShader.setAmbientColor(mColor * 0.05f)
+        mShader.setAmbientColor(mColor * mAmbientFactor * mShared.ambientFactor)
             .setDiffuseColor(mColor)
-            .setSpecularColor(0xffffff00_rgbaf * 0.4f)
-            .setShininess(80.0f);
+            .setSpecularColor(0xffffff00_rgbaf * mSpecularFactor * mShared.specularFactor)
+            .setShininess(mShared.shininessDefault * mShininess);
     }
 
     if (mShader.flags() & Shaders::PhongGL::Flag::TextureTransformation) {
@@ -148,9 +97,11 @@ void PhongDrawable::ImGui() {
         ImGui::ColorButton("color", c);
         ImGui::LabelText("hasDiffuse", "%s", mDiffuseTexture == nullptr ? "false" : "true");
         ImGui::LabelText("hasNormal", "%s", mNormalTexture == nullptr ? "false" : "true");
+        ImGui::LabelText("ambientFactor", "%f", mAmbientFactor);
+        ImGui::LabelText("specularFactor", "%f", mSpecularFactor);
+        ImGui::LabelText("shininess", "%f", mShininess);
         ImGui::LabelText("normalTextureScale", "%f", mNormalTextureScale);
         ImGui::LabelText("alphamask", "%f", mAlphaMask);
-        ImGui::LabelText("shadeless", "%s", mShadeless ? "true" : "false");
         ImGui::TreePop();
     }
 }
@@ -167,17 +118,7 @@ void LightDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera
 }
 void LightDrawable::ImGui() {}
 
-Shaders::FlatGL3D& DrawableCache::FlatShader(Shaders::FlatGL3D::Flags flags) {
-    auto found = mFlatShaders.find(enumCastUnderlyingType(flags));
-    if (found == mFlatShaders.end()) {
-        Shaders::FlatGL3D::Configuration configuration;
-        configuration.setFlags(Shaders::FlatGL3D::Flag::ObjectId | flags);
-        found = mFlatShaders.emplace(enumCastUnderlyingType(flags), Shaders::FlatGL3D{configuration}).first;
-    }
-    return found->second;
-}
-
-Shaders::PhongGL& DrawableCache::PhongShader(Shaders::PhongGL::Flags flags, uint32_t lightCount) {
+Shaders::PhongGL& Drawables::GetOrCreatePhongShader(Shaders::PhongGL::Flags flags, uint32_t lightCount) {
     auto found = mPhongShaders.find(enumCastUnderlyingType(flags));
     if (found == mPhongShaders.end()) {
         Shaders::PhongGL::Configuration configuration;
@@ -187,17 +128,16 @@ Shaders::PhongGL& DrawableCache::PhongShader(Shaders::PhongGL::Flags flags, uint
     return found->second;
 }
 
-Magnum::SceneGraph::Drawable3D* DrawableCache::CreateDrawableFromMesh(MaterialCache& mMaterialCache,
-                                                                      MeshInfo& meshInfo,
-                                                                      ObjectInfo& objectInfo,
-                                                                      int32_t materialId,
-                                                                      uint32_t lightCount,
-                                                                      bool shadeless) {
+Magnum::SceneGraph::Drawable3D* Drawables::CreateDrawableFromMesh(MaterialCache& mMaterialCache,
+                                                                  MeshInfo& meshInfo,
+                                                                  ObjectInfo& objectInfo,
+                                                                  const MaterialInfo* materialInfo,
+                                                                  uint32_t lightCount) {
     /* Add drawables for objects that have a mesh, again ignoring objects
        that are not part of the hierarchy. There can be multiple mesh
        assignments for one object, simply add one drawable for each. */
-    const auto object = objectInfo.object;
-    const auto objectId = objectInfo.id;
+    Object3D* object = objectInfo.object;
+    uint32_t objectId = objectInfo.id;
     auto& mesh = meshInfo.mesh;
 
     if (!object || !mesh) {
@@ -206,7 +146,7 @@ Magnum::SceneGraph::Drawable3D* DrawableCache::CreateDrawableFromMesh(MaterialCa
 
     objectInfo.meshIds.push_back(meshInfo.id);
 
-    Shaders::PhongGL::Flags flags;
+    Shaders::PhongGL::Flags flags{};
     if (meshInfo.hasVertexColors) {
         flags |= Shaders::PhongGL::Flag::VertexColor;
     }
@@ -214,66 +154,43 @@ Magnum::SceneGraph::Drawable3D* DrawableCache::CreateDrawableFromMesh(MaterialCa
         flags |= Shaders::PhongGL::Flag::Bitangent;
     }
 
-    /* Material not available / not loaded. If the mesh has vertex
-       colors, use that, otherwise apply a default material; use a flat
-       shader for lines / points */
-    if (materialId == -1 || !mMaterialCache.mMaterials[materialId].raw.has_value()) {
-        if (mesh->primitive() == GL::MeshPrimitive::Triangles ||
-            mesh->primitive() == GL::MeshPrimitive::TriangleStrip ||
-            mesh->primitive() == GL::MeshPrimitive::TriangleFan) {
-            return new PhongDrawable{
-                *object, PhongShader(flags, lightCount), *mesh, objectId, 0xffffff_rgbf, shadeless, mOpaqueDrawables};
-        } else {
-            return new FlatDrawable{*object,
-                                    FlatShader((meshInfo.hasVertexColors ? Shaders::FlatGL3D::Flag::VertexColor
-                                                                         : Shaders::FlatGL3D::Flags{})),
-                                    *mesh,
-                                    objectId,
-                                    0xffffff_rgbf,
-                                    Vector3{Constants::nan()},
-                                    mOpaqueDrawables};
-        }
-
-        /* Material available */
+    if (!materialInfo || !materialInfo->raw) {
+        /* Material not available */
+        return new PhongDrawable(mState, *object, objectId, *mesh, GetOrCreatePhongShader(flags, lightCount),
+                                 0xffffff_rgbf, nullptr, nullptr, 0.0f, 0.5f, {}, 1.0f, 0.0f, 80.0f, mOpaqueDrawables);
     } else {
-        const Trade::PhongMaterialData& material = *mMaterialCache.mMaterials[materialId].Phong();
+        /* Material available */
+        const Trade::PhongMaterialData& material = *materialInfo->Phong();
 
         if (material.isDoubleSided()) {
             flags |= Shaders::PhongGL::Flag::DoubleSided;
         }
 
-        /* Textured material. If the texture failed to load, again just
-           use a default-colored material. */
         GL::Texture2D* diffuseTexture = nullptr;
-        GL::Texture2D* normalTexture = nullptr;
         float normalTextureScale = 1.0f;
         if (material.hasAttribute(Trade::MaterialAttribute::DiffuseTexture)) {
             std::optional<GL::Texture2D>& texture = mMaterialCache.mTextures[material.diffuseTexture()].texture;
             if (texture) {
-                diffuseTexture = &*texture;
+                diffuseTexture = &texture.value();
                 flags |= Shaders::PhongGL::Flag::AmbientTexture | Shaders::PhongGL::Flag::DiffuseTexture;
-                if (material.hasTextureTransformation())
+                if (material.hasTextureTransformation()) {
                     flags |= Shaders::PhongGL::Flag::TextureTransformation;
-                if (material.alphaMode() == Trade::MaterialAlphaMode::Mask)
+                }
+                if (material.alphaMode() == Trade::MaterialAlphaMode::Mask) {
                     flags |= Shaders::PhongGL::Flag::AlphaMask;
+                }
             }
         }
 
-        /* Normal textured material. If the textures fail to load,
-           again just use a default-colored material. */
+        GL::Texture2D* normalTexture = nullptr;
         if (material.hasAttribute(Trade::MaterialAttribute::NormalTexture)) {
             std::optional<GL::Texture2D>& texture = mMaterialCache.mTextures[material.normalTexture()].texture;
             /* If there are no tangents, the mesh would render all
                black. Ignore the normal map in that case. */
-            /** @todo generate tangents instead once we have the algo */
             if (!meshInfo.hasTangents) {
-                /*
-                kitgui::log::error(
-                    fmt::format("Mesh {} doesn't have tangents, auto-generation NYI, so ignoring normal map for now",
-                                meshInfo.debugName));
-                */
+                Error{} << "Mesh " << meshInfo.debugName.c_str() << "doesn't have tangents, so ignoring normal map";
             } else if (texture) {
-                normalTexture = &*texture;
+                normalTexture = &texture.value();
                 normalTextureScale = material.normalTextureScale();
                 flags |= Shaders::PhongGL::Flag::NormalTexture;
                 if (material.hasTextureTransformation())
@@ -286,18 +203,15 @@ Magnum::SceneGraph::Drawable3D* DrawableCache::CreateDrawableFromMesh(MaterialCa
             group = &mTransparentDrawables;
         }
 
-        return new PhongDrawable{*object,
-                                 PhongShader(flags, lightCount),
-                                 *mesh,
-                                 objectId,
-                                 material.diffuseColor(),
-                                 diffuseTexture,
-                                 normalTexture,
-                                 normalTextureScale,
-                                 material.alphaMask(),
-                                 material.commonTextureMatrix(),
-                                 shadeless,
-                                 *group};
+        // TODO: derive from pbr?
+        constexpr float kAmbient = 1.0f;
+        constexpr float kSpecular = 1.0f;
+        constexpr float kShininess = 1.0f;
+
+        return new PhongDrawable(mState, *object, objectId, *mesh, GetOrCreatePhongShader(flags, lightCount),
+                                 material.diffuseColor(), diffuseTexture, normalTexture, normalTextureScale,
+                                 material.alphaMask(), material.commonTextureMatrix(), kAmbient, kSpecular, kShininess,
+                                 *group);
     }
 }
 

@@ -19,10 +19,8 @@
 #include <Magnum/Trade/MaterialData.h>
 #include <Magnum/Trade/PhongMaterialData.h>
 #include <Magnum/Trade/TextureData.h>
-#include <fmt/format.h>
 #include <cstddef>
 #include <optional>
-#include "log.h"
 
 using namespace Magnum;
 
@@ -43,7 +41,8 @@ void loadImage(Magnum::GL::Texture2D& texture, const Magnum::Trade::ImageData2D&
             } else {
                 const PixelFormat imageFormat =
                     pixelFormat(image.format(), channelCount == 2 ? 4 : 3, isPixelFormatSrgb(image.format()));
-                //Debug{} << "Texture swizzle not supported, expanding a" << image.format() << "image to" << imageFormat;
+                // Debug{} << "Texture swizzle not supported, expanding a" << image.format() << "image to" <<
+                // imageFormat;
                 const std::size_t rowStride =
                     static_cast<std::size_t>(4 * ((pixelFormatSize(imageFormat) * image.size().x() + 3) / 4));
                 usedImageStorage = Containers::Array<char>{NoInit, std::size_t(rowStride * image.size().y())};
@@ -84,8 +83,7 @@ void loadImage(Magnum::GL::Texture2D& texture, const Magnum::Trade::ImageData2D&
             case PixelFormat::RGBA32F:
                 format = GL::textureFormat(usedImage.format());
                 break;
-            default:
-            {
+            default: {
                 /*
                 kitgui::log::error(
                     fmt::format("cannot load image of format {} ", static_cast<uint32_t>(usedImage.format())));
@@ -117,8 +115,7 @@ void loadImage(Magnum::GL::Texture2D& texture, const Magnum::Trade::ImageData2D&
             case CompressedPixelFormat::Astc10x8RGBAF:
             case CompressedPixelFormat::Astc10x10RGBAF:
             case CompressedPixelFormat::Astc12x10RGBAF:
-            case CompressedPixelFormat::Astc12x12RGBAF:
-            {
+            case CompressedPixelFormat::Astc12x12RGBAF: {
                 /*
                 kitgui::log::error(fmt::format("cannot load image of compressed format {} ",
                                                static_cast<uint32_t>(image.compressedFormat())));
@@ -136,14 +133,14 @@ void loadImage(Magnum::GL::Texture2D& texture, const Magnum::Trade::ImageData2D&
 namespace kitgui {
 void MaterialCache::LoadTextures(Magnum::Trade::AbstractImporter& importer) {
     /* Load all textures. Textures that fail to load will be NullOpt. */
-    //Debug{} << "Loading" << importer.textureCount() << "textures";
+    // Debug{} << "Loading" << importer.textureCount() << "textures";
     mTextures.clear();
     mTextures.reserve(importer.textureCount());
 
     for (uint32_t i = 0; i != importer.textureCount(); ++i) {
         auto textureData = std::optional<Trade::TextureData>{importer.texture(i)};
         if (!textureData || textureData->type() != Trade::TextureType::Texture2D) {
-            //kitgui::log::error(fmt::format("cannot load texture {}, {} ", i, importer.textureName(i)));
+            // kitgui::log::error(fmt::format("cannot load texture {}, {} ", i, importer.textureName(i)));
             continue;
         }
 
@@ -171,7 +168,7 @@ void MaterialCache::LoadMaterials(Magnum::Trade::AbstractImporter& importer) {
     /* Load all materials. Materials that fail to load will be NullOpt. The
        data will be stored directly in objects later, so save them only
        temporarily. */
-    //kitgui::log::verbose(fmt::format("Loading {} materials", importer.materialCount()));
+    // kitgui::log::verbose(fmt::format("Loading {} materials", importer.materialCount()));
     mMaterials.clear();
     mMaterials.reserve(importer.materialCount());
     for (uint32_t i = 0; i != importer.materialCount(); ++i) {
@@ -184,7 +181,7 @@ void MaterialCache::LoadMaterials(Magnum::Trade::AbstractImporter& importer) {
             (materialData->as<Trade::PhongMaterialData>().hasTextureTransformation() &&
              !materialData->as<Trade::PhongMaterialData>().hasCommonTextureTransformation()) ||
             materialData->as<Trade::PhongMaterialData>().hasTextureCoordinates()) {
-            //kitgui::log::error(fmt::format("Cannont load material {} {}", i, importer.materialName(i)));
+            // kitgui::log::error(fmt::format("Cannont load material {} {}", i, importer.materialName(i)));
             mat.raw = std::nullopt;
             continue;
         }

@@ -94,7 +94,7 @@ bool KitguiFeature::Validate(const BasePlugin& plugin) const {
         return false;
     }
 #ifdef __linux__
-    if (plugin.GetHost().HostSupportsExtension(CLAP_EXT_TIMER_SUPPORT)) {
+    if (!plugin.GetHost().HostSupportsExtension(CLAP_EXT_TIMER_SUPPORT)) {
         plugin.GetHost().Log(LogSeverity::Fatal, "Can't run gui on hosts without timer support");
         return false;
     }

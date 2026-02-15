@@ -31,6 +31,7 @@ struct LightCache {
     std::vector<LightInfo> mLights;
     bool mShadeless{false};
     float mBrightness{0.0025f};
+    float mAmbientBrightness{0.0025f};
     // calculated externally, in LightDrawable
     std::vector<Magnum::Vector4> mLightPositions;
     std::vector<float> mLightRanges;

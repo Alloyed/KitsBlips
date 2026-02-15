@@ -36,6 +36,8 @@ class Scene {
     void SetViewport(const kitgui::Vector2& size);
     /** Sets scene overall brightness, from 0-1+. nullopt means fullbright. */
     void SetBrightness(std::optional<float> brightness);
+    /** Sets scene ambient brightness, from 0-1+. nullopt means fullbright. */
+    void SetAmbientBrightness(float brightness);
 
     // These methods are added as needed, so no rhyme or reason to what's supported really
     void PlayAnimationByName(std::string_view name);

@@ -1,30 +1,36 @@
 #pragma once
 
 #include <Corrade/Containers/ArrayView.h>
-
 #include <Magnum/GL/Mesh.h>
 #include <Magnum/GL/Texture.h>
+#include <Magnum/Magnum.h>
 #include <Magnum/Math/Color.h>
 #include <Magnum/Math/Matrix3.h>
 #include <Magnum/Math/Matrix4.h>
 #include <Magnum/SceneGraph/Drawable.h>
 #include <Magnum/SceneGraph/TranslationRotationScalingTransformation3D.h>
-#include <Magnum/Shaders/FlatGL.h>
 #include <Magnum/Shaders/MeshVisualizerGL.h>
 #include <Magnum/Shaders/PhongGL.h>
 
 #include <span>
 #include <vector>
 
-#include "Magnum/Magnum.h"
 #include "gfx/meshes.h"
 #include "gfx/sceneGraph.h"
 
 namespace kitgui {
 struct MaterialCache;
-}
+struct MaterialInfo;
+}  // namespace kitgui
 
 namespace kitgui {
+
+struct SharedDrawableState {
+    bool shadeless = false;
+    float ambientFactor = 0.05f;
+    float specularFactor = 0.4f;
+    float shininessDefault = 80.0f;
+};
 
 class BaseDrawable : public Magnum::SceneGraph::Drawable3D {
    public:
@@ -33,54 +39,30 @@ class BaseDrawable : public Magnum::SceneGraph::Drawable3D {
     virtual void ImGui() = 0;
 };
 
-class FlatDrawable : public BaseDrawable {
-   public:
-    explicit FlatDrawable(Object3D& object,
-                          Magnum::Shaders::FlatGL3D& shader,
-                          Magnum::GL::Mesh& mesh,
-                          uint32_t objectId,
-                          const Magnum::Color4& color,
-                          const Magnum::Vector3& scale,
-                          Magnum::SceneGraph::DrawableGroup3D& group);
-
-   private:
-    void draw(const Magnum::Matrix4& transformationMatrix, Magnum::SceneGraph::Camera3D& camera) override;
-    void ImGui() override;
-
-    Magnum::Shaders::FlatGL3D& mShader;
-    Magnum::GL::Mesh& mMesh;
-    uint32_t mObjectId;
-    Magnum::Color4 mColor;
-    Magnum::Vector3 mScale;
-};
-
 class PhongDrawable : public BaseDrawable {
    public:
-    explicit PhongDrawable(Object3D& object,
-                           Magnum::Shaders::PhongGL& shader,
-                           Magnum::GL::Mesh& mesh,
+    explicit PhongDrawable(const SharedDrawableState& state,
+                           Object3D& object,
                            uint32_t objectId,
+                           Magnum::GL::Mesh& mesh,
+                           Magnum::Shaders::PhongGL& shader,
                            const Magnum::Color4& color,
                            Magnum::GL::Texture2D* diffuseTexture,
                            Magnum::GL::Texture2D* normalTexture,
                            float normalTextureScale,
                            float alphaMask,
                            const Magnum::Matrix3& textureMatrix,
-                           const bool& shadeless,
-                           Magnum::SceneGraph::DrawableGroup3D& group);
-
-    explicit PhongDrawable(Object3D& object,
-                           Magnum::Shaders::PhongGL& shader,
-                           Magnum::GL::Mesh& mesh,
-                           uint32_t objectId,
-                           const Magnum::Color4& color,
-                           const bool& shadeless,
+                           float ambientFactor,
+                           float specularFactor,
+                           float shininess,
                            Magnum::SceneGraph::DrawableGroup3D& group);
 
    private:
     void draw(const Magnum::Matrix4& transformationMatrix, Magnum::SceneGraph::Camera3D& camera) override;
     void ImGui() override;
 
+    Magnum::Matrix3 mTextureMatrix;
+    const SharedDrawableState& mShared;
     Magnum::Shaders::PhongGL& mShader;
     Magnum::GL::Mesh& mMesh;
     uint32_t mObjectId;
@@ -89,8 +71,10 @@ class PhongDrawable : public BaseDrawable {
     Magnum::GL::Texture2D* mNormalTexture;
     float mNormalTextureScale;
     float mAlphaMask;
-    Magnum::Matrix3 mTextureMatrix;
-    bool mShadeless;
+    float mAmbientFactor;
+    float mSpecularFactor;
+    float mShininess;
+    bool mShadeless = false;
 };
 
 class LightDrawable : public BaseDrawable {
@@ -108,15 +92,13 @@ class LightDrawable : public BaseDrawable {
     std::vector<Magnum::Vector4>& mPositions;
 };
 
-struct DrawableCache {
-    Magnum::Shaders::FlatGL3D& FlatShader(Magnum::Shaders::FlatGL3D::Flags flags);
-    Magnum::Shaders::PhongGL& PhongShader(Magnum::Shaders::PhongGL::Flags flags, uint32_t lightCount);
+struct Drawables {
+    Magnum::Shaders::PhongGL& GetOrCreatePhongShader(Magnum::Shaders::PhongGL::Flags flags, uint32_t lightCount);
     Magnum::SceneGraph::Drawable3D* CreateDrawableFromMesh(MaterialCache& mMaterialCache,
                                                            MeshInfo& meshInfo,
                                                            ObjectInfo& objectInfo,
-                                                           int32_t materialId,
-                                                           uint32_t lightCount,
-                                                           bool shadeless);
+                                                           const MaterialInfo* materialInfo,
+                                                           uint32_t lightCount);
 
     void SetLightColors(const std::span<const Magnum::Color3>& colors) {
         const Corrade::Containers::ArrayView<const Magnum::Color3> colorsView(colors.data(), colors.size());
@@ -125,7 +107,6 @@ struct DrawableCache {
             pair.second.setLightSpecularColors(colorsView);
         }
     }
-
     void SetLightPositions(const std::span<const Magnum::Vector4>& positions) {
         const Corrade::Containers::ArrayView<const Magnum::Vector4> positionsView(positions.data(), positions.size());
         for (auto& pair : mPhongShaders) {
@@ -138,13 +119,14 @@ struct DrawableCache {
             pair.second.setLightRanges(rangesView);
         }
     }
-
-    // uint32_t = Shaders::FlatGL3D::Flags
-    std::unordered_map<uint32_t, Magnum::Shaders::FlatGL3D> mFlatShaders;
+    void SetShadeless(bool shadeless) { mState.shadeless = shadeless; }
+    void SetAmbientFactor(float ambientFactor) { mState.ambientFactor = ambientFactor; }
     // uint32_t = Shaders::PhongGL::Flags
     std::unordered_map<uint32_t, Magnum::Shaders::PhongGL> mPhongShaders;
     // uint32_t = Shaders::MeshVisualizer3D::Flags
     std::unordered_map<uint32_t, Magnum::Shaders::MeshVisualizerGL3D> mMeshVisualizerShaders;
+
+    SharedDrawableState mState{};
 
     Magnum::SceneGraph::DrawableGroup3D mOpaqueDrawables;
     Magnum::SceneGraph::DrawableGroup3D mTransparentDrawables;

@@ -9,21 +9,13 @@
 #include <Corrade/Containers/Array.h>
 #include <Corrade/Containers/BitArray.h>
 #include <Corrade/Containers/Pair.h>
-#include <Corrade/Containers/StridedArrayView.h>
 #include <Corrade/Containers/Triple.h>
-#include <Corrade/Utility/Algorithms.h>
 #include <Magnum/Animation/Player.h>
-#include <Magnum/Animation/Track.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/GL/Renderer.h>
-#include <Magnum/Math/CubicHermite.h>
-#include <Magnum/Math/Quaternion.h>
 #include <Magnum/SceneGraph/Camera.h>
 #include <Magnum/Trade/AbstractImporter.h>
-#include <Magnum/Trade/AnimationData.h>
 #include <Magnum/Trade/CameraData.h>
-#include <Magnum/Trade/MeshData.h>
-#include <Magnum/Trade/PhongMaterialData.h>
 #include <Magnum/Trade/SceneData.h>
 #include <fmt/format.h>
 #include <imgui.h>
@@ -42,7 +34,6 @@
 #include "gfx/sceneGraph.h"
 #include "kitgui/context.h"
 #include "kitgui/types.h"
-#include "log.h"
 
 using namespace Magnum;
 using namespace Magnum::Math::Literals;
@@ -65,6 +56,7 @@ struct Scene::Impl {
     void Draw();
     void SetViewport(const kitgui::Vector2& size);
     void SetBrightness(std::optional<float> brightness);
+    void SetAmbientBrightness(float brightness);
 
     void PlayAnimationByName(std::string_view name);
     void SetObjectRotationByName(std::string_view name, float angleRadians, Scene::Axis axis);
@@ -77,10 +69,10 @@ struct Scene::Impl {
     bool mLoadError = false;
 
     MeshCache mMeshCache;
-
     MaterialCache mMaterialCache;
+
     LightCache mLightCache;
-    DrawableCache mDrawableCache;
+    Drawables mDrawables;
 
     Scene3D mScene;
     std::vector<ObjectInfo> mSceneObjects;
@@ -128,20 +120,14 @@ void Scene::Impl::Load(std::string_view path) {
 }
 
 void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::string_view debugName) {
-    //kitgui::log::TimeRegion r1("Scene::Impl::LoadImpl()");
-
-    {
-        //kitgui::log::TimeRegion r2("Scene::Impl::LoadImpl()::mMaterialCache");
-        mMaterialCache.LoadTextures(importer);
-        mMaterialCache.LoadMaterials(importer);
-    }
+    mMaterialCache.LoadTextures(importer);
+    mMaterialCache.LoadMaterials(importer);
     mLightCache.LoadLights(importer);
     mMeshCache.LoadMeshes(importer);
 
     /* Load the scene. Save the object pointers in an array for easier mapping
        of animations later. */
     uint32_t id = importer.defaultScene() == -1 ? 0 : importer.defaultScene();
-    //Debug{} << "Loading " << debugName.data() << "scene:" << id << importer.sceneName(id);
 
     auto scene = std::optional<Trade::SceneData>(importer.scene(id));
     if (!scene || !scene->is3D() || !scene->hasField(Trade::SceneField::Parent)) {
@@ -212,7 +198,7 @@ void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::strin
     }
 
     /* Import all lights so we know which shaders to instantiate */
-    mLightCache.CreateSceneLights(*scene, mSceneObjects, mDrawableCache.mLightDrawables);
+    mLightCache.CreateSceneLights(*scene, mSceneObjects, mDrawables.mLightDrawables);
 
     /* Import camera references, the first camera will be treated as the
        default one */
@@ -247,14 +233,16 @@ void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::strin
        that are not part of the hierarchy. There can be multiple mesh
        assignments for one object, simply add one drawable for each. */
     if (scene->hasField(Trade::SceneField::Mesh)) {
-        // TODO: can we redo this if shadeless changes?
         for (const auto& meshMaterial : scene->meshesMaterialsAsArray()) {
             const uint32_t objectId = meshMaterial.first();
             const uint32_t meshId = meshMaterial.second().first();
             const int32_t materialId = meshMaterial.second().second();
-            mDrawableCache.CreateDrawableFromMesh(mMaterialCache, mMeshCache.mMeshes[meshId], mSceneObjects[objectId],
-                                                  materialId, static_cast<uint32_t>(mLightCache.mLights.size()),
-                                                  mLightCache.mShadeless);
+            const MaterialInfo* material =
+                materialId >= 0 && materialId < static_cast<int32_t>(mMaterialCache.mMaterials.size())
+                    ? &mMaterialCache.mMaterials[materialId]
+                    : nullptr;
+            mDrawables.CreateDrawableFromMesh(mMaterialCache, mMeshCache.mMeshes[meshId], mSceneObjects[objectId],
+                                              material, static_cast<uint32_t>(mLightCache.mLights.size()));
         }
     }
 
@@ -308,7 +296,16 @@ void Scene::Impl::SetBrightness(std::optional<float> brightness) {
         mLightCache.mShadeless = true;
     }
     const auto finalLightColors = mLightCache.CalculateLightColors();
-    mDrawableCache.SetLightColors(finalLightColors);
+    mDrawables.SetLightColors(finalLightColors);
+}
+
+void Scene::SetAmbientBrightness(float brightness) {
+    mImpl->SetAmbientBrightness(brightness);
+}
+
+void Scene::Impl::SetAmbientBrightness(float brightness) {
+    mLightCache.mAmbientBrightness = brightness;
+    mDrawables.SetAmbientFactor(mLightCache.mAmbientBrightness);
 }
 
 void Scene::PlayAnimationByName(std::string_view name) {
@@ -446,29 +443,30 @@ void Scene::Impl::Draw() {
 
     /* Upload light positions to each subsequent shader call */
     mLightCache.mLightPositions.clear();
-    mCamera->draw(mDrawableCache.mLightDrawables);  // calculates light positions as a side effect
-    mDrawableCache.SetLightPositions(mLightCache.mLightPositions);
-    mDrawableCache.SetLightRanges(mLightCache.mLightRanges);
+    mCamera->draw(mDrawables.mLightDrawables);  // calculates light positions as a side effect
+    mDrawables.SetLightPositions(mLightCache.mLightPositions);
+    mDrawables.SetLightRanges(mLightCache.mLightRanges);
+    mDrawables.SetShadeless(mLightCache.mShadeless);
+    mDrawables.SetAmbientFactor(mLightCache.mAmbientBrightness);
 
     /* Draw opaque stuff as usual */
-    mCamera->draw(mDrawableCache.mOpaqueDrawables);
+    mCamera->draw(mDrawables.mOpaqueDrawables);
 
     /* Draw transparent stuff back-to-front with blending enabled */
-    if (!mDrawableCache.mTransparentDrawables.isEmpty()) {
+    if (!mDrawables.mTransparentDrawables.isEmpty()) {
         GL::Renderer::setDepthMask(false);
         GL::Renderer::enable(GL::Renderer::Feature::Blending);
-        /* Ugh non-premultiplied alpha */
         GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::SourceAlpha,
                                        GL::Renderer::BlendFunction::OneMinusSourceAlpha);
 
-        auto drawableTransformations = mCamera->drawableTransformations(mDrawableCache.mTransparentDrawables);
+        auto drawableTransformations = mCamera->drawableTransformations(mDrawables.mTransparentDrawables);
         std::sort(drawableTransformations.begin(), drawableTransformations.end(),
                   [](const auto& a, const auto& b) { return a.second.translation().z() > b.second.translation().z(); });
         mCamera->draw(drawableTransformations);
 
-        GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::One, GL::Renderer::BlendFunction::Zero);
-        GL::Renderer::disable(GL::Renderer::Feature::Blending);
         GL::Renderer::setDepthMask(true);
+        GL::Renderer::disable(GL::Renderer::Feature::Blending);
+        GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::One, GL::Renderer::BlendFunction::Zero);
     }
 
     GL::Renderer::disable(GL::Renderer::Feature::FramebufferSrgb);
@@ -504,6 +502,7 @@ void Scene::Impl::ImGui() {
     if (ImGui::CollapsingHeader(fmt::format("{} Lights", mLightCache.mLights.size()).c_str())) {
         ImGui::Text("shadeless: %s", mLightCache.mShadeless ? "true" : "false");
         ImGui::Text("brightness: %f", mLightCache.mBrightness);
+        ImGui::Text("ambient brightness: %f", mLightCache.mAmbientBrightness);
         for (const auto& info : mLightCache.mLights) {
             if (ImGui::TreeNode(&info, "%s", info.debugName.c_str())) {
                 ImGui::Text("brightness: %f", info.brightness);
@@ -512,25 +511,25 @@ void Scene::Impl::ImGui() {
         }
     }
 
-    size_t numDrawables = mDrawableCache.mOpaqueDrawables.size() + mDrawableCache.mTransparentDrawables.size() +
-                          mDrawableCache.mLightDrawables.size();
+    size_t numDrawables = mDrawables.mOpaqueDrawables.size() + mDrawables.mTransparentDrawables.size() +
+                          mDrawables.mLightDrawables.size();
     if (ImGui::CollapsingHeader(fmt::format("{} Drawables", numDrawables).c_str())) {
         Magnum::SceneGraph::DrawableGroup3D* drawables{};
-        drawables = &mDrawableCache.mOpaqueDrawables;
+        drawables = &mDrawables.mOpaqueDrawables;
         ImGui::Text("opaque: %ld", drawables->size());
         for (size_t idx = 0; idx < drawables->size(); ++idx) {
             BaseDrawable& d = dynamic_cast<BaseDrawable&>((*drawables)[idx]);
             d.ImGui();
         }
 
-        drawables = &mDrawableCache.mTransparentDrawables;
+        drawables = &mDrawables.mTransparentDrawables;
         ImGui::Text("transparent: %ld", drawables->size());
         for (size_t idx = 0; idx < drawables->size(); ++idx) {
             BaseDrawable& d = dynamic_cast<BaseDrawable&>((*drawables)[idx]);
             d.ImGui();
         }
 
-        drawables = &mDrawableCache.mLightDrawables;
+        drawables = &mDrawables.mLightDrawables;
         ImGui::Text("light: %ld", drawables->size());
         for (size_t idx = 0; idx < drawables->size(); ++idx) {
             BaseDrawable& d = dynamic_cast<BaseDrawable&>((*drawables)[idx]);

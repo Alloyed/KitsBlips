@@ -19,9 +19,7 @@ class MyApp : public kitgui::BaseApp {
         mScene->Load(mFilePath);
         GetContext().SetClearColor(mClearColor);
     }
-    void OnUpdate() override {
-        mScene->Update();
-    }
+    void OnUpdate() override { mScene->Update(); }
     void OnGuiUpdate() override {
         if (mShowUi) {
             ImGui::SetNextWindowPos({ImGui::GetWindowWidth() - 300, ImGui::GetWindowHeight() - 200}, ImGuiCond_Once);
@@ -46,8 +44,11 @@ class MyApp : public kitgui::BaseApp {
                     GetContext().SetSizeDirectly(w, h, false);
                 }
 
-                if(ImGui::DragFloat("brightness", &mBrightness, 0.0001, 0.0f, 1.0f, "%.6f")) {
+                if (ImGui::DragFloat("brightness", &mBrightness, 0.0001, 0.0f, 1.0f, "%.6f")) {
                     mScene->SetBrightness(mBrightness);
+                }
+                if (ImGui::DragFloat("ambient brightness", &mAmbientBrightness, 0.0001, 0.0f, 1.0f, "%.6f")) {
+                    mScene->SetAmbientBrightness(mAmbientBrightness);
                 }
                 mScene->ImGui();
             }
@@ -62,6 +63,7 @@ class MyApp : public kitgui::BaseApp {
     std::string mFilePath{PROJECT_DIR "/../daw/assets/kitskeys.glb"};
     kitgui::Color4 mClearColor{0.1f, 0.4f, 0.4f, 1.0f};
     float mBrightness = 0.0025f;
+    float mAmbientBrightness = 0.0025f;
 };
 
 int main() {

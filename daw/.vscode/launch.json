@@ -13,7 +13,7 @@
         "--clap-plugin",
         "${workspaceFolder}/build/dist/KitsBlips.clap",
         "-i",
-        "4"
+        "0"
       ],
       "cwd": "${fileDirname}",
       //"environment": []
