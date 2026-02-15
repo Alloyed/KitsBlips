@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include "clapeze/basePlugin.h"
+#include "clapeze/features/state/baseStateFeature.h"
 
 namespace clapeze {
 
@@ -12,7 +13,7 @@ namespace clapeze {
  * Useful more for debugging. some plugin hosts will bail if they don't see a state feature
  */
 template <class TParamsFeature>
-class NoopStateFeature : public BaseFeature {
+class NoopStateFeature : public BaseStateFeature {
    public:
     static constexpr auto NAME = CLAP_EXT_STATE;
     const char* Name() const override { return NAME; }
@@ -32,6 +33,9 @@ class NoopStateFeature : public BaseFeature {
         }
         return true;
     }
+
+    bool Save(std::ostream& out) override { return true; }
+    bool Load(std::istream& in) override { return true; }
 
    private:
     static bool _save(const clap_plugin_t* plugin, const clap_ostream_t* out) {

@@ -2,10 +2,11 @@
 
 #include <clap/clap.h>
 #include <clap/ext/params.h>
-#include <cstdint>
 #include <cstdio>
 
 #include "clapeze/basePlugin.h"
+#include "clapeze/features/state/baseStateFeature.h"
+#include "clapeze/impl/streamUtils.h"
 
 namespace clapeze {
 
@@ -13,8 +14,9 @@ namespace clapeze {
  * Saves and loads parameter state. This works(tm), but you should probably prefer TomlStateFeature.
  */
 template <class TParamsFeature>
-class BinaryStateFeature : public BaseFeature {
+class BinaryStateFeature : public BaseStateFeature {
    public:
+    explicit BinaryStateFeature(BasePlugin& self) : mPlugin(self) {}
     static constexpr auto NAME = CLAP_EXT_STATE;
     const char* Name() const override { return NAME; }
     void Configure(BasePlugin& self) override {
@@ -34,9 +36,8 @@ class BinaryStateFeature : public BaseFeature {
         return true;
     }
 
-   private:
-    static bool _save(const clap_plugin_t* plugin, const clap_ostream_t* out) {
-        TParamsFeature& params = TParamsFeature::template GetFromPluginObject<TParamsFeature>(plugin);
+    bool Save(std::ostream& out) override {
+        TParamsFeature& params = BaseFeature::GetFromPlugin<TParamsFeature>(mPlugin);
 
         params.FlushFromAudio();  // empty queue to ensure newest changes
         auto& handle = params.GetMainHandle();
@@ -44,15 +45,16 @@ class BinaryStateFeature : public BaseFeature {
         size_t numParams = params.GetNumParams();
         for (clap_id id = 0; id < numParams; ++id) {
             double value = handle.GetRawValue(id);
-            if (out->write(out, &value, sizeof(double)) == -1) {
+            out.write(reinterpret_cast<char*>(&value), sizeof(double));
+            if (out.fail()) {
                 return false;
             }
         }
         return true;
+        return true;
     }
-
-    static bool _load(const clap_plugin_t* plugin, const clap_istream_t* in) {
-        TParamsFeature& params = TParamsFeature::template GetFromPluginObject<TParamsFeature>(plugin);
+    bool Load(std::istream& in) override {
+        TParamsFeature& params = BaseFeature::GetFromPlugin<TParamsFeature>(mPlugin);
 
         params.FlushFromAudio();  // empty queue so changes apply on top
         auto& handle = params.GetMainHandle();
@@ -60,11 +62,11 @@ class BinaryStateFeature : public BaseFeature {
         clap_id id = 0;
         while (id < numParams) {
             double value = 0.0f;
-            int64_t result = in->read(in, &value, sizeof(double));
-            if (result == -1) {
+            in.read(reinterpret_cast<char*>(&value), sizeof(double));
+            if (in.bad()) {
                 // error
                 return false;
-            } else if (result == 0) {
+            } else if (in.eof()) {
                 // eof
                 break;
             }
@@ -72,6 +74,23 @@ class BinaryStateFeature : public BaseFeature {
             id++;
         }
         return id == numParams;
+        return true;
+    }
+
+   private:
+    BasePlugin& mPlugin;
+    static bool _save(const clap_plugin_t* plugin, const clap_ostream_t* out) {
+        BinaryStateFeature<TParamsFeature>& self =
+            BaseFeature::GetFromPluginObject<BinaryStateFeature<TParamsFeature>>(plugin);
+        impl::clap_ostream stream(out);
+        return self.Save(stream);
+    }
+
+    static bool _load(const clap_plugin_t* plugin, const clap_istream_t* in) {
+        BinaryStateFeature<TParamsFeature>& self =
+            BaseFeature::GetFromPluginObject<BinaryStateFeature<TParamsFeature>>(plugin);
+        impl::clap_istream stream(in);
+        return self.Load(stream);
     }
 };
 }  // namespace clapeze

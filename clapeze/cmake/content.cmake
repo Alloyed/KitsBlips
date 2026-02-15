@@ -28,34 +28,41 @@ FetchContent_Declare(
     fmt
     GIT_REPOSITORY https://github.com/fmtlib/fmt
     GIT_TAG        11.2.0
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     etl
     GIT_REPOSITORY https://github.com/ETLCPP/etl
     GIT_TAG        20.44.2
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG        v1.17.0
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     clap
     GIT_REPOSITORY https://github.com/free-audio/clap.git
     GIT_TAG        1.2.7
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
 	miniz
 	GIT_REPOSITORY https://github.com/richgel999/miniz.git
 	GIT_TAG        3.1.0
+    SYSTEM
     EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
     tomlplusplus
     GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
     GIT_TAG        v3.4.0
+    SYSTEM
+    EXCLUDE_FROM_ALL
 )

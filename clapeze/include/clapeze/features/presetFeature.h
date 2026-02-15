@@ -46,7 +46,7 @@ class PresetFeature : public BaseFeature {
                                uint32_t location_kind,
                                const char* location,
                                const char* load_key);
-    // BasePlugin& mPlugin;
+    BasePlugin& mPlugin;
     PluginHost& mHost;
     PresetInfo mPresetInfo{};
     std::optional<PresetLocation> mLastPresetLocation{};

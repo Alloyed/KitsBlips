@@ -8,7 +8,7 @@
 
 namespace clapeze {
 
-PresetFeature::PresetFeature(BasePlugin& self) : mHost(self.GetHost()) {}
+PresetFeature::PresetFeature(BasePlugin& self) : mPlugin(self), mHost(self.GetHost()) {}
 const char* PresetFeature::Name() const {
     return NAME;
 }
@@ -40,27 +40,24 @@ bool PresetFeature::LoadPreset(clap_preset_discovery_location_kind location_kind
         return false;
     }
 
-    // TODO: actually load preset
-    /*
-    BaseStateFeature& state = BaseFeature::TryGetFromPlugin<BaseStateFeature>(mPlugin);
-    AssetsFeature& assets = BaseFeature::TryGetFromPlugin<AssetsFeature>(mPlugin);
+    BaseStateFeature& state = BaseFeature::GetFromPlugin<BaseStateFeature>(mPlugin);
+    AssetsFeature& assets = BaseFeature::GetFromPlugin<AssetsFeature>(mPlugin);
     {
-        auto loadStream = assets.OpenLoadStream();
-        if (!loadStream) {
+        auto loadStream = assets.OpenFromPlugin(load_key);
+        if (loadStream.fail()) {
             // int32_t osError = 0;
             // const char* msg = "";
             // rawPresetLoad->on_error(rawHost, location_kind, location, load_key, osError, msg);
             return false;
         }
-        if (!state.Load(loadStream.get())) {
+        if (!state.Load(loadStream)) {
             // int32_t osError = 0;
             // const char* msg = "";
             // rawPresetLoad->on_error(rawHost, location_kind, location, load_key, osError, msg);
             return false;
         }
     }
-    // rawPresetLoad->loaded(rawHost, location_kind, location, load_key);
-    */
+    rawPresetLoad->loaded(rawHost, location_kind, location, load_key);
     mLastPresetLocation = {.kind = location_kind,
                            .location = location_kind == CLAP_PRESET_DISCOVERY_LOCATION_PLUGIN ? load_key : location};
     return true;
@@ -76,21 +73,17 @@ bool PresetFeature::LoadLastPreset() {
 }
 
 bool PresetFeature::SavePreset(const char* path) {
-    (void)path;
-    // TODO: something like so
-    /*
-    BaseStateFeature& state = BaseFeature::TryGetFromPlugin<BaseStateFeature>(mPlugin);
-    AssetsFeature& assets = BaseFeature::TryGetFromPlugin<AssetsFeature>(mPlugin);
+    BaseStateFeature& state = BaseFeature::GetFromPlugin<BaseStateFeature>(mPlugin);
+    AssetsFeature& assets = BaseFeature::GetFromPlugin<AssetsFeature>(mPlugin);
     {
-        auto saveStream = assets.OpenSaveStream();
-        if (!saveStream) {
+        auto saveStream = assets.OpenFromFilesystemOut(path);
+        if (saveStream.fail()) {
             return false;
         }
-        if (!state.Save(saveStream.get())) {
+        if (!state.Save(saveStream)) {
             return false;
         }
     }
-    */
     return true;
 }
 

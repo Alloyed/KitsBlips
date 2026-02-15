@@ -5,6 +5,7 @@
 #include <clapeze/processor/baseProcessor.h>
 #include <kitdsp/math/util.h>
 #include "clapeze/features/assetsFeature.h"
+#include "clapeze/features/state/tomlStateFeature.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>
@@ -88,7 +89,8 @@ class Plugin : public EffectPlugin {
         EffectPlugin::Config();
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count).Parameter<Params::Mix>();
-        ConfigFeature<BinaryStateFeature<ParamsFeature>>();
+        ConfigFeature<TomlStateFeature<ParamsFeature>>(*this);
+
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<clapeze::AssetsFeature>();
         ConfigFeature<KitguiFeature>(GetHost(),

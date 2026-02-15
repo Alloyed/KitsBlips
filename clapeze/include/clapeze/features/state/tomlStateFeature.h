@@ -12,6 +12,7 @@
 #include "clapeze/features/baseFeature.h"
 #include "clapeze/features/params/baseParameter.h"
 #include "clapeze/features/presetFeature.h"
+#include "clapeze/features/state/baseStateFeature.h"
 #include "clapeze/impl/streamUtils.h"
 #include "clapeze/pluginHost.h"
 
@@ -26,7 +27,7 @@ struct Metadata {
 };
 
 template <class TParamsFeature>
-class TomlStateFeature : public BaseFeature {
+class TomlStateFeature : public BaseStateFeature {
    public:
     explicit TomlStateFeature(BasePlugin& self, uint32_t saveVersion = 0) : mPlugin(self), mSaveVersion(saveVersion) {}
     static constexpr auto NAME = CLAP_EXT_STATE;
@@ -46,7 +47,7 @@ class TomlStateFeature : public BaseFeature {
     virtual bool OnSave(toml::table& t) const { return true; }
     virtual bool OnLoad(const toml::table& t) { return true; }
 
-    bool Save(std::ostream& out) {
+    bool Save(std::ostream& out) override {
         TParamsFeature& params = BaseFeature::GetFromPlugin<TParamsFeature>(mPlugin);
         PresetFeature* presets = static_cast<PresetFeature*>(mPlugin.TryGetFeature(PresetFeature::NAME));
         const clap_plugin_descriptor_t& desc = mPlugin.GetDescriptor();
@@ -83,7 +84,7 @@ class TomlStateFeature : public BaseFeature {
         return out.good();
     }
 
-    bool Load(std::istream& in) {
+    bool Load(std::istream& in) override {
         TParamsFeature& params = BaseFeature::GetFromPlugin<TParamsFeature>(mPlugin);
         PresetFeature* presets = static_cast<PresetFeature*>(mPlugin.TryGetFeature(PresetFeature::NAME));
         PluginHost& host = mPlugin.GetHost();

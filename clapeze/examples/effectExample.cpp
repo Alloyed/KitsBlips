@@ -147,7 +147,7 @@ class MyPlugin : public clapeze::EffectPlugin {
                                       .Parameter<MyParams::VuPPM>()
                                       .Parameter<MyParams::Bypass>();
         static_assert(static_cast<clap_id>(MyParams::Count) == 3, "update parameter order");
-        ConfigFeature<clapeze::BinaryStateFeature<MyParamsFeature>>();
+        ConfigFeature<clapeze::BinaryStateFeature<MyParamsFeature>>(*this);
 
         // we are opting into audio processing using the Processor object defined before, and using the params object as
         // our communication channel.
