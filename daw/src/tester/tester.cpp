@@ -7,6 +7,7 @@
 #include <etl/string.h>
 
 #include <clapeze/pluginHost.h>
+#include "clapeze/features/assetsFeature.h"
 #include "descriptor.h"
 #include "fmt/base.h"
 #include "kitgui/context.h"
@@ -113,6 +114,7 @@ class Plugin : public clapeze::BasePlugin {
     void Config() override {
         GetHost().SetLogFn([](auto severity, const std::string& line) { sLog.AddLog(line); });
 #if KITSBLIPS_ENABLE_GUI
+        ConfigFeature<clapeze::AssetsFeature>();
         ConfigFeature<KitguiFeature>(
             GetHost(), [this](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, GetHost()); },
             kitgui::SizeConfig{1000, 600, false, true});

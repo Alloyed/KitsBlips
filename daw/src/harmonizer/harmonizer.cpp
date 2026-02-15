@@ -8,6 +8,7 @@
 
 #include <clapeze/features/state/binaryStateFeature.h>
 #include <clapeze/processor/baseProcessor.h>
+#include "clapeze/features/assetsFeature.h"
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI
@@ -161,6 +162,7 @@ class Plugin : public EffectPlugin {
                                     .Parameter<Params::Mix>();
         ConfigFeature<BinaryStateFeature<ParamsFeature>>();
 #if KITSBLIPS_ENABLE_GUI
+        ConfigFeature<clapeze::AssetsFeature>();
         ConfigFeature<KitguiFeature>(GetHost(),
                                      [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif

@@ -262,6 +262,7 @@ class Plugin : public EffectPlugin {
         ConfigFeature<TomlStateFeature<ParamsFeature>>(*this);
 
 #if KITSBLIPS_ENABLE_GUI
+        ConfigFeature<clapeze::AssetsFeature>();
         ConfigFeature<KitguiFeature>(GetHost(),
                                      [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif

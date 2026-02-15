@@ -4,6 +4,7 @@
 #include <clapeze/features/state/binaryStateFeature.h>
 #include <clapeze/processor/baseProcessor.h>
 #include <kitdsp/math/util.h>
+#include "clapeze/features/assetsFeature.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>
@@ -89,6 +90,7 @@ class Plugin : public EffectPlugin {
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count).Parameter<Params::Mix>();
         ConfigFeature<BinaryStateFeature<ParamsFeature>>();
 #if KITSBLIPS_ENABLE_GUI
+        ConfigFeature<clapeze::AssetsFeature>();
         ConfigFeature<KitguiFeature>(GetHost(),
                                      [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif
