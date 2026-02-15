@@ -1,11 +1,9 @@
 #include "clapeze/features/assetsFeature.h"
 
-#include <fmt/format.h>
 #include <miniz.h>
 #include <miniz_zip.h>
 #include <fstream>
 #include "clapeze/entryPoint.h"
-#include "clapeze/impl/streamUtils.h"
 
 namespace clapeze {
 
@@ -31,6 +29,21 @@ AssetsFeature::~AssetsFeature() {
 }
 
 void AssetsFeature::Configure(BasePlugin& self) {}
+
+std::vector<std::string> GetAllPathsFromPlugin() {
+    std::vector<std::string> out;
+    mz_uint numFiles = mz_zip_reader_get_num_files(&sZip);
+    out.reserve(numFiles);
+
+    for (mz_uint idx = 0; idx < numFiles; ++idx) {
+        mz_uint bytesNeeded = mz_zip_reader_get_filename(&sZip, idx, nullptr, 0);
+        out.emplace_back(bytesNeeded, '\0');
+        std::string& buf = out.back();
+        mz_uint bytesWritten = mz_zip_reader_get_filename(&sZip, idx, buf.data(), buf.size());
+        assert(bytesWritten == bytesNeeded);
+    }
+    return out;
+}
 
 miniz_istream AssetsFeature::OpenFromPlugin(const char* path) {
     return miniz_istream(&sZip, path);

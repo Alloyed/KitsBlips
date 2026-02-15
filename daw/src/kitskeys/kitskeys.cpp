@@ -14,7 +14,10 @@
 #include <kitdsp/osc/blepOscillator.h>
 #include <memory>
 
+#include "clapeze/features/presetFeature.h"
 #include "descriptor.h"
+#include "gui/parameterControls.h"
+#include "gui/presetBrowser.h"
 #include "kitdsp/filters/onePole.h"
 #include "kitdsp/math/util.h"
 #include "kitgui/context.h"
@@ -382,6 +385,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
         auto status = mVoices.ProcessAudio(out);
 
         // TODO: this probably doesn't need to be a full loop
+        // also, updating this once per buffer produces a noticable stepping effect if you turn resonance up
         float lfoOut{};
         for (uint32_t index = 0; index < out.left.size(); index++) {
             float lfoTri = mLfo.Process();  // [-1, 1]
@@ -420,8 +424,8 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
 #if KITSBLIPS_ENABLE_GUI
 class GuiApp : public kitgui::BaseApp {
    public:
-    GuiApp(kitgui::Context& ctx, ParamsFeature& params)
-        : kitgui::BaseApp(ctx), mParams(params), mScene(std::make_unique<kitgui::Scene>(ctx)) {}
+    GuiApp(kitgui::Context& ctx, clapeze::BasePlugin& plugin, ParamsFeature& params)
+        : kitgui::BaseApp(ctx), mParams(params), mScene(std::make_unique<kitgui::Scene>(ctx)), mPresetBrowser(plugin) {}
     ~GuiApp() = default;
 
     void OnActivate() override {
@@ -485,51 +489,15 @@ class GuiApp : public kitgui::BaseApp {
         }
     }
 
-    void DebugParamList() {
-        ImGui::TextWrapped("WIP keys synthesizer. don't tell anybody but this is a volca keys for ur computer");
-
-        ImGui::TextWrapped("Voicing");
-        kitgui::DebugParam<ParamsFeature, Params::PolyCount>(mParams);
-
-        // TODO: conditionally visible
-        kitgui::DebugParam<ParamsFeature, Params::PolyChordType>(mParams);
-        ImGui::TextWrapped("Oscillator");
-        kitgui::DebugParam<ParamsFeature, Params::OscOctave>(mParams);
-        kitgui::DebugParam<ParamsFeature, Params::OscTune>(mParams);
-        kitgui::DebugParam<ParamsFeature, Params::OscModMix>(mParams);
-        kitgui::DebugParam<ParamsFeature, Params::OscModAmount>(mParams);
-
-        ImGui::TextWrapped("Filter");
-        kitgui::DebugParam<ParamsFeature, Params::FilterCutoff>(mParams);
-        kitgui::DebugParam<ParamsFeature, Params::FilterResonance>(mParams);
-        kitgui::DebugParam<ParamsFeature, Params::FilterModMix>(mParams);
-        kitgui::DebugParam<ParamsFeature, Params::FilterModAmount>(mParams);
-
-        ImGui::TextWrapped("MOD A: Low frequency Oscillator");
-        kitgui::DebugParam<ParamsFeature, Params::LfoRate>(mParams);
-        kitgui::DebugParam<ParamsFeature, Params::LfoShape>(mParams);
-        kitgui::DebugParam<ParamsFeature, Params::LfoSync>(mParams);
-        kitgui::DebugParam<ParamsFeature, Params::LfoOut>(mParams);
-
-        ImGui::TextWrapped("MOD B: Envelope");
-        kitgui::DebugParam<ParamsFeature, Params::EnvAttack>(mParams);
-        kitgui::DebugParam<ParamsFeature, Params::EnvDecay>(mParams);
-        kitgui::DebugParam<ParamsFeature, Params::EnvSustain>(mParams);
-        kitgui::DebugParam<ParamsFeature, Params::EnvRelease>(mParams);
-
-        ImGui::TextWrapped("Volume");
-        kitgui::DebugParam<ParamsFeature, Params::VcaGain>(mParams);
-        kitgui::DebugParam<ParamsFeature, Params::VcaEnvDisabled>(mParams);
-        kitgui::DebugParam<ParamsFeature, Params::VcaLfoAmount>(mParams);
-    }
     void OnUpdate() override {
         mParams.FlushFromAudio();
         mScene->Update();
+        mPresetBrowser.Update();
         for (auto& knob : mKnobs) {
             clap_id id = knob->GetParamId();
             double raw = mParams.GetMainHandle().GetRawValue(id);
 
-            knob->mShowDebug = mShowDebugWindow;
+            knob->mShowDebug = mDebugMode;
             if (knob->Update(raw)) {
                 mParams.GetMainHandle().SetRawValue(id, raw);
             }
@@ -548,7 +516,7 @@ class GuiApp : public kitgui::BaseApp {
             double raw = mParams.GetMainHandle().GetRawValue(id);
             bool value = raw > 0.5;
 
-            knob->mShowDebug = mShowDebugWindow;
+            knob->mShowDebug = mDebugMode;
             if (knob->Update(value)) {
                 mParams.GetMainHandle().SetRawValue(id, value ? 1.0 : 0.0);
             }
@@ -563,12 +531,15 @@ class GuiApp : public kitgui::BaseApp {
             if (ImGui::MenuItem("Reset All")) {
                 mParams.ResetAllParamsToDefault();
             }
-            ImGui::MenuItem("Debug", NULL, &mShowDebugWindow);
+            if (ImGui::MenuItem("Presets")) {
+                mParams.ResetAllParamsToDefault();
+            }
+            ImGui::MenuItem("Debug", NULL, &mDebugMode);
             ImGui::EndMainMenuBar();
         }
 
         if (ImGui::IsKeyPressed(ImGuiKey_GraveAccent)) {
-            mShowDebugWindow = !mShowDebugWindow;
+            mDebugMode = !mDebugMode;
         }
 
         if (mShowHelpWindow) {
@@ -582,13 +553,6 @@ class GuiApp : public kitgui::BaseApp {
             }
             ImGui::End();
         }
-
-        if (mShowDebugWindow) {
-            if (ImGui::Begin("Debugger", &mShowDebugWindow)) {
-                DebugParamList();
-            }
-            ImGui::End();
-        }
     }
 
     void OnDraw() override { mScene->Draw(); }
@@ -596,9 +560,10 @@ class GuiApp : public kitgui::BaseApp {
    private:
     ParamsFeature& mParams;
     std::unique_ptr<kitgui::Scene> mScene;
+    kitgui::PresetBrowser mPresetBrowser;
     std::vector<std::unique_ptr<kitgui::BaseParamKnob>> mKnobs;
     std::vector<std::unique_ptr<kitgui::BaseParamToggle>> mToggles;
-    bool mShowDebugWindow = false;
+    bool mDebugMode = false;
     bool mShowHelpWindow = false;
 };
 #endif
@@ -657,15 +622,19 @@ class Plugin : public InstrumentPlugin {
                                     .Parameter<Params::VcaGain>()
                                     .Parameter<Params::VcaEnvDisabled>()
                                     .Parameter<Params::VcaLfoAmount>();
+
+        ConfigFeature<clapeze::AssetsFeature>();
         ConfigFeature<TomlStateFeature<ParamsFeature>>(*this);
+        ConfigFeature<clapeze::PresetFeature>(*this);
 
 #if KITSBLIPS_ENABLE_GUI
-        ConfigFeature<clapeze::AssetsFeature>();
         // aspect ratio 1.5
         kitgui::SizeConfig cfg{750, 500, false, true};
         ConfigFeature<KitguiFeature>(
-            GetHost(), [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); }, cfg);
+            GetHost(), [this, &params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, *this, params); },
+            cfg);
 #endif
+
         ConfigProcessor<Processor>(params.GetProcessorHandle<ParamsFeature::ProcessorHandle>());
     }
 };

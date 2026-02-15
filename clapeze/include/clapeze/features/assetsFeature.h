@@ -4,6 +4,7 @@
 #include <miniz.h>
 #include <ios>
 #include <istream>
+#include <vector>
 #include "clapeze/features/baseFeature.h"
 
 namespace clapeze {
@@ -74,6 +75,8 @@ class AssetsFeature : public BaseFeature {
     const char* Name() const override { return NAME; }
 
     void Configure(BasePlugin& self) override;
+
+    std::vector<std::string> GetAllPathsFromPlugin() const;
 
     miniz_istream OpenFromPlugin(const char* path);
     std::ifstream OpenFromFilesystem(const char* path);

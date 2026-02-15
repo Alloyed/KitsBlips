@@ -1,8 +1,9 @@
 // combines preset loading and preset discovery into a single feature, using the same serialization/deserialization that
 // the state feature provides.
 
-#include <fstream>
 #include "clapeze/features/presetFeature.h"
+#include <fstream>
+#include "clap/factory/preset-discovery.h"
 #include "clapeze/features/state/tomlStateFeature.h"
 
 namespace clapeze {
@@ -30,7 +31,9 @@ bool PresetFeature::Validate(const BasePlugin& plugin) const {
     return true;
 }
 
-bool PresetFeature::LoadPreset(uint32_t location_kind, const char* location, const char* load_key) {
+bool PresetFeature::LoadPreset(clap_preset_discovery_location_kind location_kind,
+                               const char* location,
+                               const char* load_key) {
     const clap_host_t* rawHost = nullptr;
     const clap_host_preset_load_t* rawPresetLoad = nullptr;
     if (!mHost.TryGetExtension(NAME, rawHost, rawPresetLoad)) {
@@ -58,7 +61,18 @@ bool PresetFeature::LoadPreset(uint32_t location_kind, const char* location, con
     }
     // rawPresetLoad->loaded(rawHost, location_kind, location, load_key);
     */
+    mLastPresetLocation = {.kind = location_kind,
+                           .location = location_kind == CLAP_PRESET_DISCOVERY_LOCATION_PLUGIN ? load_key : location};
     return true;
+}
+bool PresetFeature::LoadLastPreset() {
+    if (!mLastPresetLocation) {
+        // no last preset to load
+        return true;
+    }
+
+    return LoadPreset(mLastPresetLocation->kind, mLastPresetLocation->location.c_str(),
+                      mLastPresetLocation->location.c_str());
 }
 
 bool PresetFeature::SavePreset(const char* path) {
@@ -92,7 +106,7 @@ const PresetInfo& PresetFeature::GetPresetInfo() const {
                                               const char* location,
                                               const char* load_key) {
     PresetFeature& self = PresetFeature::GetFromPluginObject<PresetFeature>(plugin);
-    return self.LoadPreset(location_kind, location, load_key);
+    return self.LoadPreset(static_cast<clap_preset_discovery_location_kind>(location_kind), location, load_key);
 }
 
 /*static*/ const clap_preset_discovery_provider_t* PresetProvider::Create(

@@ -5,6 +5,7 @@
 
 #include <clap/ext/preset-load.h>
 #include <clap/factory/preset-discovery.h>
+#include <optional>
 #include "clapeze/basePlugin.h"
 #include "clapeze/features/assetsFeature.h"
 #include "clapeze/features/baseFeature.h"
@@ -18,6 +19,10 @@ struct PresetInfo {
     std::vector<std::string> features{};
     clap_preset_discovery_flags flags{};
 };
+struct PresetLocation {
+    clap_preset_discovery_location_kind kind{};
+    std::string location{};
+};
 class PresetFeature : public BaseFeature {
    public:
     explicit PresetFeature(BasePlugin& self);
@@ -28,7 +33,8 @@ class PresetFeature : public BaseFeature {
 
     bool Validate(const BasePlugin& plugin) const override;
 
-    bool LoadPreset(uint32_t location_kind, const char* location, const char* load_key);
+    bool LoadPreset(clap_preset_discovery_location_kind location_kind, const char* location, const char* load_key);
+    bool LoadLastPreset();
 
     bool SavePreset(const char* path);
 
@@ -43,6 +49,7 @@ class PresetFeature : public BaseFeature {
     // BasePlugin& mPlugin;
     PluginHost& mHost;
     PresetInfo mPresetInfo{};
+    std::optional<PresetLocation> mLastPresetLocation{};
 };
 
 class PresetProvider {
