@@ -10,6 +10,8 @@
 #include <Corrade/Containers/BitArray.h>
 #include <Corrade/Containers/Pair.h>
 #include <Corrade/Containers/Triple.h>
+#include <Corrade/PluginManager/AbstractPlugin.h>
+#include <Corrade/PluginManager/PluginMetadata.h>
 #include <Magnum/Animation/Player.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/GL/Renderer.h>
@@ -95,9 +97,12 @@ void Scene::Impl::Load(std::string_view path) {
     if (mLoaded || mLoadError) {
         return;
     }
+    PluginManager::PluginMetadata* basisImporter = sImporterManager.metadata("BasisImporter");
+    mMaterialCache.ConfigureBasisLoader(*basisImporter);
+
     Corrade::Containers::Pointer<Magnum::Trade::AbstractImporter> importer =
         sImporterManager.loadAndInstantiate("GltfImporter");
-    assert(!!importer);  // FIXME: this is null right now, investigate
+    assert(!!importer);
 
     const auto fileCallback = [](const std::string& filename, Magnum::InputFileCallbackPolicy policy,
                                  void* ctx) -> Containers::Optional<Containers::ArrayView<const char>> {

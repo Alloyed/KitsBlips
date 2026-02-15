@@ -8,6 +8,7 @@
 
 #include <Corrade/Containers/Array.h>
 #include <Corrade/Utility/Algorithms.h>
+#include <Corrade/Utility/ConfigurationGroup.h>
 #include <Magnum/GL/Context.h>
 #include <Magnum/GL/Extensions.h>
 #include <Magnum/GL/Texture.h>
@@ -192,5 +193,35 @@ const Magnum::Trade::PhongMaterialData* MaterialInfo::Phong() const {
     return raw.has_value() && raw->types() & Magnum::Trade::MaterialType::Phong
                ? &(raw->as<Magnum::Trade::PhongMaterialData>())
                : nullptr;
+}
+void MaterialCache::ConfigureBasisLoader(Corrade::PluginManager::PluginMetadata& importer) {
+    GL::Context& context = GL::Context::current();
+    using namespace GL::Extensions;
+
+    // This is pared down from the source by assuming we only want to support desktop opengl
+
+    // LDR format
+    if (context.isExtensionSupported<KHR::texture_compression_astc_ldr>()) {
+        importer.configuration().setValue("format", "Astc4x4RGBA");
+    } else if (context.isExtensionSupported<ARB::texture_compression_bptc>()) {
+        importer.configuration().setValue("format", "Bc7RGBA");
+    } else if (context.isExtensionSupported<EXT::texture_compression_s3tc>()) {
+        importer.configuration().setValue("format", "Bc3RGBA");
+    } else if (context.isExtensionSupported<ARB::ES3_compatibility>()) {
+        importer.configuration().setValue("format", "Etc2RGBA");
+    } else {
+        /* Fall back to uncompressed if nothing else is supported */
+        importer.configuration().setValue("format", "RGBA8");
+    }
+
+    // HDR format
+    if (context.isExtensionSupported<KHR::texture_compression_astc_hdr>()) {
+        importer.configuration().setValue("formatHdr", "Astc4x4RGBAF");
+    } else if (context.isExtensionSupported<ARB::texture_compression_bptc>()) {
+        importer.configuration().setValue("formatHdr", "Bc6hRGB");
+    } else {
+        /* Fall back to uncompressed if nothing else is supported */
+        importer.configuration().setValue("formatHdr", "RGBA16F");
+    }
 }
 }  // namespace kitgui

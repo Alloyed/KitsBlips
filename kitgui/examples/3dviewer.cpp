@@ -8,10 +8,14 @@
 #include "kitgui/kitgui.h"
 #include "kitgui/types.h"
 
+namespace {
+static const char* sFile = PROJECT_DIR "/../daw/assets/kitskeys.glb";
+}
+
 class MyApp : public kitgui::BaseApp {
    public:
     explicit MyApp(kitgui::Context& mContext)
-        : kitgui::BaseApp(mContext), mScene(std::make_unique<kitgui::Scene>(mContext)) {}
+        : kitgui::BaseApp(mContext), mScene(std::make_unique<kitgui::Scene>(mContext)), mFilePath(sFile) {}
     ~MyApp() = default;
 
    protected:
@@ -60,14 +64,18 @@ class MyApp : public kitgui::BaseApp {
    private:
     std::unique_ptr<kitgui::Scene> mScene;
     bool mShowUi = true;
-    std::string mFilePath{PROJECT_DIR "/../daw/assets/kitskeys.glb"};
+    std::string mFilePath{};
     kitgui::Color4 mClearColor{0.1f, 0.4f, 0.4f, 1.0f};
     float mBrightness = 0.0025f;
     float mAmbientBrightness = 0.0025f;
 };
 
-int main() {
+int main(int argc, const char* argv[]) {
     kitgui::Context::init(kitgui::WindowApi::Any, "kitgui");
+
+    if (argc >= 2) {
+        sFile = argv[1];
+    }
 
     {
         kitgui::Context ctx1([](kitgui::Context& ctx) { return std::make_unique<MyApp>(ctx); });

@@ -2,6 +2,7 @@
 // the state feature provides.
 
 #include "clapeze/features/presetFeature.h"
+#include <clap/version.h>
 #include <fstream>
 #include "clap/factory/preset-discovery.h"
 #include "clapeze/features/state/tomlStateFeature.h"
@@ -42,18 +43,27 @@ bool PresetFeature::LoadPreset(clap_preset_discovery_location_kind location_kind
 
     BaseStateFeature& state = BaseFeature::GetFromPlugin<BaseStateFeature>(mPlugin);
     AssetsFeature& assets = BaseFeature::GetFromPlugin<AssetsFeature>(mPlugin);
-    {
+    if (location_kind == CLAP_PRESET_DISCOVERY_LOCATION_PLUGIN) {
         auto loadStream = assets.OpenFromPlugin(load_key);
-        if (loadStream.fail()) {
-            // int32_t osError = 0;
-            // const char* msg = "";
-            // rawPresetLoad->on_error(rawHost, location_kind, location, load_key, osError, msg);
+        if (loadStream.bad()) {
+            int32_t zipError{};
+            const char* msg{};
+            loadStream.getZipError(zipError, msg);
+            rawPresetLoad->on_error(rawHost, location_kind, location, load_key, 0, msg);
             return false;
         }
         if (!state.Load(loadStream)) {
-            // int32_t osError = 0;
-            // const char* msg = "";
-            // rawPresetLoad->on_error(rawHost, location_kind, location, load_key, osError, msg);
+            return false;
+        }
+    } else if (location_kind == CLAP_PRESET_DISCOVERY_LOCATION_FILE) {
+        auto loadStream = assets.OpenFromFilesystem(location);
+        if (loadStream.bad()) {
+            int32_t osError = errno;
+            const char* msg = std::strerror(errno);
+            rawPresetLoad->on_error(rawHost, location_kind, location, load_key, osError, msg);
+            return false;
+        }
+        if (!state.Load(loadStream)) {
             return false;
         }
     }
@@ -68,8 +78,9 @@ bool PresetFeature::LoadLastPreset() {
         return true;
     }
 
-    return LoadPreset(mLastPresetLocation->kind, mLastPresetLocation->location.c_str(),
-                      mLastPresetLocation->location.c_str());
+    bool isPlugin = mLastPresetLocation->kind == CLAP_PRESET_DISCOVERY_LOCATION_PLUGIN;
+    return LoadPreset(mLastPresetLocation->kind, isPlugin ? nullptr : mLastPresetLocation->location.c_str(),
+                      isPlugin ? mLastPresetLocation->location.c_str() : nullptr);
 }
 
 bool PresetFeature::SavePreset(const char* path) {
@@ -109,13 +120,19 @@ const PresetInfo& PresetFeature::GetPresetInfo() const {
 }
 
 /*static*/ const clap_preset_discovery_provider_descriptor_t* PresetProvider::Descriptor() {
-    // TODO fill out
-    static const clap_preset_discovery_provider_descriptor_t desc{};
+    // TODO: we need to update the entry point to define these parameters for us
+    static const clap_preset_discovery_provider_descriptor_t desc{
+        .clap_version = CLAP_VERSION,
+        .id = "",      // dll id
+        .name = "",    // dll name
+        .vendor = "",  // vendor name
+    };
     return &desc;
 }
 PresetProvider::PresetProvider(const clap_preset_discovery_indexer_t* indexer) : mIndexer(indexer) {}
 
 bool PresetProvider::Init() {
+    // TODO: let each feature type register this themselves
     static clap_preset_discovery_filetype_t filetype{
         .name = "preset",
         .description = "plain text preset",
@@ -180,6 +197,7 @@ bool PresetProvider::GetMetadata(uint32_t location_kind,
 
     return true;
 }
+
 /*static*/ PresetProvider& PresetProvider::_instance(const clap_preset_discovery_provider* provider) {
     return *static_cast<PresetProvider*>(provider->provider_data);
 }

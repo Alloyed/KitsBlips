@@ -39,7 +39,7 @@ std::vector<std::string> GetAllPathsFromPlugin() {
         mz_uint bytesNeeded = mz_zip_reader_get_filename(&sZip, idx, nullptr, 0);
         out.emplace_back(bytesNeeded, '\0');
         std::string& buf = out.back();
-        mz_uint bytesWritten = mz_zip_reader_get_filename(&sZip, idx, buf.data(), buf.size());
+        [[maybe_unused]] mz_uint bytesWritten = mz_zip_reader_get_filename(&sZip, idx, buf.data(), buf.size());
         assert(bytesWritten == bytesNeeded);
     }
     return out;

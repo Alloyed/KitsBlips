@@ -146,6 +146,11 @@ FetchContent_Declare(
     FIND_PACKAGE_ARGS
 )
 
+
+set(BASISU_STATIC ON)
+set(BASISU_EXAMPLES OFF)
+set(BASISU_ZSTD OFF)
+
 set(CORRADE_BUILD_STATIC ON)
 set(MAGNUM_BUILD_STATIC ON)
 set(MAGNUM_BUILD_PLUGINS_STATIC ON)
@@ -160,6 +165,8 @@ set(MAGNUM_WITH_MAGNUMFONT ON)
 set(MAGNUM_WITH_STBIMAGEIMPORTER ON)
 set(MAGNUM_WITH_STBTRUETYPEFONT ON)
 set(MAGNUM_WITH_GLTFIMPORTER ON)
+set(MAGNUM_WITH_KTXIMPORTER ON)
+set(MAGNUM_WITH_BASISIMPORTER ON)
 
 # opengl
 set(MAGNUM_WITH_GL ON)
@@ -205,9 +212,11 @@ FetchContent_Declare(
 FetchContent_Declare(
     basis_universal
     GIT_REPOSITORY https://github.com/BinomialLLC/basis_universal.git
-    GIT_TAG v2_0_2
+    #GIT_TAG        v2_0_2
+    GIT_TAG v1_50_0_2
     SYSTEM
     EXCLUDE_FROM_ALL
+    FIND_PACKAGE_ARGS
 )
 
 # debug/test

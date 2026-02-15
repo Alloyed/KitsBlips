@@ -2,6 +2,7 @@
 #pragma once
 
 #include <miniz.h>
+#include <miniz_zip.h>
 #include <ios>
 #include <istream>
 #include <vector>
@@ -54,12 +55,20 @@ class miniz_istreambuf : public std::streambuf {
  */
 class miniz_istream : public std::basic_istream<char> {
    public:
-    explicit miniz_istream(mz_zip_archive* pZip, const char* path) : basic_istream(nullptr), mBuf(pZip, path) {
+    explicit miniz_istream(mz_zip_archive* pZip, const char* path)
+        : basic_istream(nullptr), mBuf(pZip, path), mZip(pZip) {
         this->init(&mBuf);
+    }
+
+    void getZipError(int32_t& errorcode, const char*& msg) {
+        mz_zip_error err = mz_zip_get_last_error(mZip);
+        errorcode = static_cast<int32_t>(err);
+        msg = mz_zip_get_error_string(err);
     }
 
    private:
     miniz_istreambuf mBuf;
+    mz_zip_archive* mZip;
 };
 
 class AssetsFeature : public BaseFeature {

@@ -5,6 +5,10 @@ project(kitgui VERSION 0.0.0)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(../content.cmake)
+
+# hack to get magnum to recognize basis
+FetchContent_MakeAvailable(basis_universal)
+FetchContent_GetProperties(basis_universal SOURCE_DIR BASIS_UNIVERSAL_DIR)
 FetchContent_MakeAvailable(corrade magnum magnum-plugins fmt)
 
 # Only one backend can be compiled in at a time
@@ -56,6 +60,8 @@ target_link_libraries(kitgui PUBLIC
     Magnum::AnyImageImporter
     MagnumPlugins::GltfImporter
     MagnumPlugins::StbImageImporter
+    MagnumPlugins::KtxImporter
+    MagnumPlugins::BasisImporter
 )
 target_link_libraries(kitgui PRIVATE
     ${MAGNUM_PLATFORMGL}

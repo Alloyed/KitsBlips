@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Corrade/PluginManager/PluginMetadata.h>
 #include <Magnum/GL/Texture.h>
 #include <Magnum/Trade/MaterialData.h>
 #include <optional>
@@ -29,5 +30,7 @@ struct MaterialCache {
 
     void LoadTextures(Magnum::Trade::AbstractImporter& importer);
     void LoadMaterials(Magnum::Trade::AbstractImporter& importer);
+
+    void ConfigureBasisLoader(Corrade::PluginManager::PluginMetadata& importer);
 };
 }  // namespace kitgui
