@@ -4,6 +4,9 @@ cmake_policy(SET CMP0048 NEW)
 set(CMAKE_CXX_STANDARD 20)
 add_compile_definitions(-DPROJECT_DIR="${CMAKE_SOURCE_DIR}")
 
+# include(../cmake/asset-cook.cmake)
+# add_packed_scene(${CMAKE_SOURCE_DIR}/assets/suzanne.glb ${CMAKE_SOURCE_DIR}/assets/suzanne.basis.glb)
+
 # Inside your own application, you can include kitgui like so:
 # 
 #    FetchContent_Declare(

@@ -198,6 +198,8 @@ void MaterialCache::ConfigureBasisLoader(Corrade::PluginManager::PluginMetadata&
     GL::Context& context = GL::Context::current();
     using namespace GL::Extensions;
 
+    // importer.configuration().setValue("assumeYUp", true);
+
     // This is pared down from the source by assuming we only want to support desktop opengl
 
     // LDR format

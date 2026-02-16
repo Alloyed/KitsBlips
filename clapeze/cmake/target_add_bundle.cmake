@@ -22,7 +22,7 @@ function(target_add_bundle TARGET_NAME OUT_FILE)
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}" # use so final zip looks like project dir
         COMMAND ${CMAKE_COMMAND} -E make_directory "${ZIP_DIR}"
         COMMAND ${CMAKE_COMMAND} -E rm -f "${ZIP_FILE}"
-        COMMAND "$<TARGET_FILE:create-zip>" "${ZIP_FILE}" ${SOURCES}
+        COMMAND create-zip "${ZIP_FILE}" ${SOURCES}
         COMMENT "creating zip file: ${ZIP_FILE}"
         VERBATIM
     )

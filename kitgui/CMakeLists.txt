@@ -57,6 +57,7 @@ target_link_libraries(kitgui PUBLIC
     fmt::fmt
 
     MagnumIntegration::ImGui
+    Magnum::AnySceneImporter
     Magnum::AnyImageImporter
     MagnumPlugins::GltfImporter
     MagnumPlugins::StbImageImporter
