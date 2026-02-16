@@ -2,6 +2,7 @@
 #include <clapeze/entryPoint.h>
 #include <clapeze/features/params/enumParametersFeature.h>
 #include <clapeze/features/params/parameterTypes.h>
+#include <clapeze/features/presetFeature.h>
 #include <clapeze/features/state/tomlStateFeature.h>
 #include <clapeze/instrumentPlugin.h>
 #include <clapeze/processor/voice.h>
@@ -9,26 +10,24 @@
 #include <kitdsp/control/adsr.h>
 #include <kitdsp/control/gate.h>
 #include <kitdsp/control/lfo.h>
+#include <kitdsp/filters/onePole.h>
 #include <kitdsp/filters/svf.h>
 #include <kitdsp/math/units.h>
+#include <kitdsp/math/util.h>
 #include <kitdsp/osc/blepOscillator.h>
+#include <kitgui/context.h>
 #include <memory>
 
-#include "clapeze/features/presetFeature.h"
 #include "descriptor.h"
 #include "gui/parameterControls.h"
 #include "gui/presetBrowser.h"
-#include "kitdsp/filters/onePole.h"
-#include "kitdsp/math/util.h"
-#include "kitgui/context.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <clapeze/features/assetsFeature.h>
 #include <imgui.h>
 #include <kitgui/app.h>
-#include "gui/debugui.h"
+#include <kitgui/gfx/scene.h>
 #include "gui/kitguiFeature.h"
-#include "kitgui/gfx/scene.h"
 #endif
 
 #if KITSBLIPS_ENABLE_SENTRY

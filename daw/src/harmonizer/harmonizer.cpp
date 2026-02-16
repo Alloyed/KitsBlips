@@ -1,15 +1,14 @@
 #include <clapeze/effectPlugin.h>
 #include <clapeze/entryPoint.h>
+#include <clapeze/features/assetsFeature.h>
 #include <clapeze/features/params/enumParametersFeature.h>
 #include <clapeze/features/params/parameterTypes.h>
+#include <clapeze/features/state/tomlStateFeature.h>
+#include <clapeze/processor/baseProcessor.h>
 #include <kitdsp/harmonizer.h>
 #include <kitdsp/math/units.h>
 #include <kitdsp/math/util.h>
 
-#include <clapeze/features/state/binaryStateFeature.h>
-#include <clapeze/processor/baseProcessor.h>
-#include "clapeze/features/assetsFeature.h"
-#include "clapeze/features/state/tomlStateFeature.h"
 #include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI

@@ -4,7 +4,6 @@
 #include <clapeze/features/params/parameterTypes.h>
 #include <kitdsp/apps/chorus.h>
 
-#include <clapeze/features/state/binaryStateFeature.h>
 #include <clapeze/processor/baseProcessor.h>
 #include "clapeze/features/assetsFeature.h"
 #include "clapeze/features/state/tomlStateFeature.h"

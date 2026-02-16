@@ -7,7 +7,6 @@
 #include <kitdsp/math/units.h>
 #include <kitdsp/math/util.h>
 
-#include <clapeze/features/state/binaryStateFeature.h>
 #include <clapeze/processor/baseProcessor.h>
 #include "clapeze/features/assetsFeature.h"
 #include "clapeze/features/state/tomlStateFeature.h"

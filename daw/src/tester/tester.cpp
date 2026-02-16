@@ -2,15 +2,15 @@
 #include <clap/process.h>
 #include <clapeze/basePlugin.h>
 #include <clapeze/entryPoint.h>
+#include <clapeze/features/assetsFeature.h>
+#include <clapeze/pluginHost.h>
 #include <clapeze/processor/baseProcessor.h>
 #include <etl/queue_spsc_atomic.h>
 #include <etl/string.h>
+#include <fmt/base.h>
+#include <kitgui/context.h>
 
-#include <clapeze/pluginHost.h>
-#include "clapeze/features/assetsFeature.h"
 #include "descriptor.h"
-#include "fmt/base.h"
-#include "kitgui/context.h"
 #include "tester/appLog.h"
 
 #if KITSBLIPS_ENABLE_GUI

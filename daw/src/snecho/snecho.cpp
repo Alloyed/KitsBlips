@@ -4,13 +4,13 @@
 #include <clapeze/features/params/parameterTypes.h>
 #include <clapeze/features/state/tomlStateFeature.h>
 #include <clapeze/processor/baseProcessor.h>
-#include "descriptor.h"
-
 #include <etl/memory.h>
 #include <kitdsp/apps/snesEcho.h>
 #include <kitdsp/apps/snesEchoFilterPresets.h>
 #include <kitdsp/math/util.h>
 #include <kitdsp/samplerate/resampler.h>
+
+#include "descriptor.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>
