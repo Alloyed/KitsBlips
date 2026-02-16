@@ -1,3 +1,7 @@
+FetchContent_MakeAvailable(miniz)
+add_executable(create-zip EXCLUDE_FROM_ALL "${CMAKE_CURRENT_LIST_DIR}/../tools/createZip.cpp")
+target_link_libraries(create-zip PRIVATE miniz)
+
 # Use to add a bundled output to your library/executable target
 function(target_add_bundle TARGET_NAME OUT_FILE)
     if (NOT TARGET ${TARGET_NAME})
@@ -11,29 +15,17 @@ function(target_add_bundle TARGET_NAME OUT_FILE)
 
     # this command would work, except for the fact that we want STORE compression (aka, none).
     #COMMAND ${CMAKE_COMMAND} -E tar c "${ZIP_FILE}" --format=zip "${ASSETS_DIR}"
-    if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        # windows includes tar but not other programs
-        add_custom_command(
-            OUTPUT ${ZIP_FILE}
-            DEPENDS ${SOURCES}
-            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}" # use so final zip looks like project dir
-            COMMAND ${CMAKE_COMMAND} -E make_directory "${ZIP_DIR}"
-            COMMAND tar.exe -cf "${ZIP_FILE}" --format zip --options="zip:compression=store" ${SOURCES}
-            COMMENT "creating zip file: ${ZIP_FILE}"
-            VERBATIM
-        )
-    else()
-        # every other platform can use info-zip
-        add_custom_command(
-            OUTPUT ${ZIP_FILE}
-            DEPENDS ${SOURCES}
-            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}" # use so final zip looks like project dir
-            COMMAND ${CMAKE_COMMAND} -E make_directory "${ZIP_DIR}"
-            COMMAND zip -0 -r "${ZIP_FILE}" ${SOURCES}
-            COMMENT "creating zip file: ${ZIP_FILE}"
-            VERBATIM
-        )
-    endif()
+    #for convenience just wrote our own zip tool with pieces laying around
+    add_custom_command(
+        OUTPUT ${ZIP_FILE}
+        DEPENDS create-zip ${SOURCES}
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}" # use so final zip looks like project dir
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${ZIP_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E rm -f "${ZIP_FILE}"
+        COMMAND "$<TARGET_FILE:create-zip>" "${ZIP_FILE}" ${SOURCES}
+        COMMENT "creating zip file: ${ZIP_FILE}"
+        VERBATIM
+    )
 
     # make bundle
     set(TARGET_FILE "$<TARGET_FILE:${TARGET_NAME}>")

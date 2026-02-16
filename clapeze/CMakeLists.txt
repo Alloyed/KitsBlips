@@ -11,7 +11,6 @@ set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(miniz PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(clapeze PRIVATE cxx_std_20)
 target_enable_warnings(clapeze)
-target_disable_warnings(miniz)
 
 target_sources(clapeze PRIVATE
     src/basePlugin.cpp
