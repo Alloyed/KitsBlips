@@ -13,7 +13,9 @@
 #include <Corrade/PluginManager/AbstractPlugin.h>
 #include <Corrade/PluginManager/PluginMetadata.h>
 #include <Magnum/Animation/Player.h>
+#include <Magnum/GL/AbstractFramebuffer.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
+#include <Magnum/GL/Framebuffer.h>
 #include <Magnum/GL/Renderer.h>
 #include <Magnum/SceneGraph/Camera.h>
 #include <Magnum/Trade/AbstractImporter.h>
@@ -33,6 +35,7 @@
 #include "gfx/lights.h"
 #include "gfx/materials.h"
 #include "gfx/meshes.h"
+#include "gfx/postProcess.h"
 #include "gfx/sceneGraph.h"
 #include "kitgui/context.h"
 #include "kitgui/types.h"
@@ -84,6 +87,7 @@ struct Scene::Impl {
     std::optional<Magnum::Trade::CameraData> mCameraData;
     AnimationCache mAnimationCache;
     std::vector<AnimationPlayer*> mAdvancingAnimations;
+    gfx::PostProcessCanvas mPostProcess{};
 };
 
 Scene::Scene(kitgui::Context& mContext) : mImpl(std::make_unique<Scene::Impl>(mContext)) {};
@@ -432,17 +436,14 @@ void Scene::Impl::Draw() {
     if (!mLoaded) {
         return;
     }
-    GL::defaultFramebuffer.bind();
-    GL::defaultFramebuffer.mapForDraw({{Shaders::PhongGL::ColorOutput, GL::DefaultFramebuffer::DrawAttachment::Back}});
-    GL::defaultFramebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
-
+    GL::AbstractFramebuffer& fb = mPostProcess.startDraw();
     GL::Renderer::enable(GL::Renderer::Feature::FramebufferSrgb);
 
     GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
     GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
     GL::Renderer::enable(GL::Renderer::Feature::Multisampling);
 
-    auto size = GL::defaultFramebuffer.viewport().size();
+    auto size = fb.viewport().size();
     const Magnum::Vector2 sizef = {static_cast<float>(size.x()), static_cast<float>(size.y())};
     SetViewport(sizef);
 
@@ -475,6 +476,8 @@ void Scene::Impl::Draw() {
     }
 
     GL::Renderer::disable(GL::Renderer::Feature::FramebufferSrgb);
+
+    mPostProcess.finishDraw();
 }
 
 void Scene::ImGui() {
