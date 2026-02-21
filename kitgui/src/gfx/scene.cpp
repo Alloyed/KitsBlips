@@ -317,6 +317,7 @@ void Scene::Impl::ApplySceneTweakables() {
         mPostProcessor.setParams(true, cfg.hdrExposureFactor, cfg.gamma);
     } else {
         mLightCache.mShadeless = false;
+        // mLightCache.mBrightness = std::pow(cfg.dynamicLightFactor, 10.0f);
         mLightCache.mBrightness = cfg.dynamicLightFactor;
         mLightCache.mAmbientBrightness = cfg.ambientLightFactor;
         const auto finalLightColors = mLightCache.CalculateLightColors();
