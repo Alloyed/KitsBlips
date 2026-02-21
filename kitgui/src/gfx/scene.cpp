@@ -32,6 +32,7 @@
 #include "fileContext.h"
 #include "gfx/animations.h"
 #include "gfx/drawables.h"
+#include "gfx/emissive.h"
 #include "gfx/lights.h"
 #include "gfx/materials.h"
 #include "gfx/meshes.h"
@@ -65,7 +66,7 @@ struct Scene::Impl {
 
     void PlayAnimationByName(std::string_view name);
     void SetObjectRotationByName(std::string_view name, float angleRadians, Scene::Axis axis);
-    void SetLightBrightnessByName(std::string_view name, float emission);
+    void SetLedBrightnessByName(std::string_view name, float emission);
     std::optional<ObjectScreenPosition> GetObjectScreenPositionByName(std::string_view name);
 
    public:
@@ -87,7 +88,8 @@ struct Scene::Impl {
     std::optional<Magnum::Trade::CameraData> mCameraData;
     AnimationCache mAnimationCache;
     std::vector<AnimationPlayer*> mAdvancingAnimations;
-    gfx::PostProcessCanvas mPostProcess{};
+    gfx::EmissiveEffect mEmissiveEffect{};
+    gfx::PostProcessCanvas mPostProcessor{};
 };
 
 Scene::Scene(kitgui::Context& mContext) : mImpl(std::make_unique<Scene::Impl>(mContext)) {};
@@ -353,15 +355,21 @@ void Scene::Impl::SetObjectRotationByName(std::string_view name, float angleRadi
     }
 }
 
-void Scene::SetLightBrightnessByName(std::string_view name, float emission) {
-    mImpl->SetLightBrightnessByName(name, emission);
+void Scene::SetLedBrightnessByName(std::string_view name, float emission) {
+    mImpl->SetLedBrightnessByName(name, emission);
 }
 
-void Scene::Impl::SetLightBrightnessByName(std::string_view name, float emission) {
-    // TODO
-    for (auto& info : mLightCache.mLights) {
-        if (info.debugName == name) {
-            return;
+void Scene::Impl::SetLedBrightnessByName(std::string_view name, float emission) {
+    auto drawables = &mDrawables.mLightDrawables;
+    for (size_t idx = 0; idx < drawables->size(); ++idx) {
+        PhongDrawable* d = dynamic_cast<PhongDrawable*>(&(*drawables)[idx]);
+        if (d) {
+            auto objectId = d->getObjectId();
+            auto& info = mSceneObjects[objectId];
+            if (info.name == name) {
+                d->setAmbientFactor(emission);
+                return;
+            }
         }
     }
 }
@@ -436,8 +444,8 @@ void Scene::Impl::Draw() {
     if (!mLoaded) {
         return;
     }
-    GL::AbstractFramebuffer& fb = mPostProcess.startDraw();
-    GL::Renderer::enable(GL::Renderer::Feature::FramebufferSrgb);
+    GL::AbstractFramebuffer& fb = mPostProcessor.startDraw();
+    // GL::Renderer::enable(GL::Renderer::Feature::FramebufferSrgb);
 
     GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
     GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
@@ -458,6 +466,11 @@ void Scene::Impl::Draw() {
     /* Draw opaque stuff as usual */
     mCamera->draw(mDrawables.mOpaqueDrawables);
 
+    /* Draw emission */
+    mEmissiveEffect.startDrawEmissive(fb);
+    mCamera->draw(mDrawables.mEmissiveDrawables);
+    mEmissiveEffect.finishDrawEmissive(fb);
+
     /* Draw transparent stuff back-to-front with blending enabled */
     if (!mDrawables.mTransparentDrawables.isEmpty()) {
         GL::Renderer::setDepthMask(false);
@@ -475,9 +488,7 @@ void Scene::Impl::Draw() {
         GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::One, GL::Renderer::BlendFunction::Zero);
     }
 
-    GL::Renderer::disable(GL::Renderer::Feature::FramebufferSrgb);
-
-    mPostProcess.finishDraw();
+    mPostProcessor.finishDraw();
 }
 
 void Scene::ImGui() {
@@ -520,11 +531,18 @@ void Scene::Impl::ImGui() {
     }
 
     size_t numDrawables = mDrawables.mOpaqueDrawables.size() + mDrawables.mTransparentDrawables.size() +
-                          mDrawables.mLightDrawables.size();
+                          mDrawables.mLightDrawables.size() + mDrawables.mEmissiveDrawables.size();
     if (ImGui::CollapsingHeader(fmt::format("{} Drawables", numDrawables).c_str())) {
         Magnum::SceneGraph::DrawableGroup3D* drawables{};
         drawables = &mDrawables.mOpaqueDrawables;
         ImGui::Text("opaque: %ld", drawables->size());
+        for (size_t idx = 0; idx < drawables->size(); ++idx) {
+            BaseDrawable& d = dynamic_cast<BaseDrawable&>((*drawables)[idx]);
+            d.ImGui();
+        }
+
+        drawables = &mDrawables.mEmissiveDrawables;
+        ImGui::Text("emissive: %ld", drawables->size());
         for (size_t idx = 0; idx < drawables->size(); ++idx) {
             BaseDrawable& d = dynamic_cast<BaseDrawable&>((*drawables)[idx]);
             d.ImGui();

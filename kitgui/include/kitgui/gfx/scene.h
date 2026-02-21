@@ -42,7 +42,7 @@ class Scene {
     // These methods are added as needed, so no rhyme or reason to what's supported really
     void PlayAnimationByName(std::string_view name);
     void SetObjectRotationByName(std::string_view name, float angleRadians, Axis axis);
-    void SetLightBrightnessByName(std::string_view name, float emission);
+    void SetLedBrightnessByName(std::string_view name, float emission);
     std::optional<ObjectScreenPosition> GetObjectScreenPositionByName(std::string_view name);
 
    private:

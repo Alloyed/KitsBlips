@@ -22,6 +22,7 @@ struct TextureInfo {
 struct MaterialInfo {
     std::optional<Magnum::Trade::MaterialData> raw;
     const Magnum::Trade::PhongMaterialData* Phong() const;
+    const Magnum::Trade::PbrMetallicRoughnessMaterialData* Pbr() const;
 };
 
 struct MaterialCache {

@@ -55,7 +55,11 @@ class PhongDrawable : public BaseDrawable {
                            float ambientFactor,
                            float specularFactor,
                            float shininess,
+                           bool shadeless,
                            Magnum::SceneGraph::DrawableGroup3D& group);
+
+    uint32_t getObjectId() const { return mObjectId; }
+    void setAmbientFactor(float factor) { mAmbientFactor = factor; }
 
    private:
     void draw(const Magnum::Matrix4& transformationMatrix, Magnum::SceneGraph::Camera3D& camera) override;
@@ -74,7 +78,8 @@ class PhongDrawable : public BaseDrawable {
     float mAmbientFactor;
     float mSpecularFactor;
     float mShininess;
-    bool mShadeless = false;
+    bool mShadeless;
+    bool mEnabled = true;
 };
 
 class LightDrawable : public BaseDrawable {
@@ -130,6 +135,7 @@ struct Drawables {
 
     Magnum::SceneGraph::DrawableGroup3D mOpaqueDrawables;
     Magnum::SceneGraph::DrawableGroup3D mTransparentDrawables;
+    Magnum::SceneGraph::DrawableGroup3D mEmissiveDrawables;
     Magnum::SceneGraph::DrawableGroup3D mLightDrawables;
 };
 

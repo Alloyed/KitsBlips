@@ -18,6 +18,7 @@
 #include <Magnum/Trade/AbstractImporter.h>
 #include <Magnum/Trade/ImageData.h>
 #include <Magnum/Trade/MaterialData.h>
+#include <Magnum/Trade/PbrMetallicRoughnessMaterialData.h>
 #include <Magnum/Trade/PhongMaterialData.h>
 #include <Magnum/Trade/TextureData.h>
 #include <cstddef>
@@ -32,35 +33,10 @@ void loadImage(Magnum::GL::Texture2D& texture, const Magnum::Trade::ImageData2D&
         Containers::Array<char> usedImageStorage;
         ImageView2D usedImage = image;
         const uint32_t channelCount = pixelFormatChannelCount(image.format());
-        if (channelCount == 1 || channelCount == 2) {
-            if (GL::Context::current().isExtensionSupported<GL::Extensions::ARB::texture_swizzle>()) {
-                if (channelCount == 1) {
-                    texture.setSwizzle<'r', 'r', 'r', '1'>();
-                } else if (channelCount == 2) {
-                    texture.setSwizzle<'r', 'r', 'r', 'g'>();
-                }
-            } else {
-                const PixelFormat imageFormat =
-                    pixelFormat(image.format(), channelCount == 2 ? 4 : 3, isPixelFormatSrgb(image.format()));
-                // Debug{} << "Texture swizzle not supported, expanding a" << image.format() << "image to" <<
-                // imageFormat;
-                const std::size_t rowStride =
-                    static_cast<std::size_t>(4 * ((pixelFormatSize(imageFormat) * image.size().x() + 3) / 4));
-                usedImageStorage = Containers::Array<char>{NoInit, std::size_t(rowStride * image.size().y())};
-                const MutableImageView2D usedMutableImage{imageFormat, image.size(), usedImageStorage};
-                usedImage = usedMutableImage;
-                const std::size_t channelSize = pixelFormatSize(pixelFormatChannelFormat(imageFormat));
-                const std::size_t dstChannelCount = pixelFormatChannelCount(imageFormat);
-                const Containers::StridedArrayView4D<const char> src =
-                    image.pixels().expanded<2>(Containers::Size2D{channelCount, channelSize});
-                const Containers::StridedArrayView4D<char> dst =
-                    usedMutableImage.pixels().expanded<2>(Containers::Size2D{dstChannelCount, channelSize});
-                Utility::copy(src.exceptSuffix({0, 0, channelCount == 2 ? 1 : 0, 0}).broadcasted<2>(3),
-                              dst.exceptSuffix({0, 0, channelCount == 2 ? 1 : 0, 0}));
-                if (channelCount == 2) {
-                    Utility::copy(src.exceptPrefix({0, 0, 1, 0}), dst.exceptPrefix({0, 0, 3, 0}));
-                }
-            }
+        if (channelCount == 1) {
+            texture.setSwizzle<'r', 'r', 'r', '1'>();
+        } else if (channelCount == 2) {
+            texture.setSwizzle<'r', 'r', 'r', 'g'>();
         }
         GL::TextureFormat format{};
         switch (usedImage.format()) {
@@ -194,6 +170,13 @@ const Magnum::Trade::PhongMaterialData* MaterialInfo::Phong() const {
                ? &(raw->as<Magnum::Trade::PhongMaterialData>())
                : nullptr;
 }
+
+const Magnum::Trade::PbrMetallicRoughnessMaterialData* MaterialInfo::Pbr() const {
+    return raw.has_value() && raw->types() & Magnum::Trade::MaterialType::PbrMetallicRoughness
+               ? &(raw->as<Magnum::Trade::PbrMetallicRoughnessMaterialData>())
+               : nullptr;
+}
+
 void MaterialCache::ConfigureBasisLoader(Corrade::PluginManager::PluginMetadata& importer) {
     GL::Context& context = GL::Context::current();
     using namespace GL::Extensions;

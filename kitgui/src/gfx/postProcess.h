@@ -31,10 +31,10 @@ class PostProcessShader : public GL::AbstractShaderProgram {
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec2 textureCoordinates;
 
-out vec2 interpolatedTextureCoordinates;
+out vec2 uv;
 
 void main() {
-    interpolatedTextureCoordinates = textureCoordinates;
+    uv = textureCoordinates;
 
     gl_Position = position;
 }
@@ -43,18 +43,34 @@ void main() {
         GL::Shader frag(GL::Version::GL330, GL::Shader::Type::Fragment);
         frag.addSource(R"HERE(
 #extension GL_ARB_explicit_uniform_location: require
-layout(location = 0) uniform vec3 color = vec3(1.0, 1.0, 1.0);
-layout(location = 1) uniform sampler2D textureData;
+layout(location = 0) uniform sampler2D textureData;
 
-in vec2 interpolatedTextureCoordinates;
+in vec2 uv;
 
 out vec4 fragmentColor;
 
+// https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
+vec3 tonemapping_ACES(const vec3 x) {
+    const float a = 2.51;
+    const float b = 0.03;
+    const float c = 2.43;
+    const float d = 0.59;
+    const float e = 0.14;
+    return (x * (a * x + b)) / (x * (c * x + d) + e);
+}
+
 void main() {
-    //fragmentColor.rgb = color*texture(textureData, interpolatedTextureCoordinates).bgr;
-    fragmentColor.rgb = color*texture(textureData, interpolatedTextureCoordinates).rgb;
-    //fragmentColor.rgb = interpolatedTextureCoordinates.xyx;
-    fragmentColor.a = 1.0;
+    const float gamma = 2.2;
+    const float exposure = 1.0;
+    vec3 hdrColor = texture(textureData, uv).rgb;
+  
+    // exposure tone mapping
+    vec3 mapped = tonemapping_ACES(hdrColor * exposure);
+
+    // gamma correction 
+    mapped = pow(mapped, vec3(1.0 / gamma));
+  
+    fragmentColor = vec4(mapped, 1.0);
 }
         )HERE");
 
@@ -69,13 +85,8 @@ void main() {
         }
     }
 
-    PostProcessShader& bindColor(const Color3& color) {
-        setUniform(0, Vector3(color.r(), color.g(), color.b()));
-        return *this;
-    }
-
     PostProcessShader& bindColor(GL::Texture2D& tex) {
-        tex.bind(1);
+        tex.bind(0);
         return *this;
     }
 
@@ -99,7 +110,7 @@ class PostProcessCanvas {
 
     void setSize(Vector2i size) {
         if (size != framebuffer.viewport().size()) {
-            texColor.setStorage(1, GL::TextureFormat::RGBA8, size);
+            texColor.setStorage(1, GL::TextureFormat::RGBA16F, size);
             texDepthAndStencil.setStorage(1, GL::TextureFormat::Depth24Stencil8, size);
             framebuffer.setViewport({{}, size});
         }
@@ -107,19 +118,19 @@ class PostProcessCanvas {
 
     GL::AbstractFramebuffer& startDraw() {
         if (!mEnabled) {
+            GL::defaultFramebuffer.bind();
             GL::defaultFramebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
             GL::defaultFramebuffer.mapForDraw({{0, GL::DefaultFramebuffer::DrawAttachment::Back}});
-            GL::defaultFramebuffer.bind();
             return GL::defaultFramebuffer;
         }
         setSize(GL::defaultFramebuffer.viewport().size());
+        framebuffer.bind();
         framebuffer.attachTexture(GL::Framebuffer::ColorAttachment(0), texColor, 0);
         framebuffer.attachTexture(GL::Framebuffer::BufferAttachment::DepthStencil, texDepthAndStencil, 0);
         framebuffer.mapForDraw({
             {Shaders::PhongGL::ColorOutput, GL::Framebuffer::ColorAttachment(0)},
         });
         framebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
-        framebuffer.bind();
         return framebuffer;
     }
 
@@ -127,9 +138,9 @@ class PostProcessCanvas {
         if (!mEnabled) {
             return;
         }
+        GL::defaultFramebuffer.bind();
         GL::defaultFramebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
         GL::defaultFramebuffer.mapForDraw({{0, GL::DefaultFramebuffer::DrawAttachment::Back}});
-        GL::defaultFramebuffer.bind();
         shader.bindColor(texColor).draw(fullscreenQuad);
     }
 

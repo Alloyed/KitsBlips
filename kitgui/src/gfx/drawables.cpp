@@ -4,6 +4,7 @@
 #include <Magnum/SceneGraph/Camera.h>
 #include <Magnum/Shaders/PhongGL.h>
 #include <Magnum/Trade/MaterialData.h>
+#include <Magnum/Trade/PbrMetallicRoughnessMaterialData.h>
 #include <Magnum/Trade/PhongMaterialData.h>
 #include <imgui.h>
 #include <vector>
@@ -31,6 +32,7 @@ PhongDrawable::PhongDrawable(const SharedDrawableState& state,
                              float ambientFactor,
                              float specularFactor,
                              float shininess,
+                             bool shadeless,
                              SceneGraph::DrawableGroup3D& group)
     : BaseDrawable{object, &group},
       mTextureMatrix(textureMatrix),
@@ -45,9 +47,13 @@ PhongDrawable::PhongDrawable(const SharedDrawableState& state,
       mAlphaMask(alphaMask),
       mAmbientFactor(ambientFactor),
       mSpecularFactor(specularFactor),
-      mShininess(shininess) {}
+      mShininess(shininess),
+      mShadeless(shadeless) {}
 
 void PhongDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera3D& camera) {
+    if (!mEnabled) {
+        return;
+    }
     Matrix4 usedTransformationMatrix{NoInit};
     usedTransformationMatrix = transformationMatrix;
 
@@ -65,7 +71,9 @@ void PhongDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera
 
     if (mShadeless || mShared.shadeless) {
         // 100% ambient, 0% diffuse means lights will have no contribution to the final color
-        mShader.setAmbientColor(mColor).setDiffuseColor(0x00000000_rgbaf).setSpecularColor(0x00000000_rgbaf);
+        mShader.setAmbientColor(mColor * mAmbientFactor)
+            .setDiffuseColor(0x00000000_rgbaf)
+            .setSpecularColor(0x00000000_rgbaf);
     } else {
         mShader.setAmbientColor(mColor * mAmbientFactor * mShared.ambientFactor)
             .setDiffuseColor(mColor)
@@ -93,13 +101,15 @@ void PhongDrawable::draw(const Matrix4& transformationMatrix, SceneGraph::Camera
 void PhongDrawable::ImGui() {
     if (ImGui::TreeNode(this, "%d", mObjectId)) {
         ImGui::Text("PhongGL");
+        ImGui::Checkbox("enabled", &mEnabled);
         ImVec4 c = {mColor.r(), mColor.g(), mColor.b(), mColor.a()};
         ImGui::ColorButton("color", c);
         ImGui::LabelText("hasDiffuse", "%s", mDiffuseTexture == nullptr ? "false" : "true");
         ImGui::LabelText("hasNormal", "%s", mNormalTexture == nullptr ? "false" : "true");
-        ImGui::LabelText("ambientFactor", "%f", mAmbientFactor);
-        ImGui::LabelText("specularFactor", "%f", mSpecularFactor);
-        ImGui::LabelText("shininess", "%f", mShininess);
+        ImGui::InputFloat("ambientFactor", &mAmbientFactor);
+        ImGui::InputFloat("specularFactor", &mSpecularFactor);
+        ImGui::InputFloat("shininess", &mShininess);
+        ImGui::Checkbox("shadeless", &mShadeless);
         ImGui::LabelText("normalTextureScale", "%f", mNormalTextureScale);
         ImGui::LabelText("alphamask", "%f", mAlphaMask);
         ImGui::TreePop();
@@ -157,10 +167,12 @@ Magnum::SceneGraph::Drawable3D* Drawables::CreateDrawableFromMesh(MaterialCache&
     if (!materialInfo || !materialInfo->raw) {
         /* Material not available */
         return new PhongDrawable(mState, *object, objectId, *mesh, GetOrCreatePhongShader(flags, lightCount),
-                                 0xffffff_rgbf, nullptr, nullptr, 0.0f, 0.5f, {}, 1.0f, 0.0f, 80.0f, mOpaqueDrawables);
+                                 0xffffff_rgbf, nullptr, nullptr, 0.0f, 0.5f, {}, 1.0f, 0.0f, 80.0f, false,
+                                 mOpaqueDrawables);
     } else {
         /* Material available */
         const Trade::PhongMaterialData& material = *materialInfo->Phong();
+        const Trade::PbrMetallicRoughnessMaterialData* pbrMat = materialInfo->Pbr();
 
         if (material.isDoubleSided()) {
             flags |= Shaders::PhongGL::Flag::DoubleSided;
@@ -208,10 +220,18 @@ Magnum::SceneGraph::Drawable3D* Drawables::CreateDrawableFromMesh(MaterialCache&
         constexpr float kSpecular = 1.0f;
         constexpr float kShininess = 1.0f;
 
+        if (pbrMat && pbrMat->emissiveColor() != 0x000000_srgbf) {
+            // also create emissive drawable
+            // 100% ambient, 0% diffuse, shadeless.
+            new PhongDrawable(mState, *object, objectId, *mesh, GetOrCreatePhongShader(flags, lightCount),
+                              pbrMat->emissiveColor(), diffuseTexture, nullptr, {}, material.alphaMask(),
+                              material.commonTextureMatrix(), 1.0f, 0.0f, 0.0f, true, mEmissiveDrawables);
+        }
+
         return new PhongDrawable(mState, *object, objectId, *mesh, GetOrCreatePhongShader(flags, lightCount),
                                  material.diffuseColor(), diffuseTexture, normalTexture, normalTextureScale,
                                  material.alphaMask(), material.commonTextureMatrix(), kAmbient, kSpecular, kShininess,
-                                 *group);
+                                 false, *group);
     }
 }
 

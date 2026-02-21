@@ -522,6 +522,9 @@ class GuiApp : public kitgui::BaseApp {
             constexpr float maxTurn = kitdsp::kPi * 2.0f * 0.05f;
             mScene->SetObjectRotationByName(knob->GetSceneNode(), value ? -maxTurn : maxTurn, kitgui::Scene::Axis::X);
         }
+
+        double out = mParams.GetMainHandle().GetRawValue(static_cast<clap_id>(Params::LfoOut));
+        mScene->SetLedBrightnessByName("led-3mm-round", static_cast<float>(out));
     }
 
     void OnGuiUpdate() override {

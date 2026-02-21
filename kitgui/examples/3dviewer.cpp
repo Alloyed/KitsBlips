@@ -22,6 +22,8 @@ class MyApp : public kitgui::BaseApp {
     void OnActivate() override {
         mScene->Load(mFilePath);
         GetContext().SetClearColor(mClearColor);
+        mScene->SetBrightness(mBrightness);
+        mScene->SetAmbientBrightness(mAmbientBrightness);
     }
     void OnUpdate() override { mScene->Update(); }
     void OnGuiUpdate() override {
@@ -66,8 +68,8 @@ class MyApp : public kitgui::BaseApp {
     bool mShowUi = true;
     std::string mFilePath{};
     kitgui::Color4 mClearColor{0.1f, 0.4f, 0.4f, 1.0f};
-    float mBrightness = 0.0025f;
-    float mAmbientBrightness = 0.0025f;
+    float mBrightness = 0.0005f;
+    float mAmbientBrightness = 0.05f;
 };
 
 int main(int argc, const char* argv[]) {
