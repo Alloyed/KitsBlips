@@ -99,7 +99,7 @@ if(KITSBLIPS_ENABLE_SENTRY)
 endif()
 
 set(ASSETS
-    assets/kitskeys.packed.glb
+    assets/kitskeys.glb
 )
 
 # as shrimple as that!

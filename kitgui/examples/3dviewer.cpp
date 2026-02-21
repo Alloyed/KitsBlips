@@ -22,8 +22,6 @@ class MyApp : public kitgui::BaseApp {
     void OnActivate() override {
         mScene->Load(mFilePath);
         GetContext().SetClearColor(mClearColor);
-        mScene->SetBrightness(mBrightness);
-        mScene->SetAmbientBrightness(mAmbientBrightness);
     }
     void OnUpdate() override { mScene->Update(); }
     void OnGuiUpdate() override {
@@ -50,11 +48,28 @@ class MyApp : public kitgui::BaseApp {
                     GetContext().SetSizeDirectly(w, h, false);
                 }
 
-                if (ImGui::DragFloat("brightness", &mBrightness, 0.0001, 0.0f, 1.0f, "%.6f")) {
-                    mScene->SetBrightness(mBrightness);
+                bool changed = false;
+                kitgui::SceneTweakables& cfg = mScene->GetSceneTweakables();
+                if (ImGui::Checkbox("shadeless", &cfg.shadeless)) {
+                    changed = true;
                 }
-                if (ImGui::DragFloat("ambient brightness", &mAmbientBrightness, 0.0001, 0.0f, 1.0f, "%.6f")) {
-                    mScene->SetAmbientBrightness(mAmbientBrightness);
+                if (ImGui::DragFloat("brightness", &cfg.dynamicLightFactor, 0.0001, 0.0f, 1.0f, "%.6f")) {
+                    changed = true;
+                }
+                if (ImGui::DragFloat("ambient brightness", &cfg.ambientLightFactor, 0.01, 0.0f, 1.0f, "%.3f")) {
+                    changed = true;
+                }
+                if (ImGui::DragFloat("bloom", &cfg.bloomIntensity, 0.01, 0.0f, 3.0f, "%.3f")) {
+                    changed = true;
+                }
+                if (ImGui::DragFloat("exposure", &cfg.hdrExposureFactor, 0.01, 0.0f, 10.0f, "%.3f")) {
+                    changed = true;
+                }
+                if (ImGui::DragFloat("gamma", &cfg.gamma, 0.01, 0.0f, 10.0f, "%.3f")) {
+                    changed = true;
+                }
+                if (changed) {
+                    mScene->ApplySceneTweakables();
                 }
                 mScene->ImGui();
             }
@@ -68,8 +83,6 @@ class MyApp : public kitgui::BaseApp {
     bool mShowUi = true;
     std::string mFilePath{};
     kitgui::Color4 mClearColor{0.1f, 0.4f, 0.4f, 1.0f};
-    float mBrightness = 0.0005f;
-    float mAmbientBrightness = 0.05f;
 };
 
 int main(int argc, const char* argv[]) {

@@ -175,42 +175,51 @@ class EmissiveEffect {
         if (mEnabled) {
             // blur shader params
             // TODO: expose
+            static int numBlurStages = 1;
             static int numBlurIterations = 3;  // at least 1
             static float samplePosMult = 1.2f;
-            static float bloomStrength = 1.0f;
+            float bloomStrength = mBloomStrength;
 
+            /*
+            ImGui::InputInt("numBlurStages", &numBlurStages);
+            numBlurStages = std::clamp(numBlurStages, 1, 3);
             ImGui::InputInt("numBlurIterations", &numBlurIterations);
             numBlurIterations = std::clamp(numBlurIterations, 1, 20);
             ImGui::DragFloat("samplePosMult", &samplePosMult);
             ImGui::DragFloat("bloomStrength", &bloomStrength);
+            */
 
             // kawase shader "ping-pong"
             auto* currentTex = &texColor1;
             auto* currentFb = &framebuffer1;
             auto* nextTex = &texColor2;
             auto* nextFb = &framebuffer2;
-            for (int idx = 0; idx < numBlurIterations - 1; ++idx) {
-                float pixelOffset = static_cast<float>(idx + 1);
-                // blur only, doesn't need depth texture
-                nextFb->bind();
-                nextFb->attachTexture(GL::Framebuffer::ColorAttachment(0), *nextTex, 0);
-                nextFb->mapForDraw({
-                    {Shaders::PhongGL::ColorOutput, GL::Framebuffer::ColorAttachment(0)},
-                });
-                nextFb->clearColor(0, 0x00000000_srgbaf);
+            for (int stage = 0; stage < numBlurStages; stage++) {
+                for (int idx = 0; idx < numBlurIterations - 1; ++idx) {
+                    float pixelOffset = static_cast<float>(idx + 1);
+                    // blur only, doesn't need depth texture
+                    nextFb->bind();
+                    nextFb->attachTexture(GL::Framebuffer::ColorAttachment(0), *nextTex, 0);
+                    nextFb->mapForDraw({
+                        {Shaders::PhongGL::ColorOutput, GL::Framebuffer::ColorAttachment(0)},
+                    });
+                    nextFb->clearColor(0, 0x00000000_srgbaf);
+                    blurShader.bind(*currentTex)
+                        .bindBlurParams(samplePosMult, pixelOffset, bloomStrength)
+                        .draw(fullscreenQuad);
+                    std::swap(currentTex, nextTex);
+                    std::swap(currentFb, nextFb);
+                }
+
+                // final draw to output
+                outputFramebuffer.bind();
+                float pixelOffset = static_cast<float>(numBlurIterations + 1);
+                GL::Renderer::setBlendEquation(Magnum::GL::Renderer::BlendEquation::Add);
+                GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::One, GL::Renderer::BlendFunction::One);
                 blurShader.bind(*currentTex)
                     .bindBlurParams(samplePosMult, pixelOffset, bloomStrength)
                     .draw(fullscreenQuad);
-                std::swap(currentTex, nextTex);
-                std::swap(currentFb, nextFb);
             }
-
-            // final draw to output
-            outputFramebuffer.bind();
-            float pixelOffset = static_cast<float>(numBlurIterations + 1);
-            GL::Renderer::setBlendEquation(Magnum::GL::Renderer::BlendEquation::Add);
-            GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::One, GL::Renderer::BlendFunction::One);
-            blurShader.bind(*currentTex).bindBlurParams(samplePosMult, pixelOffset, bloomStrength).draw(fullscreenQuad);
         }
 
         GL::Renderer::setDepthMask(true);
@@ -218,8 +227,14 @@ class EmissiveEffect {
         GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::One, GL::Renderer::BlendFunction::Zero);
     }
 
+    void setParams(bool enabled, float strength) {
+        mEnabled = enabled;
+        mBloomStrength = strength;
+    }
+
    private:
     bool mEnabled = true;
+    float mBloomStrength = 1.0f;
     GL::Framebuffer framebuffer1{{{}, {}}};
     GL::Texture2D texColor1;
     GL::Framebuffer framebuffer2{{{}, {}}};

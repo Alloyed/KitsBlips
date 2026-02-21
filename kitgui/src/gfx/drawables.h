@@ -37,6 +37,7 @@ class BaseDrawable : public Magnum::SceneGraph::Drawable3D {
     explicit BaseDrawable(Object3D& object, Magnum::SceneGraph::DrawableGroup3D* group)
         : Magnum::SceneGraph::Drawable3D(object, group) {}
     virtual void ImGui() = 0;
+    virtual uint32_t getObjectId() const = 0;
 };
 
 class PhongDrawable : public BaseDrawable {
@@ -58,7 +59,7 @@ class PhongDrawable : public BaseDrawable {
                            bool shadeless,
                            Magnum::SceneGraph::DrawableGroup3D& group);
 
-    uint32_t getObjectId() const { return mObjectId; }
+    uint32_t getObjectId() const override { return mObjectId; }
     void setAmbientFactor(float factor) { mAmbientFactor = factor; }
 
    private:
@@ -90,6 +91,7 @@ class LightDrawable : public BaseDrawable {
                            Magnum::SceneGraph::DrawableGroup3D& group);
 
    private:
+    uint32_t getObjectId() const override { return 0; }
     void draw(const Magnum::Matrix4& transformationMatrix, Magnum::SceneGraph::Camera3D&) override;
     void ImGui() override;
 

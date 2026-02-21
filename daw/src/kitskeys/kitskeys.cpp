@@ -435,8 +435,8 @@ class GuiApp : public kitgui::BaseApp {
         uint32_t h{};
         GetContext().GetSizeInPixels(w, h);
         mScene->SetViewport({static_cast<float>(w), static_cast<float>(h)});
-        mScene->SetBrightness(0.0003f);  // idk why magnum is so intense by default, to investigate
-        mScene->SetAmbientBrightness(0.1f);
+        mScene->SetBrightness(0.00065f);  // idk why magnum is so intense by default, to investigate
+        mScene->SetAmbientBrightness(0.25f);
 
         struct KnobSetupInfo {
             Params param;
@@ -471,7 +471,7 @@ class GuiApp : public kitgui::BaseApp {
 
         const std::vector<KnobSetupInfo> toggles{
             {Params::VcaEnvDisabled, "VcaEnvDisabled"},
-            {Params::LfoSync, "LfoSync"},
+            {Params::LfoSync, "switch-toggle.001"},
         };
         for (const auto& knobInfo : toggles) {
             clap_id id = static_cast<clap_id>(knobInfo.param);

@@ -44,6 +44,8 @@ void main() {
         frag.addSource(R"HERE(
 #extension GL_ARB_explicit_uniform_location: require
 layout(location = 0) uniform sampler2D textureData;
+layout(location = 1) uniform float exposure;
+layout(location = 2) uniform float gamma;
 
 in vec2 uv;
 
@@ -60,8 +62,6 @@ vec3 tonemapping_ACES(const vec3 x) {
 }
 
 void main() {
-    const float gamma = 2.2;
-    const float exposure = 1.0;
     vec3 hdrColor = texture(textureData, uv).rgb;
   
     // exposure tone mapping
@@ -87,6 +87,14 @@ void main() {
 
     PostProcessShader& bindColor(GL::Texture2D& tex) {
         tex.bind(0);
+        return *this;
+    }
+    PostProcessShader& bindExposure(float exposure) {
+        setUniform(1, exposure);
+        return *this;
+    }
+    PostProcessShader& bindGamma(float gamma) {
+        setUniform(2, gamma);
         return *this;
     }
 
@@ -141,13 +149,21 @@ class PostProcessCanvas {
         GL::defaultFramebuffer.bind();
         GL::defaultFramebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
         GL::defaultFramebuffer.mapForDraw({{0, GL::DefaultFramebuffer::DrawAttachment::Back}});
-        shader.bindColor(texColor).draw(fullscreenQuad);
+        shader.bindColor(texColor).bindExposure(mExposure).bindGamma(mGamma).draw(fullscreenQuad);
+    }
+
+    void setParams(bool enabled, float exposure, float gamma) {
+        mEnabled = enabled;
+        mExposure = exposure;
+        mGamma = gamma;
     }
 
    private:
     // Working on it :p
-    // bool mEnabled = true;
-    bool mEnabled = false;
+    bool mEnabled = true;
+    float mExposure = 1.0f;
+    float mGamma = 2.2f;
+    // bool mEnabled = false;
     GL::Framebuffer framebuffer{{{}, {}}};
     GL::Texture2D texColor;
     GL::Texture2D texDepthAndStencil;

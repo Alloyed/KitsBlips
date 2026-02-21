@@ -12,6 +12,34 @@ struct ObjectScreenPosition {
     kitgui::Vector2 pos;
     kitgui::Vector2 size;
 };
+
+struct SceneTweakables {
+    /**if true, ignore all light features and draw everything at max brightness. also known as "fullbright"  */
+    bool shadeless = false;
+    /** modifies the contribution of dynamic lights to the scene */
+    float dynamicLightFactor = 0.0005f;
+    /**
+     * modifies the contribution of ambient/indirect light to the scene. this is a uniform light applied to everything,
+     * and at 1.0 this looks the same as "fullbright"
+     */
+    float ambientLightFactor = 0.1f;
+
+    /** modifies the contribution of emissive bloom to the scene */
+    float bloomIntensity = 1.0f;
+
+    /**
+     * modifies the pre-tonemapper light colors.
+     * more exposure == more detail in darker areas of the scene (good for night)
+     * less exposure == more detail in brighter areas (good for daytime)
+     */
+    float hdrExposureFactor = 1.0f;
+    /**
+     * modifies the display-specific gamma mapping. 2.2 is standard sRGB. but monitors aren't perfect so the 2.2 needs a
+     * bit of user-controlled wiggle room.
+     */
+    float gamma = 2.2f;
+};
+
 /**
  * A scene represents a drawable instance of a loaded gltf/glb scene.
  * gltf scenes include drawable geometry, like 3d models, as well as camera and lighting information.
@@ -34,10 +62,9 @@ class Scene {
     void ImGui();
     /** Sets the viewport size, recalculating any cameras as needed. */
     void SetViewport(const kitgui::Vector2& size);
-    /** Sets scene overall brightness, from 0-1+. nullopt means fullbright. */
-    void SetBrightness(std::optional<float> brightness);
-    /** Sets scene ambient brightness, from 0-1+. nullopt means fullbright. */
-    void SetAmbientBrightness(float brightness);
+
+    SceneTweakables& GetSceneTweakables();
+    void ApplySceneTweakables();
 
     // These methods are added as needed, so no rhyme or reason to what's supported really
     void PlayAnimationByName(std::string_view name);

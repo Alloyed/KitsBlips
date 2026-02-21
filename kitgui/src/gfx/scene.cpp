@@ -61,8 +61,9 @@ struct Scene::Impl {
     void ImGui();
     void Draw();
     void SetViewport(const kitgui::Vector2& size);
-    void SetBrightness(std::optional<float> brightness);
-    void SetAmbientBrightness(float brightness);
+
+    SceneTweakables& GetSceneTweakables();
+    void ApplySceneTweakables();
 
     void PlayAnimationByName(std::string_view name);
     void SetObjectRotationByName(std::string_view name, float angleRadians, Scene::Axis axis);
@@ -90,6 +91,7 @@ struct Scene::Impl {
     std::vector<AnimationPlayer*> mAdvancingAnimations;
     gfx::EmissiveEffect mEmissiveEffect{};
     gfx::PostProcessCanvas mPostProcessor{};
+    SceneTweakables mTweakables{};
 };
 
 Scene::Scene(kitgui::Context& mContext) : mImpl(std::make_unique<Scene::Impl>(mContext)) {};
@@ -261,7 +263,7 @@ void Scene::Impl::LoadImpl(Magnum::Trade::AbstractImporter& importer, std::strin
     mAnimationCache.LoadAnimations(importer, mSceneObjects);
 
     /* We need to calculate SetBrightness at least once to set up light colors/intensity */
-    SetBrightness(mLightCache.mBrightness);
+    ApplySceneTweakables();
 }
 
 void Scene::SetViewport(const kitgui::Vector2& size) {
@@ -295,28 +297,34 @@ void Scene::Impl::SetViewport(const kitgui::Vector2& size) {
     }
 }
 
-void Scene::SetBrightness(std::optional<float> brightness) {
-    mImpl->SetBrightness(brightness);
+SceneTweakables& Scene::GetSceneTweakables() {
+    return mImpl->GetSceneTweakables();
 }
 
-void Scene::Impl::SetBrightness(std::optional<float> brightness) {
-    if (brightness) {
-        mLightCache.mBrightness = *brightness;
-        mLightCache.mShadeless = false;
-    } else {
+SceneTweakables& Scene::Impl::GetSceneTweakables() {
+    return mTweakables;
+}
+
+void Scene::ApplySceneTweakables() {
+    mImpl->ApplySceneTweakables();
+}
+
+void Scene::Impl::ApplySceneTweakables() {
+    auto& cfg = mTweakables;
+    if (cfg.shadeless) {
         mLightCache.mShadeless = true;
+        mEmissiveEffect.setParams(true, 0.0f);
+        mPostProcessor.setParams(true, cfg.hdrExposureFactor, cfg.gamma);
+    } else {
+        mLightCache.mShadeless = false;
+        mLightCache.mBrightness = cfg.dynamicLightFactor;
+        mLightCache.mAmbientBrightness = cfg.ambientLightFactor;
+        const auto finalLightColors = mLightCache.CalculateLightColors();
+        mDrawables.SetLightColors(finalLightColors);
+        mDrawables.SetAmbientFactor(mLightCache.mAmbientBrightness);
+        mEmissiveEffect.setParams(true, cfg.bloomIntensity);
+        mPostProcessor.setParams(true, cfg.hdrExposureFactor, cfg.gamma);
     }
-    const auto finalLightColors = mLightCache.CalculateLightColors();
-    mDrawables.SetLightColors(finalLightColors);
-}
-
-void Scene::SetAmbientBrightness(float brightness) {
-    mImpl->SetAmbientBrightness(brightness);
-}
-
-void Scene::Impl::SetAmbientBrightness(float brightness) {
-    mLightCache.mAmbientBrightness = brightness;
-    mDrawables.SetAmbientFactor(mLightCache.mAmbientBrightness);
 }
 
 void Scene::PlayAnimationByName(std::string_view name) {
@@ -360,9 +368,24 @@ void Scene::SetLedBrightnessByName(std::string_view name, float emission) {
 }
 
 void Scene::Impl::SetLedBrightnessByName(std::string_view name, float emission) {
-    auto drawables = &mDrawables.mLightDrawables;
+    auto drawables = &mDrawables.mEmissiveDrawables;
     for (size_t idx = 0; idx < drawables->size(); ++idx) {
-        PhongDrawable* d = dynamic_cast<PhongDrawable*>(&(*drawables)[idx]);
+        auto* dd = &(*drawables)[idx];
+        PhongDrawable* d = dynamic_cast<PhongDrawable*>(dd);
+        if (d) {
+            auto objectId = d->getObjectId();
+            auto& info = mSceneObjects[objectId];
+            if (info.name == name) {
+                d->setAmbientFactor(emission);
+                return;
+            }
+        }
+    }
+
+    drawables = &mDrawables.mOpaqueDrawables;
+    for (size_t idx = 0; idx < drawables->size(); ++idx) {
+        auto* dd = &(*drawables)[idx];
+        PhongDrawable* d = dynamic_cast<PhongDrawable*>(dd);
         if (d) {
             auto objectId = d->getObjectId();
             auto& info = mSceneObjects[objectId];

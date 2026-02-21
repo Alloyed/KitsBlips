@@ -7,7 +7,6 @@
 // IWYU pragma: end_keep
 
 #include <Corrade/Containers/Array.h>
-#include <Corrade/Utility/Algorithms.h>
 #include <Corrade/Utility/ConfigurationGroup.h>
 #include <Magnum/GL/Context.h>
 #include <Magnum/GL/Extensions.h>
@@ -21,7 +20,6 @@
 #include <Magnum/Trade/PbrMetallicRoughnessMaterialData.h>
 #include <Magnum/Trade/PhongMaterialData.h>
 #include <Magnum/Trade/TextureData.h>
-#include <cstddef>
 #include <optional>
 
 using namespace Magnum;
