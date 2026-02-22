@@ -437,10 +437,10 @@ class GuiApp : public kitgui::BaseApp {
         mScene->SetViewport({static_cast<float>(w), static_cast<float>(h)});
         kitgui::SceneTweakables& cfg = mScene->GetSceneTweakables();
         // idk why magnum is so intense by default, to investigate
-        cfg.dynamicLightFactor = 0.00045f;
+        cfg.dynamicLightFactor = 0.0003f;
         cfg.ambientLightFactor = 0.1f;
-        cfg.bloomIntensity = 1.02f;
-        cfg.hdrExposureFactor = 0.75f;
+        cfg.bloomIntensity = 1.0f;
+        cfg.hdrExposureFactor = 0.6f;
         mScene->ApplySceneTweakables();
 
         struct KnobSetupInfo {

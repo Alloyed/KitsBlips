@@ -106,7 +106,9 @@ void Scene::Impl::Load(std::string_view path) {
         return;
     }
     PluginManager::PluginMetadata* basisImporter = sImporterManager.metadata("BasisImporter");
-    mMaterialCache.ConfigureBasisLoader(*basisImporter);
+    if (basisImporter) {
+        mMaterialCache.ConfigureBasisLoader(*basisImporter);
+    }
 
     Corrade::Containers::Pointer<Magnum::Trade::AbstractImporter> importer =
         sImporterManager.loadAndInstantiate("GltfImporter");

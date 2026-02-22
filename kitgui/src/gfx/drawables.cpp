@@ -223,9 +223,11 @@ Magnum::SceneGraph::Drawable3D* Drawables::CreateDrawableFromMesh(MaterialCache&
         if (pbrMat && pbrMat->emissiveColor() != 0x000000_srgbf) {
             // also create emissive drawable
             // 100% ambient, 0% diffuse, shadeless.
-            new PhongDrawable(mState, *object, objectId, *mesh, GetOrCreatePhongShader(flags, lightCount),
-                              pbrMat->emissiveColor(), diffuseTexture, nullptr, {}, material.alphaMask(),
-                              material.commonTextureMatrix(), 1.0f, 0.0f, 0.0f, true, mEmissiveDrawables);
+            auto* d = new PhongDrawable(mState, *object, objectId, *mesh, GetOrCreatePhongShader(flags, lightCount),
+                                        pbrMat->emissiveColor(), diffuseTexture, nullptr, {}, material.alphaMask(),
+                                        material.commonTextureMatrix(), 1.0f, 0.0f, 0.0f, true, *group);
+            mEmissiveDrawables.add(*d);
+            return d;
         }
 
         return new PhongDrawable(mState, *object, objectId, *mesh, GetOrCreatePhongShader(flags, lightCount),

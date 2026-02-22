@@ -23,6 +23,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     #set(KITGUI_USE_PUGL true)
     set(KITGUI_USE_SDL true)
 endif()
+option(KITGUI_USE_BASIS "Enable basis texture loading" OFF)
 
 include(imgui)
 FetchContent_MakeAvailable(magnum-integration)
@@ -61,8 +62,6 @@ target_link_libraries(kitgui PUBLIC
     Magnum::AnyImageImporter
     MagnumPlugins::GltfImporter
     MagnumPlugins::StbImageImporter
-    MagnumPlugins::KtxImporter
-    MagnumPlugins::BasisImporter
 )
 target_link_libraries(kitgui PRIVATE
     ${MAGNUM_PLATFORMGL}
@@ -71,6 +70,13 @@ target_link_libraries(kitgui PRIVATE
     Magnum::Shaders
     Magnum::Trade
 )
+
+if(KITGUI_USE_BASIS)
+    target_link_libraries(kitgui PUBLIC
+        MagnumPlugins::KtxImporter
+        MagnumPlugins::BasisImporter
+    )
+endif()
 
 if(KITGUI_USE_PUGL)
     include(pugl)

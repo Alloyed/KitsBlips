@@ -190,8 +190,6 @@ void MaterialCache::ConfigureBasisLoader(Corrade::PluginManager::PluginMetadata&
         importer.configuration().setValue("format", "Bc7RGBA");
     } else if (context.isExtensionSupported<EXT::texture_compression_s3tc>()) {
         importer.configuration().setValue("format", "Bc3RGBA");
-    } else if (context.isExtensionSupported<ARB::ES3_compatibility>()) {
-        importer.configuration().setValue("format", "Etc2RGBA");
     } else {
         /* Fall back to uncompressed if nothing else is supported */
         importer.configuration().setValue("format", "RGBA8");
