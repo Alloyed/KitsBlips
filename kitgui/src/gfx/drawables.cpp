@@ -177,24 +177,35 @@ Magnum::SceneGraph::Drawable3D* Drawables::CreateDrawableFromMesh(MaterialCache&
         if (material.isDoubleSided()) {
             flags |= Shaders::PhongGL::Flag::DoubleSided;
         }
+        if (material.hasTextureTransformation()) {
+            flags |= Shaders::PhongGL::Flag::TextureTransformation;
+        }
+
+        GL::Texture2D* emissiveTexture = nullptr;
+        Shaders::PhongGL::Flags emissiveFlags{flags};
+        if (pbrMat && pbrMat->hasAttribute(Trade::MaterialAttribute::EmissiveTexture)) {
+            std::optional<GL::Texture2D>& texture = mMaterialCache.mTextures[pbrMat->emissiveTexture()].texture;
+            if (texture) {
+                emissiveTexture = &texture.value();
+                emissiveFlags |= Shaders::PhongGL::Flag::AmbientTexture | Shaders::PhongGL::Flag::DiffuseTexture;
+            }
+        }
+
+        if (material.alphaMode() == Trade::MaterialAlphaMode::Mask) {
+            flags |= Shaders::PhongGL::Flag::AlphaMask;
+        }
 
         GL::Texture2D* diffuseTexture = nullptr;
-        float normalTextureScale = 1.0f;
         if (material.hasAttribute(Trade::MaterialAttribute::DiffuseTexture)) {
             std::optional<GL::Texture2D>& texture = mMaterialCache.mTextures[material.diffuseTexture()].texture;
             if (texture) {
                 diffuseTexture = &texture.value();
                 flags |= Shaders::PhongGL::Flag::AmbientTexture | Shaders::PhongGL::Flag::DiffuseTexture;
-                if (material.hasTextureTransformation()) {
-                    flags |= Shaders::PhongGL::Flag::TextureTransformation;
-                }
-                if (material.alphaMode() == Trade::MaterialAlphaMode::Mask) {
-                    flags |= Shaders::PhongGL::Flag::AlphaMask;
-                }
             }
         }
 
         GL::Texture2D* normalTexture = nullptr;
+        float normalTextureScale = 1.0f;
         if (material.hasAttribute(Trade::MaterialAttribute::NormalTexture)) {
             std::optional<GL::Texture2D>& texture = mMaterialCache.mTextures[material.normalTexture()].texture;
             /* If there are no tangents, the mesh would render all
@@ -205,8 +216,6 @@ Magnum::SceneGraph::Drawable3D* Drawables::CreateDrawableFromMesh(MaterialCache&
                 normalTexture = &texture.value();
                 normalTextureScale = material.normalTextureScale();
                 flags |= Shaders::PhongGL::Flag::NormalTexture;
-                if (material.hasTextureTransformation())
-                    flags |= Shaders::PhongGL::Flag::TextureTransformation;
             }
         }
 
@@ -223,11 +232,9 @@ Magnum::SceneGraph::Drawable3D* Drawables::CreateDrawableFromMesh(MaterialCache&
         if (pbrMat && pbrMat->emissiveColor() != 0x000000_srgbf) {
             // also create emissive drawable
             // 100% ambient, 0% diffuse, shadeless.
-            auto* d = new PhongDrawable(mState, *object, objectId, *mesh, GetOrCreatePhongShader(flags, lightCount),
-                                        pbrMat->emissiveColor(), diffuseTexture, nullptr, {}, material.alphaMask(),
-                                        material.commonTextureMatrix(), 1.0f, 0.0f, 0.0f, true, *group);
-            mEmissiveDrawables.add(*d);
-            return d;
+            new PhongDrawable(mState, *object, objectId, *mesh, GetOrCreatePhongShader(emissiveFlags, lightCount),
+                              pbrMat->emissiveColor(), emissiveTexture, nullptr, {}, material.alphaMask(),
+                              material.commonTextureMatrix(), 1.0f, 0.0f, 0.0f, true, mEmissiveDrawables);
         }
 
         return new PhongDrawable(mState, *object, objectId, *mesh, GetOrCreatePhongShader(flags, lightCount),

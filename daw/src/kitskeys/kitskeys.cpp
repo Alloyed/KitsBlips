@@ -559,12 +559,13 @@ class GuiApp : public kitgui::BaseApp {
 
         const std::vector<KnobSetupInfo> toggles{
             {Params::VcaEnvDisabled, "VcaEnvDisabled"},
-            {Params::LfoSync, "LfoSync"},
+            {Params::LfoSync, "LfoTempoSync"},
         };
-        for (const auto& knobInfo : toggles) {
-            clap_id id = static_cast<clap_id>(knobInfo.param);
-            mToggles.push_back(std::make_unique<kitgui::BaseParamToggle>(*mParams.GetBaseParam(id), id, knobInfo.node));
-            auto objectInfo = mScene->GetObjectScreenPositionByName(knobInfo.node);
+        for (const auto& toggleInfo : toggles) {
+            clap_id id = static_cast<clap_id>(toggleInfo.param);
+            mToggles.push_back(
+                std::make_unique<kitgui::BaseParamToggle>(*mParams.GetBaseParam(id), id, toggleInfo.node));
+            auto objectInfo = mScene->GetObjectScreenPositionByName(toggleInfo.node);
             if (objectInfo) {
                 float slop = 32.0f * scale;  // to allow imprecise clicking
                 float w = kitdsp::max(objectInfo->size.x(), objectInfo->size.y()) + slop;
@@ -633,7 +634,7 @@ class GuiApp : public kitgui::BaseApp {
         }
 
         double out = mParams.GetMainHandle().GetRawValue(static_cast<clap_id>(Params::LfoOut));
-        mScene->SetLedBrightnessByName("led-3mm-round", static_cast<float>(out));
+        mScene->SetLedBrightnessByName("LfoOut", static_cast<float>(out));
     }
 
     void OnGuiUpdate() override {

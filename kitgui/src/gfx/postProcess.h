@@ -157,6 +157,7 @@ class PostProcessCanvas {
         mExposure = exposure;
         mGamma = gamma;
     }
+    GL::Texture2D& getDepthAndStencil() { return texDepthAndStencil; }
 
    private:
     // Working on it :p

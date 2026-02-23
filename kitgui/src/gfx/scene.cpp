@@ -493,8 +493,11 @@ void Scene::Impl::Draw() {
     mCamera->draw(mDrawables.mOpaqueDrawables);
 
     /* Draw emission */
-    mEmissiveEffect.startDrawEmissive(fb);
+    mEmissiveEffect.startDrawEmissive(fb, mPostProcessor.getDepthAndStencil());
+    GL::Renderer::setDepthMask(false);
+    GL::Renderer::setDepthFunction(GL::Renderer::DepthFunction::LessOrEqual);
     mCamera->draw(mDrawables.mEmissiveDrawables);
+    GL::Renderer::setDepthMask(true);
     mEmissiveEffect.finishDrawEmissive(fb);
 
     /* Draw transparent stuff back-to-front with blending enabled */

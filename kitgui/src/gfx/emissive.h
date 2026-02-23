@@ -143,12 +143,12 @@ class EmissiveEffect {
             framebuffer1.setViewport({{}, size});
             texColor2.setStorage(1, GL::TextureFormat::RGBA16F, size);
             framebuffer2.setViewport({{}, size});
-            texDepthAndStencil.setStorage(1, GL::TextureFormat::Depth24Stencil8, size);
             blurShader.setFrameSize(size);
         }
     }
 
-    GL::AbstractFramebuffer& startDrawEmissive(GL::AbstractFramebuffer& outputFramebuffer) {
+    GL::AbstractFramebuffer& startDrawEmissive(GL::AbstractFramebuffer& outputFramebuffer,
+                                               GL::Texture2D& texDepthAndStencil) {
         using namespace Magnum::Math::Literals;
         using namespace Magnum::Math::Literals::ColorLiterals;
         setSize(outputFramebuffer.viewport().size());
@@ -160,24 +160,32 @@ class EmissiveEffect {
                                        GL::Renderer::BlendFunction::OneMinusSourceAlpha);
 
         framebuffer1.attachTexture(GL::Framebuffer::ColorAttachment(0), texColor1, 0);
-        // framebuffer1.attachTexture(GL::Framebuffer::BufferAttachment::DepthStencil, texDepthAndStencil, 0);
+        framebuffer1.attachTexture(GL::Framebuffer::BufferAttachment::DepthStencil, texDepthAndStencil, 0);
         framebuffer1.mapForDraw({
             {Shaders::PhongGL::ColorOutput, GL::Framebuffer::ColorAttachment(0)},
         });
         framebuffer1.clearColor(0, 0x00000000_srgbaf);
-        framebuffer1.clearDepth(1.0f);
 
         return framebuffer1;
     }
 
     void finishDrawEmissive(GL::AbstractFramebuffer& outputFramebuffer) {
         using namespace Magnum::Math::Literals::ColorLiterals;
+
+        // draw once, unblurred
+        outputFramebuffer.bind();
+        GL::Renderer::setDepthMask(false);
+        GL::Renderer::enable(GL::Renderer::Feature::Blending);
+        GL::Renderer::setBlendEquation(Magnum::GL::Renderer::BlendEquation::Add);
+        GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::One, GL::Renderer::BlendFunction::One);
+        blurShader.bind(texColor1).bindBlurParams(0.0f, 0.0f, 1.0f).draw(fullscreenQuad);
+
         if (mEnabled) {
             // blur shader params
             // TODO: expose
-            static int numBlurStages = 1;
+            static int numBlurStages = 2;
             static int numBlurIterations = 3;  // at least 1
-            static float samplePosMult = 1.2f;
+            static float samplePosMult = 1.0f;
             float bloomStrength = mBloomStrength;
 
             /*
@@ -239,7 +247,6 @@ class EmissiveEffect {
     GL::Texture2D texColor1;
     GL::Framebuffer framebuffer2{{{}, {}}};
     GL::Texture2D texColor2;
-    GL::Texture2D texDepthAndStencil;
     KawaseBlurShader blurShader;
     GL::Buffer quadPosVertices;
     GL::Buffer quadTexVertices;
