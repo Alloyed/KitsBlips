@@ -18,7 +18,7 @@ class DynamicParametersFeature;
 
 class DynamicProcessorHandle : public BaseProcessorHandle {
    public:
-    DynamicProcessorHandle(std::vector<std::unique_ptr<const BaseParam>>& ref,
+    DynamicProcessorHandle(std::vector<std::unique_ptr<BaseParam>>& ref,
                            size_t numParams,
                            Queue& mainToAudio,
                            Queue& audioToMain);
@@ -36,7 +36,7 @@ class DynamicProcessorHandle : public BaseProcessorHandle {
     double GetRawModulation(clap_id id) const;
     void SetRawModulation(clap_id id, double newModulation);
 
-    std::vector<std::unique_ptr<const BaseParam>>& mParamsRef;
+    std::vector<std::unique_ptr<BaseParam>>& mParamsRef;
     std::vector<double> mValues;
     std::vector<double> mModulations;
     Queue& mMainToAudio;

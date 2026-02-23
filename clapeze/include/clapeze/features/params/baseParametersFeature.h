@@ -50,6 +50,7 @@ class BaseParametersFeature : public BaseFeature {
     bool Validate(const BasePlugin& self) const override;
 
     const BaseParam* GetBaseParam(clap_id id) const;
+    BaseParam* GetBaseParam(clap_id id);
 
     void RequestClear(clap_id id, clap_param_clear_flags flags = CLAP_PARAM_CLEAR_ALL);
 
@@ -75,7 +76,7 @@ class BaseParametersFeature : public BaseFeature {
    protected:
     PluginHost& mHost;
     const size_t mNumParams;
-    std::vector<std::unique_ptr<const BaseParam>> mParams;
+    std::vector<std::unique_ptr<BaseParam>> mParams;
     std::unordered_map<std::string, clap_id> mParamKeyToId{};
     Queue mAudioToMain;
     Queue mMainToAudio;
@@ -130,6 +131,13 @@ inline BaseParametersFeature::BaseParametersFeature(PluginHost& host, clap_id nu
     : mHost(host), mNumParams(static_cast<size_t>(numParams)), mParams(mNumParams), mAudioToMain(), mMainToAudio() {}
 
 inline const BaseParam* BaseParametersFeature::GetBaseParam(clap_id id) const {
+    if (id >= mNumParams) {
+        return nullptr;
+    }
+    return mParams[id].get();
+}
+
+inline BaseParam* BaseParametersFeature::GetBaseParam(clap_id id) {
     if (id >= mNumParams) {
         return nullptr;
     }

@@ -16,8 +16,11 @@
 #include <kitdsp/math/util.h>
 #include <kitdsp/osc/blepOscillator.h>
 #include <kitgui/context.h>
+#include <cfloat>
 #include <memory>
 
+#include "clapeze/impl/stringUtils.h"
+#include "clapeze/processor/transport.h"
 #include "descriptor.h"
 #include "gui/parameterControls.h"
 #include "gui/presetBrowser.h"
@@ -45,6 +48,7 @@ enum class Params : clap_id {
     FilterModMix,
     FilterModAmount,
     LfoRate,
+    LfoRateSync,
     LfoShape,
     LfoSync,
     LfoOut,
@@ -71,6 +75,18 @@ enum class PolyChordType {
 const std::vector<std::vector<int16_t>> kChordNotes{
     {}, {0}, {0, 7}, {0, 4, 7}, {0, 3, 7}, {0, 4, 7, 10}, {0, 3, 7, 10},
 };
+
+// clang-format off
+const std::vector<std::pair<int32_t, int32_t>> kSyncFractions{
+    // base
+    {1, 1}, {1, 2}, {1, 4}, {1, 8}, {1, 16}, {1, 32},
+    // dotted
+    {3, 2}, {3, 4}, {3, 8}, {3, 16}, {3, 32}, {3, 64},
+    // triplets
+    {1, 3}, {1, 6}, {1, 12}, {1, 24},
+};
+// clang-format on
+
 constexpr size_t cMaxVoices = 16;
 using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 }  // namespace
@@ -119,8 +135,61 @@ struct ParamTraits<Params, Params::FilterModAmount> : public clapeze::NumericPar
 };
 
 template <>
-struct ParamTraits<Params, Params::LfoRate> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("LfoRate", "Rate", 0.0f) {}
+struct ParamTraits<Params, Params::LfoRate> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("LfoRate", "Rate", 0.001f, 20.0f, 0.2f, "hz") {}
+};
+
+template <>
+struct ParamTraits<Params, Params::LfoRateSync> : public clapeze::IntegerParam {
+    using _valuetype = float;
+    ParamTraits()
+        : clapeze::IntegerParam("LfoRateSync", "Rate", 0, static_cast<int32_t>(kSyncFractions.size() - 1), 2) {
+        mFlags |= CLAP_PARAM_IS_HIDDEN;
+    }
+    bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
+        int32_t idx{};
+        if (!clapeze::IntegerParam::ToValue(rawValue, idx)) {
+            return false;
+        }
+        auto& pair = kSyncFractions[std::clamp<size_t>(idx, 0, kSyncFractions.size() - 1)];
+        impl::formatToSpan(outTextBuf, "{}/{}", pair.first, pair.second);
+        return true;
+    }
+
+    bool FromText(std::string_view text, double& outRawValue) const override {
+        // TODO
+        return clapeze::IntegerParam::FromText(text, outRawValue);
+    }
+
+    bool ToValue(double rawValue, float& out) const {
+        int32_t idx{};
+        if (!clapeze::IntegerParam::ToValue(rawValue, idx)) {
+            return false;
+        }
+        auto& pair = kSyncFractions[std::clamp<size_t>(idx, 0, kSyncFractions.size() - 1)];
+        out = static_cast<float>(pair.first) / static_cast<float>(pair.second);
+        return true;
+    }
+    bool FromValue(float in, double& outRaw) const {
+        // lazy linear search. we could sort these to reduce comparisons
+        int32_t numFractions = static_cast<int32_t>(kSyncFractions.size());
+        int32_t bestIdx = numFractions;
+        float bestDiff = FLT_MAX;
+        for (int32_t idx = 0; idx < numFractions; ++idx) {
+            const auto& pair = kSyncFractions[idx];
+            float v = static_cast<float>(pair.first) / static_cast<float>(pair.second);
+            float diff = std::abs(v - in);
+            if (diff < bestDiff) {
+                bestIdx = idx;
+                bestDiff = diff;
+            }
+        }
+        if (bestIdx == numFractions) {
+            return false;
+        }
+        outRaw = static_cast<double>(bestIdx);
+        return true;
+    }
 };
 
 template <>
@@ -376,8 +445,20 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
 
         // lfo
         float sampleRate = static_cast<float>(GetSampleRate());
-        float lfoRate = mParams.Get<Params::LfoRate>();
-        mLfo.SetFrequency(kitdsp::lerp(0.001f, 20.0f, lfoRate), sampleRate);
+        if (mParams.Get<Params::LfoSync>() == clapeze::OnOff::On) {
+            auto& transport = GetTransport();
+            // TODO: fallback if no tempo info?
+            if (transport.HasTempo()) {
+                float beatDivision = 4;  // guessing 4 4 time
+                if (transport.HasTimeSignature()) {
+                    beatDivision = transport.GetTimeSignatureDenominator();
+                }
+                float lfoPeriodMs = transport.BeatsToMs(beatDivision * mParams.Get<Params::LfoRateSync>());
+                mLfo.SetPeriod(lfoPeriodMs, sampleRate);
+            }
+        } else {
+            mLfo.SetFrequency(mParams.Get<Params::LfoRate>(), sampleRate);
+        }
         float lfoShape = mParams.Get<Params::LfoShape>();
         mLfoSmooth.SetFrequency(1800.0f, sampleRate);
 
@@ -391,6 +472,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
             float lfoSquare = lfoTri > 0.0f ? -1.0f : 1.0f;
             lfoOut = mLfoSmooth.Process(kitdsp::lerp(lfoTri, lfoSquare, lfoShape));
         }
+        assert(lfoOut == lfoOut);  // isnan
         mParams.Send<Params::LfoOut>(lfoOut);
 
         return status;
@@ -455,10 +537,11 @@ class GuiApp : public kitgui::BaseApp {
             {Params::OscModMix, "OscModMix"},       {Params::OscModAmount, "OscModAmount"},
             {Params::FilterCutoff, "FilterCutoff"}, {Params::FilterResonance, "FilterResonance"},
             {Params::FilterModMix, "FilterModMix"}, {Params::FilterModAmount, "FilterModAmount"},
-            {Params::LfoRate, "LfoRate"},           {Params::LfoShape, "LfoShape"},
-            {Params::EnvAttack, "EnvAttack"},       {Params::EnvDecay, "EnvDecay"},
-            {Params::EnvSustain, "EnvSustain"},     {Params::EnvRelease, "EnvRelease"},
-            {Params::VcaGain, "VcaGain"},           {Params::VcaLfoAmount, "VcaLfoAmount"},
+            {Params::LfoRate, "LfoRate"},           {Params::LfoRateSync, "LfoRate"},
+            {Params::LfoShape, "LfoShape"},         {Params::EnvAttack, "EnvAttack"},
+            {Params::EnvDecay, "EnvDecay"},         {Params::EnvSustain, "EnvSustain"},
+            {Params::EnvRelease, "EnvRelease"},     {Params::VcaGain, "VcaGain"},
+            {Params::VcaLfoAmount, "VcaLfoAmount"},
         };
         for (const auto& knobInfo : knobs) {
             clap_id id = static_cast<clap_id>(knobInfo.param);
@@ -476,7 +559,7 @@ class GuiApp : public kitgui::BaseApp {
 
         const std::vector<KnobSetupInfo> toggles{
             {Params::VcaEnvDisabled, "VcaEnvDisabled"},
-            {Params::LfoSync, "switch-toggle.001"},
+            {Params::LfoSync, "LfoSync"},
         };
         for (const auto& knobInfo : toggles) {
             clap_id id = static_cast<clap_id>(knobInfo.param);
@@ -495,10 +578,28 @@ class GuiApp : public kitgui::BaseApp {
 
     void OnUpdate() override {
         mParams.FlushFromAudio();
+
+        // TODO: this pattern could be abstracted out
+        bool syncEnabled = mParams.GetMainHandle().GetRawValue(static_cast<clap_id>(Params::LfoSync)) > 0.5;
+        bool lastSyncEnabled = (mParams.GetSpecificParam<Params::LfoRate>()->mFlags & CLAP_PARAM_IS_HIDDEN) != 0;
+        if (syncEnabled != lastSyncEnabled) {
+            if (syncEnabled) {
+                mParams.GetSpecificParam<Params::LfoRate>()->mFlags |= CLAP_PARAM_IS_HIDDEN;
+                mParams.GetSpecificParam<Params::LfoRateSync>()->mFlags &= ~CLAP_PARAM_IS_HIDDEN;
+            } else {
+                mParams.GetSpecificParam<Params::LfoRateSync>()->mFlags |= CLAP_PARAM_IS_HIDDEN;
+                mParams.GetSpecificParam<Params::LfoRate>()->mFlags &= ~CLAP_PARAM_IS_HIDDEN;
+            }
+            mParams.RequestRescan(CLAP_PARAM_RESCAN_INFO | CLAP_PARAM_RESCAN_VALUES | CLAP_PARAM_RESCAN_TEXT);
+        }
+
         mScene->Update();
         mPresetBrowser.Update();
         for (auto& knob : mKnobs) {
             clap_id id = knob->GetParamId();
+            if (mParams.GetBaseParam(id)->GetFlags() & CLAP_PARAM_IS_HIDDEN) {
+                continue;
+            }
             double raw = mParams.GetMainHandle().GetRawValue(id);
 
             knob->mShowDebug = mDebugMode;
@@ -515,17 +616,20 @@ class GuiApp : public kitgui::BaseApp {
                 knob->GetSceneNode(), (static_cast<float>(normalizedValue) - 0.5f) * -maxTurn, kitgui::Scene::Axis::Y);
         }
 
-        for (auto& knob : mToggles) {
-            clap_id id = knob->GetParamId();
+        for (auto& toggle : mToggles) {
+            clap_id id = toggle->GetParamId();
+            if (mParams.GetBaseParam(id)->GetFlags() & CLAP_PARAM_IS_HIDDEN) {
+                continue;
+            }
             double raw = mParams.GetMainHandle().GetRawValue(id);
             bool value = raw > 0.5;
 
-            knob->mShowDebug = mDebugMode;
-            if (knob->Update(value)) {
+            toggle->mShowDebug = mDebugMode;
+            if (toggle->Update(value)) {
                 mParams.GetMainHandle().SetRawValue(id, value ? 1.0 : 0.0);
             }
             constexpr float maxTurn = kitdsp::kPi * 2.0f * 0.05f;
-            mScene->SetObjectRotationByName(knob->GetSceneNode(), value ? -maxTurn : maxTurn, kitgui::Scene::Axis::X);
+            mScene->SetObjectRotationByName(toggle->GetSceneNode(), value ? -maxTurn : maxTurn, kitgui::Scene::Axis::X);
         }
 
         double out = mParams.GetMainHandle().GetRawValue(static_cast<clap_id>(Params::LfoOut));
@@ -619,6 +723,7 @@ class Plugin : public InstrumentPlugin {
                                     .Parameter<Params::FilterModAmount>()
                                     .Parameter<Params::FilterModMix>()
                                     .Parameter<Params::LfoRate>()
+                                    .Parameter<Params::LfoRateSync>()
                                     .Parameter<Params::LfoShape>()
                                     .Parameter<Params::LfoSync>()
                                     .Parameter<Params::LfoOut>()

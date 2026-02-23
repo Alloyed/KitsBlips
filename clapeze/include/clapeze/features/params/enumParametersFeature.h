@@ -26,7 +26,7 @@ struct ParamTraits;
 template <ParamEnum TParamId>
 class EnumProcessorHandle : public BaseProcessorHandle {
    public:
-    EnumProcessorHandle(std::vector<std::unique_ptr<const BaseParam>>& ref,
+    EnumProcessorHandle(std::vector<std::unique_ptr<BaseParam>>& ref,
                         size_t numParams,
                         Queue& mainToAudio,
                         Queue& audioToMain);
@@ -67,7 +67,7 @@ class EnumProcessorHandle : public BaseProcessorHandle {
     double GetRawModulation(clap_id id) const;
     void SetRawModulation(clap_id id, double newModulation);
 
-    std::vector<std::unique_ptr<const BaseParam>>& mParamsRef;
+    std::vector<std::unique_ptr<BaseParam>>& mParamsRef;
     std::vector<double> mValues;
     std::vector<double> mModulations;
     Queue& mMainToAudio;
@@ -125,6 +125,13 @@ class EnumParametersFeature : public BaseParametersFeature {
         clap_id index = impl::integral_cast<clap_id>(id);
         return impl::down_cast<const TParam*>(BaseType::GetBaseParam(index));
     }
+
+    template <TParamId id>
+    ParamTraits<TParamId, id>* GetSpecificParam() {
+        using TParam = ParamTraits<TParamId, id>;
+        clap_id index = impl::integral_cast<clap_id>(id);
+        return impl::down_cast<TParam*>(BaseType::GetBaseParam(index));
+    }
 };
 
 // impl
@@ -142,7 +149,7 @@ typename TParam::_valuetype EnumProcessorHandle<TParamId>::Get(clap_id id) const
 }
 
 template <ParamEnum TParamId>
-EnumProcessorHandle<TParamId>::EnumProcessorHandle(std::vector<std::unique_ptr<const BaseParam>>& ref,
+EnumProcessorHandle<TParamId>::EnumProcessorHandle(std::vector<std::unique_ptr<BaseParam>>& ref,
                                                    size_t numParams,
                                                    Queue& mainToAudio,
                                                    Queue& audioToMain)

@@ -74,6 +74,10 @@ struct Transport {
         return static_cast<float>(samples * beatsPerSample);
     }
 
+    // TODO: better name for this?
+    bool HasTimeSignature() const { return (mRaw.flags & CLAP_TRANSPORT_HAS_TIME_SIGNATURE) != 0; }
+    float GetTimeSignatureDenominator() const { return static_cast<float>(mRaw.tsig_denom); }
+
    private:
     clap_event_transport_t mRaw{};
 };

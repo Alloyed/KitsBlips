@@ -44,5 +44,9 @@ struct BaseParam {
         static const std::string kEmpty{};
         return kEmpty;
     }
+    // TODO: if set, also trigger an appropriate rescan
+    // virtual bool IsHidden() const = 0;
+    // virtual bool SetHidden(bool) = 0;
+    // virtual void SetName(std::string_view) = 0;
 };
 }  // namespace clapeze

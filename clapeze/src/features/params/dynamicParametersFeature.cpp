@@ -2,7 +2,7 @@
 
 namespace clapeze::params {
 
-DynamicProcessorHandle::DynamicProcessorHandle(std::vector<std::unique_ptr<const BaseParam>>& ref,
+DynamicProcessorHandle::DynamicProcessorHandle(std::vector<std::unique_ptr<BaseParam>>& ref,
                                                size_t numParams,
                                                Queue& mainToAudio,
                                                Queue& audioToMain)
