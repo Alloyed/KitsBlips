@@ -18,7 +18,10 @@
 #include <kitgui/context.h>
 #include <cfloat>
 #include <memory>
+#include <sstream>
 
+#include "clapeze/basePlugin.h"
+#include "clapeze/features/state/baseStateFeature.h"
 #include "clapeze/impl/stringUtils.h"
 #include "clapeze/processor/transport.h"
 #include "descriptor.h"
@@ -506,7 +509,11 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
 class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, clapeze::BasePlugin& plugin, ParamsFeature& params)
-        : kitgui::BaseApp(ctx), mParams(params), mScene(std::make_unique<kitgui::Scene>(ctx)), mPresetBrowser(plugin) {}
+        : kitgui::BaseApp(ctx),
+          mPlugin(plugin),
+          mParams(params),
+          mScene(std::make_unique<kitgui::Scene>(ctx)),
+          mPresetBrowser(plugin) {}
     ~GuiApp() = default;
 
     void OnActivate() override {
@@ -579,9 +586,10 @@ class GuiApp : public kitgui::BaseApp {
 
     void OnUpdate() override {
         mParams.FlushFromAudio();
+        auto& paramsHandle = mParams.GetMainHandle();
 
         // TODO: this pattern could be abstracted out
-        bool syncEnabled = mParams.GetMainHandle().GetRawValue(static_cast<clap_id>(Params::LfoSync)) > 0.5;
+        bool syncEnabled = paramsHandle.GetRawValue(static_cast<clap_id>(Params::LfoSync)) > 0.5;
         bool lastSyncEnabled = (mParams.GetSpecificParam<Params::LfoRate>()->mFlags & CLAP_PARAM_IS_HIDDEN) != 0;
         if (syncEnabled != lastSyncEnabled) {
             if (syncEnabled) {
@@ -601,11 +609,11 @@ class GuiApp : public kitgui::BaseApp {
             if (mParams.GetBaseParam(id)->GetFlags() & CLAP_PARAM_IS_HIDDEN) {
                 continue;
             }
-            double raw = mParams.GetMainHandle().GetRawValue(id);
+            double raw = paramsHandle.GetRawValue(id);
 
             knob->mShowDebug = mDebugMode;
             if (knob->Update(raw)) {
-                mParams.GetMainHandle().SetRawValue(id, raw);
+                paramsHandle.SetRawValue(id, raw);
             }
             // we assume the knob is at 12-o-clock, and knobs have 0.75turn(270deg) ranges
             if (knob->IsStepped()) {
@@ -622,29 +630,42 @@ class GuiApp : public kitgui::BaseApp {
             if (mParams.GetBaseParam(id)->GetFlags() & CLAP_PARAM_IS_HIDDEN) {
                 continue;
             }
-            double raw = mParams.GetMainHandle().GetRawValue(id);
+            double raw = paramsHandle.GetRawValue(id);
             bool value = raw > 0.5;
 
             toggle->mShowDebug = mDebugMode;
             if (toggle->Update(value)) {
-                mParams.GetMainHandle().SetRawValue(id, value ? 1.0 : 0.0);
+                paramsHandle.SetRawValue(id, value ? 1.0 : 0.0);
             }
             constexpr float maxTurn = kitdsp::kPi * 2.0f * 0.05f;
             mScene->SetObjectRotationByName(toggle->GetSceneNode(), value ? -maxTurn : maxTurn, kitgui::Scene::Axis::X);
         }
 
-        double out = mParams.GetMainHandle().GetRawValue(static_cast<clap_id>(Params::LfoOut));
+        double out = paramsHandle.GetRawValue(static_cast<clap_id>(Params::LfoOut));
         mScene->SetLedBrightnessByName("LfoOut", static_cast<float>(out));
     }
 
     void OnGuiUpdate() override {
         if (ImGui::BeginMainMenuBar()) {
             ImGui::MenuItem("Help/About", NULL, &mShowHelpWindow);
-            if (ImGui::MenuItem("Reset All")) {
-                mParams.ResetAllParamsToDefault();
-            }
-            if (ImGui::MenuItem("Presets")) {
-                mParams.ResetAllParamsToDefault();
+            if (ImGui::BeginMenu("Preset")) {
+                if (ImGui::MenuItem("Reset All")) {
+                    mParams.ResetAllParamsToDefault();
+                }
+                clapeze::BaseStateFeature& state =
+                    clapeze::BaseFeature::GetFromPlugin<clapeze::BaseStateFeature>(mPlugin);
+                if (ImGui::MenuItem("Copy to Clipboard")) {
+                    std::stringstream ss;
+                    if (state.Save(ss)) {
+                        ImGui::SetClipboardText(ss.str().c_str());
+                    }
+                }
+                if (ImGui::MenuItem("Load from Clipboard")) {
+                    const char* s = ImGui::GetClipboardText();
+                    std::stringstream ss(s);
+                    state.Load(ss);
+                }
+                ImGui::EndMenu();
             }
             ImGui::MenuItem("Debug", NULL, &mDebugMode);
             ImGui::EndMainMenuBar();
@@ -670,6 +691,7 @@ class GuiApp : public kitgui::BaseApp {
     void OnDraw() override { mScene->Draw(); }
 
    private:
+    clapeze::BasePlugin& mPlugin;
     ParamsFeature& mParams;
     std::unique_ptr<kitgui::Scene> mScene;
     kitgui::PresetBrowser mPresetBrowser;

@@ -121,7 +121,7 @@ struct IntegerParam : public BaseParam {
 
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override;
     bool FromText(std::string_view text, double& outRawValue) const override;
-    const std::string& GetKey() const override { return mName; }
+    const std::string& GetKey() const override { return mKey; }
 
     bool ToValue(double rawValue, int32_t& out) const;
     bool FromValue(int32_t in, double& outRaw) const;
@@ -155,7 +155,7 @@ struct EnumParam : public BaseParam {
     double GetRawDefault() const override { return static_cast<double>(mDefaultValue); }
     const std::string& GetName() const override { return mName; }
 
-    const std::string& GetKey() const override { return mName; }
+    const std::string& GetKey() const override { return mKey; }
 
     bool ToText(double rawValue, etl::span<char>& outTextBuf) const override {
         size_t index = static_cast<size_t>(rawValue);
