@@ -6,6 +6,7 @@
 #include <clapeze/features/state/tomlStateFeature.h>
 #include <clapeze/instrumentPlugin.h>
 #include <clapeze/processor/voice.h>
+#include <etl/flat_multimap.h>
 #include <etl/vector.h>
 #include <kitdsp/control/adsr.h>
 #include <kitdsp/control/gate.h>
@@ -21,6 +22,7 @@
 #include <sstream>
 
 #include "clapeze/basePlugin.h"
+#include "clapeze/common.h"
 #include "clapeze/features/state/baseStateFeature.h"
 #include "clapeze/impl/stringUtils.h"
 #include "clapeze/processor/transport.h"
@@ -277,40 +279,68 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
         void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity, T callback) {
             for (int16_t noteOffset : mChord) {
                 clapeze::NoteTuple tmp = note;
-                tmp = note;
-                // TODO: we need to reassign ids. to have N voices per id they
-                // each need a new id, but this also means we need maintain a
-                // mapping from host ids <-> processor ids, and also apply the
-                // new IDs to modulations/anything else that wants them
-                tmp.id = -1;  // TODO
                 tmp.key = static_cast<int16_t>(note.key + noteOffset);
-                callback(tmp, velocity);
+                if (tmp.key > 0 && tmp.key < 128) {
+                    if (note.id != -1) {
+                        int32_t chordId = mNextChordVoiceId++;
+                        mHostVoiceIdToChordVoiceIds.emplace(note.id, chordId);
+                        tmp.id = chordId;
+                    }
+                    callback(tmp, velocity);
+                }
             }
         }
 
         template <typename T>
         void ProcessNoteOff(const clapeze::NoteTuple& note, T callback) {
-            for (auto noteOffset : mChord) {
-                clapeze::NoteTuple tmp = note;
-                tmp.id = -1;  // TODO
-                tmp.key = static_cast<int16_t>(note.key + noteOffset);
-                callback(tmp);
+            if (note.id != clapeze::NoteTuple::kNone) {
+                auto [begin, end] = mHostVoiceIdToChordVoiceIds.equal_range(note.id);
+                for (const auto& [_, chordId] : std::ranges::subrange(begin, end)) {
+                    clapeze::NoteTuple tmp{};
+                    tmp.id = chordId;
+                    callback(tmp);
+                }
+            } else {
+                for (auto noteOffset : mChord) {
+                    clapeze::NoteTuple tmp = note;
+                    tmp.id = clapeze::NoteTuple::kNone;
+                    tmp.key = static_cast<int16_t>(note.key + noteOffset);
+                    if (tmp.key > 0 && tmp.key < 128) {
+                        callback(tmp);
+                    }
+                }
             }
+            // TODO: we should track when voices are done and remove them from the mapping piecemeal
+            mHostVoiceIdToChordVoiceIds.clear();
         }
 
         template <typename T>
         void ProcessNoteChoke(const clapeze::NoteTuple& note, T callback) {
-            for (auto noteOffset : mChord) {
-                clapeze::NoteTuple tmp = note;
-                tmp.id = -1;  // TODO
-                tmp.key = static_cast<int16_t>(note.key + noteOffset);
-                callback(tmp);
+            if (note.id != clapeze::NoteTuple::kNone) {
+                auto [begin, end] = mHostVoiceIdToChordVoiceIds.equal_range(note.id);
+                for (const auto& [_, chordId] : std::ranges::subrange(begin, end)) {
+                    clapeze::NoteTuple tmp{};
+                    tmp.id = chordId;
+                    callback(tmp);
+                }
+            } else {
+                for (auto noteOffset : mChord) {
+                    clapeze::NoteTuple tmp = note;
+                    tmp.id = clapeze::NoteTuple::kNone;
+                    tmp.key = static_cast<int16_t>(note.key + noteOffset);
+                    if (tmp.key > 0 && tmp.key < 128) {
+                        callback(tmp);
+                    }
+                }
             }
+            // TODO: we should track when voices are done and remove them from the mapping piecemeal
+            mHostVoiceIdToChordVoiceIds.clear();
         }
 
         bool SetChordType(PolyChordType chordType, int32_t numVoices) {
             if (chordType != mChordType || numVoices != mNumVoices) {
                 mChord.clear();
+                mHostVoiceIdToChordVoiceIds.clear();
                 if (chordType == PolyChordType::None || numVoices == 1) {
                     // chord mode off
                     mChord.push_back(0);
@@ -321,7 +351,11 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
                         int32_t size = static_cast<int32_t>(offsets.size());
                         int32_t x = idx % size;
                         int32_t y = idx / size;
-                        mChord.push_back(static_cast<int16_t>(y * 12 + offsets[x]));
+                        int16_t final = static_cast<int16_t>(y * 12 + offsets[x]);
+                        // cap to playable notes only
+                        if (final > 0 && final < 128) {
+                            mChord.push_back(final);
+                        }
                     }
                 }
                 mChordType = chordType;
@@ -336,6 +370,8 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
         PolyChordType mChordType{};
         int32_t mNumVoices{};
         etl::vector<int16_t, 4> mChord{};
+        etl::flat_multimap<int32_t, int32_t, 32> mHostVoiceIdToChordVoiceIds{};
+        int32_t mNextChordVoiceId = 0;
     };
 
     class Voice {

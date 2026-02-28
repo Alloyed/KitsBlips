@@ -89,8 +89,13 @@ class BaseProcessor {
      * [audio-thread & active & processing]
      */
     void SendEvent(clap_event_header_t& event) {
-        event.time += mTime;  // this is probably very not smart
-        mOutEvents->try_push(mOutEvents, &event);
+        if (mOutEvents) {
+            // we're in a process loop, send the event with sample-accurate timing info
+            event.time += mTime;  // this is probably very not smart
+            mOutEvents->try_push(mOutEvents, &event);
+        }
+        // TODO: what should we do outside of the process loop? Since this usually happens during a reset currently it's
+        // safe to ignore for now, but i have doubts that this is the "correct" way to handle it
     }
 
    protected:

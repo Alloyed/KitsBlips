@@ -46,7 +46,7 @@ struct StereoAudioBuffer {
 // All of the identifying info for a given note.
 // -1 means wildcard/no value, >= 0 is a specific value.
 struct NoteTuple {
-    static constexpr int8_t kNone = -1;
+    static constexpr int16_t kNone = -1;
     int32_t id = kNone;
     int16_t port = kNone;
     int16_t channel = kNone;
