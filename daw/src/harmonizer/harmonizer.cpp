@@ -136,6 +136,7 @@ class GuiApp : public kitgui::BaseApp {
         kitgui::DebugParam<ParamsFeature, Params::BaseDelay>(mParams);
         kitgui::DebugParam<ParamsFeature, Params::GrainSize>(mParams);
         kitgui::DebugParam<ParamsFeature, Params::Feedback>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::Mix>(mParams);
     }
 
    private:

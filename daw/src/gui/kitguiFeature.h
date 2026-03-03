@@ -17,6 +17,7 @@ class KitguiFeature : public clapeze::GuiFeature {
     explicit KitguiFeature(clapeze::PluginHost& host,
                            kitgui::Context::AppFactory createAppFn,
                            const kitgui::SizeConfig& cfg = {});
+    ~KitguiFeature();
 
     void Configure(BasePlugin& self) override;
     bool Validate(const BasePlugin& self) const override;

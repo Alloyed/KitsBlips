@@ -9,6 +9,7 @@
 #include <clapeze/pluginHost.h>
 #include "kitgui/context.h"
 #include "kitgui/kitgui.h"
+#include "kitguiFeature.h"
 
 namespace {
 
@@ -74,6 +75,13 @@ KitguiFeature::KitguiFeature(PluginHost& mPluginHost,
     mCtx.SetLogger([this](std::string_view message) {
         std::string tmp{message};
         mHost.Log(LogSeverity::Info, tmp);
+    });
+}
+
+KitguiFeature::~KitguiFeature() {
+    mCtx.SetLogger([](std::string_view message){
+        // do nothing
+        (void)message;
     });
 }
 

@@ -99,7 +99,9 @@ std::wstring ContextImpl::sClassName{};
 
 void ContextImpl::init(kitgui::WindowApi api, std::string_view appName) {
     sClassName = utf8_to_utf16(appName);
-    ImGui_ImplWin32_EnableDpiAwareness();
+    // Note! this changes dpi awareness per-process, which may mess with the host's settings.
+    // we might need to read the current dpi-awareness setting and make decisions based on that instead?
+    //ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSW windowClass = {};
     windowClass.lpfnWndProc = WndProc;
     windowClass.cbWndExtra = sizeof(ContextImpl*);
@@ -242,11 +244,19 @@ bool ContextImpl::GetSizeInPixels(uint32_t& widthOut, uint32_t& heightOut) const
 }
 bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
     // TODO: resizable
-    return ::SetWindowPos(mWindow, nullptr, 0, 0, width, height,
+    bool result = ::SetWindowPos(mWindow, nullptr, 0, 0, width, height,
                           SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
+    if(!result) {
+        kitgui::log::error(mContext, GetLastWinError());
+    }
+    return result;
 }
 bool ContextImpl::SetParent(const kitgui::WindowRef& parentWindowRef) {
-    return ::SetParent(mWindow, static_cast<HWND>(parentWindowRef.ptr));
+    bool result = ::SetParent(mWindow, static_cast<HWND>(parentWindowRef.ptr));
+    if(!result) {
+        kitgui::log::error(mContext, GetLastWinError());
+    }
+    return result;
 }
 bool ContextImpl::SetTransient([[maybe_unused]] const kitgui::WindowRef& transientWindowRef) {
     // TODO
@@ -256,16 +266,25 @@ bool ContextImpl::SetTransient([[maybe_unused]] const kitgui::WindowRef& transie
 }
 void ContextImpl::SuggestTitle(std::string_view title) {
     std::wstring wideTitle = utf8_to_utf16(title);
-    ::SetWindowTextW(mWindow, wideTitle.c_str());
+    bool result = ::SetWindowTextW(mWindow, wideTitle.c_str());
+    if(!result) {
+        kitgui::log::info(mContext, GetLastWinError());
+    }
 }
 
 bool ContextImpl::Show() {
-    ::ShowWindow(mWindow, SW_SHOW);
+    bool result = ::ShowWindow(mWindow, SW_SHOW);
+    if(!result) {
+        kitgui::log::info(mContext, GetLastWinError());
+    }
     AddActiveInstance(this);
     return true;
 }
 bool ContextImpl::Hide() {
-    ::ShowWindow(mWindow, SW_HIDE);
+    bool result = ::ShowWindow(mWindow, SW_HIDE);
+    if(!result) {
+        kitgui::log::info(mContext, GetLastWinError());
+    }
     mActive = false;  // will be removed
     return true;
 }
@@ -276,7 +295,10 @@ bool ContextImpl::Close() {
 }
 
 void ContextImpl::MakeCurrent() {
-    ::wglMakeCurrent(mDeviceContext, mWglContext);
+    bool result = ::wglMakeCurrent(mDeviceContext, mWglContext);
+    if(!result) {
+        kitgui::log::info(mContext, GetLastWinError());
+    }
     if (mImgui) {
         ImGui::SetCurrentContext(mImgui);
     }
@@ -430,6 +452,10 @@ bool ContextImpl::CreateWglContext() {
     }
 
     mWglContext = ::wglCreateContext(mDeviceContext);
+    if(mWglContext == nullptr) {
+        kitgui::log::error(mContext, GetLastWinError());
+        return false;
+    }
     return true;
 }
 
