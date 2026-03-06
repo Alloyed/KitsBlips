@@ -29,6 +29,7 @@
 #include "descriptor.h"
 #include "gui/parameterControls.h"
 #include "gui/presetBrowser.h"
+#include "kitdsp/control/approach.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <clapeze/features/assetsFeature.h>
@@ -141,7 +142,7 @@ struct ParamTraits<Params, Params::FilterModAmount> : public clapeze::NumericPar
 
 template <>
 struct ParamTraits<Params, Params::LfoRate> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("LfoRate", "Rate", 0.001f, 20.0f, 0.2f, "hz") {}
+    ParamTraits() : clapeze::NumericParam("LfoRate", "Rate", 0.001f, 20.0f, 0.2f, "hz") { mCurve = cPowCurve<3.0f>; }
 };
 
 template <>
@@ -423,6 +424,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
             // env
             mEnv.SetParams(params.Get<Params::EnvAttack>(), params.Get<Params::EnvDecay>(),
                            params.Get<Params::EnvSustain>(), params.Get<Params::EnvRelease>(), sampleRate);
+            mGateEnv.SetSampleRate(sampleRate);
 
             // vca
             // We know this will usually be used polyphonically, so let's get some headroom
@@ -457,7 +459,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
             }
 
             // if no longer processing, time to sleep
-            return mEnv.IsProcessing();
+            return mEnv.IsProcessing() || mGateEnv.IsProcessing();
         }
 
        private:
@@ -468,6 +470,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
         // TODO: paraphony, maybe
         kitdsp::EmileSvf mFilter{};
         kitdsp::ApproachAdsr mEnv{};
+        kitdsp::Approach mVcaEnvDisabled;
     };
 
    public:
@@ -683,7 +686,6 @@ class GuiApp : public kitgui::BaseApp {
 
     void OnGuiUpdate() override {
         if (ImGui::BeginMainMenuBar()) {
-            ImGui::MenuItem("Help/About", NULL, &mShowHelpWindow);
             if (ImGui::BeginMenu("Preset")) {
                 if (ImGui::MenuItem("Reset All")) {
                     mParams.ResetAllParamsToDefault();
@@ -704,6 +706,7 @@ class GuiApp : public kitgui::BaseApp {
                 ImGui::EndMenu();
             }
             ImGui::MenuItem("Debug", NULL, &mDebugMode);
+            ImGui::MenuItem("Help/About", NULL, &mShowHelpWindow);
             ImGui::EndMainMenuBar();
         }
 

@@ -51,6 +51,10 @@ target_sources(KitsBlips PRIVATE
 target_sources(KitsBlips PRIVATE
     src/kitskeys/kitskeys.cpp
     src/snecho/snecho.cpp
+    src/chorus/chorus.cpp
+    src/distort/distort.cpp
+    src/freqshift/freqshift.cpp
+    src/harmonizer/harmonizer.cpp
 )
 
 if(WIN32)
@@ -62,10 +66,6 @@ if(KITSBLIPS_RETAIL)
 else()
     # pre-alpha modules
     target_sources(KitsBlips PRIVATE
-        src/chorus/chorus.cpp
-        src/distort/distort.cpp
-        src/freqshift/freqshift.cpp
-        src/harmonizer/harmonizer.cpp
     )
 endif()
 

@@ -263,8 +263,9 @@ class Plugin : public EffectPlugin {
 
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<clapeze::AssetsFeature>();
-        ConfigFeature<KitguiFeature>(GetHost(),
-                                     [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
+        kitgui::SizeConfig cfg{400, 450, true, false};
+        ConfigFeature<KitguiFeature>(
+            GetHost(), [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); }, cfg);
 #endif
         ConfigProcessor<Processor>(params.GetProcessorHandle<ParamsFeature::ProcessorHandle>());
     }

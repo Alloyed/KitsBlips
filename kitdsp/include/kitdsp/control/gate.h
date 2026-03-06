@@ -10,7 +10,7 @@ class Gate {
     Gate() {}
     ~Gate() = default;
     inline void Reset() { mApproach.Reset(); }
-    void SetSampleRate(float sampleRate) { mApproach.SetHalfLife(1.0f, sampleRate); }
+    void SetSampleRate(float sampleRate) { mApproach.SetHalfLife(3.0f, sampleRate); }
     void TriggerOpen() { mApproach.target = 1.0f; }
     void TriggerClose() { mApproach.target = 0.0f; }
     void TriggerChoke() { mApproach.target = 0.0f; }

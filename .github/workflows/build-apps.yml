@@ -29,16 +29,16 @@ jobs:
         include:
           - name: Linux
             os: ubuntu-24.04
-            extra-flags:
+            extra-flags: -DKITSBLIPS_RETAIL="ON"
           #- name: macOS
           #  os: macos-14
           #  extra-flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DKITSBLIPS_ENABLE_VST="OFF"
           - name: Windows
             os: windows-2025
-            extra-flags:
-          - name: Windows-sentry
-            os: windows-2025
-            extra-flags: -DKITSBLIPS_ENABLE_SENTRY="ON" -DKITSBLIPS_RETAIL="ON"
+            extra-flags: -DKITSBLIPS_RETAIL="ON"
+          #- name: Windows-sentry
+          #  os: windows-2025
+          #  extra-flags: -DKITSBLIPS_ENABLE_SENTRY="ON" -DKITSBLIPS_RETAIL="ON"
 
     steps:
       - name: Set up Linux deps
