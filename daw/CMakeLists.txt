@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 cmake_policy(SET CMP0048 NEW)
-project(KitsBlips VERSION 0.0.0)
+project(KitsBlips VERSION 0.1.0)
 
 set(PRODUCT_NAME "KitsBlips")
 set(PRODUCT_ID "me.alloyed.KitsBlips")
