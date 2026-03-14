@@ -13,7 +13,7 @@
 namespace {
 enum class Params : clap_id { Fall, Polyphony, Count };
 using ParamsFeature = clapeze::params::DynamicParametersFeature;
-using ParamsHandle = ParamsFeature::ProcessorHandle;
+using ParamsHandle = ParamsFeature::AudioHandle;
 }  // namespace
 
 struct FallTraits : public clapeze::NumericParam {
@@ -80,7 +80,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsHandle> {
     };
 
    public:
-    explicit Processor(clapeze::params::DynamicProcessorHandle& params) : InstrumentProcessor(params), mVoices(*this) {}
+    explicit Processor(clapeze::params::DynamicAudioHandle& params) : InstrumentProcessor(params), mVoices(*this) {}
     ~Processor() = default;
 
     clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) override {
@@ -115,7 +115,7 @@ class Plugin : public clapeze::InstrumentPlugin {
                                     .Parameter(static_cast<clap_id>(Params::Fall), new FallTraits())
                                     .Parameter(static_cast<clap_id>(Params::Polyphony), new PolyphonyTraits());
         ConfigFeature<clapeze::TomlStateFeature<ParamsFeature>>(*this);
-        ConfigProcessor<Processor>(params.GetProcessorHandle<ParamsFeature::ProcessorHandle>());
+        ConfigProcessor<Processor>(params.GetAudioHandle<ParamsFeature::AudioHandle>());
     }
 };
 

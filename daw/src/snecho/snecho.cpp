@@ -104,9 +104,9 @@ using namespace kitdsp;
 using namespace clapeze;
 
 namespace snecho {
-class Processor : public EffectProcessor<ParamsFeature::ProcessorHandle> {
+class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
    public:
-    explicit Processor(ParamsFeature::ProcessorHandle& params) : EffectProcessor(params) {}
+    explicit Processor(ParamsFeature::AudioHandle& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
     ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
@@ -139,7 +139,7 @@ class Processor : public EffectProcessor<ParamsFeature::ProcessorHandle> {
 
    private:
     struct Channel {
-        void ProcessAudio(ParamsFeature::ProcessorHandle& params, const etl::span<float>& in, etl::span<float>& out) {
+        void ProcessAudio(ParamsFeature::AudioHandle& params, const etl::span<float>& in, etl::span<float>& out) {
             // inputs
             // core
             snes1.cfg.echoBufferSize = params.Get<Params::Size>();
@@ -267,7 +267,7 @@ class Plugin : public EffectPlugin {
         ConfigFeature<KitguiFeature>(
             GetHost(), [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); }, cfg);
 #endif
-        ConfigProcessor<Processor>(params.GetProcessorHandle<ParamsFeature::ProcessorHandle>());
+        ConfigProcessor<Processor>(params.GetAudioHandle<ParamsFeature::AudioHandle>());
     }
 };
 

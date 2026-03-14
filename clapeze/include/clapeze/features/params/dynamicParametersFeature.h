@@ -16,12 +16,12 @@
 namespace clapeze::params {
 class DynamicParametersFeature;
 
-class DynamicProcessorHandle : public BaseProcessorHandle {
+class DynamicAudioHandle : public BaseAudioHandle {
    public:
-    DynamicProcessorHandle(std::vector<std::unique_ptr<BaseParam>>& ref,
-                           size_t numParams,
-                           Queue& mainToAudio,
-                           Queue& audioToMain);
+    DynamicAudioHandle(std::vector<std::unique_ptr<BaseParam>>& ref,
+                       size_t numParams,
+                       Queue& mainToAudio,
+                       Queue& audioToMain);
 
     template <class TParam>
     typename TParam::_valuetype Get(clap_id id) const;
@@ -64,10 +64,10 @@ class DynamicMainHandle : public BaseMainHandle {
 
 class DynamicParametersFeature : public BaseParametersFeature {
    public:
-    using ProcessorHandle = DynamicProcessorHandle;
+    using AudioHandle = DynamicAudioHandle;
     using MainHandle = DynamicMainHandle;
     DynamicParametersFeature(PluginHost& host, clap_id numParams) : BaseParametersFeature(host, numParams) {
-        mAudio.reset(new DynamicProcessorHandle(mParams, mNumParams, mMainToAudio, mAudioToMain));
+        mAudio.reset(new DynamicAudioHandle(mParams, mNumParams, mMainToAudio, mAudioToMain));
         mMain.reset(new DynamicMainHandle(mNumParams, mMainToAudio, mAudioToMain));
     }
 
@@ -81,7 +81,7 @@ class DynamicParametersFeature : public BaseParametersFeature {
 
 // impl
 template <class TParam>
-typename TParam::_valuetype DynamicProcessorHandle::Get(clap_id id) const {
+typename TParam::_valuetype DynamicAudioHandle::Get(clap_id id) const {
     typename TParam::_valuetype out{};
     if (id < mValues.size()) {
         double raw = GetRawValue(id);

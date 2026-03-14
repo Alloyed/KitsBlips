@@ -24,12 +24,12 @@ template <ParamEnum TParamId, TParamId id>
 struct ParamTraits;
 
 template <ParamEnum TParamId>
-class EnumProcessorHandle : public BaseProcessorHandle {
+class EnumAudioHandle : public BaseAudioHandle {
    public:
-    EnumProcessorHandle(std::vector<std::unique_ptr<BaseParam>>& ref,
-                        size_t numParams,
-                        Queue& mainToAudio,
-                        Queue& audioToMain);
+    EnumAudioHandle(std::vector<std::unique_ptr<BaseParam>>& ref,
+                    size_t numParams,
+                    Queue& mainToAudio,
+                    Queue& audioToMain);
 
     template <class TParam>
     typename TParam::_valuetype Get(clap_id id) const;
@@ -100,11 +100,11 @@ class EnumParametersFeature : public BaseParametersFeature {
     using BaseType = BaseParametersFeature;
 
    public:
-    using ProcessorHandle = EnumProcessorHandle<TParamId>;
+    using AudioHandle = EnumAudioHandle<TParamId>;
     using MainHandle = EnumMainHandle;
     using Id = TParamId;
     EnumParametersFeature(PluginHost& host, TParamId numParams) : BaseType(host, static_cast<clap_id>(numParams)) {
-        mAudio.reset(new ProcessorHandle(mParams, mNumParams, mMainToAudio, mAudioToMain));
+        mAudio.reset(new AudioHandle(mParams, mNumParams, mMainToAudio, mAudioToMain));
         mMain.reset(new MainHandle(mNumParams, mMainToAudio, mAudioToMain));
     }
 
@@ -137,7 +137,7 @@ class EnumParametersFeature : public BaseParametersFeature {
 // impl
 template <ParamEnum TParamId>
 template <class TParam>
-typename TParam::_valuetype EnumProcessorHandle<TParamId>::Get(clap_id id) const {
+typename TParam::_valuetype EnumAudioHandle<TParamId>::Get(clap_id id) const {
     typename TParam::_valuetype out{};
     clap_id index = id;
     if (index < mValues.size()) {
@@ -149,10 +149,10 @@ typename TParam::_valuetype EnumProcessorHandle<TParamId>::Get(clap_id id) const
 }
 
 template <ParamEnum TParamId>
-EnumProcessorHandle<TParamId>::EnumProcessorHandle(std::vector<std::unique_ptr<BaseParam>>& ref,
-                                                   size_t numParams,
-                                                   Queue& mainToAudio,
-                                                   Queue& audioToMain)
+EnumAudioHandle<TParamId>::EnumAudioHandle(std::vector<std::unique_ptr<BaseParam>>& ref,
+                                           size_t numParams,
+                                           Queue& mainToAudio,
+                                           Queue& audioToMain)
     : mParamsRef(ref),
       mValues(numParams, 0.0f),
       mModulations(numParams, 0.0f),
@@ -160,7 +160,7 @@ EnumProcessorHandle<TParamId>::EnumProcessorHandle(std::vector<std::unique_ptr<B
       mAudioToMain(audioToMain) {}
 
 template <ParamEnum TParamId>
-bool EnumProcessorHandle<TParamId>::ProcessEvent(const clap_event_header_t& event) {
+bool EnumAudioHandle<TParamId>::ProcessEvent(const clap_event_header_t& event) {
     if (event.space_id == CLAP_CORE_EVENT_SPACE_ID) {
         switch (event.type) {
             case CLAP_EVENT_PARAM_VALUE: {
@@ -182,7 +182,7 @@ bool EnumProcessorHandle<TParamId>::ProcessEvent(const clap_event_header_t& even
 }
 
 template <ParamEnum TParamId>
-void EnumProcessorHandle<TParamId>::FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) {
+void EnumAudioHandle<TParamId>::FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) {
     (void)processor;
     // Send events queued from us to the host
     // Since these all happened on an independent thread, they do not have sample-accurate timing; we'll just
@@ -234,7 +234,7 @@ void EnumProcessorHandle<TParamId>::FlushEventsFromMain(BaseProcessor& processor
     }
 }
 template <ParamEnum TParamId>
-double EnumProcessorHandle<TParamId>::GetRawValue(clap_id id) const {
+double EnumAudioHandle<TParamId>::GetRawValue(clap_id id) const {
     clap_id index = id;
     if (index < mValues.size()) {
         return mValues[index];
@@ -242,7 +242,7 @@ double EnumProcessorHandle<TParamId>::GetRawValue(clap_id id) const {
     return 0.0f;
 }
 template <ParamEnum TParamId>
-void EnumProcessorHandle<TParamId>::SetRawValue(clap_id id, double newValue) {
+void EnumAudioHandle<TParamId>::SetRawValue(clap_id id, double newValue) {
     clap_id index = id;
     if (index < mValues.size()) {
         mValues[index] = newValue;
@@ -251,7 +251,7 @@ void EnumProcessorHandle<TParamId>::SetRawValue(clap_id id, double newValue) {
 }
 
 template <ParamEnum TParamId>
-double EnumProcessorHandle<TParamId>::GetRawModulation(clap_id id) const {
+double EnumAudioHandle<TParamId>::GetRawModulation(clap_id id) const {
     clap_id index = id;
     if (index < mModulations.size()) {
         return mModulations[index];
@@ -259,7 +259,7 @@ double EnumProcessorHandle<TParamId>::GetRawModulation(clap_id id) const {
     return 0.0f;
 }
 template <ParamEnum TParamId>
-void EnumProcessorHandle<TParamId>::SetRawModulation(clap_id id, double newModulation) {
+void EnumAudioHandle<TParamId>::SetRawModulation(clap_id id, double newModulation) {
     clap_id index = id;
     if (index < mModulations.size()) {
         mModulations[index] = newModulation;

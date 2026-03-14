@@ -31,9 +31,9 @@ class BaseMainHandle {
     virtual void FlushFromAudio() = 0;
 };
 
-class BaseProcessorHandle {
+class BaseAudioHandle {
    public:
-    virtual ~BaseProcessorHandle() = default;
+    virtual ~BaseAudioHandle() = default;
     virtual bool ProcessEvent(const clap_event_header_t& event) = 0;
     virtual void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) = 0;
 };
@@ -60,8 +60,8 @@ class BaseParametersFeature : public BaseFeature {
 
     void RequestFlushIfNotProcessing();
 
-    template <std::derived_from<BaseProcessorHandle> THandle = BaseProcessorHandle>
-    THandle& GetProcessorHandle() {
+    template <std::derived_from<BaseAudioHandle> THandle = BaseAudioHandle>
+    THandle& GetAudioHandle() {
         return impl::down_cast<THandle&>(*mAudio);
     }
     template <std::derived_from<BaseMainHandle> THandle = BaseMainHandle>
@@ -81,7 +81,7 @@ class BaseParametersFeature : public BaseFeature {
     Queue mAudioToMain;
     Queue mMainToAudio;
     std::unique_ptr<BaseMainHandle> mMain;
-    std::unique_ptr<BaseProcessorHandle> mAudio;
+    std::unique_ptr<BaseAudioHandle> mAudio;
 
    private:
     static uint32_t _count(const clap_plugin_t* plugin);

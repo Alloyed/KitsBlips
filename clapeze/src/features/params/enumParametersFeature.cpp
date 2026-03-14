@@ -15,6 +15,7 @@ double EnumMainHandle::GetRawValue(clap_id id) const {
 void EnumMainHandle::SetRawValue(clap_id id, double newValue) {
     if (id < mValues.size()) {
         mValues[id] = newValue;
+        // OnChangedMain
         mMainToAudio.push({ChangeType::SetValue, id, newValue});
     }
 }
@@ -26,6 +27,7 @@ void EnumMainHandle::FlushFromAudio() {
         switch (change.type) {
             case ChangeType::SetValue: {
                 mValues[index] = change.value;
+                // OnChangedMain
                 break;
             }
             case ChangeType::SetModulation: {

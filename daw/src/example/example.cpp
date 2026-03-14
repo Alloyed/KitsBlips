@@ -28,9 +28,9 @@ using namespace clapeze;
 
 namespace example {
 
-class Processor : public EffectProcessor<ParamsFeature::ProcessorHandle> {
+class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
    public:
-    explicit Processor(ParamsFeature::ProcessorHandle& params) : EffectProcessor(params) {}
+    explicit Processor(ParamsFeature::AudioHandle& params) : EffectProcessor(params) {}
     ~Processor() = default;
 
     ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
@@ -96,7 +96,7 @@ class Plugin : public EffectPlugin {
                                      [&params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, params); });
 #endif
 
-        ConfigProcessor<Processor>(params.GetProcessorHandle<ParamsFeature::ProcessorHandle>());
+        ConfigProcessor<Processor>(params.GetAudioHandle<ParamsFeature::AudioHandle>());
     }
 };
 

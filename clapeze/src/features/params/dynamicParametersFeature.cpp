@@ -2,17 +2,17 @@
 
 namespace clapeze::params {
 
-DynamicProcessorHandle::DynamicProcessorHandle(std::vector<std::unique_ptr<BaseParam>>& ref,
-                                               size_t numParams,
-                                               Queue& mainToAudio,
-                                               Queue& audioToMain)
+DynamicAudioHandle::DynamicAudioHandle(std::vector<std::unique_ptr<BaseParam>>& ref,
+                                       size_t numParams,
+                                       Queue& mainToAudio,
+                                       Queue& audioToMain)
     : mParamsRef(ref),
       mValues(numParams, 0.0f),
       mModulations(numParams, 0.0f),
       mMainToAudio(mainToAudio),
       mAudioToMain(audioToMain) {}
 
-bool DynamicProcessorHandle::ProcessEvent(const clap_event_header_t& event) {
+bool DynamicAudioHandle::ProcessEvent(const clap_event_header_t& event) {
     if (event.space_id == CLAP_CORE_EVENT_SPACE_ID) {
         switch (event.type) {
             case CLAP_EVENT_PARAM_VALUE: {
@@ -33,7 +33,7 @@ bool DynamicProcessorHandle::ProcessEvent(const clap_event_header_t& event) {
     return false;
 }
 
-void DynamicProcessorHandle::FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) {
+void DynamicAudioHandle::FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) {
     (void)processor;
     // Send events queued from us to the host
     // Since these all happened on an independent thread, they do not have sample-accurate timing; we'll just
@@ -58,6 +58,7 @@ void DynamicProcessorHandle::FlushEventsFromMain(BaseProcessor& processor, const
             case ChangeType::SetValue: {
                 clap_id index = change.id;
                 mValues[index] = change.value;
+                // OnChangedAudio
 
                 clap_event_param_value_t event = {};
                 event.header.size = sizeof(event);
@@ -84,26 +85,27 @@ void DynamicProcessorHandle::FlushEventsFromMain(BaseProcessor& processor, const
         }
     }
 }
-double DynamicProcessorHandle::GetRawValue(clap_id id) const {
+double DynamicAudioHandle::GetRawValue(clap_id id) const {
     if (id < mValues.size()) {
         return mValues[id];
     }
     return 0.0f;
 }
-void DynamicProcessorHandle::SetRawValue(clap_id id, double newValue) {
+void DynamicAudioHandle::SetRawValue(clap_id id, double newValue) {
     if (id < mValues.size()) {
         mValues[id] = newValue;
+        // OnChangedAudio
         mAudioToMain.push({ChangeType::SetValue, id, newValue});
     }
 }
 
-double DynamicProcessorHandle::GetRawModulation(clap_id id) const {
+double DynamicAudioHandle::GetRawModulation(clap_id id) const {
     if (id < mModulations.size()) {
         return mModulations[id];
     }
     return 0.0f;
 }
-void DynamicProcessorHandle::SetRawModulation(clap_id id, double newModulation) {
+void DynamicAudioHandle::SetRawModulation(clap_id id, double newModulation) {
     if (id < mModulations.size()) {
         mModulations[id] = newModulation;
         mAudioToMain.push({ChangeType::SetModulation, id, newModulation});
@@ -123,6 +125,7 @@ double DynamicMainHandle::GetRawValue(clap_id id) const {
 void DynamicMainHandle::SetRawValue(clap_id id, double newValue) {
     if (id < mValues.size()) {
         mValues[id] = newValue;
+        // onChangedMain
         mMainToAudio.push({ChangeType::SetValue, id, newValue});
     }
 }

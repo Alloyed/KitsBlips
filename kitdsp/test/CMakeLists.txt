@@ -8,6 +8,7 @@ add_executable(testdsp
     osc/dsfOscillator.test.cpp
     osc/oscillatorSweeps.test.cpp
     apps/snesEcho.test.cpp
+    apps/snesBitcrush.test.cpp
     apps/psxReverb.test.cpp
     apps/chorus.test.cpp
     apps/harmonizer.test.cpp

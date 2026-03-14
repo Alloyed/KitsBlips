@@ -273,7 +273,7 @@ using namespace clapeze;
 
 namespace kitskeys {
 
-class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHandle> {
+class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle> {
     class NoteProcessor {
        public:
         template <typename T>
@@ -474,7 +474,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::ProcessorHa
     };
 
    public:
-    explicit Processor(ParamsFeature::ProcessorHandle& params) : InstrumentProcessor(params), mVoices(*this) {}
+    explicit Processor(ParamsFeature::AudioHandle& params) : InstrumentProcessor(params), mVoices(*this) {}
     ~Processor() = default;
 
     clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) override {
@@ -809,7 +809,7 @@ class Plugin : public InstrumentPlugin {
             cfg);
 #endif
 
-        ConfigProcessor<Processor>(params.GetProcessorHandle<ParamsFeature::ProcessorHandle>());
+        ConfigProcessor<Processor>(params.GetAudioHandle<ParamsFeature::AudioHandle>());
     }
 };
 

@@ -10,6 +10,7 @@ endif()
 add_library(KitDSP STATIC
     src/psxReverb.cpp
     src/snesEcho.cpp
+    src/snesBitcrush.cpp
     src/dsfOscillator.cpp
     src/chorus.cpp
     src/harmonizer.cpp

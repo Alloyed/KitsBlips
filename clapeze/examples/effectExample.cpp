@@ -28,7 +28,7 @@ enum class MyParams : clap_id {
  */
 // let's make some aliases to save some typing
 using MyParamsFeature = clapeze::params::EnumParametersFeature<MyParams>;
-using MyParamsHandle = MyParamsFeature::ProcessorHandle;
+using MyParamsHandle = MyParamsFeature::AudioHandle;
 }  // namespace effectExample
 
 /**
@@ -151,7 +151,7 @@ class MyPlugin : public clapeze::EffectPlugin {
 
         // we are opting into audio processing using the Processor object defined before, and using the params object as
         // our communication channel.
-        ConfigProcessor<MyProcessor>(params.GetProcessorHandle<MyParamsFeature::ProcessorHandle>());
+        ConfigProcessor<MyProcessor>(params.GetAudioHandle<MyParamsFeature::AudioHandle>());
     }
 };
 
