@@ -1,7 +1,8 @@
+#include "kitdsp/harmonizer.h"
 #include <AudioFile.h>
 #include <gtest/gtest.h>
-#include "kitdsp/harmonizer.h"
 #include "kitdsp/math/util.h"
+#include "util.h"
 
 using namespace kitdsp;
 
@@ -31,5 +32,5 @@ TEST(harmonizer, works) {
         f.samples[1][i] = fade(in, out.right, 0.5f);
     }
 
-    f.save("grain.wav");
+    test::Snapshot(f);
 }

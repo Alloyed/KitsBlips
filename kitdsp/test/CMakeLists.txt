@@ -16,6 +16,10 @@ add_executable(testdsp
     control/adsr.test.cpp
 )
 
+target_include_directories(testdsp PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}
+)
+
 target_link_libraries(testdsp
     KitDSP
     AudioFile

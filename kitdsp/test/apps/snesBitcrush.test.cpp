@@ -1,6 +1,7 @@
 #include "kitdsp/apps/snesBitcrush.h"
 #include <AudioFile.h>
 #include <gtest/gtest.h>
+#include "util.h"
 
 using namespace kitdsp;
 
@@ -26,5 +27,5 @@ TEST(snesGaussFilter, works) {
         f.samples[1][i] = out;
     }
 
-    f.save("snesfilter.wav");
+    test::Snapshot(f);
 }

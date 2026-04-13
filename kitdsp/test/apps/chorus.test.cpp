@@ -1,39 +1,11 @@
 #include "kitdsp/apps/chorus.h"
-#include <gtest/gtest.h>
 #include <AudioFile.h>
-#include "kitdsp/math/util.h"
+#include <gtest/gtest.h>
+#include "util.h"
 
 using namespace kitdsp;
 
-void Snapshot(AudioFile<float>& f, std::string_view filename) {
-    bool shouldUpdate = getenv("UPDATE_SNAPSHOTS") != nullptr;
-    std::string filepath{filename};
-    AudioFile<float> expected;
-    bool loaded = expected.load(filepath);
-    if (!loaded || shouldUpdate) {
-        // file may not exist, try to write
-        ASSERT_TRUE(f.save(filepath));
-        return;
-    }
-    EXPECT_EQ(f.getSampleRate(), expected.getSampleRate());
-    EXPECT_EQ(f.getNumChannels(), expected.getNumChannels());
-    EXPECT_DOUBLE_EQ(f.getLengthInSeconds(), f.getLengthInSeconds());
-
-    if (f.getNumChannels() != expected.getNumChannels() ||
-        f.getNumSamplesPerChannel() != expected.getNumSamplesPerChannel() ||
-        f.getSampleRate() != expected.getSampleRate()) {
-        return;
-    }
-
-    for (size_t i = 0; i < f.getNumSamplesPerChannel(); ++i) {
-        for (size_t c = 0; c < f.getNumChannels(); ++c) {
-            EXPECT_FLOAT_EQ(f.samples[c][i], expected.samples[c][i]);
-        }
-    }
-}
-
 TEST(chorus, works) {
-
     AudioFile<float> f;
     bool ok = f.load(PROJECT_DIR "/test/guitar.wav");
     ASSERT_TRUE(ok);
@@ -58,5 +30,5 @@ TEST(chorus, works) {
         f.samples[1][i] = out.right;
     }
 
-    Snapshot(f, "chorus.wav");
+    test::Snapshot(f);
 }

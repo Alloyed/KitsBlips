@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include "kitdsp/apps/psxReverbPresets.h"
 #include "kitdsp/math/util.h"
+#include "util.h"
 
 using namespace kitdsp;
 
@@ -35,5 +36,5 @@ TEST(psxEcho, works) {
         }
     }
 
-    f.save("psxverb.wav");
+    test::Snapshot(f);
 }

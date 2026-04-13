@@ -4,6 +4,7 @@
 #include "kitdsp/apps/snesEchoFilterPresets.h"
 #include "kitdsp/math/units.h"
 #include "kitdsp/math/util.h"
+#include "util.h"
 
 using namespace kitdsp;
 
@@ -84,7 +85,7 @@ TEST(snesEcho, works) {
     AudioFile<float> f;
     f.setSampleRate(SNES::kOriginalSampleRate);
     CopyOut(buf, f);
-    f.save("snecho.wav");
+    test::Snapshot(f);
 }
 
 TEST(snesEchoFilter, works) {
@@ -122,7 +123,7 @@ TEST(snesEchoFilter, works) {
     AudioFile<float> f;
     f.setSampleRate(SNES::kOriginalSampleRate);
     CopyOut(buf, f);
-    f.save("snechoFilter.wav");
+    test::Snapshot(f);
 }
 
 TEST(snesEchoBufferSize, isLinearQuantized) {
@@ -154,5 +155,5 @@ TEST(snesEchoBufferSize, isLinearQuantized) {
     AudioFile<float> f;
     f.setSampleRate(SNES::kOriginalSampleRate);
     CopyOut(buf, f);
-    f.save("snechoDelay.wav");
+    test::Snapshot(f);
 }
