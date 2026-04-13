@@ -5,6 +5,33 @@
 
 using namespace kitdsp;
 
+void Snapshot(AudioFile<float>& f, std::string_view filename) {
+    bool shouldUpdate = getenv("UPDATE_SNAPSHOTS") != nullptr;
+    std::string filepath{filename};
+    AudioFile<float> expected;
+    bool loaded = expected.load(filepath);
+    if (!loaded || shouldUpdate) {
+        // file may not exist, try to write
+        ASSERT_TRUE(f.save(filepath));
+        return;
+    }
+    EXPECT_EQ(f.getSampleRate(), expected.getSampleRate());
+    EXPECT_EQ(f.getNumChannels(), expected.getNumChannels());
+    EXPECT_DOUBLE_EQ(f.getLengthInSeconds(), f.getLengthInSeconds());
+
+    if (f.getNumChannels() != expected.getNumChannels() ||
+        f.getNumSamplesPerChannel() != expected.getNumSamplesPerChannel() ||
+        f.getSampleRate() != expected.getSampleRate()) {
+        return;
+    }
+
+    for (size_t i = 0; i < f.getNumSamplesPerChannel(); ++i) {
+        for (size_t c = 0; c < f.getNumChannels(); ++c) {
+            EXPECT_FLOAT_EQ(f.samples[c][i], expected.samples[c][i]);
+        }
+    }
+}
+
 TEST(chorus, works) {
 
     AudioFile<float> f;
@@ -31,5 +58,5 @@ TEST(chorus, works) {
         f.samples[1][i] = out.right;
     }
 
-    f.save("chorus.wav");
+    Snapshot(f, "chorus.wav");
 }
