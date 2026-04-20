@@ -2,7 +2,8 @@
 #include "kitdsp/apps/snesEcho.h"
 #include "kitdsp/macros.h"
 
-namespace kitdsp::SNES {
+namespace kitdsp {
+namespace SNES {
 Bitcrush::Bitcrush(float sampleRate) : mResampler(kOriginalSampleRate, sampleRate) {}
 /*
  * The rules for the gaussian filter are documented here!
@@ -51,5 +52,5 @@ void Bitcrush::Reset() {
     std::fill(mEmphasisBuf.begin(), mEmphasisBuf.end(), 0);
     mPhasor.Reset();
 }
-
-}  // namespace kitdsp::SNES
+}  // namespace SNES
+}  // namespace kitdsp

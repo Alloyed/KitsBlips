@@ -14,6 +14,7 @@ add_executable(testdsp
     apps/harmonizer.test.cpp
     apps/frequencyShifter.test.cpp
     control/adsr.test.cpp
+    pitch.test.cpp
 )
 
 target_include_directories(testdsp PRIVATE

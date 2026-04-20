@@ -6,6 +6,7 @@
  */
 
 namespace kitdsp {
+/** Oscillates between [0-1]. To be used to build fancier oscillators */
 class Phasor {
    public:
     void SetFrequency(float frequencyHz, float sampleRate) { mAdvance = frequencyHz / sampleRate; }

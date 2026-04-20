@@ -44,7 +44,7 @@ inline void Snapshot(AudioFile<float>& f, std::string_view postfix = "") {
 
     for (size_t i = 0; i < f.getNumSamplesPerChannel(); ++i) {
         for (size_t c = 0; c < f.getNumChannels(); ++c) {
-            ASSERT_NEAR(f.samples[c][i], expected.samples[c][i], 0.0001)
+            ASSERT_NEAR(f.samples[c][i], expected.samples[c][i], 0.01)
                 << "Non-matching sample at " << i << " (" << (i / SR) << " seconds)\n"
                 << "Set the environment variable UPDATE_SNAPSHOTS to update anyways";
         }

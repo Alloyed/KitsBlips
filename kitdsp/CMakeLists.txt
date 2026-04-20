@@ -15,6 +15,7 @@ add_library(KitDSP STATIC
     src/chorus.cpp
     src/harmonizer.cpp
     src/frequencyShifter.cpp
+    src/pitch/zeroCrossingPitchDetector.cpp
 )
 
 # C++11 is required for ABI compatibility with VCV Rack 2, which has standardized on an old version of mingw
@@ -34,8 +35,10 @@ target_enable_warnings(KitDSP)
 
 # when built standalone, enable tests
 if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/CTestCustom.cmake
-        "set(CTEST_CUSTOM_POST_TEST \"${CMAKE_CURRENT_SOURCE_DIR}/test/spectrograms.sh\")")
+    if(NOT WIN32)
+        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/CTestCustom.cmake
+            "set(CTEST_CUSTOM_POST_TEST \"${CMAKE_CURRENT_SOURCE_DIR}/test/spectrograms.sh\")")
+    endif()
 
     include(CTest)
     add_subdirectory(test)
