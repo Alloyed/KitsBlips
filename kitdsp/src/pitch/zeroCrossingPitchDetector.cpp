@@ -2,17 +2,37 @@
 
 namespace kitdsp {
 namespace pitch {
+ZeroCrossingPitchDetector::ZeroCrossingPitchDetector(float sampleRate) : mSampleRate(sampleRate) {
+    mSmoothedPeriod.SetHalfLife(0.001, mSampleRate);
+    Reset();
+}
 
-ZeroCrossingPitchDetector::ZeroCrossingPitchDetector() = default;
+void ZeroCrossingPitchDetector::Reset() {
+    mSmoothedPeriod.Reset();
+}
 
-void ZeroCrossingPitchDetector::Reset() {}
+void ZeroCrossingPitchDetector::Process(etl::span<float> input) {
+    for (float f : input) {
+        Process(f);
+    }
+}
 
-void ZeroCrossingPitchDetector::Process(etl::span<float> input) {}
+void ZeroCrossingPitchDetector::Process(float input) {
+    if (mLastSample < 0.0f && input >= 0.0f) {
+        mSmoothedPeriod.target = mNextPeriod;
+        mNextPeriod = 0;
+    }
 
-void ZeroCrossingPitchDetector::Process(float input) {}
+    mLastSample = input;
+    mNextPeriod++;
+    mSmoothedPeriod.Process();
+}
 
 float ZeroCrossingPitchDetector::GetFrequency() const {
-    return 0.0f;
+    return mSmoothedPeriod.current == 0.0f ? 0.0f : mSampleRate / mSmoothedPeriod.current;
+}
+float ZeroCrossingPitchDetector::GetPeriod() const {
+    return mSmoothedPeriod.current;
 }
 }  // namespace pitch
 }  // namespace kitdsp
