@@ -5,10 +5,16 @@ Use OO features, but prefer compile-time polymorphism in DSP code (This means lo
 Most classes should have this structure:
 
 ```cpp
-/** Process a single sample */
-float Process(float inputIfNeeded) { return output; }
-/** Reset signal-dependent state */
-void Reset();
+class MyProcessor {
+    /** don't pass parameters, just pass resources and pass in parameters (incl. sample rate if variable) later */
+    MyProcessor(allocatedMemory) { /* ... */; Reset(); }
+    /** handling the most common parameters in one big batch fits nicely with polling-based approaches (like hardware/audio-rate modular) */
+    void SetParams(a, b, c) { /* ... */ }
+    /** Process a single sample */
+    float Process(float inputIfNeeded) { return output; }
+    /** Reset signal-dependent state */
+    void Reset() { /* ... */ }
+}
 ```
 
 parameterization should be achieved with setter methods. If an effect needs a buffer it should accumulate it internally from Process() calls (+provide an overload when efficiency matters).

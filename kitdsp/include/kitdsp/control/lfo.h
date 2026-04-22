@@ -6,20 +6,21 @@ namespace kitdsp {
 namespace lfo {
 class Phasor {
    public:
-    void SetPeriod(float periodMs, float sampleRate) {
-        if (periodMs == 0.0f || sampleRate == 0.0f) {
-            // hard locked
-            mAdvance = 0.0f;
-        } else {
-            mAdvance = 1000.0f / (sampleRate * periodMs);
-        }
-    }
+    void SetPeriod(float periodMs, float sampleRate) { SetPeriodSamples(periodMs * sampleRate * 0.001f); }
     void SetFrequency(float frequencyHz, float sampleRate) {
         if (sampleRate == 0.0f) {
             // hard locked
             mAdvance = 0.0f;
         } else {
             mAdvance = frequencyHz / sampleRate;
+        }
+    }
+    void SetPeriodSamples(float periodSamples) {
+        if (periodSamples == 0.0f) {
+            // hard locked
+            mAdvance = 0.0f;
+        } else {
+            mAdvance = 1.0f / periodSamples;
         }
     }
     void HardSync() { mPhase = 0.0f; }
@@ -43,6 +44,11 @@ class Phasor {
     }
     float mPhase = 0.0f;
     float mAdvance = 0.0f;
+};
+
+class ImpulseTrain : public Phasor {
+   public:
+    bool Process() { return Advance(); }
 };
 
 class SineOscillator : public Phasor {
