@@ -10,6 +10,9 @@ namespace kitdsp {
 inline float sin2pif_lut(float x) {
     return lut[static_cast<int32_t>(x * 1024) % 1024];
 }
+inline float cos2pif_lut(float x) {
+    return sin2pif_lut(x + 0.25f);
+}
 }  // namespace kitdsp
 
 namespace {

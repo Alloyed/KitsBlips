@@ -7,9 +7,9 @@
 #include "kitdsp/math/vector.h"
 
 namespace kitdsp {
-class Harmonizer {
+class H910PitchShifter {
    public:
-    Harmonizer(etl::span<float> buffer, float sampleRate);
+    H910PitchShifter(etl::span<float> buffer, float sampleRate);
     void Reset();
 
     void SetParams(float pitchRatio, float grainSizeMs = 30.0f, float baseDelayMs = 0.0f, float feedback = 0.0f);

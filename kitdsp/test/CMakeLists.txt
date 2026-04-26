@@ -5,6 +5,7 @@ include(../../content.cmake)
 FetchContent_MakeAvailable(googletest AudioFile)
 
 add_executable(testdsp
+    trapfpe.cpp
     osc/dsfOscillator.test.cpp
     osc/oscillatorSweeps.test.cpp
     apps/snesEcho.test.cpp
@@ -15,6 +16,7 @@ add_executable(testdsp
     apps/frequencyShifter.test.cpp
     control/adsr.test.cpp
     pitch.test.cpp
+    math/stft.test.cpp
 )
 
 target_include_directories(testdsp PRIVATE

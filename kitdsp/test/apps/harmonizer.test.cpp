@@ -1,7 +1,8 @@
-#include "kitdsp/harmonizer.h"
 #include <AudioFile.h>
 #include <gtest/gtest.h>
 #include "kitdsp/math/util.h"
+#include "kitdsp/math/vector.h"
+#include "kitdsp/pitch/h910PitchShifter.h"
 #include "kitdsp/pitch/psolaPitchShifter.h"
 #include "util.h"
 
@@ -17,7 +18,7 @@ TEST(harmonizer, works) {
 
     constexpr size_t snesBufferSize = 41000;
     float snesBuffer[snesBufferSize];
-    Harmonizer harmonizer(etl::span<float>(snesBuffer, snesBufferSize), sampleRate);
+    H910PitchShifter harmonizer(etl::span<float>(snesBuffer, snesBufferSize), sampleRate);
 
     // test 1 default settings
     harmonizer.Reset();
@@ -46,13 +47,13 @@ TEST(psola, works) {
 
     constexpr size_t snesBufferSize = 41000;
     float snesBuffer[snesBufferSize];
-    pitch::PsolaPitchShifter harmonizer(etl::span<float>(snesBuffer, snesBufferSize));
+    pitch::PsolaPitchShifter shifter(etl::span<float>(snesBuffer, snesBufferSize));
 
-    harmonizer.Reset();
-    harmonizer.SetParams(0.25f, sampleRate);
+    shifter.Reset();
+    shifter.SetParams(0.25f, sampleRate);
     for (size_t i = 0; i < len; ++i) {
         float in = f.samples[0][i];
-        float_2 out = float_2(harmonizer.Process(in));
+        float_2 out = float_2(shifter.Process(in));
         ASSERT_GE(out.left, -1.0f);
         ASSERT_LE(out.left, 1.0f);
         ASSERT_GE(out.right, -1.0f);

@@ -8,12 +8,12 @@ namespace kitdsp {
  * A low-complexity, no-configuration "safety" limiter, derived from:
  * https://github.com/pichenettes/stmlib/blob/master/dsp/limiter.h
  */
-template <typename SAMPLE>
+template <typename TSample>
 class SafetyLimiter {
    public:
     void Reset() { mPeak = 0.5f; }
 
-    SAMPLE Process(SAMPLE in) {
+    TSample Process(TSample in) {
         // slew rectified input
         float difference = std::abs(in) - mPeak;
         float slope = difference > 0 ? kSlopeUp : kSlopeDown;
@@ -22,7 +22,7 @@ class SafetyLimiter {
         // reduce gain if peak is above 1.0
         float gain = mPeak <= 1.0f ? 1.0f : 1.0f / mPeak;
 
-        return clamp(in * gain * kPostGain, SAMPLE(-1), SAMPLE(1));
+        return clamp(in * gain * kPostGain, TSample(-1), TSample(1));
     }
 
    private:

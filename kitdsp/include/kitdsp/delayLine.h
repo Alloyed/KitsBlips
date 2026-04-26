@@ -3,6 +3,7 @@
 #include <etl/span.h>
 #include <cstdint>
 #include <cstring>
+#include "kitdsp/macros.h"
 #include "kitdsp/math/interpolate.h"
 
 namespace kitdsp {
@@ -28,6 +29,7 @@ class DelayLine {
     }
 
     inline const TSample Read(int32_t delayIndex) const {
+        assert(delayIndex < narrow_cast<int32_t>(Size()));
         // non-interpolating read
         size_t size = mBuffer.size();
         // TODO: if size is a power-of-two this could be a cheap & instead
@@ -46,17 +48,28 @@ class DelayLine {
         using namespace interpolate;
         switch (strategy) {
             case InterpolationStrategy::None: {
+                assert(idx >= 0 && idx < Size());
                 return Read(idx);
             };
             case InterpolationStrategy::Linear: {
+                assert(idx >= 0 && idx < narrow_cast<int32_t>(Size()) - 1);
                 return linear(Read(idx), Read(idx + 1), frac);
             };
             case InterpolationStrategy::Hermite: {
+                assert(idx >= 1 && idx < narrow_cast<int32_t>(Size()) - 2);
                 return hermite4pt3oX(Read(idx - 1), Read(idx), Read(idx + 1), Read(idx + 2), frac);
             };
             case InterpolationStrategy::Cubic: {
+                assert(idx >= 1 && idx < narrow_cast<int32_t>(Size()) - 2);
                 return cubic(Read(idx - 1), Read(idx), Read(idx + 1), Read(idx + 2), frac);
             };
+        }
+    }
+
+    void ReadChunk(size_t startSample, etl::span<TSample>& out) {
+        assert(startSample - static_cast<int32_t>(out.size()) + 1 >= 0);
+        for (size_t i = 0; i < out.size(); ++i) {
+            out[i] = Read(startSample - i);
         }
     }
 

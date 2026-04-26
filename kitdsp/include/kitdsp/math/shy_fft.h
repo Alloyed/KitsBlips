@@ -26,6 +26,9 @@
 //
 
 // ported from stmlib: https://github.com/pichenettes/stmlib/blob/master/fft/shy_fft.h
+// plus some comments to document the input/output formats
+// extra notes here:
+// https://forum.electro-smith.com/t/my-battle-with-shy-fft-h-and-what-it-taught-me-shyfft-quick-guide/8455/5
 // @KitDSP
 // -----------------------------------------------------------------------------
 //
@@ -678,6 +681,12 @@ struct InverseTransform<T, 2, Phasor> {
     }
 };
 
+/**
+ * ShyFFT public class.
+ * @param T the sample format
+ * @param size the max number of samples in the input/output buffers
+ * @param Phasor pick between LutPhasor (more memory, faster) and RotationPhaser
+ */
 template <typename T = float, size_t size = 16, template <typename, size_t> class Phasor = LutPhasor>
 class ShyFFT {
    public:
@@ -708,21 +717,44 @@ class ShyFFT {
         phasor_.Init();
     }
 
+    /**
+     * perform direct FFT.
+     * @param input the input buffer. should be `size` samples long. this is used destructively.
+     * @param output the output buffer. should be `size` samples long, returns the real components (from [0, size*0.5),
+     * then the imaginary components (from [size*0.5, size), non-interleaved.
+     */
     void Direct(T* input, T* output) {
         DirectTransform<T, num_passes, Phasor<T, num_passes> > d;
         d(input, output, num_passes <= 8 ? &bit_rev_[0] : bit_rev_256_lut_, &phasor_);
     }
 
+    /**
+     * perform inverse FFT.
+     * @param input the input buffer. should be the real values, then the imaginary. this is used destructively.
+     * @param output the output buffer. should be `size` samples long, this is an audio signal.
+     */
     void Inverse(T* input, T* output) {
         InverseTransform<T, num_passes, Phasor<T, num_passes> > i;
         i(input, output, num_passes <= 8 ? &bit_rev_[0] : bit_rev_256_lut_, &phasor_);
     }
 
+    /**
+     * perform direct FFT.
+     * @param input the input buffer. should be `n` samples long. this is used destructively.
+     * @param output the output buffer. should be `n` samples long, non-interleaved.
+     * @param n the size of the buffer.
+     */
     void Direct(T* input, T* output, size_t n) {
         DirectTransform<T, num_passes, Phasor<T, num_passes> > d;
         d(input, output, bit_rev_256_lut_, &phasor_, n);
     }
 
+    /**
+     * perform inverse FFT.
+     * @param input the input buffer. should be `n` samples long, non-interleaved. this is used destructively.
+     * @param output the output buffer. should be `n` samples long.
+     * @param n the size of the buffer.
+     */
     void Inverse(T* input, T* output, size_t n) {
         InverseTransform<T, num_passes, Phasor<T, num_passes> > i;
         i(input, output, bit_rev_256_lut_, &phasor_, n);

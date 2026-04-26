@@ -34,9 +34,9 @@ namespace pitch {
  */
 class PsolaPitchShifter {
     struct Grain {
-        float sizeSamples;
-        float samplesPlayed;
-        float speed;
+        float sizeSamples = 0.0f;
+        float samplesPlayed = 0.0f;
+        float speed = 0.0f;
         explicit Grain(DelayLine<float>& buf) : mBuf(buf) {}
         void Set(float start, float size, float speed) {
             this->pos = start;
@@ -49,6 +49,9 @@ class PsolaPitchShifter {
             samplesPlayed += speed;
         }
         float Read() {
+            if (sizeSamples == 0.0f) {
+                return 0.0f;
+            }
             float progress = kitdsp::clamp(samplesPlayed / sizeSamples, 0.0f, 1.0f);
             using namespace kitdsp::interpolate;
             return mBuf.Read<InterpolationStrategy::Linear>(pos) * hanningWindow(progress);
@@ -66,6 +69,7 @@ class PsolaPitchShifter {
         mSpeed = pitchMultiplier;
         mPeriod = 0.05f * sampleRate;
         float overlapRatio = 1.0f - 0.2f;  // TODO not this
+        assert(pitchMultiplier != 0);
         mGrainPicker.SetPeriodSamples(overlapRatio * (mPeriod / pitchMultiplier));
     }
     float Process(float input) {

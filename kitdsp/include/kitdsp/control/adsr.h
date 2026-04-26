@@ -37,7 +37,8 @@ class ApproachAdsr {
         // 0 -> 1
         mAttackH = Approach::CalculateHalfLifeFromSettleTime(attackMs, sampleRate, cSettlePrecision, 1.0f);
         // 1 -> sustain
-        mDecayH = Approach::CalculateHalfLifeFromSettleTime(decayMs, sampleRate, cSettlePrecision, 1.0f - sustainValue);
+        mDecayH = Approach::CalculateHalfLifeFromSettleTime(decayMs, sampleRate, cSettlePrecision,
+                                                            kitdsp::max(0.001f, 1.0f - sustainValue));
         mSustain = sustainValue;
         // sustain -> 0
         // sustain needs to at least be a little bit above 0 to avoid infinities
