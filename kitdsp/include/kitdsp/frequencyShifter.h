@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kitdsp/hilbertTransform.h"
+#include "kitdsp/math/hilbertTransform.h"
 #include "kitdsp/osc/oscillatorUtil.h"
 
 namespace kitdsp {

@@ -8,14 +8,6 @@ namespace {
 float hammingWindow(float t) {
     return 0.54f - (0.46f * kitdsp::cos2pif_lut(t));
 }
-
-float hannWindow(float t) {
-    return 0.5f * (1.0f - kitdsp::cos2pif_lut(t));
-}
-
-float rectangleWindow(float t) {
-    return 1;
-}
 }  // namespace
 
 namespace kitdsp {
