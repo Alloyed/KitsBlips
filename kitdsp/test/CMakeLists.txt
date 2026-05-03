@@ -8,12 +8,13 @@ add_executable(testdsp
     trapfpe.cpp
     osc/dsfOscillator.test.cpp
     osc/oscillatorSweeps.test.cpp
-    apps/snesEcho.test.cpp
-    apps/snesBitcrush.test.cpp
-    apps/psxReverb.test.cpp
     apps/chorus.test.cpp
-    apps/harmonizer.test.cpp
+    apps/disperser.test.cpp
     apps/frequencyShifter.test.cpp
+    apps/harmonizer.test.cpp
+    apps/psxReverb.test.cpp
+    apps/snesBitcrush.test.cpp
+    apps/snesEcho.test.cpp
     control/adsr.test.cpp
     pitch.test.cpp
     math/stft.test.cpp

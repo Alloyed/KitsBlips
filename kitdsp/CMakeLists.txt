@@ -12,6 +12,7 @@ add_library(KitDSP STATIC
     src/snesEcho.cpp
     src/snesBitcrush.cpp
     src/dsfOscillator.cpp
+    src/disperser.cpp
     src/chorus.cpp
     src/frequencyShifter.cpp
     src/pitch/h910PitchShifter.cpp

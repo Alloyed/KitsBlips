@@ -5,7 +5,7 @@
 #include <clapeze/features/params/parameterTypes.h>
 #include <clapeze/features/state/tomlStateFeature.h>
 #include <clapeze/processor/baseProcessor.h>
-#include <kitdsp/harmonizer.h>
+#include <kitdsp/apps/harmonizer.h>
 #include <kitdsp/math/units.h>
 #include <kitdsp/math/util.h>
 
@@ -107,9 +107,9 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
 
         mBufLen = static_cast<size_t>(sampleRatef * maxSizeSeconds);
         mBufLeft.reset(new float[mBufLen]);
-        mLeft = std::make_unique<kitdsp::Harmonizer>(etl::span(mBufLeft.get(), mBufLen), sampleRatef);
+        mLeft = std::make_unique<kitdsp::H910PitchShifter>(etl::span(mBufLeft.get(), mBufLen), sampleRatef);
         mBufRight.reset(new float[mBufLen]);
-        mRight = std::make_unique<kitdsp::Harmonizer>(etl::span(mBufRight.get(), mBufLen), sampleRatef);
+        mRight = std::make_unique<kitdsp::H910PitchShifter>(etl::span(mBufRight.get(), mBufLen), sampleRatef);
     }
 
    private:
@@ -117,8 +117,8 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
     std::unique_ptr<float[]> mBufLeft;
     std::unique_ptr<float[]> mBufRight;
     size_t mBufLen;
-    std::unique_ptr<kitdsp::Harmonizer> mLeft;
-    std::unique_ptr<kitdsp::Harmonizer> mRight;
+    std::unique_ptr<kitdsp::H910PitchShifter> mLeft;
+    std::unique_ptr<kitdsp::H910PitchShifter> mRight;
 };
 
 #if KITSBLIPS_ENABLE_GUI

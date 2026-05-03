@@ -1,4 +1,5 @@
 #include <clapeze/effectPlugin.h>
+#include <clapeze/entryPoint.h>
 #include <clapeze/features/assetsFeature.h>
 #include <clapeze/features/params/enumParametersFeature.h>
 #include <clapeze/features/params/parameterTypes.h>

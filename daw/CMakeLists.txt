@@ -55,6 +55,7 @@ target_sources(KitsBlips PRIVATE
     src/distort/distort.cpp
     src/freqshift/freqshift.cpp
     src/harmonizer/harmonizer.cpp
+    src/disperser/disperser.cpp
 )
 
 if(WIN32)
