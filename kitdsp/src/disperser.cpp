@@ -11,7 +11,7 @@ void Disperser::Reset() {
     }
 }
 
-void Disperser::SetParams(float delay, float feedback, size_t numFilters) {
+void Disperser::SetParams(float frequencyHz, float sampleRate, float feedback, size_t numFilters) {
     /**
      * the phase response (phi(w), where w is the frequency we're analyzing) of
      * this filter is
@@ -19,13 +19,20 @@ void Disperser::SetParams(float delay, float feedback, size_t numFilters) {
      *     atan((g^2-1) * sin(delay w), (g^2+1) * cos(delay w) - 2g)
      *
      */
-    mDelay = kitdsp::clamp(delay, 1.0f, mDelaySize - 1.0f);
+
+    mDelay = kitdsp::clamp(sampleRate / frequencyHz, 1.0f, narrow_cast<float>(mDelaySize) - 3.0f);
     numFilters = kitdsp::clamp<size_t>(numFilters, 0, kMaxFilters);
 
     float g = kitdsp::clamp(feedback, -0.95f, 0.95f);
-    mC1 = g;
-    mC3 = g != 0.0f ? (1.0f / g) : 0;
-    mC2 = mC3 - g;
+    if (g == 0) {
+        mC1 = 0.0f;
+        mC2 = 0.0f;
+        mC3 = -1.0f;
+    } else {
+        mC1 = g;
+        mC3 = 1.0f / g;
+        mC2 = mC3 - g;
+    }
     if (numFilters != mDelayLines.size()) {
         for (int32_t i = narrow_cast<int32_t>(mDelayLines.size()) - 1; i >= narrow_cast<int32_t>(numFilters); --i) {
             mDelayLines.pop_back();
@@ -33,7 +40,7 @@ void Disperser::SetParams(float delay, float feedback, size_t numFilters) {
         for (size_t i = mDelayLines.size(); i < numFilters; ++i) {
             mDelayLines.emplace_back(etl::span<float>({&mDelayBuffer[i * mDelaySize], mDelaySize}));
             mDelayLines.back().Reset();
-            // TODO: can we copy the state of the last known good filter instead of resetting?
+            // TODO: can we copy the state of the previous filter instead of resetting?
         }
     }
 }
@@ -47,5 +54,16 @@ float Disperser::Process(float startingInput) {
         out = (mC2 * newMid) - (mC3 * in);
     }
     return out;
+}
+
+void Disperser::ProcessInPlace(etl::span<float> startingInput) {
+    for (auto& out : startingInput) {
+        for (auto& mid : mDelayLines) {
+            float in = out;
+            float newMid = in + mC1 * mid.Read<interpolate::InterpolationStrategy::Linear>(mDelay);
+            mid.Write(newMid);
+            out = (mC2 * newMid) - (mC3 * in);
+        }
+    }
 }
 }  // namespace kitdsp

@@ -22,14 +22,12 @@ TEST(disperser, works) {
     // test 1 default settings
     effect.Reset();
     for (size_t i = 0; i < len; ++i) {
-        float in = f.samples[0][i] * 0.6;
+        float in = f.samples[0][i] * 0.5;
         float t = (float)i / (float)len;
-        effect.SetParams(12, kitdsp::lerp(0.0f, 1.0f, t), 200);
+        effect.SetParams(kitdsp::lerp(400.0f, 800.0f, t), sampleRate, kitdsp::lerp(8.0f, 1.0f, t), 32);
         float_2 out = float_2(effect.Process(in));
-        // ASSERT_GE(out.left, -1.0f);
-        // ASSERT_LE(out.left, 1.0f);
-        // ASSERT_GE(out.right, -1.0f);
-        // ASSERT_LE(out.right, 1.0f);
+        // out.left = kitdsp::clamp(out.left, -1.0f, 1.0f);
+        // out.right = kitdsp::clamp(out.right, -1.0f, 1.0f);
         f.samples[0][i] = fade(in, out.left, 1.0f);
         f.samples[1][i] = fade(in, out.right, 1.0f);
     }
