@@ -1,7 +1,9 @@
 #pragma once
 
+#include <etl/span.h>
 #include "kitdsp/math/util.h"
 #include "kitdsp/math/vector.h"
+
 namespace kitdsp {
 /**
  * A crossover filter splits a signal into low and high frequencies. When adding them back together, the result is
@@ -38,24 +40,24 @@ class CrossoverFilter {
         double sq_tmp2 = kitdsp::kSqrtTwo * cowc * cok3;
         double a_tmp = 4.0 * cowc2 * cok2 + 2.0 * sq_tmp1 + cok4 + 2.0 * sq_tmp2 + cowc4;
 
-        bCoef.a = (4.0 * (cowc4 + sq_tmp1 - cok4 - sq_tmp2)) / a_tmp;
-        bCoef.b = (6.0 * cowc4 - 8.0 * cowc2 * cok2 + 6.0 * cok4) / a_tmp;
-        bCoef.c = (4.0 * (cowc4 - sq_tmp1 + sq_tmp2 - cok4)) / a_tmp;
-        bCoef.d = (cok4 - 2.0 * sq_tmp1 + cowc4 - 2.0 * sq_tmp2 + 4.0 * cowc2 * cok2) / a_tmp;
+        bCoef.d1 = (4.0 * (cowc4 + sq_tmp1 - cok4 - sq_tmp2)) / a_tmp;
+        bCoef.d2 = (6.0 * cowc4 - 8.0 * cowc2 * cok2 + 6.0 * cok4) / a_tmp;
+        bCoef.d3 = (4.0 * (cowc4 - sq_tmp1 + sq_tmp2 - cok4)) / a_tmp;
+        bCoef.d4 = (cok4 - 2.0 * sq_tmp1 + cowc4 - 2.0 * sq_tmp2 + 4.0 * cowc2 * cok2) / a_tmp;
 
         // lowpass
         lpCoef0 = cowc4 / a_tmp;
-        lpCoef.a = 4.0 * cowc4 / a_tmp;
-        lpCoef.b = 6.0 * cowc4 / a_tmp;
-        lpCoef.c = lpCoef.a;
-        lpCoef.d = lpCoef0;
+        lpCoef.d1 = 4.0 * cowc4 / a_tmp;
+        lpCoef.d2 = 6.0 * cowc4 / a_tmp;
+        lpCoef.d3 = lpCoef.d1;
+        lpCoef.d4 = lpCoef0;
 
         // highpass
         hpCoef0 = cok4 / a_tmp;
-        hpCoef.a = -4.0 * cok4 / a_tmp;
-        hpCoef.b = 6.0 * cok4 / a_tmp;
-        hpCoef.c = hpCoef.a;
-        hpCoef.d = hpCoef0;
+        hpCoef.d1 = -4.0 * cok4 / a_tmp;
+        hpCoef.d2 = 6.0 * cok4 / a_tmp;
+        hpCoef.d3 = hpCoef.d1;
+        hpCoef.d4 = hpCoef0;
     }
     inline void Reset() {
         x = {};
@@ -78,10 +80,33 @@ class CrossoverFilter {
         Shift(x, tempx);
     }
 
+    inline void ProcessBlock(etl::span<float> in, etl::span<float> hp, etl::span<float> lp) {
+        // slightly weird: we want to increment x for each loop, but restart it when we move onto the next one. the
+        // final state should be the last 4 samples as usual
+        double_4 xinit = x;
+
+        // High pass
+        for (size_t t = 0; t < in.size(); ++t) {
+            double tempy = hpCoef0 * in[t] + ((hpCoef * x) - (bCoef * hpy)).sum();
+            hp[t] = narrow_cast<float>(tempy);
+            Shift(hpy, tempy);
+            Shift(x, in[t]);
+        }
+
+        // Low pass
+        x = xinit;
+        for (size_t t = 0; t < in.size(); ++t) {
+            double tempy = lpCoef0 * in[t] + ((lpCoef * x) - (bCoef * hpy)).sum();
+            lp[t] = narrow_cast<float>(tempy);
+            Shift(lpy, tempy);
+            Shift(x, in[t]);
+        }
+    }
+
    private:
     double lpCoef0;
-    double hpCoef0;
     double_4 lpCoef;
+    double hpCoef0;
     double_4 hpCoef;
     double_4 bCoef;
 
@@ -90,10 +115,10 @@ class CrossoverFilter {
     double_4 hpy;
 
     static void Shift(double_4& m, double m0) {
-        m.d = m.c;
-        m.c = m.b;
-        m.b = m.a;
-        m.a = m0;
+        m.d4 = m.d3;
+        m.d3 = m.d2;
+        m.d2 = m.d1;
+        m.d1 = m0;
     }
 
     float mFrequency;

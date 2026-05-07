@@ -1,8 +1,10 @@
 #include "kitdsp/harmonizer.h"
+#include "kitdsp/filters/biquad.h"
 
 namespace kitdsp {
 Harmonizer::Harmonizer(etl::span<float> buffer, float sampleRate) : mDelayLine(buffer), mSampleRate(sampleRate) {
-    // from the H910 manual, which doesn't expose grain size but mentions that in pitch mode that the delay is variable around 30ms
+    // from the H910 manual, which doesn't expose grain size but mentions that in pitch mode that the delay is variable
+    // around 30ms
     SetParams(2.0f, 30.0f, 0.0f, 0.0f);
 }
 void Harmonizer::Reset() {}
@@ -29,8 +31,8 @@ float Harmonizer::Process(float in) {
 
     // using a triangle wave here to mimic original H910 harmonizer
     float tri = fabsf(phase1 - 0.5f) * 2.0f;
-    mFilterOut.SetFrequency(12000.0f, mSampleRate);
-    mFilterOut.SetQ(1.0f);
+    mFilterOut.SetFrequency<rbj::BiquadFilterMode::LowPass>(12000.0f, mSampleRate);
+    mFilterOut.SetQ<rbj::BiquadFilterMode::LowPass>(1.0f);
 
     float out = clamp<float>(mFilterOut.Process(fade(grain1, grain2, tri)), -1.0f, 1.0f);
 

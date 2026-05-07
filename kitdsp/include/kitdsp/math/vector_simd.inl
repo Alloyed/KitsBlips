@@ -27,22 +27,22 @@ struct alignas(16) Vector<float, 2> {
 #endif
         union {
         __m128 simd;
-
         float data[4];
-
         struct {
             float left;
             float right;
         };
-
         struct {
             float l;
             float r;
         };
-
         struct {
             float x;
             float y;
+        };
+        struct {
+            float d1;
+            float d2;
         };
     };
 #ifdef _MSC_VER
@@ -56,6 +56,12 @@ struct alignas(16) Vector<float, 2> {
     explicit Vector(float v) : simd(_mm_set1_ps(v)) {}
 
     explicit Vector(__m128 v) : simd(v) {}
+
+    float sum() {
+        __m128 shuf = _mm_movehdup_ps(simd);  // broadcast elements 3,1 to 2,0
+        __m128 sums = _mm_add_ps(simd, shuf);
+        return _mm_cvtss_f32(sums);
+    }
 
     Vector operator+(const Vector& other) const { return Vector(_mm_add_ps(simd, other.simd)); }
 
@@ -92,16 +98,13 @@ struct alignas(16) Vector<float, 4> {
 #endif
         union {
         __m128 simd;
-
         float data[4];
-
         struct {
-            float a;
-            float b;
-            float c;
-            float d;
+            float d1;
+            float d2;
+            float d3;
+            float d4;
         };
-
         struct {
             float x;
             float y;
@@ -120,6 +123,14 @@ struct alignas(16) Vector<float, 4> {
     explicit Vector(float v) : simd(_mm_set1_ps(v)) {}
 
     explicit Vector(__m128 v) : simd(v) {}
+
+    float sum() {
+        __m128 shuf = _mm_movehdup_ps(simd);  // broadcast elements 3,1 to 2,0
+        __m128 sums = _mm_add_ps(simd, shuf);
+        shuf = _mm_movehl_ps(shuf, sums);  // high half -> low half
+        sums = _mm_add_ss(sums, shuf);
+        return _mm_cvtss_f32(sums);
+    }
 
     Vector operator+(const Vector& other) const { return Vector(_mm_add_ps(simd, other.simd)); }
 

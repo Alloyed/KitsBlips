@@ -26,6 +26,6 @@ class H910PitchShifter {
     float mBaseDelaySamples;
     bool mSlowing;
     float mFeedback;
-    rbj::BiquadFilter<rbj::BiquadFilterMode::LowPass> mFilterOut;
+    rbj::BiquadFilter mFilterOut;
 };
 }  // namespace kitdsp

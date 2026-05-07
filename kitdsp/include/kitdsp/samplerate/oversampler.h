@@ -19,8 +19,8 @@ class OversamplerGeneric {
         if (sourceRate != mSampleRate) {
             mSampleRate = sourceRate;
             // sticking to a fixed filter of 20khz
-            mFilterUp.SetFrequency(20000.0f, sourceRate * FACTOR);
-            mFilterDown.SetFrequency(20000.0f, sourceRate * FACTOR);
+            mFilterUp.SetFrequency<rbj::BiquadFilterMode::LowPass>(20000.0f, sourceRate * FACTOR);
+            mFilterDown.SetFrequency<rbj::BiquadFilterMode::LowPass>(20000.0f, sourceRate * FACTOR);
         }
     }
 
@@ -69,8 +69,8 @@ class OversamplerGeneric {
 
    private:
     float mSampleRate{};
-    rbj::BiquadFilter<rbj::BiquadFilterMode::LowPass> mFilterUp;
-    rbj::BiquadFilter<rbj::BiquadFilterMode::LowPass> mFilterDown;
+    rbj::BiquadFilter mFilterUp;
+    rbj::BiquadFilter mFilterDown;
 };
 
 /**

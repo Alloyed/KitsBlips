@@ -38,6 +38,10 @@ struct Vector<TYPE, 2> {
             TYPE x;
             TYPE y;
         };
+        struct {
+            TYPE d1;
+            TYPE d2;
+        };
     };
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -91,27 +95,27 @@ struct Vector<TYPE, 4> {
         union {
         TYPE data[4];
         struct {
-            TYPE a;
-            TYPE b;
-            TYPE c;
-            TYPE d;
-        };
-        struct {
             TYPE x;
             TYPE y;
             TYPE z;
             TYPE w;
+        };
+        struct {
+            TYPE d1;
+            TYPE d2;
+            TYPE d3;
+            TYPE d4;
         };
     };
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
 
-    Vector() : a(0), b(0), c(0), d(0) {}
+    Vector() : x(0), y(0), z(0), w(0) {}
 
-    Vector(type a, type b, type c, type d) : a(a), b(b), c(c), d(d) {}
+    Vector(type x, type y, type z, type w) : x(x), y(y), z(z), w(w) {}
 
-    explicit Vector(type in) : a(in), b(in), c(in), d(in) {}
+    explicit Vector(type in) : x(in), y(in), z(in), w(in) {}
 
     type sum() { return data[0] + data[1] + data[2] + data[3]; }
 

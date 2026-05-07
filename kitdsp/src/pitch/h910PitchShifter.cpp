@@ -1,4 +1,5 @@
 #include "kitdsp/pitch/h910PitchShifter.h"
+#include "kitdsp/filters/biquad.h"
 
 namespace kitdsp {
 H910PitchShifter::H910PitchShifter(etl::span<float> buffer, float sampleRate)
@@ -31,8 +32,8 @@ float H910PitchShifter::Process(float in) {
 
     // using a triangle wave here to mimic original H910 harmonizer
     float tri = fabsf(phase1 - 0.5f) * 2.0f;
-    mFilterOut.SetFrequency(12000.0f, mSampleRate);
-    mFilterOut.SetQ(1.0f);
+    mFilterOut.SetFrequency<rbj::BiquadFilterMode::LowPass>(12000.0f, mSampleRate);
+    mFilterOut.SetQ<rbj::BiquadFilterMode::LowPass>(1.0f);
 
     float out = clamp<float>(mFilterOut.Process(fade(grain1, grain2, tri)), -1.0f, 1.0f);
 

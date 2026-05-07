@@ -20,12 +20,11 @@ enum class BiquadFilterMode {
     HighShelf,
 };
 
-template <BiquadFilterMode MODE>
 class BiquadFilter {
    public:
     BiquadFilter() {
-        SetFrequency(1200.0f, 44100.0f);
-        SetShelf(0.5f, -6.0f);
+        SetFrequency<BiquadFilterMode::LowPass>(1200.0f, 44100.0f);
+        SetShelf<BiquadFilterMode::LowPass>(0.5f, -6.0f);
     }
     inline void Reset() {
         x[0] = {};
@@ -38,17 +37,19 @@ class BiquadFilter {
      * @param frequencyHz in hertz
      * @param sampleRate should be the rate Process() is called at
      */
+    template <BiquadFilterMode MODE>
     inline void SetFrequency(float frequency, float sampleRate) {
         float w0 = 2 * kPi * frequency / sampleRate;
         cos_w0 = cosf(w0);
         sin_w0 = sinf(w0);
-        CalculateCoefficients();
+        CalculateCoefficients<MODE>();
     }
 
     /* Set Q Factor of the filter. */
+    template <BiquadFilterMode MODE>
     inline void SetQ(float Q_) {
         Q = Q_;
-        CalculateCoefficients();
+        CalculateCoefficients<MODE>();
     }
 
     /**
@@ -56,12 +57,13 @@ class BiquadFilter {
      * @param Q
      * @param dbGain
      */
+    template <BiquadFilterMode MODE>
     inline void SetShelf(float Q_, float dbGain) {
         Q = Q_;
         A = std::sqrt(std::pow(10.0f, dbGain / 20.0f));
         A_p_1 = A + 1.0f;
         A_m_1 = A - 1.0f;
-        CalculateCoefficients();
+        CalculateCoefficients<MODE>();
     }
 
     inline float Process(float in) {
@@ -82,6 +84,7 @@ class BiquadFilter {
     }
 
    private:
+    template <BiquadFilterMode MODE>
     void CalculateCoefficients();
 
     // inputs
@@ -105,7 +108,7 @@ class BiquadFilter {
 };
 
 template <>
-inline void BiquadFilter<BiquadFilterMode::LowPass>::CalculateCoefficients() {
+inline void BiquadFilter::CalculateCoefficients<BiquadFilterMode::LowPass>() {
     // H(s) = 1 / (s^2 + s/Q + 1)
     float alpha = sin_w0 / (2.0f * Q);
     float a0 = 1.0f + alpha;
@@ -118,7 +121,7 @@ inline void BiquadFilter<BiquadFilterMode::LowPass>::CalculateCoefficients() {
 }
 
 template <>
-inline void BiquadFilter<BiquadFilterMode::Highpass>::CalculateCoefficients() {
+inline void BiquadFilter::CalculateCoefficients<BiquadFilterMode::Highpass>() {
     // H(s) = s^2 / (s^2 + s/Q + 1)
     float alpha = sin_w0 / (2.0f * Q);
     float a0 = 1.0f + alpha;
@@ -130,7 +133,7 @@ inline void BiquadFilter<BiquadFilterMode::Highpass>::CalculateCoefficients() {
     a2 = (1.0f - alpha) / a0;
 }
 template <>
-inline void BiquadFilter<BiquadFilterMode::BandPass>::CalculateCoefficients() {
+inline void BiquadFilter::CalculateCoefficients<BiquadFilterMode::BandPass>() {
     // H(s) = s / (s^2 + s/Q + 1)  (constant skirt gain, peak gain = Q)
     float alpha = sin_w0 / (2.0f * Q);
     float a0 = 1 + alpha;
@@ -142,7 +145,7 @@ inline void BiquadFilter<BiquadFilterMode::BandPass>::CalculateCoefficients() {
     a2 = (1.0f - alpha) / a0;
 }
 template <>
-inline void BiquadFilter<BiquadFilterMode::Notch>::CalculateCoefficients() {
+inline void BiquadFilter::CalculateCoefficients<BiquadFilterMode::Notch>() {
     // H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
     float alpha = sin_w0 / (2.0f * Q);
     float a0 = 1.0f + alpha;
@@ -154,7 +157,7 @@ inline void BiquadFilter<BiquadFilterMode::Notch>::CalculateCoefficients() {
     a2 = (1.0f - alpha) / a0;
 }
 template <>
-inline void BiquadFilter<BiquadFilterMode::AllPass>::CalculateCoefficients() {
+inline void BiquadFilter::CalculateCoefficients<BiquadFilterMode::AllPass>() {
     // H(s) = (s^2 - s/Q + 1) / (s^2 + s/Q + 1)
     float alpha = sin_w0 / (2.0f * Q);
     float a0 = 1 + alpha;
@@ -166,7 +169,7 @@ inline void BiquadFilter<BiquadFilterMode::AllPass>::CalculateCoefficients() {
     a2 = b0;
 }
 template <>
-inline void BiquadFilter<BiquadFilterMode::LowShelf>::CalculateCoefficients() {
+inline void BiquadFilter::CalculateCoefficients<BiquadFilterMode::LowShelf>() {
     // H(s) = A * (s^2 + (sqrt(A)/Q)*s + A)/(A*s^2 + (sqrt(A)/Q)*s + 1)
     float alpha = sin_w0 / (2.0f * Q);
     float twoSqrtAAlpha = 2.0f * std::sqrt(A) * alpha;
@@ -179,7 +182,7 @@ inline void BiquadFilter<BiquadFilterMode::LowShelf>::CalculateCoefficients() {
     a2 = (A_p_1 + A_m_1 * cos_w0 - twoSqrtAAlpha) / a0;
 }
 template <>
-inline void BiquadFilter<BiquadFilterMode::HighShelf>::CalculateCoefficients() {
+inline void BiquadFilter::CalculateCoefficients<BiquadFilterMode::HighShelf>() {
     // H(s) = A * (A*s^2 + (sqrt(A)/Q)*s + 1)/(s^2 + (sqrt(A)/Q)*s + A)
     float alpha = sin_w0 / (2.0f * Q);
     float twoSqrtAAlpha = 2.0f * std::sqrt(A) * alpha;
