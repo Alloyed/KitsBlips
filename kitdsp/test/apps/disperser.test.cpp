@@ -15,21 +15,21 @@ TEST(disperser, works) {
     float sampleRate = f.getSampleRate();
     size_t len = f.getNumSamplesPerChannel();
 
-    constexpr size_t snesBufferSize = 255 * 300;
+    constexpr size_t snesBufferSize = Disperser::GetMaxFilters() * 300;
     float snesBuffer[snesBufferSize];
     Disperser effect({snesBuffer, snesBufferSize});
 
     // test 1 default settings
     effect.Reset();
     for (size_t i = 0; i < len; ++i) {
-        float in = f.samples[0][i] * 0.5;
+        float_2 in = {f.samples[0][i] * 0.5f, f.samples[1][i] * 0.5f};
         float t = (float)i / (float)len;
         effect.SetParams(kitdsp::lerp(400.0f, 800.0f, t), sampleRate, kitdsp::lerp(8.0f, 1.0f, t), 32);
-        float_2 out = float_2(effect.Process(in));
+        float out = effect.Process(in.left);
         // out.left = kitdsp::clamp(out.left, -1.0f, 1.0f);
         // out.right = kitdsp::clamp(out.right, -1.0f, 1.0f);
-        f.samples[0][i] = fade(in, out.left, 1.0f);
-        f.samples[1][i] = fade(in, out.right, 1.0f);
+        f.samples[0][i] = fade(in.left, out, 1.0f);
+        f.samples[1][i] = fade(in.right, out, 1.0f);
     }
 
     test::Snapshot(f);

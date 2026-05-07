@@ -38,31 +38,31 @@ void Disperser::SetParams(float frequencyHz, float sampleRate, float feedback, s
             mDelayLines.pop_back();
         }
         for (size_t i = mDelayLines.size(); i < numFilters; ++i) {
-            mDelayLines.emplace_back(etl::span<float>({&mDelayBuffer[i * mDelaySize], mDelaySize}));
+            mDelayLines.emplace_back(etl::span<Sample>({&mDelayBuffer[i * mDelaySize], mDelaySize}));
             mDelayLines.back().Reset();
             // TODO: can we copy the state of the previous filter instead of resetting?
         }
     }
 }
 
-float Disperser::Process(float startingInput) {
-    float out = startingInput;
+Disperser::Sample Disperser::Process(Sample startingInput) {
+    Sample out = startingInput;
     for (auto& mid : mDelayLines) {
-        float in = out;
-        float newMid = in + mC1 * mid.Read<interpolate::InterpolationStrategy::Linear>(mDelay);
+        Sample in = out;
+        Sample newMid = in + mid.Read<interpolate::InterpolationStrategy::Linear>(mDelay) * mC1;
         mid.Write(newMid);
-        out = (mC2 * newMid) - (mC3 * in);
+        out = (newMid * mC2) - (in * mC3);
     }
     return out;
 }
 
-void Disperser::ProcessInPlace(etl::span<float> startingInput) {
+void Disperser::ProcessInPlace(etl::span<Sample> startingInput) {
     for (auto& out : startingInput) {
         for (auto& mid : mDelayLines) {
-            float in = out;
-            float newMid = in + mC1 * mid.Read<interpolate::InterpolationStrategy::Linear>(mDelay);
+            Sample in = out;
+            Sample newMid = in + mid.Read<interpolate::InterpolationStrategy::Linear>(mDelay) * mC1;
             mid.Write(newMid);
-            out = (mC2 * newMid) - (mC3 * in);
+            out = (newMid * mC2) - (in * mC3);
         }
     }
 }
