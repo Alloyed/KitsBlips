@@ -10,7 +10,8 @@ namespace clapeze {
 
 class StereoAudioPortsFeature : public BaseFeature {
    public:
-    StereoAudioPortsFeature(uint32_t numInputs, uint32_t numOutputs) : mNumInputs(numInputs), mNumOutputs(numOutputs) {}
+    StereoAudioPortsFeature(uint32_t numInputs, uint32_t numOutputs, bool inPlace)
+        : mNumInputs(numInputs), mNumOutputs(numOutputs), mInPlace(inPlace) {}
     static constexpr auto NAME = CLAP_EXT_AUDIO_PORTS;
     const char* Name() const override { return NAME; }
     void Configure(BasePlugin& self) override {
@@ -24,6 +25,8 @@ class StereoAudioPortsFeature : public BaseFeature {
    private:
     uint32_t mNumInputs;
     uint32_t mNumOutputs;
+    bool mInPlace;
+
     static uint32_t _count([[maybe_unused]] const clap_plugin_t* plugin, bool isInput) {
         StereoAudioPortsFeature& self = StereoAudioPortsFeature::GetFromPluginObject<StereoAudioPortsFeature>(plugin);
         if (isInput) {
@@ -42,18 +45,26 @@ class StereoAudioPortsFeature : public BaseFeature {
             // input
             info->id = index;
             info->channel_count = 2;
-            info->flags = CLAP_AUDIO_PORT_IS_MAIN;
+            info->flags = index == 0 ? CLAP_AUDIO_PORT_IS_MAIN : 0;
             info->port_type = CLAP_PORT_STEREO;
-            info->in_place_pair = CLAP_INVALID_ID;
+            if (self.mInPlace && index < self.mNumOutputs) {
+                info->in_place_pair = index;
+            } else {
+                info->in_place_pair = CLAP_INVALID_ID;
+            }
             snprintf(info->name, sizeof(info->name), "%s %u", "Audio Input", index);
             return true;
         } else if (index < self.mNumOutputs) {
             // output
             info->id = index;
             info->channel_count = 2;
-            info->flags = CLAP_AUDIO_PORT_IS_MAIN;
+            info->flags = index == 0 ? CLAP_AUDIO_PORT_IS_MAIN : 0;
             info->port_type = CLAP_PORT_STEREO;
-            info->in_place_pair = CLAP_INVALID_ID;  // TODO: might be nice to support for effects
+            if (self.mInPlace && index < self.mNumInputs) {
+                info->in_place_pair = index;
+            } else {
+                info->in_place_pair = CLAP_INVALID_ID;
+            }
             snprintf(info->name, sizeof(info->name), "%s %u", "Audio Output", index);
             return true;
         }

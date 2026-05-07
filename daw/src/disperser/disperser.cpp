@@ -19,18 +19,14 @@
 #endif
 
 namespace {
-enum class Params : clap_id { Mix, Delay, Feedback, Iterations, Count };
+enum class Params : clap_id { Frequency, Feedback, Iterations, Count };
 using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 }  // namespace
 
 namespace clapeze::params {
 template <>
-struct ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Mix", "Mix", 1.0f) {}
-};
-template <>
-struct ParamTraits<Params, Params::Delay> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("Delay", "Delay", 1.0f, 200.0f, 6.0f) {}
+struct ParamTraits<Params, Params::Frequency> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("Frequency", "Frequency", 0.100f, 15000.0f, 440.0f) {}
 };
 template <>
 struct ParamTraits<Params, Params::Feedback> : public clapeze::PercentParam {
@@ -38,7 +34,7 @@ struct ParamTraits<Params, Params::Feedback> : public clapeze::PercentParam {
 };
 template <>
 struct ParamTraits<Params, Params::Iterations> : public clapeze::IntegerParam {
-    ParamTraits() : clapeze::IntegerParam("Iterations", "Iterations", 1, 255, 1) {}
+    ParamTraits() : clapeze::IntegerParam("Iterations", "Iterations", 1, kitdsp::Disperser::GetMaxFilters(), 1) {}
 };
 }  // namespace clapeze::params
 
@@ -52,27 +48,22 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
     ~Processor() = default;
 
     ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
-        float mixf = mParams.Get<Params::Mix>();
-        float delay = mParams.Get<Params::Delay>();
+        if (in.left.data() != out.left.data()) {
+            // not inplace, time to fake it
+            out.CopyFrom(in);
+        }
+        float sampleRate = narrow_cast<float>(GetSampleRate());
+        float freq = mParams.Get<Params::Frequency>();
         float feedback = mParams.Get<Params::Feedback>();
         int32_t iterations = mParams.Get<Params::Iterations>();
 
-        mLeft->SetParams(delay, feedback, iterations);
-        mRight->SetParams(delay, feedback, iterations);
+        mLeft->SetParams(freq, sampleRate, feedback, iterations);
+        mLeft->ProcessInPlace(out.left);
 
-        for (size_t idx = 0; idx < in.left.size(); ++idx) {
-            // in
-            float left = in.left[idx];
-            float right = in.right[idx];
+        mRight->SetParams(freq, sampleRate, feedback, iterations);
+        mRight->ProcessInPlace(out.right);
 
-            float processedLeft = mLeft->Process(left);
-            float processedRight = mRight->Process(right);
-
-            // outputs
-            out.left[idx] = kitdsp::lerp(left, processedLeft, mixf);
-            out.right[idx] = kitdsp::lerp(right, processedRight, mixf);
-        }
-        return ProcessStatus::Continue;
+        return ProcessStatus::ContinueIfNotQuiet;
     }
 
     void ProcessReset() override {}
@@ -83,9 +74,9 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
         (void)maxBlockSize;
 
         float sampleRatef = static_cast<float>(sampleRate);
-        constexpr float maxSizeSeconds = 1.0f;
+        constexpr float maxSizeSeconds = .02f;
 
-        mBufLen = static_cast<size_t>(sampleRatef * maxSizeSeconds);
+        mBufLen = static_cast<size_t>(sampleRatef * maxSizeSeconds * kitdsp::Disperser::GetMaxFilters());
         mBufLeft.reset(new float[mBufLen]);
         mLeft = std::make_unique<kitdsp::Disperser>(etl::span(mBufLeft.get(), mBufLen));
         mBufRight.reset(new float[mBufLen]);
@@ -108,8 +99,7 @@ class GuiApp : public kitgui::BaseApp {
     void OnUpdate() override {
         mParams.FlushFromAudio();
         ImGui::TextWrapped("idk man");
-        kitgui::DebugParam<ParamsFeature, Params::Mix>(mParams);
-        kitgui::DebugParam<ParamsFeature, Params::Delay>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::Frequency>(mParams);
         kitgui::DebugParam<ParamsFeature, Params::Feedback>(mParams);
         kitgui::DebugParam<ParamsFeature, Params::Iterations>(mParams);
     }
@@ -127,11 +117,10 @@ class Plugin : public EffectPlugin {
 
    protected:
     void Config() override {
-        EffectPlugin::Config();
+        EffectPlugin::BaseConfig(true);
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
-                                    .Parameter<Params::Mix>()
-                                    .Parameter<Params::Delay>()
+                                    .Parameter<Params::Frequency>()
                                     .Parameter<Params::Feedback>()
                                     .Parameter<Params::Iterations>();
         ConfigFeature<TomlStateFeature<ParamsFeature>>(*this);

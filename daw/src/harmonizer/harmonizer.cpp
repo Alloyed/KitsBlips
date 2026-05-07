@@ -152,7 +152,7 @@ class Plugin : public EffectPlugin {
 
    protected:
     void Config() override {
-        EffectPlugin::Config();
+        EffectPlugin::BaseConfig(false);
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)
                                     .Parameter<Params::Transpose>()

@@ -138,7 +138,7 @@ class MyPlugin : public clapeze::EffectPlugin {
      * it runs once per plugin on init.
      */
     void Config() override {
-        EffectPlugin::Config();  // pre-configured as a stereo effect
+        EffectPlugin::BaseConfig(false);  // pre-configured as a stereo effect
 
         // Here we configure our parameters. if you have special requirements, you can create your own implementation of
         // ParametersFeature, and config it here.
