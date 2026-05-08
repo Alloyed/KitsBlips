@@ -370,9 +370,25 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
        private:
         PolyChordType mChordType{};
         int32_t mNumVoices{};
-        etl::vector<int16_t, 4> mChord{};
+        etl::vector<int16_t, cMaxVoices> mChord{};
         etl::flat_multimap<int32_t, int32_t, 32> mHostVoiceIdToChordVoiceIds{};
         int32_t mNextChordVoiceId = 0;
+    };
+
+    class AnalogLfo : public kitdsp::lfo::Phasor {
+       public:
+        void Reset() { kitdsp::lfo::Phasor::Reset(); }
+        void SetShape(float shape) { mShape = shape; }
+        float Process(float numSamples = 1) {
+            Advance(numSamples);
+            float lfoTri = fabsf(mPhase - 0.5f) * 4.0f - 1.0f;
+            float lfoSquare = mPhase > 0.5f ? -1.0f : 1.0f;
+            float mixed = kitdsp::lerp(lfoTri, lfoSquare, mShape);
+            return mixed;
+        }
+
+       private:
+        float mShape;
     };
 
     class Voice {
@@ -397,6 +413,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
             mGateEnv.Reset();
             mFilter.Reset();
             mEnv.Reset();
+            mLfo.Reset();
         }
         bool ProcessAudio(clapeze::StereoAudioBuffer& out) {
             const float sampleRate = static_cast<float>(mProcessor.GetSampleRate());
@@ -419,12 +436,12 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
             float filterModMix = params.Get<Params::FilterModMix>();
             float filterModAmount = params.Get<Params::FilterModAmount>() * 64.0f;
 
-            float lfo = params.Get<Params::LfoOut>();
-
             // env
             mEnv.SetParams(params.Get<Params::EnvAttack>(), params.Get<Params::EnvDecay>(),
                            params.Get<Params::EnvSustain>(), params.Get<Params::EnvRelease>(), sampleRate);
             mGateEnv.SetSampleRate(sampleRate);
+            mLfo = mProcessor.mLeaderLfo;  // copy
+            mLfoSmooth.SetFrequency(1800.0f, sampleRate);
 
             // vca
             // We know this will usually be used polyphonically, so let's get some headroom
@@ -436,6 +453,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
             for (uint32_t index = 0; index < out.left.size(); index++) {
                 float env = mEnv.Process();          // [0, 1]
                 float gateEnv = mGateEnv.Process();  // [0, 1]
+                float lfo = mLfoSmooth.Process(mLfo.Process());
 
                 float oscMod = kitdsp::lerp(lfo, env, oscModMix) * oscModAmount;
                 float filterMod = kitdsp::lerp(lfo, env, filterModMix) * filterModAmount;
@@ -471,6 +489,8 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
         kitdsp::EmileSvf mFilter{};
         kitdsp::ApproachAdsr mEnv{};
         kitdsp::Approach mVcaEnvDisabled;
+        AnalogLfo mLfo;
+        kitdsp::OnePole mLfoSmooth{};
     };
 
    public:
@@ -487,6 +507,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
 
         // lfo
         float sampleRate = static_cast<float>(GetSampleRate());
+        mLeaderLfo.SetShape(mParams.Get<Params::LfoShape>());
         if (mParams.Get<Params::LfoSync>() == clapeze::OnOff::On) {
             auto& transport = GetTransport();
             // TODO: fallback if no tempo info?
@@ -496,26 +517,17 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                     beatDivision = transport.GetTimeSignatureDenominator();
                 }
                 float lfoPeriodMs = transport.BeatsToMs(beatDivision * mParams.Get<Params::LfoRateSync>());
-                mLfo.SetPeriod(lfoPeriodMs, sampleRate);
+                mLeaderLfo.SetPeriod(lfoPeriodMs, sampleRate);
             }
         } else {
-            mLfo.SetFrequency(mParams.Get<Params::LfoRate>(), sampleRate);
+            float lfoRate = mParams.Get<Params::LfoRate>();
+            mLeaderLfo.SetFrequency(lfoRate, sampleRate);
         }
-        float lfoShape = mParams.Get<Params::LfoShape>();
-        mLfoSmooth.SetFrequency(1800.0f, sampleRate);
 
         auto status = mVoices.ProcessAudio(out);
 
-        // TODO: this probably doesn't need to be a full loop
-        // also, updating this once per buffer produces a noticable stepping effect if you turn resonance up
-        float lfoOut{};
-        for (uint32_t index = 0; index < out.left.size(); index++) {
-            float lfoTri = mLfo.Process();  // [-1, 1]
-            float lfoSquare = lfoTri > 0.0f ? -1.0f : 1.0f;
-            lfoOut = mLfoSmooth.Process(kitdsp::lerp(lfoTri, lfoSquare, lfoShape));
-        }
-        assert(lfoOut == lfoOut);  // isnan
-        mParams.Send<Params::LfoOut>(lfoOut);
+        float numSamples = narrow_cast<float>(out.left.size());
+        mParams.Send<Params::LfoOut>(mLeaderLfo.Process(numSamples));
 
         return status;
     }
@@ -540,8 +552,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
    private:
     clapeze::VoicePool<Processor, Voice, cMaxVoices> mVoices;
     NoteProcessor mNoteProcessor{};
-    kitdsp::lfo::TriangleOscillator mLfo{};
-    kitdsp::OnePole mLfoSmooth{};
+    AnalogLfo mLeaderLfo{};
 };
 
 #if KITSBLIPS_ENABLE_GUI

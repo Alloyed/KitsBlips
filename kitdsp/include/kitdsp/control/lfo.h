@@ -25,20 +25,21 @@ class Phasor {
     }
     void HardSync() { mPhase = 0.0f; }
     float GetPhase() const { return mPhase; }
+    float GetAdvance() const { return mAdvance; }
     void Reset() {
         mPhase = 0.0f;
         mAdvance = 0.0f;
     }
     /** take an arbitrary value and wrap into 0-1 (phasor range) */
     static float WrapPhase(float phase) { return phase - std::floor(phase); }
-    float Process() {
-        Advance();
+    float Process(float numSamples = 1) {
+        Advance(numSamples);
         return mPhase;
     }
 
    protected:
-    bool Advance() {
-        float nextPhase = mPhase + mAdvance;
+    bool Advance(float numSamples) {
+        float nextPhase = mPhase + (mAdvance * numSamples);
         mPhase = WrapPhase(nextPhase);
         return mPhase != nextPhase;
     }
@@ -48,21 +49,21 @@ class Phasor {
 
 class ImpulseTrain : public Phasor {
    public:
-    bool Process() { return Advance(); }
+    bool Process(float numSamples = 1) { return Advance(numSamples); }
 };
 
 class SineOscillator : public Phasor {
    public:
-    float Process() {
-        Advance();
+    float Process(float numSamples = 1) {
+        Advance(numSamples);
         return approx::cos2pif_nasty(mPhase);
     }
 };
 
 class TriangleOscillator : public Phasor {
    public:
-    float Process() {
-        Advance();
+    float Process(float numSamples = 1) {
+        Advance(numSamples);
         // in phase with a cos wave
         return fabsf(mPhase - 0.5f) * 4.0f - 1.0f;
     }
