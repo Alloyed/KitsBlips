@@ -26,6 +26,7 @@ class BiquadFilter {
     BiquadFilter() {
         SetFrequency<BiquadFilterMode::LowPass>(1200.0f, 44100.0f);
         SetShelf<BiquadFilterMode::LowPass>(0.5f, -6.0f);
+        Reset();
     }
     inline void Reset() {
         x[0] = {};
