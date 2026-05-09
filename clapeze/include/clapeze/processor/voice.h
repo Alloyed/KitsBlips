@@ -123,6 +123,13 @@ class VoicePool {
         return count;
     }
 
+    template <typename T>
+    void ForEach(T fn) {
+        for (VoiceIndex idx = 0; idx < mVoices.size(); idx++) {
+            fn(mVoices[idx]);
+        }
+    }
+
    private:
     using VoiceIndex = size_t;
     void StopVoice(VoiceIndex index) {
