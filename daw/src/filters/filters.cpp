@@ -43,17 +43,18 @@ struct ParamTraits<Params, Params::Type> : public clapeze::EnumParam<FilterType>
     ParamTraits()
         : clapeze::EnumParam<FilterType>("Type",
                                          "Type",
-                                         {"SVF: Lowpass",
-                                          "SVF: HighPass",
-                                          "SVF: Bandpass",
-                                          "Crossover: Low",
-                                          "Crossover: High",
-                                          "Crossover: Mixed",
-                                          "Biquad: Lowpass",
-                                          "Biquad: Highpass",
-                                          "Biquad: Bandpass",
-                                          "Biquad: Allpass",
-                                        },
+                                         {
+                                             "SVF: Lowpass",
+                                             "SVF: HighPass",
+                                             "SVF: Bandpass",
+                                             "Crossover: Low",
+                                             "Crossover: High",
+                                             "Crossover: Mixed",
+                                             "Biquad: Lowpass",
+                                             "Biquad: Highpass",
+                                             "Biquad: Bandpass",
+                                             "Biquad: Allpass",
+                                         },
                                          FilterType::SvfLowpass) {}
 };
 
@@ -96,21 +97,19 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
             mType = type;
         }
 
-        auto Setup =
-            [&](auto expr) {
-                expr(0);
-                expr(1);
-            };
+        auto Setup = [&](auto expr) {
+            expr(0);
+            expr(1);
+        };
 
-        auto Filter =
-            [&](auto expr) {
-                for (size_t idx = 0; idx < in.left.size(); ++idx) {
-                    out.left[idx] = kitdsp::lerp(in.left[idx], (expr)(0, in.left[idx]), mixf);
-                }
-                for (size_t idx = 0; idx < in.left.size(); ++idx) {
-                    out.right[idx] = kitdsp::lerp(in.right[idx], (expr)(1, in.right[idx]), mixf);
-                }
-            };
+        auto Filter = [&](auto expr) {
+            for (size_t idx = 0; idx < in.left.size(); ++idx) {
+                out.left[idx] = kitdsp::lerp(in.left[idx], (expr)(0, in.left[idx]), mixf);
+            }
+            for (size_t idx = 0; idx < in.left.size(); ++idx) {
+                out.right[idx] = kitdsp::lerp(in.right[idx], (expr)(1, in.right[idx]), mixf);
+            }
+        };
 
         // in
         switch (type) {
@@ -118,28 +117,28 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
                 float r = Q * 0.89f;
                 float filterSteepness = 0.5f;  // steeper means "achieves self-oscillation quicker"
                 float filterQ = 0.5f * std::exp(filterSteepness * (r / (1 - r)));  // [0, 1] -> [0.5, inf]
-                Setup([&](auto i) { mSvf[i].SetFrequency(cutoff, sr, filterQ); });
-                Filter([&](auto i, float s) { return mSvf[i].Process<kitdsp::SvfFilterMode::LowPass>(s); });
+                Setup([&](size_t i) { mSvf[i].SetFrequency(cutoff, sr, filterQ); });
+                Filter([&](size_t i, float s) { return mSvf[i].template Process<kitdsp::SvfFilterMode::LowPass>(s); });
             } break;
             case FilterType::SvfHighpass: {
                 float r = Q * 0.89f;
                 float filterSteepness = 0.5f;  // steeper means "achieves self-oscillation quicker"
                 float filterQ = 0.5f * std::exp(filterSteepness * (r / (1 - r)));  // [0, 1] -> [0.5, inf]
-                Setup([&](auto i) { mSvf[i].SetFrequency(cutoff, sr, filterQ); });
-                Filter([&](auto i, float s) { return mSvf[i].Process<kitdsp::SvfFilterMode::HighPass>(s); });
+                Setup([&](size_t i) { mSvf[i].SetFrequency(cutoff, sr, filterQ); });
+                Filter([&](size_t i, float s) { return mSvf[i].template Process<kitdsp::SvfFilterMode::HighPass>(s); });
             } break;
             case FilterType::SvfBandpass: {
                 float r = Q * 0.89f;
                 float filterSteepness = 0.5f;  // steeper means "achieves self-oscillation quicker"
                 float filterQ = 0.5f * std::exp(filterSteepness * (r / (1 - r)));  // [0, 1] -> [0.5, inf]
-                Setup([&](auto i) { mSvf[i].SetFrequency(cutoff, sr, filterQ); });
-                Filter([&](auto i, float s) { return mSvf[i].Process<kitdsp::SvfFilterMode::BandPass>(s); });
+                Setup([&](size_t i) { mSvf[i].SetFrequency(cutoff, sr, filterQ); });
+                Filter([&](size_t i, float s) { return mSvf[i].template Process<kitdsp::SvfFilterMode::BandPass>(s); });
             } break;
             case FilterType::CrossoverLow: {
                 float high = 0.0f;
                 float low = 0.0f;
-                Setup([&](auto i) { mCrossover[i].SetFrequency(cutoff, sr); });
-                Filter([&](auto i, float s) {
+                Setup([&](size_t i) { mCrossover[i].SetFrequency(cutoff, sr); });
+                Filter([&](size_t i, float s) {
                     mCrossover[i].Process(s, high, low);
                     return low;
                 });
@@ -147,8 +146,8 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
             case FilterType::CrossoverHigh: {
                 float high = 0.0f;
                 float low = 0.0f;
-                Setup([&](auto i) { mCrossover[i].SetFrequency(cutoff, sr); });
-                Filter([&](auto i, float s) {
+                Setup([&](size_t i) { mCrossover[i].SetFrequency(cutoff, sr); });
+                Filter([&](size_t i, float s) {
                     mCrossover[i].Process(s, high, low);
                     return high;
                 });
@@ -156,51 +155,43 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
             case FilterType::CrossoverMixed: {
                 float high = 0.0f;
                 float low = 0.0f;
-                Setup([&](auto i) { mCrossover[i].SetFrequency(cutoff, sr); });
-                Filter([&](auto i, float s) {
+                Setup([&](size_t i) { mCrossover[i].SetFrequency(cutoff, sr); });
+                Filter([&](size_t i, float s) {
                     mCrossover[i].Process(s, high, low);
-                    return high+low;
+                    return high + low;
                 });
             } break;
             case FilterType::BiquadLowpass: {
-                float mappedQ = kitdsp::lerp(0.8f, 10.0f, Q*Q*Q*Q);
-                Setup([&](auto i) {
-                    mBiquad[i].SetFrequency<kitdsp::rbj::BiquadFilterMode::LowPass>(cutoff, sr);
-                    mBiquad[i].SetQ<kitdsp::rbj::BiquadFilterMode::LowPass>(mappedQ);
-                 });
-                Filter([&](auto i, float s) {
-                    return mBiquad[i].Process(s);
+                float mappedQ = kitdsp::lerp(0.8f, 10.0f, Q * Q * Q * Q);
+                Setup([&](size_t i) {
+                    mBiquad[i].template SetFrequency<kitdsp::rbj::BiquadFilterMode::LowPass>(cutoff, sr);
+                    mBiquad[i].template SetQ<kitdsp::rbj::BiquadFilterMode::LowPass>(mappedQ);
                 });
+                Filter([&](size_t i, float s) { return mBiquad[i].Process(s); });
             } break;
             case FilterType::BiquadHighpass: {
                 float mappedQ = kitdsp::lerp(0.03f, 72.0f, Q);
-                Setup([&](auto i) {
-                    mBiquad[i].SetFrequency<kitdsp::rbj::BiquadFilterMode::Highpass>(cutoff, sr);
-                    mBiquad[i].SetQ<kitdsp::rbj::BiquadFilterMode::Highpass>(mappedQ);
-                 });
-                Filter([&](auto i, float s) {
-                    return mBiquad[i].Process(s);
+                Setup([&](size_t i) {
+                    mBiquad[i].template SetFrequency<kitdsp::rbj::BiquadFilterMode::Highpass>(cutoff, sr);
+                    mBiquad[i].template SetQ<kitdsp::rbj::BiquadFilterMode::Highpass>(mappedQ);
                 });
+                Filter([&](size_t i, float s) { return mBiquad[i].Process(s); });
             } break;
             case FilterType::BiquadBandpass: {
                 float mappedQ = kitdsp::lerp(0.03f, 72.0f, Q);
-                Setup([&](auto i) {
-                    mBiquad[i].SetFrequency<kitdsp::rbj::BiquadFilterMode::BandPass>(cutoff, sr);
-                    mBiquad[i].SetQ<kitdsp::rbj::BiquadFilterMode::BandPass>(mappedQ);
-                 });
-                Filter([&](auto i, float s) {
-                    return mBiquad[i].Process(s);
+                Setup([&](size_t i) {
+                    mBiquad[i].template SetFrequency<kitdsp::rbj::BiquadFilterMode::BandPass>(cutoff, sr);
+                    mBiquad[i].template SetQ<kitdsp::rbj::BiquadFilterMode::BandPass>(mappedQ);
                 });
+                Filter([&](size_t i, float s) { return mBiquad[i].Process(s); });
             } break;
             case FilterType::BiquadAllpass: {
                 float mappedQ = kitdsp::lerp(0.03f, 72.0f, Q);
-                Setup([&](auto i) {
-                    mBiquad[i].SetFrequency<kitdsp::rbj::BiquadFilterMode::AllPass>(cutoff, sr);
-                    mBiquad[i].SetQ<kitdsp::rbj::BiquadFilterMode::AllPass>(mappedQ);
-                 });
-                Filter([&](auto i, float s) {
-                    return mBiquad[i].Process(s);
+                Setup([&](size_t i) {
+                    mBiquad[i].template SetFrequency<kitdsp::rbj::BiquadFilterMode::AllPass>(cutoff, sr);
+                    mBiquad[i].template SetQ<kitdsp::rbj::BiquadFilterMode::AllPass>(mappedQ);
                 });
+                Filter([&](size_t i, float s) { return mBiquad[i].Process(s); });
             } break;
         }
 
