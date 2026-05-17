@@ -68,7 +68,11 @@ class InstrumentProcessor : public BaseProcessor {
     virtual void ProcessNoteOn(const NoteTuple& note, float velocity) = 0;
     virtual void ProcessNoteOff(const NoteTuple& note) = 0;
     virtual void ProcessNoteChoke(const NoteTuple& note) = 0;
-    virtual void ProcessNoteExpression(const NoteTuple& note, clap_note_expression expression, float value) {}
+    virtual void ProcessNoteExpression(const NoteTuple& note, clap_note_expression expression, float value) {
+        (void)note;
+        (void)expression;
+        (void)value;
+    }
 
     // impl
     void ProcessFlush(const clap_process_t& process) final {

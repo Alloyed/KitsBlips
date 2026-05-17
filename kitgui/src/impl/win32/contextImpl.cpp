@@ -98,6 +98,7 @@ namespace kitgui::win32 {
 std::wstring ContextImpl::sClassName{};
 
 void ContextImpl::init(kitgui::WindowApi api, std::string_view appName) {
+    (void)api;
     sClassName = utf8_to_utf16(appName);
     // Note! this changes dpi awareness per-process, which may mess with the host's settings.
     // we might need to read the current dpi-awareness setting and make decisions based on that instead?
@@ -243,7 +244,7 @@ bool ContextImpl::GetSizeInPixels(uint32_t& widthOut, uint32_t& heightOut) const
     return true;
 }
 bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
-    // TODO: resizable
+    (void)resizable; // TODO: resizable
     bool result = ::SetWindowPos(mWindow, nullptr, 0, 0, width, height,
                           SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
     if(!result) {

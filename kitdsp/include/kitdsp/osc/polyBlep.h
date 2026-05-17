@@ -114,7 +114,7 @@ class PolyBlepProcessor {
 };
 
 // origin: https://www.kvraudio.com/forum/viewtopic.php?t=375517
-float KvrPolyBlep(float phase, float advance) {
+inline float KvrPolyBlep(float phase, float advance) {
     // did the last advance put us past the disconinuity point?
     if (phase < advance) {
         // 0 <= t < 1

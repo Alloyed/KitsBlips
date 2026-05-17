@@ -29,7 +29,7 @@ inline F clamp(F in, F min, F max) {
 
 template <typename F>
 F lerp(F x0, F x1, float t) {
-    return x0 + (x1 - x0) * t;
+    return F(x0 + (x1 - x0) * t);
 }
 
 template <typename F>

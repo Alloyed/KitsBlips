@@ -34,7 +34,7 @@ struct ParamTraits<Params, Params::Feedback> : public clapeze::PercentParam {
 };
 template <>
 struct ParamTraits<Params, Params::Iterations> : public clapeze::IntegerParam {
-    ParamTraits() : clapeze::IntegerParam("Iterations", "Iterations", 1, kitdsp::Disperser::GetMaxFilters(), 1) {}
+    ParamTraits() : clapeze::IntegerParam("Iterations", "Iterations", 1, static_cast<int32_t>(kitdsp::Disperser::GetMaxFilters()), 1) {}
 };
 }  // namespace clapeze::params
 

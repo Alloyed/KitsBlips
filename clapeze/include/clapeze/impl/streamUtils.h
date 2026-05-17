@@ -46,7 +46,7 @@ class clap_istream : public std::basic_istream<char> {
     clap_istream_streambuf mBuf;
 
    public:
-    explicit clap_istream(const clap_istream_t* out) : basic_istream(nullptr), mBuf(out) { this->init(&mBuf); }
+    explicit clap_istream(const clap_istream_t* outstream) : basic_istream(nullptr), mBuf(outstream) { this->init(&mBuf); }
 };
 
 inline std::string istream_tostring(std::istream& stream) {
@@ -87,7 +87,7 @@ class clap_ostream : public std::basic_ostream<char> {
     clap_ostream_streambuf mBuf;
 
    public:
-    explicit clap_ostream(const clap_ostream_t* out) : basic_ostream(nullptr), mBuf(out) { this->init(&mBuf); }
+    explicit clap_ostream(const clap_ostream_t* outstream) : basic_ostream(nullptr), mBuf(outstream) { this->init(&mBuf); }
 };
 
 }  // namespace clapeze::impl

@@ -31,9 +31,9 @@ class Knob {
     }
     virtual double GetDefault() const { return 0.5; }
     virtual std::string ToValueText(double value) const { return fmt::format("{}", value); }
-    virtual bool FromValueText(std::string_view str, double& value) const { return false; /* TODO */ }
+    virtual bool FromValueText(std::string_view str, double& value) const { (void)str; (void)value; return false; /* TODO */ }
 
    private:
-    static constexpr float kPi = 3.14159265359;
+    static constexpr float kPi = 3.14159265359f;
 };
 }  // namespace kitgui

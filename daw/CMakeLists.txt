@@ -50,6 +50,7 @@ target_sources(KitsBlips PRIVATE
 # public modules
 target_sources(KitsBlips PRIVATE
     src/kitskeys/kitskeys.cpp
+    src/layersynth/layersynth.cpp
     src/snecho/snecho.cpp
     src/chorus/chorus.cpp
     src/distort/distort.cpp

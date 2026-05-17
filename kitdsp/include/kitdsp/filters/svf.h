@@ -53,6 +53,7 @@ class EmileSvf {
             case SvfFilterMode::HighPass:
                 return hp;
         }
+        return 0.0f;
     }
 
     inline float Process(float in, SvfFilterMode mode) {
@@ -67,6 +68,7 @@ class EmileSvf {
             case SvfFilterMode::HighPass:
                 return hp;
         }
+        return 0.0f;
     }
 
     inline void ProcessAll(float in, float& hp, float& bp, float& lp) {

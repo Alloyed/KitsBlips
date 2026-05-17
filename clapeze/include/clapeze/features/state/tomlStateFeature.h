@@ -40,12 +40,12 @@ class TomlStateFeature : public BaseStateFeature {
         self.RegisterExtension(NAME, static_cast<const void*>(&value));
     }
 
-    bool Validate(const BasePlugin& plugin) const override { return true; }
+    bool Validate(const BasePlugin& plugin) const override { (void)plugin; return true; }
 
     // customization points
-    virtual bool OnMigrate(toml::table& t, uint32_t currentVersion, uint32_t targetVersion) const { return true; }
-    virtual bool OnSave(toml::table& t) const { return true; }
-    virtual bool OnLoad(const toml::table& t) { return true; }
+    virtual bool OnMigrate(toml::table& t, uint32_t currentVersion, uint32_t targetVersion) const { (void)t; (void)currentVersion; (void)targetVersion; return true; }
+    virtual bool OnSave(toml::table& t) const { (void)t; return true; }
+    virtual bool OnLoad(const toml::table& t) { (void)t; return true; }
 
     bool Save(std::ostream& out) override {
         TParamsFeature& params = BaseFeature::GetFromPlugin<TParamsFeature>(mPlugin);

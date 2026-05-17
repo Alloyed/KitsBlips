@@ -3,7 +3,7 @@
 namespace kitdsp {
 namespace pitch {
 ZeroCrossingPitchDetector::ZeroCrossingPitchDetector(float sampleRate) : mSampleRate(sampleRate) {
-    mSmoothedPeriod.SetHalfLife(0.001, mSampleRate);
+    mSmoothedPeriod.SetHalfLife(0.001f, mSampleRate);
     Reset();
 }
 
@@ -19,7 +19,7 @@ void ZeroCrossingPitchDetector::Process(etl::span<float> input) {
 
 void ZeroCrossingPitchDetector::Process(float input) {
     if (mLastSample < 0.0f && input >= 0.0f) {
-        mSmoothedPeriod.target = mNextPeriod;
+        mSmoothedPeriod.target = narrow_cast<float>(mNextPeriod);
         mNextPeriod = 0;
     }
 
