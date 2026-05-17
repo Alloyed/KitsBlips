@@ -81,7 +81,7 @@ class ApproachAdsr {
 
     void TriggerChoke() { mState = State::Choke; }
 
-    bool IsProcessing() { return mState != State::Idle; }
+    bool IsProcessing() const { return mState != State::Idle; }
 
    private:
     float Update(bool isProcessing) {

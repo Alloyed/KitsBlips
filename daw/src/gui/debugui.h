@@ -3,6 +3,7 @@
 #if KITSBLIPS_ENABLE_GUI
 
 #include <clap/ext/params.h>
+#include <clapeze/features/params/dynamicParametersFeature.h>
 #include <clapeze/features/params/baseParameter.h>
 #include <clapeze/features/params/parameterTypes.h>
 #include <imgui.h>
@@ -66,6 +67,40 @@ void DebugParam(TParamsFeature& feature) {
     if (DebugParam(*(feature.template GetSpecificParam<id>()), raw)) {
         handle.SetRawValue(index, raw);
     }
+    if (ImGui::IsItemActivated()) {
+        handle.StartGesture(index);
+    }
+    if (ImGui::IsItemDeactivated()) {
+        handle.StopGesture(index);
+    }
+}
+
+inline void DebugParam(clapeze::params::DynamicParametersFeature& feature, clap_id index) {
+    auto& handle = feature.GetMainHandle();
+    double raw = handle.GetRawValue(index);
+
+    clapeze::BaseParam* base = feature.GetBaseParam(index);
+
+    if(auto* maybeNumeric = dynamic_cast<clapeze::NumericParam*>(base)) {
+        if (DebugParam(*maybeNumeric, raw)) {
+            handle.SetRawValue(index, raw);
+        }
+    }
+    else if(auto* maybeInteger = dynamic_cast<clapeze::IntegerParam*>(base)) {
+        if (DebugParam(*maybeInteger, raw)) {
+            handle.SetRawValue(index, raw);
+        }
+    }
+    else if(auto* maybeEnum = dynamic_cast<clapeze::OnOffParam*>(base)) {
+        if (DebugParam(*maybeEnum, raw)) {
+            handle.SetRawValue(index, raw);
+        }
+    }
+    else {
+        // Too dynamic for us
+        return;
+    }
+
     if (ImGui::IsItemActivated()) {
         handle.StartGesture(index);
     }

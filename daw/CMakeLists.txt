@@ -51,6 +51,7 @@ target_sources(KitsBlips PRIVATE
 target_sources(KitsBlips PRIVATE
     src/kitskeys/kitskeys.cpp
     src/layersynth/layersynth.cpp
+    src/layersynth/dsp.cpp
     src/snecho/snecho.cpp
     src/chorus/chorus.cpp
     src/distort/distort.cpp

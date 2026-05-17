@@ -67,6 +67,9 @@ class TriangleOscillator : public Phasor {
         // in phase with a cos wave
         return fabsf(mPhase - 0.5f) * 4.0f - 1.0f;
     }
+    float GetValue() const {
+        return fabsf(mPhase - 0.5f) * 4.0f - 1.0f;
+    }
 };
 }  // namespace lfo
 }  // namespace kitdsp
