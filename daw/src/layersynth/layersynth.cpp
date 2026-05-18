@@ -13,7 +13,7 @@
 #include <clapeze/processor/voice.h>
 #include <etl/flat_multimap.h>
 #include <etl/vector.h>
-#include <cfloat>
+#include "AudioFile.h"
 #include <memory>
 #include <sstream>
 
@@ -24,6 +24,7 @@
 #if KITSBLIPS_ENABLE_GUI
 #include <clapeze/features/assetsFeature.h>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <kitgui/app.h>
 #include <kitgui/gfx/scene.h>
 #include <kitgui/context.h>
@@ -122,28 +123,29 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
         mVoices.ForEach([&](Voice& v) {
             auto LfoParams = [&](kitdsp::lfo::TriangleOscillator& lfo, clap_id first) {
                 float wave = mParams.Get<PercentParam>(first+static_cast<clap_id>(LfoParams::Wave));
-                float rate = mParams.Get<PercentParam>(first+static_cast<clap_id>(LfoParams::Rate));
+                float rate = mParams.Get<LfoRateParam>(first+static_cast<clap_id>(LfoParams::Rate));
                 float delay = mParams.Get<PercentParam>(first+static_cast<clap_id>(LfoParams::Delay));
                 float sync = mParams.Get<PercentParam>(first+static_cast<clap_id>(LfoParams::Sync));
                 lfo.SetFrequency(rate, sr);
             };
             auto EnvParams = [&](kitdsp::ApproachAdsr& adsr, clap_id first) {
-                float a = mParams.Get<NumericParam>(first+static_cast<clap_id>(EnvParams::Attack));
-                float d = mParams.Get<NumericParam>(first+static_cast<clap_id>(EnvParams::Decay));
+                float a = mParams.Get<EnvParam>(first+static_cast<clap_id>(EnvParams::Attack));
+                float d = mParams.Get<EnvParam>(first + static_cast<clap_id>(EnvParams::Decay));
                 float s = mParams.Get<PercentParam>(first+static_cast<clap_id>(EnvParams::Sustain));
-                float r = mParams.Get<NumericParam>(first+static_cast<clap_id>(EnvParams::Release));
+                float r = mParams.Get<EnvParam>(first + static_cast<clap_id>(EnvParams::Release));
                 adsr.SetParams(a, d, s, r, sr);
             };
             auto PartialParams = [&](Partial& part, clap_id first) {
+                part.sr = sr;
                 // = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::Wave));
                 part.mNoteOffset = mParams.Get<NumericParam>(first+static_cast<clap_id>(PartialParams::PitchOffset));
-                part.mPitchEnvMult = mParams.Get<NumericParam>(first+static_cast<clap_id>(PartialParams::PitchEnvMult));
-                part.mPitchLfoMult = mParams.Get<NumericParam>(first+static_cast<clap_id>(PartialParams::PitchLfoMult));
+                part.mPitchEnvMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::PitchEnvMult));
+                part.mPitchLfoMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::PitchLfoMult));
                 part.mDuty = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::Duty));
                 //mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::DutyLfoSource));
                 part.mDutyLfoMult= mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::DutyLfoMult));
                 part.mFilterNote = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::FilterNote)) * 80.0f;
-                part.mFilterTrackingMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::FilterTrackingMult)) * 80.0f;
+                part.mFilterTrackingMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::FilterTrackingMult));
                 part.mFilterEnvMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::FilterEnvMult));
                 //part.mFilterLfoMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::FilterLfoSource));
                 part.mFilterLfoMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::FilterLfoMult));
@@ -237,6 +239,22 @@ class GuiApp : public kitgui::BaseApp {
     }
 
     void OnGuiUpdate() override {
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
+        /*
+        ImGuiID dockspace_id = ImGui::GetID("My Dockspace");
+        if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr) {
+            ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);
+            ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
+            ImGuiID dock_id_main = dockspace_id;
+            ImGui::DockBuilderDockWindow("Global", dock_id_main);
+            ImGui::DockBuilderDockWindow("Tone 1", dock_id_main);
+            ImGui::DockBuilderDockWindow("Tone 2", dock_id_main);
+            ImGui::DockBuilderFinish(dockspace_id);
+        }
+        ImGui::DockSpaceOverViewport(dockspace_id, viewport, ImGuiDockNodeFlags_PassthruCentralNode);
+        */
+        ImGui::DockSpaceOverViewport(0, viewport, ImGuiDockNodeFlags_PassthruCentralNode);
+
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("Preset")) {
                 if (ImGui::MenuItem("Reset All")) {
@@ -266,16 +284,25 @@ class GuiApp : public kitgui::BaseApp {
             mDebugMode = !mDebugMode;
         }
 
-        ImGui::TextWrapped(
-            "layersynth is an intentionally simple-ish virtual analog polysynth. This is the first one I'm "
-            "really dumping effort into the UI for so extra feedback there is very appreciated :)");
-        ImGui::BulletText("Shift-click for fine adjustment");
-        ImGui::BulletText("double-click to reset to default");
-        ImGui::BulletText("right-click to get a text input");
-        for(clap_id idx = 0; idx < static_cast<clap_id>(GlobalParams::Count); ++idx) 
+        ImGui::Begin("Global");
+        kitgui::DebugParam(mParams, 0);
+        kitgui::DebugParam(mParams, 1);
+        ImGui::End();
+
+        ImGui::Begin("Tone 1");
+        for(clap_id idx = 2; idx < 2+static_cast<clap_id>(ToneParams::Count); ++idx) 
         {
             kitgui::DebugParam(mParams, idx);
         }
+        ImGui::End();
+
+        ImGui::Begin("Tone 2");
+        for(clap_id idx = 70; idx < 70+static_cast<clap_id>(ToneParams::Count); ++idx) 
+        {
+            kitgui::DebugParam(mParams, idx);
+        }
+        ImGui::End();
+
     }
 
     void OnDraw() override {}
@@ -300,7 +327,7 @@ class Plugin : public InstrumentPlugin {
         InstrumentPlugin::Config();
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), static_cast<clap_id>(GlobalParams::Count));
-        clap_id next_idx; 
+        clap_id next_idx = 0; 
         auto LfoParams = [&] (std::string pre) {
             params.Parameter(next_idx++, new PercentParam(pre+"_wave", pre+": Wave", 0.0f));
             params.Parameter(next_idx++, new LfoRateParam(pre+"_rate", pre+": Rate"));
@@ -330,8 +357,8 @@ class Plugin : public InstrumentPlugin {
             params.Parameter(next_idx++, new PercentParam(pre+"_vcaMult", pre+": Volume", 0.5f));
             params.Parameter(next_idx++, new PercentParam(pre+"_vcaLfoSource", pre+": Volume Mod source", 0.5f));
             params.Parameter(next_idx++, new PercentParam(pre+"_vcaLfoMult", pre+": Volume Mod amount", 0.0f));
-            EnvParams("FilterEnv");
-            EnvParams("volumeEnv");
+            EnvParams(pre+"FilterEnv");
+            EnvParams(pre+"volumeEnv");
         };
         auto ToneParams = [&] (std::string pre) {
             params.Parameter(next_idx++, new PercentParam(pre+"_chorusMix", pre+": Chorus Mix", 0.0f));
@@ -368,10 +395,18 @@ class Plugin : public InstrumentPlugin {
 
         ConfigProcessor<Processor>(params.GetAudioHandle<ParamsFeature::AudioHandle>());
     }
+
+    void LoadSample(std::string_view path) {
+        mSamples.emplace_back();
+        std::string s(path);
+        mSamples.back().load(s);
+    }
+
+    std::vector<AudioFile<float>> mSamples;
 };
 
 CLAPEZE_REGISTER_PLUGIN(Plugin,
                         AudioInstrumentDescriptor("kitsblips.layersynth",
                                                   "layersynth",
-                                                  "A Linear-Arithmetic inspired "));
+                                                  "A Linear-Arithmetic inspired polysynth"));
 }  // namespace layersynth

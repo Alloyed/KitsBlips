@@ -8,6 +8,7 @@ set(PRODUCT_ID "me.alloyed.KitsBlips")
 include(CMakeDependentOption)
 option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
 option(KITSBLIPS_ENABLE_VST "build VSTs" ON)
+option(KITSBLIPS_ENABLE_STANDALONE "build standalone (instruments only)" ON)
 option(KITSBLIPS_ENABLE_SENTRY "Enable sentry error reporting" OFF)
 option(KITSBLIPS_RETAIL "Enable if this build is intended for end-users" OFF)
 if(APPLE)
@@ -31,7 +32,7 @@ set(CMAKE_CXX_STANDARD 20)
 # shared libs
 include(../content.cmake)
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
-FetchContent_MakeAvailable(clap fmt clapeze KitDSP)
+FetchContent_MakeAvailable(clap fmt clapeze KitDSP AudioFile)
 FetchContent_MakeAvailable(clap-wrapper)
 
 add_library(KitsBlips OBJECT)
@@ -78,6 +79,7 @@ target_include_directories(KitsBlips PUBLIC src)
 target_link_libraries(KitsBlips PRIVATE
     clapeze
     KitDSP
+    AudioFile
 )
 
 if(KITSBLIPS_ENABLE_GUI)
@@ -132,6 +134,20 @@ if(KITSBLIPS_ENABLE_VST)
     )
     if(NOT APPLE) # TODO: mac support
         target_add_bundle(KitsBlips-vst3 "${CMAKE_CURRENT_BINARY_DIR}/dist/KitsBlips.vst3" ${ASSETS})
+    endif()
+endif()
+
+if(KITSBLIPS_ENABLE_STANDALONE)
+    message(STATUS "Building with Standalone Wrapper enabled...")
+    add_executable(KitsBlips-standalone)
+    target_link_libraries(KitsBlips-standalone PRIVATE KitsBlips)
+    target_add_standalone_wrapper(TARGET KitsBlips-standalone 
+        OUTPUT_NAME "KitsBlips"
+        STATICALLY_LINKED_CLAP_ENTRY True
+        PLUGIN_ID "kitsblips.layersynth"
+    )
+    if(NOT APPLE) # TODO: mac support
+        target_add_bundle(KitsBlips-standalone "${CMAKE_CURRENT_BINARY_DIR}/dist/layersynth.exe" ${ASSETS})
     endif()
 endif()
 

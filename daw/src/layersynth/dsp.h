@@ -31,7 +31,7 @@ class Partial {
     Partial(){}
     void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
         (void)velocity;
-        // mOsc.SetFrequency();
+        mNote = note.key;
         mFilterEnv.TriggerOpen();
         mVolumeEnv.TriggerOpen();
     }
@@ -54,17 +54,39 @@ class Partial {
         mFilterEnv.Process();
         mVolumeEnv.Process();
 
-        float filterNote = mFilterNote + (mNote * mFilterTrackingMult) + (mFilterEnv.GetValue() * mFilterEnvMult) +
-                           (mFilterLfo ? mFilterLfo->GetValue() * mFilterLfoMult : 0.0f);
-        mFilter.SetFrequency(kitdsp::midiToFrequency(filterNote), sr, mFilterRes);
         float pitchNote = mNote + mNoteOffset + (mPitchEnv ? mPitchEnv->GetValue() * mPitchEnvMult : 0.0f) +
                           (mPitchLfo ? mPitchLfo->GetValue() * mPitchLfoMult : 0.0f);
+        float filterNote = mFilterNote + (mNote * mFilterTrackingMult) + (mFilterEnv.GetValue() * mFilterEnvMult) +
+                           (mFilterLfo ? mFilterLfo->GetValue() * mFilterLfoMult : 0.0f);
+        float res = mFilterRes * 0.89f;  // acts as cap, experimentally determined
+        float filterSteepness = 0.5f;    // steeper means "achieves self-oscillation quicker"
+        float filterQ = 0.5f * std::exp(filterSteepness * (res / (1 - res)));  // [0, 1] -> [0.5, inf]
+        mFilter.SetFrequency(kitdsp::midiToFrequency(filterNote), sr, filterQ);
 
-        mOsc.SetFrequency(kitdsp::midiToFrequency(pitchNote), sr);
-        mOsc.GetOscillator().SetDuty(mDuty + (mDutyLfo ? mDutyLfo->GetValue() * mDutyLfoMult : 0.0f));
+        float waveout = 0.0f;
+        switch(mWave) {
+            case Wave::Pulse: {
+                mOsc.SetFrequency(kitdsp::midiToFrequency(pitchNote), sr);
+                mOsc.GetOscillator().SetDuty(mDuty + (mDutyLfo ? mDutyLfo->GetValue() * mDutyLfoMult : 0.0f));
+                float osc = mOsc.Process();
+                waveout = mFilter.Process<kitdsp::SvfFilterMode::LowPass>(osc);
+            }
+            break;
+            case Wave::Saw: {
+                mOsc.SetFrequency(kitdsp::midiToFrequency(pitchNote), sr);
+                mOsc.GetOscillator().SetDuty(mDuty + (mDutyLfo ? mDutyLfo->GetValue() * mDutyLfoMult : 0.0f));
+                float osc = mOsc.Process();
+                waveout = mFilter.Process<kitdsp::SvfFilterMode::LowPass>(osc) * kitdsp::approx::cos2pif_nasty(mOsc.GetPhase());
+            }
+            break;
+            case Wave::Pcm: {
+                // TODO
+            }
+            break;
+        }
+
         float vca = mVcaMult * mVolumeEnv.GetValue() + (mVcaLfo ? mVcaLfo->GetValue() * mVcaLfoMult : 0.0f);
-
-        return vca * mFilter.Process<kitdsp::SvfFilterMode::LowPass>(mOsc.Process());
+        return vca * waveout;
     }
     bool IsProcessing() const { return mVolumeEnv.IsProcessing(); }
 
@@ -183,7 +205,6 @@ class Voice {
         mTone2.Reset();
     }
     bool ProcessAudio(clapeze::StereoAudioBuffer& out) {
-        //const float sampleRate = static_cast<float>(mProcessor.GetSampleRate());
         for (uint32_t index = 0; index < out.left.size(); index++) {
             kitdsp::float_2 outf = mTone1.Process() + mTone2.Process();
 
