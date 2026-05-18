@@ -16,7 +16,7 @@ class HalfbandFilter {
         static_assert(STAGES <= 4);
         static_assert(STAGES != 0);
 
-        if (STAGES == 4) {
+        if constexpr (STAGES == 4) {
             // rejection=69dB, transition band=0.01
             mFilterA[0].coef = 0.07711507983241622f;
             mFilterA[1].coef = 0.48207062506104720f;
@@ -26,7 +26,7 @@ class HalfbandFilter {
             mFilterB[1].coef = 0.66510415326349570f;
             mFilterB[2].coef = 0.88410150855061590f;
             mFilterB[3].coef = 0.98200541418860750f;
-        } else if (STAGES == 3) {
+        } else if constexpr (STAGES == 3) {
             // rejection=51dB, transition band=0.01
             mFilterA[0].coef = 0.12714141362648530f;
             mFilterA[1].coef = 0.65282458863691170f;
@@ -34,13 +34,13 @@ class HalfbandFilter {
             mFilterB[0].coef = 0.40056789819445626f;
             mFilterB[1].coef = 0.82041638919233430f;
             mFilterB[2].coef = 0.97631145158367730f;
-        } else if (STAGES == 2) {
+        } else if constexpr (STAGES == 2) {
             // rejection=53dB, transition band=0.05
             mFilterA[0].coef = 0.12073211751675449f;
             mFilterA[1].coef = 0.66320202241939950f;
             mFilterB[0].coef = 0.39036218723450060f;
             mFilterB[1].coef = 0.89078683265349700f;
-        } else if (STAGES == 1) {
+        } else if constexpr (STAGES == 1) {
             // rejection=36dB, transition band=0.1
             mFilterA[0].coef = 0.23647102099689224f;
             mFilterB[0].coef = 0.71454214971260010f;

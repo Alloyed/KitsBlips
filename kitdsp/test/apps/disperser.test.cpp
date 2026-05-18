@@ -15,9 +15,8 @@ TEST(disperser, works) {
     float sampleRate = f.getSampleRate();
     size_t len = f.getNumSamplesPerChannel();
 
-    constexpr size_t snesBufferSize = Disperser::GetMaxFilters() * 300;
-    float snesBuffer[snesBufferSize];
-    Disperser effect({snesBuffer, snesBufferSize});
+    float snesBuffer[Disperser::GetNeededSampleMemory()];
+    Disperser effect({snesBuffer, Disperser::GetNeededSampleMemory()});
 
     // test 1 default settings
     effect.Reset();

@@ -2,15 +2,70 @@
 
 #include "etl/vector.h"
 #include "kitdsp/delayLine.h"
-#include "kitdsp/math/vector.h"
+#include "kitdsp/filters/biquad.h"
+#include "kitdsp/filters/crossover.h"
+#include "kitdsp/samplerate/undersampler.h"
+#include "kitdsp/spanAllocator.h"
 
 namespace kitdsp {
+
+class AllPassStack {
+   public:
+    static constexpr size_t kMaxStages = 100;
+    static constexpr size_t kMaxSamples = 100;
+
+    static constexpr size_t GetNeededSampleMemory() { return kMaxSamples * kMaxStages; }
+
+    explicit AllPassStack(etl::span<float> mem) {
+        assert(mem.size() == GetNeededSampleMemory());
+        for (size_t stage = 0; stage < kMaxStages; ++stage) {
+            mBuf.emplace_back(etl::span<float>({&mem[stage * kMaxSamples], kMaxSamples}));
+        }
+    }
+    void SetParams(size_t stages, float k, float freq, float sampleRate) {
+        this->mNumStages = stages;
+        this->k = k;
+        this->M = narrow_cast<int32_t>(sampleRate / (freq * 2.0f));
+    }
+
+    float Process(float in) {
+        float x = in;
+        for (size_t stage = 0; stage < mNumStages; ++stage) {
+            float vnm = mBuf[stage].Read(M);
+
+            // direct form II
+            float vn = x - k * vnm;
+            x = k * vn + vnm;
+
+            mBuf[stage].Write(vn);
+        }
+        return x;
+    }
+
+   private:
+    float k;
+    int32_t M;
+    size_t mNumStages;
+    etl::vector<DelayLine<float>, kMaxStages> mBuf;
+};
+
 class Disperser {
-    static constexpr size_t kMaxFilters = 32;
     using Sample = float;
 
    public:
-    explicit Disperser(etl::span<Sample> buffer) : mDelaySize(buffer.size() / kMaxFilters), mDelayBuffer(buffer) {}
+    static constexpr size_t GetNeededSampleMemory() {
+        return
+            // mLowAllpass
+            AllPassStack::GetNeededSampleMemory() +
+            // mHighAllpass
+            AllPassStack::GetNeededSampleMemory() +
+            // mDelay
+            AllPassStack::kMaxSamples +
+            // mDelay
+            AllPassStack::kMaxSamples;
+    }
+
+    explicit Disperser(etl::span<float> mem) : kitdsp::Disperser(SpanAllocator<float>(mem)) {}
     void Reset();
 
     void SetParams(float frequencyHz, float sampleRate, float feedback, size_t numFilters);
@@ -18,21 +73,21 @@ class Disperser {
     Sample Process(Sample in);
     void ProcessInPlace(etl::span<Sample> in);
 
-    float GetLowestFrequency(float sampleRate) const {
-        float maxPeriod = narrow_cast<float>(mDelaySize - 2);
-        return sampleRate / maxPeriod;
-    }
-    static constexpr size_t GetMaxFilters() { return kMaxFilters; }
-
    private:
-    // allpass coefficients
-    float mC1 = 0.0f;
-    float mC2 = 0.0f;
-    float mC3 = 0.0f;
-    float mDelay = 1;
-    size_t mDelaySize;
+    explicit Disperser(SpanAllocator<float> mem)
+        : mLowAllpass(mem.alloc(AllPassStack::GetNeededSampleMemory())),
+          mHighAllpass(mem.alloc(AllPassStack::GetNeededSampleMemory())),
+          mLowDelay(mem.alloc(AllPassStack::kMaxSamples)),
+          mHighDelay(mem.alloc(AllPassStack::kMaxSamples)) {}
+    Undersampler2x<float> mLowSampler{};
+    CrossoverFilter mLowCrossover{};
+    AllPassStack mLowAllpass;
+    rbj::BiquadFilter mLowFilter{};
 
-    etl::vector<DelayLine<Sample>, kMaxFilters> mDelayLines;
-    etl::span<Sample> mDelayBuffer;
+    CrossoverFilter mHighCrossover{};
+    AllPassStack mHighAllpass;
+
+    DelayLine<float> mLowDelay;
+    DelayLine<float> mHighDelay;
 };
 }  // namespace kitdsp

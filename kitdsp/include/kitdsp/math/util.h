@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <type_traits>
 #include "kitdsp/macros.h"
 
 namespace kitdsp {
@@ -77,8 +78,8 @@ inline float blockNanf(float in, float valueIfNan = 0.0f) {
 template <class T2, class T1>
 KITDSP_CONSTEXPR T2 bit_cast(T1 t1) {
     static_assert(sizeof(T1) == sizeof(T2), "Types must match sizes");
-    static_assert(std::is_pod<T1>::value, "Requires POD input");
-    static_assert(std::is_pod<T2>::value, "Requires POD output");
+    static_assert(std::is_standard_layout<T1>::value && std::is_trivial<T1>::value, "Requires POD input");
+    static_assert(std::is_standard_layout<T2>::value && std::is_trivial<T2>::value, "Requires POD output");
 
     T2 t2;
     std::memcpy(std::addressof(t2), std::addressof(t1), sizeof(T1));
