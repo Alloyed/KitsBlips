@@ -279,7 +279,7 @@ bool ContextImpl::Create(bool isFloating) {
     ImGui::SetCurrentContext(mImgui);
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     //  disable file writing
     io.IniFilename = nullptr;

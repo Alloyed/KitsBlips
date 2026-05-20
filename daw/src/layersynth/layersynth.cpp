@@ -111,9 +111,88 @@ using namespace clapeze;
 
 namespace layersynth {
 
+template<size_t TNumSamples>
+class RawSampleLoader {
+    public:
+    using File = AudioFile<float>;
+    using Queue = etl::queue_spsc_atomic<std::pair<size_t, File*>, 200, etl::memory_model::MEMORY_MODEL_SMALL>;
+    using Sampler = kitdsp::Sampler1D<float, kitdsp::interpolate::InterpolationStrategy::Linear, false>;
+
+    class AudioHandle {
+        public:
+        AudioHandle(Queue& mainToAudio, Queue& audioToMain): mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {
+        }
+        void ReleaseSample(size_t idx) {
+            mAudioToMain.push({idx, mSampleData[idx]});
+            mSampleData[idx] = nullptr;
+            mSamplers[idx] = std::nullopt;
+        }
+        void OnAudioUpdate() {
+            std::pair<size_t, File*> pair;
+            while(mMainToAudio.pop(pair)) {
+                if(mSampleData[pair.first]) {
+                    ReleaseSample(pair.first);
+                }
+                mSampleData[pair.first] = pair.second;
+                mSamplers[pair.first] = std::make_optional<Sampler>(pair.second->samples[0]);
+            }
+        }
+        const Sampler* GetSampler(size_t i) const {
+            return mSamplers[i] ? &(*mSamplers[i]) : nullptr;
+        }
+        size_t GetNumSamplers() const {
+            return mSamplers.size();
+        }
+    private:
+        Queue& mMainToAudio;
+        Queue& mAudioToMain;
+        etl::array<File*, TNumSamples> mSampleData;
+        etl::array<std::optional<Sampler>, TNumSamples> mSamplers;
+    };
+
+    RawSampleLoader(): mAudioHandle(mMainToAudio, mAudioToMain) {}
+
+    void LoadSample(size_t idx, const std::string& path) {
+        File* f = new AudioFile<float>(path);
+        mMainToAudio.push({idx, f});
+        mSamplePaths[idx] = path;
+    }
+
+    std::string GetSamplePath(size_t idx) {
+        return mSamplePaths[idx];
+    }
+
+    void OnMainUpdate() {
+        std::pair<size_t, File*> pair;
+        while(mAudioToMain.pop(pair)) {
+            delete pair.second;
+        }
+    }
+    AudioHandle& GetAudioHandle() {
+        return mAudioHandle;
+    }
+
+    void OnImGui() {
+        for (size_t i = 0; i < TNumSamples; ++i) {
+            ImGui::PushID(static_cast<int>(i));
+            //ImGui::Text("%s", fmt::format("{}: {}", i, GetSamplePath(i)));
+            ImGui::Text("%s", fmt::format("{}", i).c_str());
+
+            ImGui::PopID();
+        }
+    }
+
+    private:
+    Queue mMainToAudio{};
+    Queue mAudioToMain{};
+    AudioHandle mAudioHandle;
+    etl::array<std::string, TNumSamples> mSamplePaths{};
+};
+using SampleLoader = RawSampleLoader<4>;
+
 class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle> {
    public:
-    explicit Processor(ParamsFeature::AudioHandle& params) : InstrumentProcessor(params), mVoices(*this) {}
+    explicit Processor(ParamsFeature::AudioHandle& params, SampleLoader::AudioHandle& sampleLoader) : InstrumentProcessor(params), mSampleLoader(sampleLoader), mVoices(*this) {}
     ~Processor() = default;
 
     clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) override {
@@ -213,15 +292,17 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
 
    private:
     clapeze::VoicePool<Processor, Voice, cMaxVoices> mVoices;
+    SampleLoader::AudioHandle& mSampleLoader;
 };
 
 #if KITSBLIPS_ENABLE_GUI
 class GuiApp : public kitgui::BaseApp {
    public:
-    GuiApp(kitgui::Context& ctx, clapeze::BasePlugin& plugin, ParamsFeature& params)
+    GuiApp(kitgui::Context& ctx, clapeze::BasePlugin& plugin, ParamsFeature& params, SampleLoader& sampleLoader)
         : kitgui::BaseApp(ctx),
           mPlugin(plugin),
           mParams(params),
+          mSampleLoader(sampleLoader),
           mPresetBrowser(plugin) {}
     ~GuiApp() = default;
 
@@ -239,8 +320,8 @@ class GuiApp : public kitgui::BaseApp {
     }
 
     void OnGuiUpdate() override {
-        ImGuiViewport* viewport = ImGui::GetMainViewport();
         /*
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImGuiID dockspace_id = ImGui::GetID("My Dockspace");
         if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr) {
             ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);
@@ -253,7 +334,7 @@ class GuiApp : public kitgui::BaseApp {
         }
         ImGui::DockSpaceOverViewport(dockspace_id, viewport, ImGuiDockNodeFlags_PassthruCentralNode);
         */
-        ImGui::DockSpaceOverViewport(0, viewport, ImGuiDockNodeFlags_PassthruCentralNode);
+        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("Preset")) {
@@ -303,6 +384,9 @@ class GuiApp : public kitgui::BaseApp {
         }
         ImGui::End();
 
+        ImGui::Begin("Samples");
+        mSampleLoader.OnImGui();
+        ImGui::End();
     }
 
     void OnDraw() override {}
@@ -310,11 +394,21 @@ class GuiApp : public kitgui::BaseApp {
    private:
     clapeze::BasePlugin& mPlugin;
     ParamsFeature& mParams;
+    SampleLoader& mSampleLoader;
     kitgui::PresetBrowser mPresetBrowser;
     bool mDebugMode = false;
     bool mShowHelpWindow = false;
 };
 #endif
+
+class StateFeature : public TomlStateFeature<ParamsFeature> {
+    public:
+    StateFeature(BasePlugin& self, SampleLoader& sampleLoader): TomlStateFeature(self, 0),  mSampleLoader(sampleLoader)  {}
+    virtual bool OnSave(toml::table& t) const { (void)t; return true; }
+    virtual bool OnLoad(const toml::table& t) { (void)t; return true; }
+    private:
+    SampleLoader& mSampleLoader;
+};
 
 class Plugin : public InstrumentPlugin {
    public:
@@ -382,27 +476,22 @@ class Plugin : public InstrumentPlugin {
         GlobalParams();
 
         ConfigFeature<clapeze::AssetsFeature>();
-        ConfigFeature<TomlStateFeature<ParamsFeature>>(*this);
+        ConfigFeature<StateFeature>(*this, mSampleLoader);
         ConfigFeature<clapeze::PresetFeature>(*this);
 
 #if KITSBLIPS_ENABLE_GUI
         // aspect ratio 1.5
         kitgui::SizeConfig cfg{750, 500, false, true};
         ConfigFeature<KitguiFeature>(
-            GetHost(), [this, &params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, *this, params); },
+            GetHost(), [this, &params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, *this, params, mSampleLoader); },
             cfg);
 #endif
 
-        ConfigProcessor<Processor>(params.GetAudioHandle<ParamsFeature::AudioHandle>());
+        ConfigProcessor<Processor>(params.GetAudioHandle<ParamsFeature::AudioHandle>(), mSampleLoader.GetAudioHandle());
     }
 
-    void LoadSample(std::string_view path) {
-        mSamples.emplace_back();
-        std::string s(path);
-        mSamples.back().load(s);
-    }
-
-    std::vector<AudioFile<float>> mSamples;
+    private:
+    SampleLoader mSampleLoader;
 };
 
 CLAPEZE_REGISTER_PLUGIN(Plugin,
