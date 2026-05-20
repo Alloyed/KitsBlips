@@ -55,13 +55,13 @@ class BiquadFilter {
     }
 
     /**
-     * Set frequency + resonance.
-     * @param Q
-     * @param dbGain
+     * Sets the shelf factors of the filter (only necessary for low-shelf and high-shelf)
+     * @param S 1 is maximum steepness. >1 increases the slope
+     * @param dbGain in db.
      */
     template <BiquadFilterMode MODE>
-    inline void SetShelf(float Q_, float dbGain) {
-        Q = Q_;
+    inline void SetShelf(float S, float dbGain) {
+        Q = S;
         A = std::sqrt(std::pow(10.0f, dbGain / 20.0f));
         A_p_1 = A + 1.0f;
         A_m_1 = A - 1.0f;

@@ -17,6 +17,7 @@ add_library(KitDSP STATIC
     src/frequencyShifter.cpp
     src/pitch/h910PitchShifter.cpp
     src/pitch/zeroCrossingPitchDetector.cpp
+    src/apps/equalizer3Band.cpp
 )
 
 # C++11 is required for ABI compatibility with VCV Rack 2, which has standardized on an old version of mingw
