@@ -15,6 +15,11 @@ if(APPLE)
     option(KITSBLIPS_ENABLE_AUDIOUNIT "build Audio Units" OFF)
 endif()
 
+if(KITSBLIPS_ENABLE_VST AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # needed for VST headers: https://forum.juce.com/t/juce-8-0-12-linux-vst-embedded-interface-pragma-pack-warnings/67852/7
+    add_compile_options(-Wno-pragma-pack)
+endif()
+
 if(KITSBLIPS_RETAIL)
     message(STATUS "KITSBLIPS - Building For Retail")
 endif()

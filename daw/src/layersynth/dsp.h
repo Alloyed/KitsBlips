@@ -1,5 +1,6 @@
 #pragma once
 
+#include <clapeze/processor/voice.h>
 #include <kitdsp/apps/chorus.h>
 #include <kitdsp/control/adsr.h>
 #include <kitdsp/control/approach.h>
@@ -12,7 +13,6 @@
 #include <kitdsp/osc/blepOscillator.h>
 #include <kitdsp/osc/naiveOscillator.h>
 #include <kitdsp/sampler.h>
-#include <clapeze/processor/voice.h>
 
 namespace layersynth {
 
@@ -22,13 +22,9 @@ class Processor;
 
 /* Unlike the D50, we are combining the synth/PCM partial types into a single signal path. */
 class Partial {
-    enum class Wave: uint8_t {
-        Pulse,
-        Saw,
-        Pcm
-    };
    public:
-    Partial(){}
+    enum class Wave : uint8_t { Pulse, Saw, Pcm };
+    Partial() {}
     void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
         (void)velocity;
         mNote = note.key;
@@ -61,28 +57,26 @@ class Partial {
         float res = mFilterRes * 0.89f;  // acts as cap, experimentally determined
         float filterSteepness = 0.5f;    // steeper means "achieves self-oscillation quicker"
         float filterQ = 0.5f * std::exp(filterSteepness * (res / (1 - res)));  // [0, 1] -> [0.5, inf]
-        mFilter.SetFrequency(kitdsp::midiToFrequency(filterNote), sr, filterQ);
+        mFilter.SetFrequency(kitdsp::midiToFrequency(filterNote, mTune), sr, filterQ);
 
         float waveout = 0.0f;
-        switch(mWave) {
+        switch (mWave) {
             case Wave::Pulse: {
-                mOsc.SetFrequency(kitdsp::midiToFrequency(pitchNote), sr);
+                mOsc.SetFrequency(kitdsp::midiToFrequency(pitchNote, mTune), sr);
                 mOsc.GetOscillator().SetDuty(mDuty + (mDutyLfo ? mDutyLfo->GetValue() * mDutyLfoMult : 0.0f));
                 float osc = mOsc.Process();
                 waveout = mFilter.Process<kitdsp::SvfFilterMode::LowPass>(osc);
-            }
-            break;
+            } break;
             case Wave::Saw: {
-                mOsc.SetFrequency(kitdsp::midiToFrequency(pitchNote), sr);
+                mOsc.SetFrequency(kitdsp::midiToFrequency(pitchNote, mTune), sr);
                 mOsc.GetOscillator().SetDuty(mDuty + (mDutyLfo ? mDutyLfo->GetValue() * mDutyLfoMult : 0.0f));
                 float osc = mOsc.Process();
-                waveout = mFilter.Process<kitdsp::SvfFilterMode::LowPass>(osc) * kitdsp::approx::cos2pif_nasty(mOsc.GetPhase());
-            }
-            break;
+                waveout = mFilter.Process<kitdsp::SvfFilterMode::LowPass>(osc) *
+                          kitdsp::approx::cos2pif_nasty(mOsc.GetPhase());
+            } break;
             case Wave::Pcm: {
                 // TODO
-            }
-            break;
+            } break;
         }
 
         float vca = mVcaMult * mVolumeEnv.GetValue() + (mVcaLfo ? mVcaLfo->GetValue() * mVcaLfoMult : 0.0f);
@@ -105,6 +99,7 @@ class Partial {
     float sr{};
     float mNote{};
     float mNoteOffset{};
+    float mTune{};
     float mPitchEnvMult{};
     float mPitchLfoMult{};
     float mDuty{};
@@ -124,7 +119,13 @@ class Partial {
 
 class Tone {
    public:
-    Tone() : mPartial1(), mPartial2() {}
+    Tone() : mPartial1(), mPartial2() {
+        // hardcoded pitch routing
+        SetLfoRoute(1, 1, 1);
+        mPartial1.mPitchEnv = &mPitchEnv;
+        SetLfoRoute(2, 1, 1);
+        mPartial2.mPitchEnv = &mPitchEnv;
+    }
     void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
         (void)velocity;
         mPartial1.ProcessNoteOn(note, velocity);
@@ -148,7 +149,7 @@ class Tone {
         mLfo2.Reset();
         mLfo3.Reset();
         mPitchEnv.Reset();
-        if(mChorus) {
+        if (mChorus) {
             mChorus->Reset();
         }
     }
@@ -159,21 +160,48 @@ class Tone {
         mLfo3.Process();
 
         float mix = kitdsp::lerp(mPartial1.Process(), mPartial2.Process(), mPartialMix);
-        if(mChorus) {
+        if (mChorus) {
             return mChorus->Process(mix);
-        }
-        else {
+        } else {
             return {mix, mix};
         }
     }
     bool IsProcessing() const { return mPartial1.IsProcessing() || mPartial2.IsProcessing(); }
 
+    void SetLfoRoute(int32_t partial, int32_t target, int32_t sourceLfo) {
+        Partial* p{};
+        if (partial == 1) {
+            p = &mPartial1;
+        } else {
+            p = &mPartial2;
+        }
+
+        kitdsp::lfo::TriangleOscillator** pTarget{};
+        if (target == 1) {
+            pTarget = &p->mPitchLfo;
+        } else if (target == 2) {
+            pTarget = &p->mDutyLfo;
+        } else if (target == 3) {
+            pTarget = &p->mFilterLfo;
+        } else {
+            pTarget = &p->mVcaLfo;
+        }
+
+        if (sourceLfo == 1) {
+            *pTarget = &mLfo1;
+        } else if (sourceLfo == 2) {
+            *pTarget = &mLfo2;
+        } else {
+            *pTarget = &mLfo3;
+        }
+    }
+
     Partial mPartial1;
     Partial mPartial2;
     // tri, saw, square, s&h
-    kitdsp::lfo::TriangleOscillator mLfo1; // pitch, pulse width, cutoff, vca
-    kitdsp::lfo::TriangleOscillator mLfo2; // pulse width, cutoff, vca
-    kitdsp::lfo::TriangleOscillator mLfo3; // pulse width, cutoff, vca
+    kitdsp::lfo::TriangleOscillator mLfo1;  // pitch, pulse width, cutoff, vca
+    kitdsp::lfo::TriangleOscillator mLfo2;  // pulse width, cutoff, vca
+    kitdsp::lfo::TriangleOscillator mLfo3;  // pulse width, cutoff, vca
     kitdsp::ApproachAdsr mPitchEnv;
     std::optional<kitdsp::Chorus> mChorus;
     // kitdsp::Equalizer mEq; // ok fine...
@@ -185,7 +213,8 @@ class Tone {
 
 class Voice {
    public:
-    explicit Voice(Processor& p) : mProcessor(p), mTone1(), mTone2() {}
+    enum class ToneAlgorithm : uint8_t { OneOnly, TwoOnly, Both };
+    explicit Voice(Processor& p) : mTone1(), mTone2(), mProcessor(p) {}
     void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
         (void)velocity;
         mNote = note.key;
@@ -205,11 +234,29 @@ class Voice {
         mTone2.Reset();
     }
     bool ProcessAudio(clapeze::StereoAudioBuffer& out) {
-        for (uint32_t index = 0; index < out.left.size(); index++) {
-            kitdsp::float_2 outf = mTone1.Process() + mTone2.Process();
-
-            out.left[index] += outf.left;
-            out.right[index] += outf.right;
+        switch (mAlgo) {
+            case ToneAlgorithm::OneOnly: {
+                for (uint32_t index = 0; index < out.left.size(); index++) {
+                    kitdsp::float_2 outf = mTone1.Process();
+                    out.left[index] += outf.left;
+                    out.right[index] += outf.right;
+                }
+            }
+            case ToneAlgorithm::TwoOnly: {
+                for (uint32_t index = 0; index < out.left.size(); index++) {
+                    kitdsp::float_2 outf = mTone2.Process();
+                    out.left[index] += outf.left;
+                    out.right[index] += outf.right;
+                }
+            }
+            case ToneAlgorithm::Both: {
+                for (uint32_t index = 0; index < out.left.size(); index++) {
+                    kitdsp::float_2 outf = mTone1.Process() + mTone2.Process();
+                    out.left[index] += outf.left;
+                    out.right[index] += outf.right;
+                }
+                break;
+            }
         }
 
         // if no longer processing, time to sleep
@@ -218,6 +265,8 @@ class Voice {
 
     Tone mTone1;
     Tone mTone2;
+    ToneAlgorithm mAlgo = ToneAlgorithm::OneOnly;
+
    private:
     Processor& mProcessor;
     float mNote;

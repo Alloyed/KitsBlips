@@ -13,9 +13,9 @@
 #include <clapeze/processor/voice.h>
 #include <etl/flat_multimap.h>
 #include <etl/vector.h>
-#include "AudioFile.h"
 #include <memory>
 #include <sstream>
+#include "AudioFile.h"
 
 #include <descriptor.h>
 
@@ -26,10 +26,10 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <kitgui/app.h>
-#include <kitgui/gfx/scene.h>
 #include <kitgui/context.h>
-#include "gui/kitguiFeature.h"
+#include <kitgui/gfx/scene.h>
 #include "gui/debugui.h"
+#include "gui/kitguiFeature.h"
 #include "gui/parameterControls.h"
 #include "gui/presetBrowser.h"
 #endif
@@ -70,7 +70,7 @@ enum class PartialParams : clap_id {
     VcaLfoMult,
     // + filterEnv
     // + volumeEnv
-    Count = 16u + static_cast<clap_id>(EnvParams::Count) * 2, 
+    Count = 16u + static_cast<clap_id>(EnvParams::Count) * 2,
 };
 enum class ToneParams {
     ChorusMix,
@@ -88,20 +88,29 @@ enum class ToneParams {
 };
 enum class GlobalParams {
     Tune,
-    ToneMix,
+    ToneAlgorithm,
     // + tone1
     // + tone2
     Count = 2u + static_cast<clap_id>(ToneParams::Count) * 2,
 };
 
 struct LfoRateParam : public clapeze::NumericParam {
-    LfoRateParam(std::string_view key, std::string_view name) : clapeze::NumericParam(key, name, 0.001f, 20.0f, 0.2f, "hz") { mCurve = clapeze::cPowCurve<3.0f>; }
+    LfoRateParam(std::string_view key, std::string_view name)
+        : clapeze::NumericParam(key, name, 0.001f, 20.0f, 0.2f, "hz") {
+        mCurve = clapeze::cPowCurve<3.0f>;
+    }
 };
 
 struct EnvParam : public clapeze::NumericParam {
-    EnvParam(std::string_view key, std::string_view name, float min, float max) : clapeze::NumericParam(key, name, min, max, min, "ms") {
+    EnvParam(std::string_view key, std::string_view name, float min, float max)
+        : clapeze::NumericParam(key, name, min, max, min, "ms") {
         mCurve = clapeze::cPowCurve<2.0f>;
     }
+};
+
+struct ModSourceParam : public clapeze::IntegerParam {
+    ModSourceParam(std::string_view key, std::string_view name, int32_t defaultValue = 1)
+        : clapeze::IntegerParam(key, name, 1, 3, defaultValue) {}
 };
 
 using ParamsFeature = clapeze::params::DynamicParametersFeature;
@@ -111,17 +120,16 @@ using namespace clapeze;
 
 namespace layersynth {
 
-template<size_t TNumSamples>
+template <size_t TNumSamples>
 class RawSampleLoader {
-    public:
+   public:
     using File = AudioFile<float>;
     using Queue = etl::queue_spsc_atomic<std::pair<size_t, File*>, 200, etl::memory_model::MEMORY_MODEL_SMALL>;
     using Sampler = kitdsp::Sampler1D<float, kitdsp::interpolate::InterpolationStrategy::Linear, false>;
 
     class AudioHandle {
-        public:
-        AudioHandle(Queue& mainToAudio, Queue& audioToMain): mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {
-        }
+       public:
+        AudioHandle(Queue& mainToAudio, Queue& audioToMain) : mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {}
         void ReleaseSample(size_t idx) {
             mAudioToMain.push({idx, mSampleData[idx]});
             mSampleData[idx] = nullptr;
@@ -129,28 +137,25 @@ class RawSampleLoader {
         }
         void OnAudioUpdate() {
             std::pair<size_t, File*> pair;
-            while(mMainToAudio.pop(pair)) {
-                if(mSampleData[pair.first]) {
+            while (mMainToAudio.pop(pair)) {
+                if (mSampleData[pair.first]) {
                     ReleaseSample(pair.first);
                 }
                 mSampleData[pair.first] = pair.second;
                 mSamplers[pair.first] = std::make_optional<Sampler>(pair.second->samples[0]);
             }
         }
-        const Sampler* GetSampler(size_t i) const {
-            return mSamplers[i] ? &(*mSamplers[i]) : nullptr;
-        }
-        size_t GetNumSamplers() const {
-            return mSamplers.size();
-        }
-    private:
+        const Sampler* GetSampler(size_t i) const { return mSamplers[i] ? &(*mSamplers[i]) : nullptr; }
+        size_t GetNumSamplers() const { return mSamplers.size(); }
+
+       private:
         Queue& mMainToAudio;
         Queue& mAudioToMain;
         etl::array<File*, TNumSamples> mSampleData;
         etl::array<std::optional<Sampler>, TNumSamples> mSamplers;
     };
 
-    RawSampleLoader(): mAudioHandle(mMainToAudio, mAudioToMain) {}
+    RawSampleLoader() : mAudioHandle(mMainToAudio, mAudioToMain) {}
 
     void LoadSample(size_t idx, const std::string& path) {
         File* f = new AudioFile<float>(path);
@@ -158,31 +163,27 @@ class RawSampleLoader {
         mSamplePaths[idx] = path;
     }
 
-    std::string GetSamplePath(size_t idx) {
-        return mSamplePaths[idx];
-    }
+    std::string GetSamplePath(size_t idx) { return mSamplePaths[idx]; }
 
     void OnMainUpdate() {
         std::pair<size_t, File*> pair;
-        while(mAudioToMain.pop(pair)) {
+        while (mAudioToMain.pop(pair)) {
             delete pair.second;
         }
     }
-    AudioHandle& GetAudioHandle() {
-        return mAudioHandle;
-    }
+    AudioHandle& GetAudioHandle() { return mAudioHandle; }
 
     void OnImGui() {
         for (size_t i = 0; i < TNumSamples; ++i) {
             ImGui::PushID(static_cast<int>(i));
-            //ImGui::Text("%s", fmt::format("{}: {}", i, GetSamplePath(i)));
+            // ImGui::Text("%s", fmt::format("{}: {}", i, GetSamplePath(i)));
             ImGui::Text("%s", fmt::format("{}", i).c_str());
 
             ImGui::PopID();
         }
     }
 
-    private:
+   private:
     Queue mMainToAudio{};
     Queue mAudioToMain{};
     AudioHandle mAudioHandle;
@@ -192,7 +193,8 @@ using SampleLoader = RawSampleLoader<4>;
 
 class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle> {
    public:
-    explicit Processor(ParamsFeature::AudioHandle& params, SampleLoader::AudioHandle& sampleLoader) : InstrumentProcessor(params), mSampleLoader(sampleLoader), mVoices(*this) {}
+    explicit Processor(ParamsFeature::AudioHandle& params, SampleLoader::AudioHandle& sampleLoader)
+        : InstrumentProcessor(params), mVoices(*this), mSampleLoader(sampleLoader) {}
     ~Processor() = default;
 
     clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) override {
@@ -201,54 +203,73 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
         mVoices.SetStrategy(clapeze::VoiceStrategy::Poly);
         mVoices.ForEach([&](Voice& v) {
             auto LfoParams = [&](kitdsp::lfo::TriangleOscillator& lfo, clap_id first) {
-                float wave = mParams.Get<PercentParam>(first+static_cast<clap_id>(LfoParams::Wave));
-                float rate = mParams.Get<LfoRateParam>(first+static_cast<clap_id>(LfoParams::Rate));
-                float delay = mParams.Get<PercentParam>(first+static_cast<clap_id>(LfoParams::Delay));
-                float sync = mParams.Get<PercentParam>(first+static_cast<clap_id>(LfoParams::Sync));
+                // float wave = mParams.Get<PercentParam>(first + static_cast<clap_id>(LfoParams::Wave));
+                float rate = mParams.Get<LfoRateParam>(first + static_cast<clap_id>(LfoParams::Rate));
+                // float delay = mParams.Get<PercentParam>(first + static_cast<clap_id>(LfoParams::Delay));
+                // float sync = mParams.Get<PercentParam>(first + static_cast<clap_id>(LfoParams::Sync));
                 lfo.SetFrequency(rate, sr);
             };
             auto EnvParams = [&](kitdsp::ApproachAdsr& adsr, clap_id first) {
-                float a = mParams.Get<EnvParam>(first+static_cast<clap_id>(EnvParams::Attack));
+                float a = mParams.Get<EnvParam>(first + static_cast<clap_id>(EnvParams::Attack));
                 float d = mParams.Get<EnvParam>(first + static_cast<clap_id>(EnvParams::Decay));
-                float s = mParams.Get<PercentParam>(first+static_cast<clap_id>(EnvParams::Sustain));
+                float s = mParams.Get<PercentParam>(first + static_cast<clap_id>(EnvParams::Sustain));
                 float r = mParams.Get<EnvParam>(first + static_cast<clap_id>(EnvParams::Release));
                 adsr.SetParams(a, d, s, r, sr);
             };
             auto PartialParams = [&](Partial& part, clap_id first) {
                 part.sr = sr;
-                // = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::Wave));
-                part.mNoteOffset = mParams.Get<NumericParam>(first+static_cast<clap_id>(PartialParams::PitchOffset));
-                part.mPitchEnvMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::PitchEnvMult));
-                part.mPitchLfoMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::PitchLfoMult));
-                part.mDuty = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::Duty));
-                //mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::DutyLfoSource));
-                part.mDutyLfoMult= mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::DutyLfoMult));
-                part.mFilterNote = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::FilterNote)) * 80.0f;
-                part.mFilterTrackingMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::FilterTrackingMult));
-                part.mFilterEnvMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::FilterEnvMult));
-                //part.mFilterLfoMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::FilterLfoSource));
-                part.mFilterLfoMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::FilterLfoMult));
-                part.mFilterRes = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::FilterRes));
-                part.mVcaMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::VcaMult));
-                //part.mVcaLfoMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::VcaLfoSource));
-                part.mVcaLfoMult = mParams.Get<PercentParam>(first+static_cast<clap_id>(PartialParams::VcaLfoMult));
+                part.mWave = mParams.Get<EnumParam<Partial::Wave>>(first + static_cast<clap_id>(PartialParams::Wave));
+                part.mNoteOffset = mParams.Get<NumericParam>(first + static_cast<clap_id>(PartialParams::PitchOffset));
+                part.mTune = mParams.Get<NumericParam>(static_cast<clap_id>(GlobalParams::Tune));
+                part.mPitchEnvMult =
+                    mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::PitchEnvMult));
+                part.mPitchLfoMult =
+                    mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::PitchLfoMult));
+                part.mDuty = mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::Duty));
+                part.mDutyLfoMult = mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::DutyLfoMult));
+                part.mFilterNote =
+                    mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::FilterNote)) * 80.0f;
+                part.mFilterTrackingMult =
+                    mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::FilterTrackingMult));
+                part.mFilterEnvMult =
+                    mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::FilterEnvMult));
+                part.mFilterLfoMult =
+                    mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::FilterLfoMult));
+                part.mFilterRes = mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::FilterRes));
+                part.mVcaMult = mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::VcaMult));
+                part.mVcaLfoMult = mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::VcaLfoMult));
                 first += 16;
                 EnvParams(part.mFilterEnv, first);
                 first += static_cast<clap_id>(EnvParams::Count);
                 EnvParams(part.mVolumeEnv, first);
             };
             auto ToneParams = [&](Tone& tone, clap_id first) {
-                if(tone.mChorus) {
+                if (tone.mChorus) {
                     auto& cfg = tone.mChorus->cfg;
-                    cfg.mix = mParams.Get<PercentParam>(first+static_cast<clap_id>(ToneParams::ChorusMix));
-                    cfg.mix = mParams.Get<PercentParam>(first+static_cast<clap_id>(ToneParams::ChorusRate));
-                    cfg.mix = mParams.Get<PercentParam>(first+static_cast<clap_id>(ToneParams::ChorusDepth));
+                    cfg.mix = mParams.Get<PercentParam>(first + static_cast<clap_id>(ToneParams::ChorusMix));
+                    cfg.mix = mParams.Get<PercentParam>(first + static_cast<clap_id>(ToneParams::ChorusRate));
+                    cfg.mix = mParams.Get<PercentParam>(first + static_cast<clap_id>(ToneParams::ChorusDepth));
                 }
-                tone.mPartialMix = mParams.Get<PercentParam>(first+static_cast<clap_id>(ToneParams::PartialMix));
+                tone.mPartialMix = mParams.Get<PercentParam>(first + static_cast<clap_id>(ToneParams::PartialMix));
                 first += 4;
+
                 PartialParams(tone.mPartial1, first);
                 first += static_cast<clap_id>(PartialParams::Count);
+                tone.SetLfoRoute(
+                    1, 2, mParams.Get<ModSourceParam>(first + static_cast<clap_id>(PartialParams::DutyLfoSource)));
+                tone.SetLfoRoute(
+                    1, 3, mParams.Get<ModSourceParam>(first + static_cast<clap_id>(PartialParams::FilterLfoSource)));
+                tone.SetLfoRoute(
+                    1, 4, mParams.Get<ModSourceParam>(first + static_cast<clap_id>(PartialParams::VcaLfoSource)));
+
                 PartialParams(tone.mPartial2, first);
+                tone.SetLfoRoute(
+                    2, 2, mParams.Get<ModSourceParam>(first + static_cast<clap_id>(PartialParams::DutyLfoSource)));
+                tone.SetLfoRoute(
+                    2, 3, mParams.Get<ModSourceParam>(first + static_cast<clap_id>(PartialParams::FilterLfoSource)));
+                tone.SetLfoRoute(
+                    2, 4, mParams.Get<ModSourceParam>(first + static_cast<clap_id>(PartialParams::VcaLfoSource)));
+
                 first += static_cast<clap_id>(PartialParams::Count);
                 LfoParams(tone.mLfo1, first);
                 first += static_cast<clap_id>(LfoParams::Count);
@@ -259,8 +280,8 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                 EnvParams(tone.mPitchEnv, first);
             };
             auto GlobalParams = [&]() {
-                //mParams.Get<PercentParam>(static_cast<clap_id>(GlobalParams::Tune));
-                //mParams.Get<PercentParam>(static_cast<clap_id>(GlobalParams::ToneMix));
+                v.mAlgo =
+                    mParams.Get<EnumParam<Voice::ToneAlgorithm>>(static_cast<clap_id>(GlobalParams::ToneAlgorithm));
                 ToneParams(v.mTone1, 2);
                 ToneParams(v.mTone2, 2 + static_cast<clap_id>(ToneParams::Count));
             };
@@ -275,9 +296,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
         mVoices.ProcessNoteOn(note, velocity);
     }
 
-    void ProcessNoteOff(const clapeze::NoteTuple& note) override {
-        mVoices.ProcessNoteOff(note); 
-    }
+    void ProcessNoteOff(const clapeze::NoteTuple& note) override { mVoices.ProcessNoteOff(note); }
 
     void ProcessNoteChoke(const clapeze::NoteTuple& note) override { mVoices.ProcessNoteChoke(note); }
 
@@ -289,7 +308,6 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
         float sampleRatef = static_cast<float>(sampleRate);
     }
 
-
    private:
     clapeze::VoicePool<Processor, Voice, cMaxVoices> mVoices;
     SampleLoader::AudioHandle& mSampleLoader;
@@ -299,11 +317,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
 class GuiApp : public kitgui::BaseApp {
    public:
     GuiApp(kitgui::Context& ctx, clapeze::BasePlugin& plugin, ParamsFeature& params, SampleLoader& sampleLoader)
-        : kitgui::BaseApp(ctx),
-          mPlugin(plugin),
-          mParams(params),
-          mSampleLoader(sampleLoader),
-          mPresetBrowser(plugin) {}
+        : kitgui::BaseApp(ctx), mPlugin(plugin), mParams(params), mSampleLoader(sampleLoader), mPresetBrowser(plugin) {}
     ~GuiApp() = default;
 
     void OnActivate() override {
@@ -316,25 +330,7 @@ class GuiApp : public kitgui::BaseApp {
 
     void OnUpdate() override {
         mParams.FlushFromAudio();
-        auto& paramsHandle = mParams.GetMainHandle();
-    }
-
-    void OnGuiUpdate() override {
-        /*
-        ImGuiViewport* viewport = ImGui::GetMainViewport();
-        ImGuiID dockspace_id = ImGui::GetID("My Dockspace");
-        if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr) {
-            ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);
-            ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
-            ImGuiID dock_id_main = dockspace_id;
-            ImGui::DockBuilderDockWindow("Global", dock_id_main);
-            ImGui::DockBuilderDockWindow("Tone 1", dock_id_main);
-            ImGui::DockBuilderDockWindow("Tone 2", dock_id_main);
-            ImGui::DockBuilderFinish(dockspace_id);
-        }
-        ImGui::DockSpaceOverViewport(dockspace_id, viewport, ImGuiDockNodeFlags_PassthruCentralNode);
-        */
-        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+        // auto& paramsHandle = mParams.GetMainHandle();
 
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("Preset")) {
@@ -365,29 +361,115 @@ class GuiApp : public kitgui::BaseApp {
             mDebugMode = !mDebugMode;
         }
 
-        ImGui::Begin("Global");
-        kitgui::DebugParam(mParams, 0);
-        kitgui::DebugParam(mParams, 1);
-        ImGui::End();
+        auto LfoParams = [&](clap_id first) {
+            // kitgui::DebugParam(mParams, first + static_cast<clap_id>(LfoParams::Wave));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(LfoParams::Rate));
+            // kitgui::DebugParam(mParams, first + static_cast<clap_id>(LfoParams::Delay));
+            // kitgui::DebugParam(mParams, first + static_cast<clap_id>(LfoParams::Sync));
+        };
+        auto EnvParams = [&](clap_id first) {
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(EnvParams::Attack));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(EnvParams::Decay));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(EnvParams::Sustain));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(EnvParams::Release));
+        };
+        auto PartialParams = [&](clap_id first) {
+            ImGui::Indent();
+            ImGui::SeparatorText("Wave Generator");
+            kitgui::DebugEnumParam<Partial::Wave>(mParams, first + static_cast<clap_id>(PartialParams::Wave));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::PitchOffset));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::PitchEnvMult));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::PitchLfoMult));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::Duty));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::DutyLfoSource));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::DutyLfoMult));
 
-        ImGui::Begin("Tone 1");
-        for(clap_id idx = 2; idx < 2+static_cast<clap_id>(ToneParams::Count); ++idx) 
-        {
-            kitgui::DebugParam(mParams, idx);
-        }
-        ImGui::End();
+            ImGui::SeparatorText("Filter");
+            ImGui::PushID("vcf");
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::FilterNote));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::FilterTrackingMult));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::FilterEnvMult));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::FilterLfoSource));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::FilterLfoMult));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::FilterRes));
+            EnvParams(first + 16);  // filter env
+            ImGui::PopID();
 
-        ImGui::Begin("Tone 2");
-        for(clap_id idx = 70; idx < 70+static_cast<clap_id>(ToneParams::Count); ++idx) 
-        {
-            kitgui::DebugParam(mParams, idx);
-        }
-        ImGui::End();
+            ImGui::SeparatorText("Volume");
+            ImGui::PushID("vca");
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::VcaMult));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::VcaLfoSource));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::VcaLfoMult));
+            EnvParams(first + 16 + static_cast<clap_id>(EnvParams::Count));  // volume env
+            ImGui::PopID();
+            ImGui::Unindent();
+        };
+        auto ToneParams = [&](clap_id first) {
+            ImGui::Indent();
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::ChorusMix));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::ChorusRate));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::ChorusDepth));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::PartialMix));
+            first += 4;
+            if (ImGui::BeginTabBar("part")) {
+                if (ImGui::BeginTabItem("Partial 1")) {
+                    PartialParams(first);  // part1
+                    ImGui::EndTabItem();
+                }
+                first += static_cast<clap_id>(PartialParams::Count);
+                if (ImGui::BeginTabItem("Partial 2")) {
+                    PartialParams(first);  // part2
+                    ImGui::EndTabItem();
+                }
+                first += static_cast<clap_id>(PartialParams::Count);
+                ImGui::EndTabBar();
+            }
 
-        ImGui::Begin("Samples");
-        mSampleLoader.OnImGui();
-        ImGui::End();
+            if (ImGui::BeginTabBar("lfo")) {
+                if (ImGui::BeginTabItem("LFO 1")) {
+                    LfoParams(first);  // lfo1
+                    ImGui::EndTabItem();
+                }
+                first += static_cast<clap_id>(LfoParams::Count);
+                if (ImGui::BeginTabItem("LFO 2")) {
+                    LfoParams(first);  // lfo2
+                    ImGui::EndTabItem();
+                }
+                first += static_cast<clap_id>(LfoParams::Count);
+                if (ImGui::BeginTabItem("LFO 3")) {
+                    LfoParams(first);  // lfo3
+                    ImGui::EndTabItem();
+                }
+                first += static_cast<clap_id>(LfoParams::Count);
+                ImGui::EndTabBar();
+            }
+            ImGui::SeparatorText("Pitch Envelope");
+            ImGui::PushID("pitchenv");
+            EnvParams(first);  // pitchEnv
+            ImGui::PopID();
+            ImGui::Unindent();
+        };
+        auto GlobalParams = [&]() {
+            kitgui::DebugParam(mParams, static_cast<clap_id>(GlobalParams::Tune));
+            kitgui::DebugEnumParam<Voice::ToneAlgorithm>(mParams, static_cast<clap_id>(GlobalParams::ToneAlgorithm));
+            mSampleLoader.OnImGui();
+            if (ImGui::BeginTabBar("tone")) {
+                if (ImGui::BeginTabItem("Tone 1")) {
+                    ToneParams(2);  // tone 1
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::BeginTabItem("Tone 2")) {
+                    ToneParams(2 + static_cast<clap_id>(ToneParams::Count));  // tone 2
+                    ImGui::EndTabItem();
+                }
+                ImGui::EndTabBar();
+            }
+        };
+
+        GlobalParams();
     }
+
+    void OnGuiUpdate() override {}
 
     void OnDraw() override {}
 
@@ -402,11 +484,19 @@ class GuiApp : public kitgui::BaseApp {
 #endif
 
 class StateFeature : public TomlStateFeature<ParamsFeature> {
-    public:
-    StateFeature(BasePlugin& self, SampleLoader& sampleLoader): TomlStateFeature(self, 0),  mSampleLoader(sampleLoader)  {}
-    virtual bool OnSave(toml::table& t) const { (void)t; return true; }
-    virtual bool OnLoad(const toml::table& t) { (void)t; return true; }
-    private:
+   public:
+    StateFeature(BasePlugin& self, SampleLoader& sampleLoader)
+        : TomlStateFeature(self, 0), mSampleLoader(sampleLoader) {}
+    bool OnSave(toml::table& t) const override {
+        (void)t;
+        return true;
+    }
+    bool OnLoad(const toml::table& t) override {
+        (void)t;
+        return true;
+    }
+
+   private:
     SampleLoader& mSampleLoader;
 };
 
@@ -421,54 +511,58 @@ class Plugin : public InstrumentPlugin {
         InstrumentPlugin::Config();
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), static_cast<clap_id>(GlobalParams::Count));
-        clap_id next_idx = 0; 
-        auto LfoParams = [&] (std::string pre) {
-            params.Parameter(next_idx++, new PercentParam(pre+"_wave", pre+": Wave", 0.0f));
-            params.Parameter(next_idx++, new LfoRateParam(pre+"_rate", pre+": Rate"));
-            params.Parameter(next_idx++, new PercentParam(pre+"_delay", pre+": Delay", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_sync", pre+": Sync", 0.0f));
+        clap_id next_idx = 0;
+        auto LfoParams = [&](const std::string& pre) {
+            params.Parameter(next_idx++, new EnumParam<Partial::Wave>(pre + "_wave", "Wave", {"Pulse", "Saw", "PCM"},
+                                                                      Partial::Wave::Pulse));
+            params.Parameter(next_idx++, new LfoRateParam(pre + "_rate", "Rate"));
+            params.Parameter(next_idx++, new PercentParam(pre + "_delay", "Delay", 0.0f));
+            params.Parameter(next_idx++, new PercentParam(pre + "_sync", "Sync", 0.0f));
         };
-        auto EnvParams = [&] (std::string pre) {
-            params.Parameter(next_idx++, new EnvParam(pre+"_attack", pre+": Attack", 1.0f, 1000.0f));
-            params.Parameter(next_idx++, new EnvParam(pre+"_decay", pre+": Decay", 10.0f, 30000.0f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_sustain", pre+": Sustain", 1.0f));
-            params.Parameter(next_idx++, new EnvParam(pre+"_release", pre+": Release", 10.0f, 30000.0f));
+        auto EnvParams = [&](const std::string& pre) {
+            params.Parameter(next_idx++, new EnvParam(pre + "_attack", "Attack", 1.0f, 1000.0f));
+            params.Parameter(next_idx++, new EnvParam(pre + "_decay", "Decay", 10.0f, 30000.0f));
+            params.Parameter(next_idx++, new PercentParam(pre + "_sustain", "Sustain", 1.0f));
+            params.Parameter(next_idx++, new EnvParam(pre + "_release", "Release", 10.0f, 30000.0f));
         };
-        auto PartialParams = [&] (std::string pre) {
-            params.Parameter(next_idx++, new PercentParam(pre+"_wave", pre+": Wave", 0.0f));
-            params.Parameter(next_idx++, new NumericParam(pre+"_pitch", pre+": Pitch", -32.0f, 32.0f, 0.0f, "semis"));
-            params.Parameter(next_idx++, new PercentParam(pre+"_pitchEnv", pre+": Pitch Env amount", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_pitchLfo", pre+": Pitch LFO amount", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_duty", pre+": Duty", 0.5f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_dutySrc", pre+": Duty Mod source", 0.5f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_dutyMult", pre+": Duty Mod amount", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_filter", pre+": Filter Cutoff", 1.0f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_filterTrack", pre+": Filter Tracking", 0.5f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_filterEnvMult", pre+": Filter Env amount", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_filterSrc", pre+": Filter Mod source", 0.5f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_filterSrcMult", pre+": Filter Mod amount", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_filterRes", pre+": Filter Resonance", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_vcaMult", pre+": Volume", 0.5f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_vcaLfoSource", pre+": Volume Mod source", 0.5f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_vcaLfoMult", pre+": Volume Mod amount", 0.0f));
-            EnvParams(pre+"FilterEnv");
-            EnvParams(pre+"volumeEnv");
+        auto PartialParams = [&](const std::string& pre) {
+            params.Parameter(next_idx++, new EnumParam<Partial::Wave>(pre + "_wave", "Wave", {"Pulse", "Saw", "PCM"},
+                                                                      Partial::Wave::Pulse));
+            params.Parameter(next_idx++, new NumericParam(pre + "_pitch", "Pitch", -32.0f, 32.0f, 0.0f, "semis"));
+            params.Parameter(next_idx++, new PercentParam(pre + "_pitchEnv", "Pitch Env amount", 0.0f));
+            params.Parameter(next_idx++, new PercentParam(pre + "_pitchLfo", "Pitch LFO amount", 0.0f));
+            params.Parameter(next_idx++, new PercentParam(pre + "_duty", "Duty", 0.5f));
+            params.Parameter(next_idx++, new ModSourceParam(pre + "_dutySrc", "Duty Mod source", 1));
+            params.Parameter(next_idx++, new PercentParam(pre + "_dutyMult", "Duty Mod amount", 0.0f));
+            params.Parameter(next_idx++, new PercentParam(pre + "_filter", "Filter Cutoff", 1.0f));
+            params.Parameter(next_idx++, new PercentParam(pre + "_filterTrack", "Filter Tracking", 0.5f));
+            params.Parameter(next_idx++, new PercentParam(pre + "_filterEnvMult", "Filter Env amount", 0.0f));
+            params.Parameter(next_idx++, new ModSourceParam(pre + "_filterSrc", "Filter Mod source", 2));
+            params.Parameter(next_idx++, new PercentParam(pre + "_filterSrcMult", "Filter Mod amount", 0.0f));
+            params.Parameter(next_idx++, new PercentParam(pre + "_filterRes", "Filter Resonance", 0.0f));
+            params.Parameter(next_idx++, new PercentParam(pre + "_vcaMult", "Volume", 0.5f));
+            params.Parameter(next_idx++, new ModSourceParam(pre + "_vcaLfoSource", "Volume Mod source", 3));
+            params.Parameter(next_idx++, new PercentParam(pre + "_vcaLfoMult", "Volume Mod amount", 0.0f));
+            EnvParams(pre + "FilterEnv");
+            EnvParams(pre + "volumeEnv");
         };
-        auto ToneParams = [&] (std::string pre) {
-            params.Parameter(next_idx++, new PercentParam(pre+"_chorusMix", pre+": Chorus Mix", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_chorusRate", pre+": Chorus Rate", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_chorusDepth", pre+": Chorus Depth", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre+"_partialMix", pre+": Partial Mix", 0.5f));
-            PartialParams(pre+"Part1");
-            PartialParams(pre+"Part2");
-            LfoParams(pre+"Lfo1");
-            LfoParams(pre+"Lfo2");
-            LfoParams(pre+"Lfo3");
-            EnvParams(pre+"PitchEnv");
+        auto ToneParams = [&](const std::string& pre) {
+            params.Parameter(next_idx++, new PercentParam(pre + "_chorusMix", "Chorus Mix", 0.0f));
+            params.Parameter(next_idx++, new PercentParam(pre + "_chorusRate", "Chorus Rate", 0.0f));
+            params.Parameter(next_idx++, new PercentParam(pre + "_chorusDepth", "Chorus Depth", 0.0f));
+            params.Parameter(next_idx++, new PercentParam(pre + "_partialMix", "Partial Mix", 0.5f));
+            PartialParams(pre + "Part1");
+            PartialParams(pre + "Part2");
+            LfoParams(pre + "Lfo1");
+            LfoParams(pre + "Lfo2");
+            LfoParams(pre + "Lfo3");
+            EnvParams(pre + "PitchEnv");
         };
-        auto GlobalParams = [&] () {
+        auto GlobalParams = [&]() {
             params.Parameter(next_idx++, new NumericParam("tune", "Tune", 20.0f, 1000.0f, 440.0f, "hz"));
-            params.Parameter(next_idx++, new PercentParam("toneMix", "Tone Mix", 0.5f));
+            params.Parameter(next_idx++,
+                             new EnumParam<Voice::ToneAlgorithm>("toneAlgo", "Routing", {"1 only", "2 only", "both"},
+                                                                 Voice::ToneAlgorithm::OneOnly));
             ToneParams("Tone1");
             ToneParams("Tone2");
         };
@@ -483,14 +577,17 @@ class Plugin : public InstrumentPlugin {
         // aspect ratio 1.5
         kitgui::SizeConfig cfg{750, 500, false, true};
         ConfigFeature<KitguiFeature>(
-            GetHost(), [this, &params](kitgui::Context& ctx) { return std::make_unique<GuiApp>(ctx, *this, params, mSampleLoader); },
+            GetHost(),
+            [this, &params](kitgui::Context& ctx) {
+                return std::make_unique<GuiApp>(ctx, *this, params, mSampleLoader);
+            },
             cfg);
 #endif
 
         ConfigProcessor<Processor>(params.GetAudioHandle<ParamsFeature::AudioHandle>(), mSampleLoader.GetAudioHandle());
     }
 
-    private:
+   private:
     SampleLoader mSampleLoader;
 };
 
