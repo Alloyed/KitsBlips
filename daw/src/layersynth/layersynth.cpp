@@ -76,6 +76,10 @@ enum class ToneParams {
     ChorusMix,
     ChorusRate,
     ChorusDepth,
+    EqLowFrequency,
+    EqLowGain,
+    EqHighFrequency,
+    EqHighGain,
     PartialMix,
     // + partial1
     // + partial2
@@ -83,7 +87,7 @@ enum class ToneParams {
     // + lfo2
     // + lfo3
     // + pitchEnv
-    Count = 4u + static_cast<clap_id>(PartialParams::Count) * 2 + static_cast<clap_id>(LfoParams::Count) * 3 +
+    Count = 7u + static_cast<clap_id>(PartialParams::Count) * 2 + static_cast<clap_id>(LfoParams::Count) * 3 +
             static_cast<clap_id>(EnvParams::Count) * 1,
 };
 enum class GlobalParams {
@@ -125,7 +129,6 @@ class RawSampleLoader {
    public:
     using File = AudioFile<float>;
     using Queue = etl::queue_spsc_atomic<std::pair<size_t, File*>, 200, etl::memory_model::MEMORY_MODEL_SMALL>;
-    using Sampler = kitdsp::Sampler1D<float, kitdsp::interpolate::InterpolationStrategy::Linear, false>;
 
     class AudioHandle {
        public:
@@ -217,6 +220,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                 adsr.SetParams(a, d, s, r, sr);
             };
             auto PartialParams = [&](Partial& part, clap_id first) {
+                part.mPcmSampler = mSampleLoader.GetSampler(1);
                 part.sr = sr;
                 part.mWave = mParams.Get<EnumParam<Partial::Wave>>(first + static_cast<clap_id>(PartialParams::Wave));
                 part.mNoteOffset = mParams.Get<NumericParam>(first + static_cast<clap_id>(PartialParams::PitchOffset));
@@ -250,11 +254,18 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                     cfg.mix = mParams.Get<PercentParam>(first + static_cast<clap_id>(ToneParams::ChorusRate));
                     cfg.mix = mParams.Get<PercentParam>(first + static_cast<clap_id>(ToneParams::ChorusDepth));
                 }
+                {
+                    auto& cfg = tone.mEq.cfg;
+                    cfg.lowFreq = mParams.Get<NumericParam>(first + static_cast<clap_id>(ToneParams::EqLowFrequency));
+                    cfg.lowGainDb = mParams.Get<NumericParam>(first + static_cast<clap_id>(ToneParams::EqLowGain));
+                    cfg.highFreq = mParams.Get<NumericParam>(first + static_cast<clap_id>(ToneParams::EqHighFrequency));
+                    cfg.highGainDb = mParams.Get<NumericParam>(first + static_cast<clap_id>(ToneParams::EqHighGain));
+                    cfg.sampleRate = sr;
+                }
                 tone.mPartialMix = mParams.Get<PercentParam>(first + static_cast<clap_id>(ToneParams::PartialMix));
-                first += 4;
+                first += 7;
 
                 PartialParams(tone.mPartial1, first);
-                first += static_cast<clap_id>(PartialParams::Count);
                 tone.SetLfoRoute(
                     1, 2, mParams.Get<ModSourceParam>(first + static_cast<clap_id>(PartialParams::DutyLfoSource)));
                 tone.SetLfoRoute(
@@ -262,6 +273,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                 tone.SetLfoRoute(
                     1, 4, mParams.Get<ModSourceParam>(first + static_cast<clap_id>(PartialParams::VcaLfoSource)));
 
+                first += static_cast<clap_id>(PartialParams::Count);
                 PartialParams(tone.mPartial2, first);
                 tone.SetLfoRoute(
                     2, 2, mParams.Get<ModSourceParam>(first + static_cast<clap_id>(PartialParams::DutyLfoSource)));
@@ -409,8 +421,12 @@ class GuiApp : public kitgui::BaseApp {
             kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::ChorusMix));
             kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::ChorusRate));
             kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::ChorusDepth));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::EqLowFrequency));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::EqLowGain));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::EqHighFrequency));
+            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::EqHighGain));
             kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::PartialMix));
-            first += 4;
+            first += 7;
             if (ImGui::BeginTabBar("part")) {
                 if (ImGui::BeginTabItem("Partial 1")) {
                     PartialParams(first);  // part1
@@ -511,46 +527,53 @@ class Plugin : public InstrumentPlugin {
         InstrumentPlugin::Config();
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), static_cast<clap_id>(GlobalParams::Count));
-        clap_id next_idx = 0;
+        clap_id idx = 0;
         auto LfoParams = [&](const std::string& pre) {
-            params.Parameter(next_idx++, new EnumParam<Partial::Wave>(pre + "_wave", "Wave", {"Pulse", "Saw", "PCM"},
-                                                                      Partial::Wave::Pulse));
-            params.Parameter(next_idx++, new LfoRateParam(pre + "_rate", "Rate"));
-            params.Parameter(next_idx++, new PercentParam(pre + "_delay", "Delay", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre + "_sync", "Sync", 0.0f));
+            params.Parameter(idx++, new EnumParam<Partial::Wave>(pre + "_wave", "Wave", {"Pulse", "Saw", "PCM"},
+                                                                 Partial::Wave::Pulse));
+            params.Parameter(idx++, new LfoRateParam(pre + "_rate", "Rate"));
+            params.Parameter(idx++, new PercentParam(pre + "_delay", "Delay", 0.0f));
+            params.Parameter(idx++, new PercentParam(pre + "_sync", "Sync", 0.0f));
         };
         auto EnvParams = [&](const std::string& pre) {
-            params.Parameter(next_idx++, new EnvParam(pre + "_attack", "Attack", 1.0f, 1000.0f));
-            params.Parameter(next_idx++, new EnvParam(pre + "_decay", "Decay", 10.0f, 30000.0f));
-            params.Parameter(next_idx++, new PercentParam(pre + "_sustain", "Sustain", 1.0f));
-            params.Parameter(next_idx++, new EnvParam(pre + "_release", "Release", 10.0f, 30000.0f));
+            params.Parameter(idx++, new EnvParam(pre + "_attack", "Attack", 1.0f, 1000.0f));
+            params.Parameter(idx++, new EnvParam(pre + "_decay", "Decay", 10.0f, 30000.0f));
+            params.Parameter(idx++, new PercentParam(pre + "_sustain", "Sustain", 1.0f));
+            params.Parameter(idx++, new EnvParam(pre + "_release", "Release", 10.0f, 30000.0f));
         };
         auto PartialParams = [&](const std::string& pre) {
-            params.Parameter(next_idx++, new EnumParam<Partial::Wave>(pre + "_wave", "Wave", {"Pulse", "Saw", "PCM"},
-                                                                      Partial::Wave::Pulse));
-            params.Parameter(next_idx++, new NumericParam(pre + "_pitch", "Pitch", -32.0f, 32.0f, 0.0f, "semis"));
-            params.Parameter(next_idx++, new PercentParam(pre + "_pitchEnv", "Pitch Env amount", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre + "_pitchLfo", "Pitch LFO amount", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre + "_duty", "Duty", 0.5f));
-            params.Parameter(next_idx++, new ModSourceParam(pre + "_dutySrc", "Duty Mod source", 1));
-            params.Parameter(next_idx++, new PercentParam(pre + "_dutyMult", "Duty Mod amount", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre + "_filter", "Filter Cutoff", 1.0f));
-            params.Parameter(next_idx++, new PercentParam(pre + "_filterTrack", "Filter Tracking", 0.5f));
-            params.Parameter(next_idx++, new PercentParam(pre + "_filterEnvMult", "Filter Env amount", 0.0f));
-            params.Parameter(next_idx++, new ModSourceParam(pre + "_filterSrc", "Filter Mod source", 2));
-            params.Parameter(next_idx++, new PercentParam(pre + "_filterSrcMult", "Filter Mod amount", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre + "_filterRes", "Filter Resonance", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre + "_vcaMult", "Volume", 0.5f));
-            params.Parameter(next_idx++, new ModSourceParam(pre + "_vcaLfoSource", "Volume Mod source", 3));
-            params.Parameter(next_idx++, new PercentParam(pre + "_vcaLfoMult", "Volume Mod amount", 0.0f));
+            params.Parameter(idx++, new EnumParam<Partial::Wave>(pre + "_wave", "Wave", {"Pulse", "Saw", "PCM"},
+                                                                 Partial::Wave::Pulse));
+            params.Parameter(idx++, new NumericParam(pre + "_pitch", "Pitch", -32.0f, 32.0f, 0.0f, "semis"));
+            params.Parameter(idx++, new PercentParam(pre + "_pitchEnv", "Pitch Env amount", 0.0f));
+            params.Parameter(idx++, new PercentParam(pre + "_pitchLfo", "Pitch LFO amount", 0.0f));
+            params.Parameter(idx++, new PercentParam(pre + "_duty", "Duty", 0.5f));
+            params.Parameter(idx++, new ModSourceParam(pre + "_dutySrc", "Duty Mod source", 1));
+            params.Parameter(idx++, new PercentParam(pre + "_dutyMult", "Duty Mod amount", 0.0f));
+            params.Parameter(idx++, new PercentParam(pre + "_filter", "Filter Cutoff", 1.0f));
+            params.Parameter(idx++, new PercentParam(pre + "_filterTrack", "Filter Tracking", 0.5f));
+            params.Parameter(idx++, new PercentParam(pre + "_filterEnvMult", "Filter Env amount", 0.0f));
+            params.Parameter(idx++, new ModSourceParam(pre + "_filterSrc", "Filter Mod source", 2));
+            params.Parameter(idx++, new PercentParam(pre + "_filterSrcMult", "Filter Mod amount", 0.0f));
+            params.Parameter(idx++, new PercentParam(pre + "_filterRes", "Filter Resonance", 0.0f));
+            params.Parameter(idx++, new PercentParam(pre + "_vcaMult", "Volume", 0.5f));
+            params.Parameter(idx++, new ModSourceParam(pre + "_vcaLfoSource", "Volume Mod source", 3));
+            params.Parameter(idx++, new PercentParam(pre + "_vcaLfoMult", "Volume Mod amount", 0.0f));
             EnvParams(pre + "FilterEnv");
             EnvParams(pre + "volumeEnv");
         };
         auto ToneParams = [&](const std::string& pre) {
-            params.Parameter(next_idx++, new PercentParam(pre + "_chorusMix", "Chorus Mix", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre + "_chorusRate", "Chorus Rate", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre + "_chorusDepth", "Chorus Depth", 0.0f));
-            params.Parameter(next_idx++, new PercentParam(pre + "_partialMix", "Partial Mix", 0.5f));
+            params.Parameter(idx++, new PercentParam(pre + "_chorusMix", "Chorus Mix", 0.0f));
+            params.Parameter(idx++, new PercentParam(pre + "_chorusRate", "Chorus Rate", 0.0f));
+            params.Parameter(idx++, new PercentParam(pre + "_chorusDepth", "Chorus Depth", 0.0f));
+            params.Parameter(idx++, new PercentParam(pre + "_chorusRate", "Chorus Rate", 0.0f));
+            params.Parameter(idx++,
+                             new NumericParam(pre + "_eqLowFreq", "Low Frequency", 20.0f, 20000.0f, 300.0f, "hz"));
+            params.Parameter(idx++, new NumericParam(pre + "_eqLowGain", "Low Gain", -60.0f, 10.0f, 0.0f, "db"));
+            params.Parameter(idx++,
+                             new NumericParam(pre + "_eqHighFreq", "High Frequency", 20.0f, 20000.0f, 1800.0f, "hz"));
+            params.Parameter(idx++, new NumericParam(pre + "_eqHighGain", "High Gain", -60.0f, 10.0f, 0.0f, "db"));
+            params.Parameter(idx++, new PercentParam(pre + "_partialMix", "Partial Mix", 0.5f));
             PartialParams(pre + "Part1");
             PartialParams(pre + "Part2");
             LfoParams(pre + "Lfo1");
@@ -559,8 +582,8 @@ class Plugin : public InstrumentPlugin {
             EnvParams(pre + "PitchEnv");
         };
         auto GlobalParams = [&]() {
-            params.Parameter(next_idx++, new NumericParam("tune", "Tune", 20.0f, 1000.0f, 440.0f, "hz"));
-            params.Parameter(next_idx++,
+            params.Parameter(idx++, new NumericParam("tune", "Tune", 20.0f, 1000.0f, 440.0f, "hz"));
+            params.Parameter(idx++,
                              new EnumParam<Voice::ToneAlgorithm>("toneAlgo", "Routing", {"1 only", "2 only", "both"},
                                                                  Voice::ToneAlgorithm::OneOnly));
             ToneParams("Tone1");

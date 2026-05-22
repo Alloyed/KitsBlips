@@ -13,8 +13,11 @@
 #include <kitdsp/osc/blepOscillator.h>
 #include <kitdsp/osc/naiveOscillator.h>
 #include <kitdsp/sampler.h>
+#include "kitdsp/apps/equalizer3Band.h"
 
 namespace layersynth {
+
+using Sampler = kitdsp::Sampler1D<float, kitdsp::interpolate::InterpolationStrategy::Linear, false>;
 
 class Voice;
 class Tone;
@@ -30,6 +33,7 @@ class Partial {
         mNote = note.key;
         mFilterEnv.TriggerOpen();
         mVolumeEnv.TriggerOpen();
+        mPcmPhase = 0.0f;
     }
     void ProcessNoteOff() {
         mFilterEnv.TriggerClose();
@@ -44,6 +48,7 @@ class Partial {
         mFilter.Reset();
         mFilterEnv.Reset();
         mVolumeEnv.Reset();
+        mPcmPhase = 0.0f;
     }
 
     float Process() {
@@ -66,17 +71,24 @@ class Partial {
                 mOsc.GetOscillator().SetDuty(mDuty + (mDutyLfo ? mDutyLfo->GetValue() * mDutyLfoMult : 0.0f));
                 float osc = mOsc.Process();
                 waveout = mFilter.Process<kitdsp::SvfFilterMode::LowPass>(osc);
-            } break;
+                break;
+            }
             case Wave::Saw: {
                 mOsc.SetFrequency(kitdsp::midiToFrequency(pitchNote, mTune), sr);
                 mOsc.GetOscillator().SetDuty(mDuty + (mDutyLfo ? mDutyLfo->GetValue() * mDutyLfoMult : 0.0f));
                 float osc = mOsc.Process();
                 waveout = mFilter.Process<kitdsp::SvfFilterMode::LowPass>(osc) *
                           kitdsp::approx::cos2pif_nasty(mOsc.GetPhase());
-            } break;
+                break;
+            }
             case Wave::Pcm: {
-                // TODO
-            } break;
+                mPcmAdvance = kitdsp::midiToFrequency(pitchNote, mTune) / sr;
+                mPcmPhase += mPcmAdvance;
+                if (mPcmSampler) {
+                    waveout = mPcmSampler->Read(mPcmPhase);
+                }
+                break;
+            }
         }
 
         float vca = mVcaMult * mVolumeEnv.GetValue() + (mVcaLfo ? mVcaLfo->GetValue() * mVcaLfoMult : 0.0f);
@@ -90,11 +102,12 @@ class Partial {
     kitdsp::ApproachAdsr mFilterEnv;
     kitdsp::ApproachAdsr mVolumeEnv;
 
-    kitdsp::ApproachAdsr* mPitchEnv{};
-    kitdsp::lfo::TriangleOscillator* mPitchLfo{};
-    kitdsp::lfo::TriangleOscillator* mDutyLfo{};
-    kitdsp::lfo::TriangleOscillator* mFilterLfo{};
-    kitdsp::lfo::TriangleOscillator* mVcaLfo{};
+    const kitdsp::ApproachAdsr* mPitchEnv{};
+    const kitdsp::lfo::TriangleOscillator* mPitchLfo{};
+    const kitdsp::lfo::TriangleOscillator* mDutyLfo{};
+    const kitdsp::lfo::TriangleOscillator* mFilterLfo{};
+    const kitdsp::lfo::TriangleOscillator* mVcaLfo{};
+    const Sampler* mPcmSampler{};
 
     float sr{};
     float mNote{};
@@ -112,6 +125,9 @@ class Partial {
     float mVcaMult{};
     float mVcaLfoMult{};
 
+    float mPcmAdvance{};
+    float mPcmPhase{};
+
     Wave mWave;
 
    private:
@@ -119,7 +135,7 @@ class Partial {
 
 class Tone {
    public:
-    Tone() : mPartial1(), mPartial2() {
+    Tone() : mPartial1(), mPartial2(), mEq() {
         // hardcoded pitch routing
         SetLfoRoute(1, 1, 1);
         mPartial1.mPitchEnv = &mPitchEnv;
@@ -160,6 +176,7 @@ class Tone {
         mLfo3.Process();
 
         float mix = kitdsp::lerp(mPartial1.Process(), mPartial2.Process(), mPartialMix);
+        mix = mEq.Process(mix);
         if (mChorus) {
             return mChorus->Process(mix);
         } else {
@@ -176,7 +193,7 @@ class Tone {
             p = &mPartial2;
         }
 
-        kitdsp::lfo::TriangleOscillator** pTarget{};
+        const kitdsp::lfo::TriangleOscillator** pTarget{};
         if (target == 1) {
             pTarget = &p->mPitchLfo;
         } else if (target == 2) {
@@ -204,7 +221,7 @@ class Tone {
     kitdsp::lfo::TriangleOscillator mLfo3;  // pulse width, cutoff, vca
     kitdsp::ApproachAdsr mPitchEnv;
     std::optional<kitdsp::Chorus> mChorus;
-    // kitdsp::Equalizer mEq; // ok fine...
+    kitdsp::Equalizer3Band mEq;
 
     float mPartialMix;
 
@@ -241,6 +258,7 @@ class Voice {
                     out.left[index] += outf.left;
                     out.right[index] += outf.right;
                 }
+                break;
             }
             case ToneAlgorithm::TwoOnly: {
                 for (uint32_t index = 0; index < out.left.size(); index++) {
@@ -248,6 +266,7 @@ class Voice {
                     out.left[index] += outf.left;
                     out.right[index] += outf.right;
                 }
+                break;
             }
             case ToneAlgorithm::Both: {
                 for (uint32_t index = 0; index < out.left.size(); index++) {

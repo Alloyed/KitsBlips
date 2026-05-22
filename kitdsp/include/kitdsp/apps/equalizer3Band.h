@@ -11,11 +11,12 @@ class Equalizer3Band {
         float highGainDb = 0.0f;
         float highFreq = 1000.0f;
         float midGainDb = 0.0f;
+        float sampleRate = 44100.0f;
     };
 
     Config cfg;
 
-    explicit Equalizer3Band(float sampleRate);
+    Equalizer3Band() = default;
 
     void Reset();
 
@@ -24,7 +25,6 @@ class Equalizer3Band {
     float GetMaxDelayMs() const;
 
    private:
-    float mSampleRate;
     rbj::BiquadFilter mLowShelf;
     rbj::BiquadFilter mHighShelf;
 };

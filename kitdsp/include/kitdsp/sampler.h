@@ -3,6 +3,7 @@
 #include <etl/span.h>
 #include <cstddef>
 #include <cstdint>
+#include "kitdsp/macros.h"
 #include "kitdsp/math/interpolate.h"
 
 namespace kitdsp {
@@ -16,14 +17,14 @@ class Sampler1D {
         if (SHOULD_LOOP) {
             return mBuffer[index % size];
         } else {
-            return index < 0 || index >= size ? SAMPLE(0) : mBuffer[index];
+            return index < 0 || index >= narrow_cast<int32_t>(size) ? SAMPLE(0) : mBuffer[index];
         }
     }
 
     SAMPLE Read(float sampleIndex) const {
         // assumption: sample is exactly one period long
-        size_t idx = static_cast<size_t>(sampleIndex);
-        float frac = sampleIndex - static_cast<float>(idx);
+        int32_t idx = narrow_cast<int32_t>(sampleIndex);
+        float frac = sampleIndex - narrow_cast<float>(idx);
 
         using namespace interpolate;
         switch (STRATEGY) {
