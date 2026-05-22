@@ -28,6 +28,7 @@
 #include <kitgui/app.h>
 #include <kitgui/context.h>
 #include <kitgui/gfx/scene.h>
+#include <misc/cpp/imgui_stdlib.h>
 #include "gui/debugui.h"
 #include "gui/kitguiFeature.h"
 #include "gui/presetBrowser.h"
@@ -177,9 +178,10 @@ class RawSampleLoader {
     void OnImGui() {
         for (size_t i = 0; i < TNumSamples; ++i) {
             ImGui::PushID(static_cast<int>(i));
-            // ImGui::Text("%s", fmt::format("{}: {}", i, GetSamplePath(i)));
-            ImGui::Text("%s", fmt::format("{}", i).c_str());
-
+            if (ImGui::InputText(fmt::format("Sample {}", i).c_str(), &mSamplePaths[i],
+                                 ImGuiInputTextFlags_EnterReturnsTrue)) {
+                LoadSample(i, mSamplePaths[i]);
+            }
             ImGui::PopID();
         }
     }
@@ -217,7 +219,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                 adsr.SetParams(a, d, s, r, sr);
             };
             auto PartialParams = [&](Partial& part, clap_id first) {
-                part.mPcmSampler = mSampleLoader.GetSampler(1);
+                part.mPcmSampler = mSampleLoader.GetSampler(0);
                 part.sr = sr;
                 part.mWave = mParams.Get<EnumParam<Partial::Wave>>(XID(PartialParams::Wave));
                 part.mNoteOffset = mParams.Get<NumericParam>(XID(PartialParams::PitchOffset));
@@ -327,8 +329,6 @@ class GuiApp : public kitgui::BaseApp {
 
     void OnUpdate() override {
         mParams.FlushFromAudio();
-        // auto& paramsHandle = mParams.GetMainHandle();
-
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("Preset")) {
                 if (ImGui::MenuItem("Reset All")) {
@@ -349,13 +349,7 @@ class GuiApp : public kitgui::BaseApp {
                 }
                 ImGui::EndMenu();
             }
-            ImGui::MenuItem("Debug", NULL, &mDebugMode);
-            ImGui::MenuItem("Help/About", NULL, &mShowHelpWindow);
             ImGui::EndMainMenuBar();
-        }
-
-        if (ImGui::IsKeyPressed(ImGuiKey_GraveAccent)) {
-            mDebugMode = !mDebugMode;
         }
 
 #define XID(enum) (first + static_cast<clap_id>(enum))
@@ -481,8 +475,6 @@ class GuiApp : public kitgui::BaseApp {
     ParamsFeature& mParams;
     SampleLoader& mSampleLoader;
     kitgui::PresetBrowser mPresetBrowser;
-    bool mDebugMode = false;
-    bool mShowHelpWindow = false;
 };
 #endif
 
@@ -490,12 +482,22 @@ class StateFeature : public TomlStateFeature<ParamsFeature> {
    public:
     StateFeature(BasePlugin& self, SampleLoader& sampleLoader)
         : TomlStateFeature(self, 0), mSampleLoader(sampleLoader) {}
-    bool OnSave(toml::table& t) const override {
-        (void)t;
+    bool OnSave(toml::table& file) const override {
+        toml::table sampleskv{};
+        for (size_t idx = 0; idx < 4; ++idx) {
+            sampleskv.insert(fmt::format("sample_{}", idx), mSampleLoader.GetSamplePath(idx));
+        }
+        file.insert("samples", sampleskv);
         return true;
     }
-    bool OnLoad(const toml::table& t) override {
-        (void)t;
+    bool OnLoad(const toml::table& file) override {
+        auto sampleskv = file["samples"].as_table();
+        if (sampleskv) {
+            for (size_t idx = 0; idx < 4; ++idx) {
+                std::string path = sampleskv->get(fmt::format("sample_{}", idx))->value_or("");
+                mSampleLoader.LoadSample(idx, path);
+            }
+        }
         return true;
     }
 
