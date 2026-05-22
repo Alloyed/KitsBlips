@@ -30,12 +30,10 @@
 #include <kitgui/gfx/scene.h>
 #include "gui/debugui.h"
 #include "gui/kitguiFeature.h"
-#include "gui/parameterControls.h"
 #include "gui/presetBrowser.h"
 #endif
 
 namespace {
-constexpr size_t cMaxVoices = 16;
 
 enum class LfoParams : clap_id {
     Wave,
@@ -87,7 +85,7 @@ enum class ToneParams {
     // + lfo2
     // + lfo3
     // + pitchEnv
-    Count = 7u + static_cast<clap_id>(PartialParams::Count) * 2 + static_cast<clap_id>(LfoParams::Count) * 3 +
+    Count = 8u + static_cast<clap_id>(PartialParams::Count) * 2 + static_cast<clap_id>(LfoParams::Count) * 3 +
             static_cast<clap_id>(EnvParams::Count) * 1,
 };
 enum class GlobalParams {
@@ -145,7 +143,7 @@ class RawSampleLoader {
                     ReleaseSample(pair.first);
                 }
                 mSampleData[pair.first] = pair.second;
-                mSamplers[pair.first] = std::make_optional<Sampler>(pair.second->samples[0]);
+                mSamplers[pair.first] = {pair.second->samples[0]};
             }
         }
         const Sampler* GetSampler(size_t i) const { return mSamplers[i] ? &(*mSamplers[i]) : nullptr; }
@@ -197,51 +195,44 @@ using SampleLoader = RawSampleLoader<4>;
 class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle> {
    public:
     explicit Processor(ParamsFeature::AudioHandle& params, SampleLoader::AudioHandle& sampleLoader)
-        : InstrumentProcessor(params), mVoices(*this), mSampleLoader(sampleLoader) {}
+        : InstrumentProcessor(params), mSynth(*this), mSampleLoader(sampleLoader) {}
     ~Processor() = default;
 
     clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) override {
+#define XID(enum) (first + static_cast<clap_id>(enum))
         float sr = static_cast<float>(GetSampleRate());
-        mVoices.SetNumVoices(16);
-        mVoices.SetStrategy(clapeze::VoiceStrategy::Poly);
-        mVoices.ForEach([&](Voice& v) {
+        mSynth.mVoices.ForEach([&](Voice& v) {
             auto LfoParams = [&](kitdsp::lfo::TriangleOscillator& lfo, clap_id first) {
-                // float wave = mParams.Get<PercentParam>(first + static_cast<clap_id>(LfoParams::Wave));
-                float rate = mParams.Get<LfoRateParam>(first + static_cast<clap_id>(LfoParams::Rate));
-                // float delay = mParams.Get<PercentParam>(first + static_cast<clap_id>(LfoParams::Delay));
-                // float sync = mParams.Get<PercentParam>(first + static_cast<clap_id>(LfoParams::Sync));
+                // float wave = mParams.Get<PercentParam>(XID(LfoParams::Wave));
+                float rate = mParams.Get<LfoRateParam>(XID(LfoParams::Rate));
+                // float delay = mParams.Get<PercentParam>(XID(LfoParams::Delay));
+                // float sync = mParams.Get<PercentParam>(XID(LfoParams::Sync));
                 lfo.SetFrequency(rate, sr);
             };
             auto EnvParams = [&](kitdsp::ApproachAdsr& adsr, clap_id first) {
-                float a = mParams.Get<EnvParam>(first + static_cast<clap_id>(EnvParams::Attack));
-                float d = mParams.Get<EnvParam>(first + static_cast<clap_id>(EnvParams::Decay));
-                float s = mParams.Get<PercentParam>(first + static_cast<clap_id>(EnvParams::Sustain));
-                float r = mParams.Get<EnvParam>(first + static_cast<clap_id>(EnvParams::Release));
+                float a = mParams.Get<EnvParam>(XID(EnvParams::Attack));
+                float d = mParams.Get<EnvParam>(XID(EnvParams::Decay));
+                float s = mParams.Get<PercentParam>(XID(EnvParams::Sustain));
+                float r = mParams.Get<EnvParam>(XID(EnvParams::Release));
                 adsr.SetParams(a, d, s, r, sr);
             };
             auto PartialParams = [&](Partial& part, clap_id first) {
                 part.mPcmSampler = mSampleLoader.GetSampler(1);
                 part.sr = sr;
-                part.mWave = mParams.Get<EnumParam<Partial::Wave>>(first + static_cast<clap_id>(PartialParams::Wave));
-                part.mNoteOffset = mParams.Get<NumericParam>(first + static_cast<clap_id>(PartialParams::PitchOffset));
+                part.mWave = mParams.Get<EnumParam<Partial::Wave>>(XID(PartialParams::Wave));
+                part.mNoteOffset = mParams.Get<NumericParam>(XID(PartialParams::PitchOffset));
                 part.mTune = mParams.Get<NumericParam>(static_cast<clap_id>(GlobalParams::Tune));
-                part.mPitchEnvMult =
-                    mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::PitchEnvMult));
-                part.mPitchLfoMult =
-                    mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::PitchLfoMult));
-                part.mDuty = mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::Duty));
-                part.mDutyLfoMult = mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::DutyLfoMult));
-                part.mFilterNote =
-                    mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::FilterNote)) * 80.0f;
-                part.mFilterTrackingMult =
-                    mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::FilterTrackingMult));
-                part.mFilterEnvMult =
-                    mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::FilterEnvMult));
-                part.mFilterLfoMult =
-                    mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::FilterLfoMult));
-                part.mFilterRes = mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::FilterRes));
-                part.mVcaMult = mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::VcaMult));
-                part.mVcaLfoMult = mParams.Get<PercentParam>(first + static_cast<clap_id>(PartialParams::VcaLfoMult));
+                part.mPitchEnvMult = mParams.Get<PercentParam>(XID(PartialParams::PitchEnvMult));
+                part.mPitchLfoMult = mParams.Get<PercentParam>(XID(PartialParams::PitchLfoMult));
+                part.mDuty = mParams.Get<PercentParam>(XID(PartialParams::Duty));
+                part.mDutyLfoMult = mParams.Get<PercentParam>(XID(PartialParams::DutyLfoMult));
+                part.mFilterNote = mParams.Get<PercentParam>(XID(PartialParams::FilterNote)) * 80.0f;
+                part.mFilterTrackingMult = mParams.Get<PercentParam>(XID(PartialParams::FilterTrackingMult));
+                part.mFilterEnvMult = mParams.Get<PercentParam>(XID(PartialParams::FilterEnvMult));
+                part.mFilterLfoMult = mParams.Get<PercentParam>(XID(PartialParams::FilterLfoMult));
+                part.mFilterRes = mParams.Get<PercentParam>(XID(PartialParams::FilterRes));
+                part.mVcaMult = mParams.Get<PercentParam>(XID(PartialParams::VcaMult));
+                part.mVcaLfoMult = mParams.Get<PercentParam>(XID(PartialParams::VcaLfoMult));
                 first += 16;
                 EnvParams(part.mFilterEnv, first);
                 first += static_cast<clap_id>(EnvParams::Count);
@@ -250,37 +241,31 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
             auto ToneParams = [&](Tone& tone, clap_id first) {
                 if (tone.mChorus) {
                     auto& cfg = tone.mChorus->cfg;
-                    cfg.mix = mParams.Get<PercentParam>(first + static_cast<clap_id>(ToneParams::ChorusMix));
-                    cfg.mix = mParams.Get<PercentParam>(first + static_cast<clap_id>(ToneParams::ChorusRate));
-                    cfg.mix = mParams.Get<PercentParam>(first + static_cast<clap_id>(ToneParams::ChorusDepth));
+                    cfg.mix = mParams.Get<PercentParam>(XID(ToneParams::ChorusMix));
+                    cfg.mix = mParams.Get<PercentParam>(XID(ToneParams::ChorusRate));
+                    cfg.mix = mParams.Get<PercentParam>(XID(ToneParams::ChorusDepth));
                 }
                 {
                     auto& cfg = tone.mEq.cfg;
-                    cfg.lowFreq = mParams.Get<NumericParam>(first + static_cast<clap_id>(ToneParams::EqLowFrequency));
-                    cfg.lowGainDb = mParams.Get<NumericParam>(first + static_cast<clap_id>(ToneParams::EqLowGain));
-                    cfg.highFreq = mParams.Get<NumericParam>(first + static_cast<clap_id>(ToneParams::EqHighFrequency));
-                    cfg.highGainDb = mParams.Get<NumericParam>(first + static_cast<clap_id>(ToneParams::EqHighGain));
+                    cfg.lowFreq = mParams.Get<NumericParam>(XID(ToneParams::EqLowFrequency));
+                    cfg.lowGainDb = mParams.Get<NumericParam>(XID(ToneParams::EqLowGain));
+                    cfg.highFreq = mParams.Get<NumericParam>(XID(ToneParams::EqHighFrequency));
+                    cfg.highGainDb = mParams.Get<NumericParam>(XID(ToneParams::EqHighGain));
                     cfg.sampleRate = sr;
                 }
-                tone.mPartialMix = mParams.Get<PercentParam>(first + static_cast<clap_id>(ToneParams::PartialMix));
-                first += 7;
+                tone.mPartialMix = mParams.Get<PercentParam>(XID(ToneParams::PartialMix));
+                first += 8;
 
                 PartialParams(tone.mPartial1, first);
-                tone.SetLfoRoute(
-                    1, 2, mParams.Get<ModSourceParam>(first + static_cast<clap_id>(PartialParams::DutyLfoSource)));
-                tone.SetLfoRoute(
-                    1, 3, mParams.Get<ModSourceParam>(first + static_cast<clap_id>(PartialParams::FilterLfoSource)));
-                tone.SetLfoRoute(
-                    1, 4, mParams.Get<ModSourceParam>(first + static_cast<clap_id>(PartialParams::VcaLfoSource)));
+                tone.SetLfoRoute(1, 2, mParams.Get<ModSourceParam>(XID(PartialParams::DutyLfoSource)));
+                tone.SetLfoRoute(1, 3, mParams.Get<ModSourceParam>(XID(PartialParams::FilterLfoSource)));
+                tone.SetLfoRoute(1, 4, mParams.Get<ModSourceParam>(XID(PartialParams::VcaLfoSource)));
 
                 first += static_cast<clap_id>(PartialParams::Count);
                 PartialParams(tone.mPartial2, first);
-                tone.SetLfoRoute(
-                    2, 2, mParams.Get<ModSourceParam>(first + static_cast<clap_id>(PartialParams::DutyLfoSource)));
-                tone.SetLfoRoute(
-                    2, 3, mParams.Get<ModSourceParam>(first + static_cast<clap_id>(PartialParams::FilterLfoSource)));
-                tone.SetLfoRoute(
-                    2, 4, mParams.Get<ModSourceParam>(first + static_cast<clap_id>(PartialParams::VcaLfoSource)));
+                tone.SetLfoRoute(2, 2, mParams.Get<ModSourceParam>(XID(PartialParams::DutyLfoSource)));
+                tone.SetLfoRoute(2, 3, mParams.Get<ModSourceParam>(XID(PartialParams::FilterLfoSource)));
+                tone.SetLfoRoute(2, 4, mParams.Get<ModSourceParam>(XID(PartialParams::VcaLfoSource)));
 
                 first += static_cast<clap_id>(PartialParams::Count);
                 LfoParams(tone.mLfo1, first);
@@ -292,36 +277,36 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                 EnvParams(tone.mPitchEnv, first);
             };
             auto GlobalParams = [&]() {
-                v.mAlgo =
-                    mParams.Get<EnumParam<Voice::ToneAlgorithm>>(static_cast<clap_id>(GlobalParams::ToneAlgorithm));
+                clap_id first = 0;
+                v.mAlgo = mParams.Get<EnumParam<Voice::ToneAlgorithm>>(XID(GlobalParams::ToneAlgorithm));
                 ToneParams(v.mTone1, 2);
                 ToneParams(v.mTone2, 2 + static_cast<clap_id>(ToneParams::Count));
             };
 
             GlobalParams();
+#undef XID
         });
-        auto status = mVoices.ProcessAudio(out);
-        return status;
+        return mSynth.ProcessAudio(out);
     }
 
     void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) override {
-        mVoices.ProcessNoteOn(note, velocity);
+        mSynth.ProcessNoteOn(note, velocity);
     }
 
-    void ProcessNoteOff(const clapeze::NoteTuple& note) override { mVoices.ProcessNoteOff(note); }
+    void ProcessNoteOff(const clapeze::NoteTuple& note) override { mSynth.ProcessNoteOff(note); }
 
-    void ProcessNoteChoke(const clapeze::NoteTuple& note) override { mVoices.ProcessNoteChoke(note); }
+    void ProcessNoteChoke(const clapeze::NoteTuple& note) override { mSynth.ProcessNoteChoke(note); }
 
-    void ProcessReset() override { mVoices.Reset(); }
+    void ProcessReset() override { mSynth.ProcessReset(); }
 
     void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) override {
         (void)minBlockSize;
         (void)maxBlockSize;
-        float sampleRatef = static_cast<float>(sampleRate);
+        (void)sampleRate;
     }
 
    private:
-    clapeze::VoicePool<Processor, Voice, cMaxVoices> mVoices;
+    SynthProcessor<Processor> mSynth;
     SampleLoader::AudioHandle& mSampleLoader;
 };
 
@@ -373,60 +358,61 @@ class GuiApp : public kitgui::BaseApp {
             mDebugMode = !mDebugMode;
         }
 
+#define XID(enum) (first + static_cast<clap_id>(enum))
         auto LfoParams = [&](clap_id first) {
-            // kitgui::DebugParam(mParams, first + static_cast<clap_id>(LfoParams::Wave));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(LfoParams::Rate));
-            // kitgui::DebugParam(mParams, first + static_cast<clap_id>(LfoParams::Delay));
-            // kitgui::DebugParam(mParams, first + static_cast<clap_id>(LfoParams::Sync));
+            // kitgui::DebugParam(mParams, XID(LfoParams::Wave));
+            kitgui::DebugParam(mParams, XID(LfoParams::Rate));
+            // kitgui::DebugParam(mParams, XID(LfoParams::Delay));
+            // kitgui::DebugParam(mParams, XID(LfoParams::Sync));
         };
         auto EnvParams = [&](clap_id first) {
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(EnvParams::Attack));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(EnvParams::Decay));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(EnvParams::Sustain));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(EnvParams::Release));
+            kitgui::DebugParam(mParams, XID(EnvParams::Attack));
+            kitgui::DebugParam(mParams, XID(EnvParams::Decay));
+            kitgui::DebugParam(mParams, XID(EnvParams::Sustain));
+            kitgui::DebugParam(mParams, XID(EnvParams::Release));
         };
         auto PartialParams = [&](clap_id first) {
             ImGui::Indent();
             ImGui::SeparatorText("Wave Generator");
-            kitgui::DebugEnumParam<Partial::Wave>(mParams, first + static_cast<clap_id>(PartialParams::Wave));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::PitchOffset));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::PitchEnvMult));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::PitchLfoMult));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::Duty));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::DutyLfoSource));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::DutyLfoMult));
+            kitgui::DebugEnumParam<Partial::Wave>(mParams, XID(PartialParams::Wave));
+            kitgui::DebugParam(mParams, XID(PartialParams::PitchOffset));
+            kitgui::DebugParam(mParams, XID(PartialParams::PitchEnvMult));
+            kitgui::DebugParam(mParams, XID(PartialParams::PitchLfoMult));
+            kitgui::DebugParam(mParams, XID(PartialParams::Duty));
+            kitgui::DebugParam(mParams, XID(PartialParams::DutyLfoSource));
+            kitgui::DebugParam(mParams, XID(PartialParams::DutyLfoMult));
 
             ImGui::SeparatorText("Filter");
             ImGui::PushID("vcf");
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::FilterNote));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::FilterTrackingMult));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::FilterEnvMult));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::FilterLfoSource));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::FilterLfoMult));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::FilterRes));
+            kitgui::DebugParam(mParams, XID(PartialParams::FilterNote));
+            kitgui::DebugParam(mParams, XID(PartialParams::FilterTrackingMult));
+            kitgui::DebugParam(mParams, XID(PartialParams::FilterEnvMult));
+            kitgui::DebugParam(mParams, XID(PartialParams::FilterLfoSource));
+            kitgui::DebugParam(mParams, XID(PartialParams::FilterLfoMult));
+            kitgui::DebugParam(mParams, XID(PartialParams::FilterRes));
             EnvParams(first + 16);  // filter env
             ImGui::PopID();
 
             ImGui::SeparatorText("Volume");
             ImGui::PushID("vca");
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::VcaMult));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::VcaLfoSource));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(PartialParams::VcaLfoMult));
+            kitgui::DebugParam(mParams, XID(PartialParams::VcaMult));
+            kitgui::DebugParam(mParams, XID(PartialParams::VcaLfoSource));
+            kitgui::DebugParam(mParams, XID(PartialParams::VcaLfoMult));
             EnvParams(first + 16 + static_cast<clap_id>(EnvParams::Count));  // volume env
             ImGui::PopID();
             ImGui::Unindent();
         };
         auto ToneParams = [&](clap_id first) {
             ImGui::Indent();
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::ChorusMix));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::ChorusRate));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::ChorusDepth));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::EqLowFrequency));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::EqLowGain));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::EqHighFrequency));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::EqHighGain));
-            kitgui::DebugParam(mParams, first + static_cast<clap_id>(ToneParams::PartialMix));
-            first += 7;
+            kitgui::DebugParam(mParams, XID(ToneParams::ChorusMix));
+            kitgui::DebugParam(mParams, XID(ToneParams::ChorusRate));
+            kitgui::DebugParam(mParams, XID(ToneParams::ChorusDepth));
+            kitgui::DebugParam(mParams, XID(ToneParams::EqLowFrequency));
+            kitgui::DebugParam(mParams, XID(ToneParams::EqLowGain));
+            kitgui::DebugParam(mParams, XID(ToneParams::EqHighFrequency));
+            kitgui::DebugParam(mParams, XID(ToneParams::EqHighGain));
+            kitgui::DebugParam(mParams, XID(ToneParams::PartialMix));
+            first += 8;
             if (ImGui::BeginTabBar("part")) {
                 if (ImGui::BeginTabItem("Partial 1")) {
                     PartialParams(first);  // part1
@@ -483,6 +469,7 @@ class GuiApp : public kitgui::BaseApp {
         };
 
         GlobalParams();
+#undef XID
     }
 
     void OnGuiUpdate() override {}
@@ -566,7 +553,6 @@ class Plugin : public InstrumentPlugin {
             params.Parameter(idx++, new PercentParam(pre + "_chorusMix", "Chorus Mix", 0.0f));
             params.Parameter(idx++, new PercentParam(pre + "_chorusRate", "Chorus Rate", 0.0f));
             params.Parameter(idx++, new PercentParam(pre + "_chorusDepth", "Chorus Depth", 0.0f));
-            params.Parameter(idx++, new PercentParam(pre + "_chorusRate", "Chorus Rate", 0.0f));
             params.Parameter(idx++,
                              new NumericParam(pre + "_eqLowFreq", "Low Frequency", 20.0f, 20000.0f, 300.0f, "hz"));
             params.Parameter(idx++, new NumericParam(pre + "_eqLowGain", "Low Gain", -60.0f, 10.0f, 0.0f, "db"));

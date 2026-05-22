@@ -53,6 +53,9 @@ uint32_t u16ToDelayBufferIndex(uint32_t raw, float sampleRate) {
 
 namespace kitdsp {
 
+PSX::Reverb::Reverb(etl::span<float> buffer, float sampleRate)
+    : kitdsp::PSX::Reverb(narrow_cast<int32_t>(sampleRate), buffer.data(), buffer.size()) {}
+
 PSX::Reverb::Reverb(int32_t sampleRate, float* buffer, size_t bufferSize) {
     assert(bufferSize == GetBufferDesiredSizeFloats(sampleRate));
     mSampleRate = (float)sampleRate;
@@ -112,7 +115,7 @@ void PSX::Reverb::Reset() {
 
 float_2 PSX::Reverb::Get(size_2 index) {
     return float_2(mBuffer[(index.left + mBufferHeadIndex) & mBufferWrapMask],
-                    mBuffer[(index.right + mBufferHeadIndex) & mBufferWrapMask]);
+                   mBuffer[(index.right + mBufferHeadIndex) & mBufferWrapMask]);
 }
 
 void PSX::Reverb::Set(size_2 index, float_2 sample) {

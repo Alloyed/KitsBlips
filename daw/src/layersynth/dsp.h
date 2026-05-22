@@ -2,22 +2,26 @@
 
 #include <clapeze/processor/voice.h>
 #include <kitdsp/apps/chorus.h>
+#include <kitdsp/apps/equalizer3Band.h>
+#include <kitdsp/apps/psxReverb.h>
 #include <kitdsp/control/adsr.h>
 #include <kitdsp/control/approach.h>
 #include <kitdsp/control/gate.h>
 #include <kitdsp/control/lfo.h>
 #include <kitdsp/filters/onePole.h>
 #include <kitdsp/filters/svf.h>
+#include <kitdsp/math/interpolate.h>
 #include <kitdsp/math/units.h>
 #include <kitdsp/math/util.h>
 #include <kitdsp/osc/blepOscillator.h>
 #include <kitdsp/osc/naiveOscillator.h>
 #include <kitdsp/sampler.h>
-#include "kitdsp/apps/equalizer3Band.h"
+#include <kitdsp/spanAllocator.h>
+#include <optional>
 
 namespace layersynth {
 
-using Sampler = kitdsp::Sampler1D<float, kitdsp::interpolate::InterpolationStrategy::Linear, false>;
+using Sampler = kitdsp::Sampler1D<float>;
 
 class Voice;
 class Tone;
@@ -82,10 +86,11 @@ class Partial {
                 break;
             }
             case Wave::Pcm: {
-                mPcmAdvance = kitdsp::midiToFrequency(pitchNote, mTune) / sr;
-                mPcmPhase += mPcmAdvance;
                 if (mPcmSampler) {
-                    waveout = mPcmSampler->Read(mPcmPhase);
+                    constexpr float baseFreq = 261.626f;  // middle C
+                    mPcmAdvance = kitdsp::midiToFrequency(pitchNote, mTune) / baseFreq;
+                    mPcmPhase += mPcmAdvance;
+                    waveout = mPcmSampler->Read<false, kitdsp::interpolate::InterpolationStrategy::Linear>(mPcmPhase);
                 }
                 break;
             }
@@ -97,7 +102,6 @@ class Partial {
     bool IsProcessing() const { return mVolumeEnv.IsProcessing(); }
 
     kitdsp::OversampledOscillator<kitdsp::naive::PulseOscillator, 2> mOsc;
-    // kitdsp::Sampler1D<float, kitdsp::interpolate::InterpolationStrategy::Cubic, true> mSampler;
     kitdsp::EmileSvf mFilter;
     kitdsp::ApproachAdsr mFilterEnv;
     kitdsp::ApproachAdsr mVolumeEnv;
@@ -231,7 +235,7 @@ class Tone {
 class Voice {
    public:
     enum class ToneAlgorithm : uint8_t { OneOnly, TwoOnly, Both };
-    explicit Voice(Processor& p) : mTone1(), mTone2(), mProcessor(p) {}
+    explicit Voice(Processor& p) : mTone1(), mTone2() { (void)p; }
     void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
         (void)velocity;
         mNote = note.key;
@@ -287,7 +291,58 @@ class Voice {
     ToneAlgorithm mAlgo = ToneAlgorithm::OneOnly;
 
    private:
-    Processor& mProcessor;
     float mNote;
+};
+
+constexpr size_t cMaxVoices = 16;
+template <typename Processor>
+class SynthProcessor {
+   public:
+    explicit SynthProcessor(Processor& p) : mVoices(p) {}
+    ~SynthProcessor() = default;
+
+    clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) {
+        mVoices.SetNumVoices(16);
+        mVoices.SetStrategy(clapeze::VoiceStrategy::Poly);
+
+        auto status = mVoices.ProcessAudio(out);
+        if (mReverb) {
+            for (size_t idx = 0; idx < out.left.size(); ++idx) {
+                kitdsp::float_2 tmp = {out.left[idx], out.right[idx]};
+                tmp = mReverb->Process(tmp);
+                out.left[idx] = tmp.left;
+                out.right[idx] = tmp.right;
+            }
+        }
+        return status;
+    }
+
+    void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) { mVoices.ProcessNoteOn(note, velocity); }
+
+    void ProcessNoteOff(const clapeze::NoteTuple& note) { mVoices.ProcessNoteOff(note); }
+
+    void ProcessNoteChoke(const clapeze::NoteTuple& note) { mVoices.ProcessNoteChoke(note); }
+
+    void ProcessReset() {
+        mVoices.Reset();
+        if (mReverb) {
+            mReverb->Reset();
+        }
+    }
+
+    void Activate(double _sampleRate, size_t minBlockSize, size_t maxBlockSize) {
+        (void)minBlockSize;
+        (void)maxBlockSize;
+        float sampleRate = narrow_cast<float>(_sampleRate);
+        mReverb = {mMemory.alloc(kitdsp::PSX::Reverb::GetBufferDesiredSizeFloats(sampleRate)), sampleRate};
+        mVoices.ForEach(
+            [&](Voice& v) { v.mTone1.mChorus = {mMemory.alloc(narrow_cast<size_t>(sampleRate) / 4u), sampleRate}; });
+    }
+
+    clapeze::VoicePool<Processor, Voice, cMaxVoices> mVoices;
+    std::optional<kitdsp::PSX::Reverb> mReverb{};
+    kitdsp::DynamicSpanAllocator<float> mMemory{};
+
+   private:
 };
 }  // namespace layersynth

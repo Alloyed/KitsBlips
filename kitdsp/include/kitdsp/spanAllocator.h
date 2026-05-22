@@ -18,4 +18,22 @@ class SpanAllocator {
     etl::span<T> mMemory;
     size_t mNextIdx = 0;
 };
+
+template <typename T>
+class DynamicSpanAllocator {
+   public:
+    explicit DynamicSpanAllocator() {}
+
+    etl::span<T> alloc(size_t size) {
+        size_t lastSize = mMemory.size();
+        mMemory.resize(lastSize + size);
+        return mMemory.subspan(lastSize, size);
+    }
+
+    void reset() { mMemory.resize(0); }
+
+   private:
+    std::vector<T> mMemory;
+};
+
 }  // namespace kitdsp

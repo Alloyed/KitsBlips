@@ -1,5 +1,6 @@
 #pragma once
 
+#include <etl/span.h>
 #include <cstddef>
 #include <cstdint>
 #include "kitdsp/math/util.h"
@@ -29,6 +30,7 @@ static constexpr size_t SPU_REV_PRESET_LONGEST_COUNT = 0x18040 / 2;
 class Reverb {
    public:
     Reverb(int32_t sampleRate, float* buffer, size_t bufferSize);
+    Reverb(etl::span<float> buffer, float sampleRate);
     void ClearBuffer();
     void Reset();
     float_2 Process(float_2 in);
