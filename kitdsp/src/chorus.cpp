@@ -23,13 +23,13 @@ float_2 Chorus::Process(float_2 in) {
     // TODO: moving delayModMs or delayBaseMs results in ugly clicking. probably avoid somehow (slew?)
     float lfoMs = (mLfo.Process() * cfg.delayModMs);
     auto toSamples = [&](float offsetMs) {
-        return clamp<float>((cfg.delayBaseMs + offsetMs) * mSampleRate / 1000.0f, 0.0f,
+        return clamp<float>((cfg.delayBaseMs + offsetMs) * mSampleRate / 1000.0f, 1.0f,
                             static_cast<float>(mDelayLine.Size()));
     };
 
     using namespace kitdsp::interpolate;
-    out.left += mDelayLine.Read<InterpolationStrategy::Linear>(toSamples(lfoMs));
-    out.right += mDelayLine.Read<InterpolationStrategy::Linear>(toSamples(-lfoMs));
+    out.left = mDelayLine.Read<InterpolationStrategy::Linear>(toSamples(lfoMs));
+    out.right = mDelayLine.Read<InterpolationStrategy::Linear>(toSamples(-lfoMs));
 
     // send input in
     float inMono = (in.left + in.right) * 0.5f;

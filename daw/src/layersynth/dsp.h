@@ -82,7 +82,7 @@ class Partial {
                 mOsc.GetOscillator().SetDuty(mDuty + (mDutyLfo ? mDutyLfo->GetValue() * mDutyLfoMult : 0.0f));
                 float osc = mOsc.Process();
                 waveout = mFilter.Process<kitdsp::SvfFilterMode::LowPass>(osc) *
-                          kitdsp::approx::cos2pif_nasty(mOsc.GetPhase());
+                          kitdsp::approx::cos2pif_nasty(mOsc.GetPhase()) * 2.0f;
                 break;
             }
             case Wave::Pcm: {
@@ -308,12 +308,12 @@ class SynthProcessor {
         mVoices.SetStrategy(clapeze::VoiceStrategy::Poly);
 
         auto status = mVoices.ProcessAudio(out);
-        if (mReverb) {
+        if (mReverb && mReverbMix > 0.0f) {
             for (size_t idx = 0; idx < out.left.size(); ++idx) {
                 kitdsp::float_2 tmp = {out.left[idx], out.right[idx]};
                 tmp = mReverb->Process(tmp);
-                out.left[idx] = tmp.left;
-                out.right[idx] = tmp.right;
+                out.left[idx] = kitdsp::lerp(out.left[idx], tmp.left, mReverbMix);
+                out.right[idx] = kitdsp::lerp(out.right[idx], tmp.right, mReverbMix);
             }
         }
         return status;
@@ -337,10 +337,10 @@ class SynthProcessor {
         (void)maxBlockSize;
         float sampleRate = narrow_cast<float>(_sampleRate);
         mMemory.reset();
-        // mReverb = {mMemory.alloc(kitdsp::PSX::Reverb::GetBufferDesiredSizeFloats(sampleRate)), sampleRate};
+        mReverb = {mMemory.alloc(kitdsp::PSX::Reverb::GetBufferDesiredSizeFloats(sampleRate)), sampleRate};
         mVoices.ForEach([&](Voice& voice) {
-            // voice.mTone1.mChorus = {mMemory.alloc(narrow_cast<size_t>(sampleRate) / 4u), sampleRate};
-            // voice.mTone2.mChorus = {mMemory.alloc(narrow_cast<size_t>(sampleRate) / 4u), sampleRate};
+            voice.mTone1.mChorus = {mMemory.alloc(narrow_cast<size_t>(sampleRate) / 10u), sampleRate};
+            voice.mTone2.mChorus = {mMemory.alloc(narrow_cast<size_t>(sampleRate) / 10u), sampleRate};
 
             voice.mTone1.mPartial1.sr = sampleRate;
             voice.mTone1.mPartial2.sr = sampleRate;
@@ -352,6 +352,7 @@ class SynthProcessor {
     clapeze::VoicePool<Processor, Voice, cMaxVoices> mVoices;
     std::optional<kitdsp::PSX::Reverb> mReverb{};
     kitdsp::DynamicSpanAllocator<float> mMemory{};
+    float mReverbMix{};
 
    private:
 };
