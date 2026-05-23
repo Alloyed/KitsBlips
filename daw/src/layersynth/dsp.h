@@ -31,7 +31,7 @@ class Processor;
 class Partial {
    public:
     enum class Wave : uint8_t { Pulse, Saw, Pcm };
-    Partial() {}
+    Partial(int32_t number): mNumber(number) {}
     void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
         (void)velocity;
         mNote = note.key;
@@ -113,6 +113,7 @@ class Partial {
     const kitdsp::lfo::TriangleOscillator* mVcaLfo{};
     const Sampler* mPcmSampler{};
 
+    int32_t mNumber;
     float sr{};
     float mNote{};
     float mNoteOffset{};
@@ -139,7 +140,7 @@ class Partial {
 
 class Tone {
    public:
-    Tone() : mPartial1(), mPartial2(), mEq() {
+    Tone() : mPartial1(1), mPartial2(2), mEq() {
         // hardcoded pitch routing
         SetLfoRoute(1, 1, 1);
         mPartial1.mPitchEnv = &mPitchEnv;
@@ -294,7 +295,7 @@ class Voice {
     float mNote;
 };
 
-constexpr size_t cMaxVoices = 16;
+constexpr size_t cMaxVoices = 1;
 template <typename Processor>
 class SynthProcessor {
    public:
@@ -302,7 +303,7 @@ class SynthProcessor {
     ~SynthProcessor() = default;
 
     clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) {
-        mVoices.SetNumVoices(16);
+        mVoices.SetNumVoices(cMaxVoices);
         mVoices.SetStrategy(clapeze::VoiceStrategy::Poly);
 
         auto status = mVoices.ProcessAudio(out);

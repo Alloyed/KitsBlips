@@ -230,7 +230,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                 float r = mParams.Get<EnvParam>(start + 3);
                 adsr.SetParams(a, d, s, r, static_cast<float>(GetSampleRate()));
             };
-            auto HandlePartial = [&](Partial& part, clap_id inner) {
+            auto HandlePartial = [&](Tone& tone, Partial& part, clap_id inner) {
                 if (inner == static_cast<clap_id>(PartialParams::Wave)) {
                     part.mWave = mParams.Get<EnumParam<Partial::Wave>>(id);
                 } else if (inner == static_cast<clap_id>(PartialParams::PitchOffset)) {
@@ -241,6 +241,8 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                     part.mPitchLfoMult = mParams.Get<PercentParam>(id);
                 } else if (inner == static_cast<clap_id>(PartialParams::Duty)) {
                     part.mDuty = mParams.Get<PercentParam>(id);
+                } else if (inner == static_cast<clap_id>(PartialParams::DutyLfoSource)) {
+                    tone.SetLfoRoute(part.mNumber, 2, mParams.Get<ModSourceParam>(id));
                 } else if (inner == static_cast<clap_id>(PartialParams::DutyLfoMult)) {
                     part.mDutyLfoMult = mParams.Get<PercentParam>(id);
                 } else if (inner == static_cast<clap_id>(PartialParams::FilterNote)) {
@@ -249,17 +251,25 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                     part.mFilterTrackingMult = mParams.Get<PercentParam>(id);
                 } else if (inner == static_cast<clap_id>(PartialParams::FilterEnvMult)) {
                     part.mFilterEnvMult = mParams.Get<PercentParam>(id);
+                } else if (inner == static_cast<clap_id>(PartialParams::FilterLfoSource)) {
+                    tone.SetLfoRoute(part.mNumber, 3, mParams.Get<ModSourceParam>(id));
                 } else if (inner == static_cast<clap_id>(PartialParams::FilterLfoMult)) {
                     part.mFilterLfoMult = mParams.Get<PercentParam>(id);
                 } else if (inner == static_cast<clap_id>(PartialParams::FilterRes)) {
                     part.mFilterRes = mParams.Get<PercentParam>(id);
                 } else if (inner == static_cast<clap_id>(PartialParams::VcaMult)) {
                     part.mVcaMult = mParams.Get<PercentParam>(id);
+                } else if (inner == static_cast<clap_id>(PartialParams::VcaLfoSource)) {
+                    tone.SetLfoRoute(part.mNumber, 4, mParams.Get<ModSourceParam>(id));
                 } else if (inner == static_cast<clap_id>(PartialParams::VcaLfoMult)) {
                     part.mVcaLfoMult = mParams.Get<PercentParam>(id);
-                } else if (inner < static_cast<clap_id>(PartialParams::VolumeEnvStart)) {
+                } else if (
+                    inner >= static_cast<clap_id>(PartialParams::FilterEnvStart) &&
+                    inner < static_cast<clap_id>(PartialParams::VolumeEnvStart)) {
                     HandleEnv(part.mFilterEnv, inner - static_cast<clap_id>(PartialParams::FilterEnvStart));
-                } else {
+                } else if (
+                    inner >= static_cast<clap_id>(PartialParams::VolumeEnvStart) &&
+                    inner < static_cast<clap_id>(PartialParams::Count)) {
                     HandleEnv(part.mVolumeEnv, inner - static_cast<clap_id>(PartialParams::VolumeEnvStart));
                 }
             };
@@ -286,17 +296,23 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                     tone.mEq.cfg.highGainDb = mParams.Get<NumericParam>(id);
                 } else if (inner == static_cast<clap_id>(ToneParams::PartialMix)) {
                     tone.mPartialMix = mParams.Get<PercentParam>(id);
-                } else if (inner < static_cast<clap_id>(ToneParams::Partial2Start)) {
-                    HandlePartial(tone.mPartial1, inner - static_cast<clap_id>(ToneParams::Partial1Start));
-                } else if (inner < static_cast<clap_id>(ToneParams::Lfo1Start)) {
-                    HandlePartial(tone.mPartial2, inner - static_cast<clap_id>(ToneParams::Partial2Start));
-                } else if (inner < static_cast<clap_id>(ToneParams::Lfo2Start)) {
+                } else if (inner >= static_cast<clap_id>(ToneParams::Partial1Start) &&
+                           inner < static_cast<clap_id>(ToneParams::Partial2Start)) {
+                    HandlePartial(tone, tone.mPartial1, inner - static_cast<clap_id>(ToneParams::Partial1Start));
+                } else if (inner >= static_cast<clap_id>(ToneParams::Partial2Start) &&
+                           inner < static_cast<clap_id>(ToneParams::Lfo1Start)) {
+                    HandlePartial(tone, tone.mPartial2, inner - static_cast<clap_id>(ToneParams::Partial2Start));
+                } else if (inner >= static_cast<clap_id>(ToneParams::Lfo1Start) &&
+                           inner < static_cast<clap_id>(ToneParams::Lfo2Start)) {
                     HandleLfo(tone.mLfo1, inner - static_cast<clap_id>(ToneParams::Lfo1Start));
-                } else if (inner < static_cast<clap_id>(ToneParams::Lfo3Start)) {
+                } else if (inner >= static_cast<clap_id>(ToneParams::Lfo2Start) &&
+                           inner < static_cast<clap_id>(ToneParams::Lfo3Start)) {
                     HandleLfo(tone.mLfo2, inner - static_cast<clap_id>(ToneParams::Lfo2Start));
-                } else if (inner < static_cast<clap_id>(ToneParams::PitchEnvStart)) {
+                } else if (inner >= static_cast<clap_id>(ToneParams::Lfo3Start) &&
+                           inner < static_cast<clap_id>(ToneParams::PitchEnvStart)) {
                     HandleLfo(tone.mLfo3, inner - static_cast<clap_id>(ToneParams::Lfo3Start));
-                } else {
+                } else if (inner >= static_cast<clap_id>(ToneParams::Lfo3Start) &&
+                           inner < static_cast<clap_id>(ToneParams::Count)) {
                     HandleEnv(tone.mPitchEnv, inner - static_cast<clap_id>(ToneParams::PitchEnvStart));
                 }
             };
@@ -310,9 +326,11 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                     voice.mTone2.mPartial2.mTune = tune;
                 } else if (inner == static_cast<clap_id>(GlobalParams::ToneAlgorithm)) {
                     voice.mAlgo = mParams.Get<EnumParam<Voice::ToneAlgorithm>>(id);
-                } else if (inner < static_cast<clap_id>(GlobalParams::Tone1Start)) {
+                } else if (inner >= static_cast<clap_id>(GlobalParams::Tone1Start) &&
+                           inner < static_cast<clap_id>(GlobalParams::Tone2Start)) {
                     HandleTone(voice.mTone1, inner - static_cast<clap_id>(GlobalParams::Tone1Start));
-                } else {
+                } else if (inner >= static_cast<clap_id>(GlobalParams::Tone2Start) &&
+                           inner < static_cast<clap_id>(GlobalParams::Count)) {
                     HandleTone(voice.mTone2, inner - static_cast<clap_id>(GlobalParams::Tone2Start));
                 }
             };
@@ -346,7 +364,13 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
     void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) override {
         (void)minBlockSize;
         (void)maxBlockSize;
-        (void)sampleRate;
+        float sr = static_cast<float>(sampleRate);
+        mSynth.mVoices.ForEach([&](Voice& voice) {
+            voice.mTone1.mPartial1.sr = sr;
+            voice.mTone1.mPartial2.sr = sr;
+            voice.mTone2.mPartial1.sr = sr;
+            voice.mTone2.mPartial2.sr = sr;
+        });
     }
 
    private:
@@ -393,6 +417,8 @@ class GuiApp : public kitgui::BaseApp {
             }
             ImGui::EndMainMenuBar();
         }
+
+
 
 #define XID(enum) (first + static_cast<clap_id>(enum))
         auto LfoParams = [&](clap_id first) {
@@ -603,7 +629,7 @@ class Plugin : public InstrumentPlugin {
             params.Parameter(idx++,
                              new NumericParam(pre + "_eqHighFreq", "High Frequency", 20.0f, 20000.0f, 1800.0f, "hz"));
             params.Parameter(idx++, new NumericParam(pre + "_eqHighGain", "High Gain", -60.0f, 10.0f, 0.0f, "db"));
-            params.Parameter(idx++, new PercentParam(pre + "_partialMix", "Partial Mix", 0.5f));
+            params.Parameter(idx++, new PercentParam(pre + "_partialMix", "Partial Mix", 0.0f));
             PartialParams(pre + "Part1");
             PartialParams(pre + "Part2");
             LfoParams(pre + "Lfo1");
