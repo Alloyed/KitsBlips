@@ -251,6 +251,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
    public:
     explicit Processor(ParamsFeature::AudioHandle& params, SampleLoader::AudioHandle& sampleLoader)
         : InstrumentProcessor(params), mSynth(*this), mSampleLoader(sampleLoader) {
+        static_assert(static_cast<clap_id>(GlobalParams::Count) == 156, "Update handlers");
         params.RegisterHandler([&](clap_id id) {
             auto HandleLfo = [&](kitdsp::lfo::TriangleOscillator& lfo, clap_id inner) {
                 if (inner == static_cast<clap_id>(LfoParams::Rate)) {
@@ -462,6 +463,7 @@ class GuiApp : public kitgui::BaseApp {
             ImGui::EndMainMenuBar();
         }
 
+        static_assert(static_cast<clap_id>(GlobalParams::Count) == 156, "Update UI");
 #define XID(enum) (first + static_cast<clap_id>(enum))
         auto LfoParams = [&](clap_id first) {
             // kitgui::DebugParam(mParams, XID(LfoParams::Wave));
@@ -626,6 +628,7 @@ class Plugin : public InstrumentPlugin {
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), static_cast<clap_id>(GlobalParams::Count));
         clap_id idx = 0;
+        static_assert(static_cast<clap_id>(GlobalParams::Count) == 156, "Update Traits");
         auto LfoParams = [&](const std::string& pre) {
             params.Parameter(idx++, new EnumParam<Partial::Wave>(pre + "_wave", "Wave", {"Pulse", "Saw", "PCM"},
                                                                  Partial::Wave::Pulse));
@@ -700,7 +703,7 @@ class Plugin : public InstrumentPlugin {
 
 #if KITSBLIPS_ENABLE_GUI
         // aspect ratio 1.5
-        kitgui::SizeConfig cfg{750, 500, false, true};
+        kitgui::SizeConfig cfg{750, 750, false, true};
         ConfigFeature<KitguiFeature>(
             GetHost(),
             [this, &params](kitgui::Context& ctx) {

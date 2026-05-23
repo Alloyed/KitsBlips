@@ -40,8 +40,8 @@ bool NumericParam::ToValue(double rawValue, float& out) const {
 
 bool NumericParam::FromValue(float in, double& outRaw) const {
     float range = mMax - mMin;
-    in = mCurve.fromCurved(in);
-    outRaw = std::clamp(range != 0.0f ? (in - mMin) / range : mMin, 0.0f, 1.0f);
+    float normalized = range != 0.0f ? (in - mMin) / range : mMin;
+    outRaw = std::clamp(mCurve.fromCurved(normalized), 0.0f, 1.0f);
     return true;
 }
 
@@ -55,7 +55,7 @@ bool NumericParam::FromValue(float in, double& outRaw) const {
     NumericParam tmpFrom("", "", fromMin, fromMax, 0.0f);
     tmpFrom.mCurve = fromCurve;
     NumericParam tmpTo("", "", toMin, toMax, 0.0f);
-    tmpFrom.mCurve = toCurve;
+    tmpTo.mCurve = toCurve;
 
     float realValue{};
     double outRaw{};
