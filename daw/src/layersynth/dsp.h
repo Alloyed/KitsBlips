@@ -229,7 +229,7 @@ class Tone {
     std::optional<kitdsp::Chorus> mChorus;
     kitdsp::Equalizer3Band mEq;
 
-    float mPartialMix;
+    float mPartialMix{};
 
    private:
 };
@@ -293,7 +293,7 @@ class Voice {
     ToneAlgorithm mAlgo = ToneAlgorithm::OneOnly;
 
    private:
-    float mNote;
+    float mNote{};
 };
 
 constexpr size_t cMaxVoices = 16;

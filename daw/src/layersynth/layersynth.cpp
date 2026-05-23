@@ -43,6 +43,7 @@
 
 namespace {
 
+#define P_(id) static_cast<clap_id>(id)
 enum class LfoParams : clap_id {
     Wave,
     Rate,
@@ -78,8 +79,8 @@ enum class PartialParams : clap_id {
     // + filterEnv
     FilterEnvStart,
     // + volumeEnv
-    VolumeEnvStart = FilterEnvStart + static_cast<clap_id>(EnvParams::Count),
-    Count = VolumeEnvStart + static_cast<clap_id>(EnvParams::Count),
+    VolumeEnvStart = FilterEnvStart + P_(EnvParams::Count),
+    Count = VolumeEnvStart + P_(EnvParams::Count),
 };
 enum class ToneParams {
     ChorusMix,
@@ -95,18 +96,17 @@ enum class ToneParams {
     // + partial1
     Partial1Start,
     // + partial2
-    Partial2Start = Partial1Start + static_cast<clap_id>(PartialParams::Count),
+    Partial2Start = Partial1Start + P_(PartialParams::Count),
     // + lfo1
-    Lfo1Start = Partial2Start + static_cast<clap_id>(PartialParams::Count),
+    Lfo1Start = Partial2Start + P_(PartialParams::Count),
     // + lfo2
-    Lfo2Start = Lfo1Start + static_cast<clap_id>(LfoParams::Count),
+    Lfo2Start = Lfo1Start + P_(LfoParams::Count),
     // + lfo3
-    Lfo3Start = Lfo2Start + static_cast<clap_id>(LfoParams::Count),
+    Lfo3Start = Lfo2Start + P_(LfoParams::Count),
     // + pitchEnv
-    PitchEnvStart = Lfo3Start + static_cast<clap_id>(LfoParams::Count),
-    Count = PitchEnvStart + static_cast<clap_id>(EnvParams::Count),
+    PitchEnvStart = Lfo3Start + P_(LfoParams::Count),
+    Count = PitchEnvStart + P_(EnvParams::Count),
 };
-
 enum class GlobalParams {
     Tune,
     ToneAlgorithm,
@@ -115,8 +115,8 @@ enum class GlobalParams {
     // + tone1
     Tone1Start,
     // + tone2
-    Tone2Start = Tone1Start + static_cast<clap_id>(ToneParams::Count),
-    Count = Tone2Start + static_cast<clap_id>(ToneParams::Count),
+    Tone2Start = Tone1Start + P_(ToneParams::Count),
+    Count = Tone2Start + P_(ToneParams::Count),
 };
 
 struct LfoRateParam : public clapeze::NumericParam {
@@ -251,10 +251,10 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
    public:
     explicit Processor(ParamsFeature::AudioHandle& params, SampleLoader::AudioHandle& sampleLoader)
         : InstrumentProcessor(params), mSynth(*this), mSampleLoader(sampleLoader) {
-        static_assert(static_cast<clap_id>(GlobalParams::Count) == 156, "Update handlers");
+        static_assert(P_(GlobalParams::Count) == 156, "Update handlers");
         params.RegisterHandler([&](clap_id id) {
             auto HandleLfo = [&](kitdsp::lfo::TriangleOscillator& lfo, clap_id inner) {
-                if (inner == static_cast<clap_id>(LfoParams::Rate)) {
+                if (inner == P_(LfoParams::Rate)) {
                     float rate = mParams.Get<LfoRateParam>(id);
                     lfo.SetFrequency(rate, static_cast<float>(GetSampleRate()));
                 }
@@ -269,122 +269,110 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
             };
             auto HandlePartial = [&](Tone& tone, Partial& part, clap_id inner) {
                 clap_id start = id - inner;
-                if (inner == static_cast<clap_id>(PartialParams::Wave)) {
+                if (inner == P_(PartialParams::Wave)) {
                     part.mWave = mParams.Get<EnumParam<Partial::Wave>>(id);
-                } else if (inner == static_cast<clap_id>(PartialParams::PitchCoarse) ||
-                           inner == static_cast<clap_id>(PartialParams::PitchFine)) {
-                    part.mNoteOffset =
-                        mParams.Get<IntegerParam>(start + static_cast<clap_id>(PartialParams::PitchCoarse)) +
-                        mParams.Get<NumericParam>(start + static_cast<clap_id>(PartialParams::PitchFine)) / 100.0f;
-                } else if (inner == static_cast<clap_id>(PartialParams::PitchEnvMult)) {
+                } else if (inner == P_(PartialParams::PitchCoarse) || inner == P_(PartialParams::PitchFine)) {
+                    part.mNoteOffset = mParams.Get<IntegerParam>(start + P_(PartialParams::PitchCoarse)) +
+                                       mParams.Get<NumericParam>(start + P_(PartialParams::PitchFine)) / 100.0f;
+                } else if (inner == P_(PartialParams::PitchEnvMult)) {
                     part.mPitchEnvMult = mParams.Get<NumericParam>(id);
-                } else if (inner == static_cast<clap_id>(PartialParams::PitchLfoMult)) {
+                } else if (inner == P_(PartialParams::PitchLfoMult)) {
                     part.mPitchLfoMult = mParams.Get<NumericParam>(id);
-                } else if (inner == static_cast<clap_id>(PartialParams::Duty)) {
+                } else if (inner == P_(PartialParams::Duty)) {
                     part.mDuty = mParams.Get<PercentParam>(id);
-                } else if (inner == static_cast<clap_id>(PartialParams::DutyLfoSource)) {
+                } else if (inner == P_(PartialParams::DutyLfoSource)) {
                     tone.SetLfoRoute(part.mNumber, 2, mParams.Get<ModSourceParam>(id));
-                } else if (inner == static_cast<clap_id>(PartialParams::DutyLfoMult)) {
+                } else if (inner == P_(PartialParams::DutyLfoMult)) {
                     part.mDutyLfoMult = mParams.Get<PercentParam>(id);
-                } else if (inner == static_cast<clap_id>(PartialParams::FilterNote)) {
+                } else if (inner == P_(PartialParams::FilterNote)) {
                     part.mFilterNote = mParams.Get<PercentParam>(id) * 80.0f;
-                } else if (inner == static_cast<clap_id>(PartialParams::FilterTrackingMult)) {
+                } else if (inner == P_(PartialParams::FilterTrackingMult)) {
                     part.mFilterTrackingMult = mParams.Get<PercentParam>(id);
-                } else if (inner == static_cast<clap_id>(PartialParams::FilterEnvMult)) {
+                } else if (inner == P_(PartialParams::FilterEnvMult)) {
                     part.mFilterEnvMult = mParams.Get<PercentParam>(id) * 80.0f;
-                } else if (inner == static_cast<clap_id>(PartialParams::FilterLfoSource)) {
+                } else if (inner == P_(PartialParams::FilterLfoSource)) {
                     tone.SetLfoRoute(part.mNumber, 3, mParams.Get<ModSourceParam>(id));
-                } else if (inner == static_cast<clap_id>(PartialParams::FilterLfoMult)) {
+                } else if (inner == P_(PartialParams::FilterLfoMult)) {
                     part.mFilterLfoMult = mParams.Get<PercentParam>(id) * 80.0f;
-                } else if (inner == static_cast<clap_id>(PartialParams::FilterRes)) {
+                } else if (inner == P_(PartialParams::FilterRes)) {
                     part.mFilterRes = mParams.Get<PercentParam>(id);
-                } else if (inner == static_cast<clap_id>(PartialParams::VcaMult)) {
+                } else if (inner == P_(PartialParams::VcaMult)) {
                     part.mVcaMult = mParams.Get<PercentParam>(id);
-                } else if (inner == static_cast<clap_id>(PartialParams::VcaLfoSource)) {
+                } else if (inner == P_(PartialParams::VcaLfoSource)) {
                     tone.SetLfoRoute(part.mNumber, 4, mParams.Get<ModSourceParam>(id));
-                } else if (inner == static_cast<clap_id>(PartialParams::VcaLfoMult)) {
+                } else if (inner == P_(PartialParams::VcaLfoMult)) {
                     part.mVcaLfoMult = mParams.Get<PercentParam>(id);
-                } else if (inner >= static_cast<clap_id>(PartialParams::FilterEnvStart) &&
-                           inner < static_cast<clap_id>(PartialParams::VolumeEnvStart)) {
-                    HandleEnv(part.mFilterEnv, inner - static_cast<clap_id>(PartialParams::FilterEnvStart));
-                } else if (inner >= static_cast<clap_id>(PartialParams::VolumeEnvStart) &&
-                           inner < static_cast<clap_id>(PartialParams::Count)) {
-                    HandleEnv(part.mVolumeEnv, inner - static_cast<clap_id>(PartialParams::VolumeEnvStart));
+                } else if (inner >= P_(PartialParams::FilterEnvStart) && inner < P_(PartialParams::VolumeEnvStart)) {
+                    HandleEnv(part.mFilterEnv, inner - P_(PartialParams::FilterEnvStart));
+                } else if (inner >= P_(PartialParams::VolumeEnvStart) && inner < P_(PartialParams::Count)) {
+                    HandleEnv(part.mVolumeEnv, inner - P_(PartialParams::VolumeEnvStart));
                 }
             };
             auto HandleTone = [&](Tone& tone, clap_id inner) {
-                if (inner == static_cast<clap_id>(ToneParams::ChorusMix)) {
+                if (inner == P_(ToneParams::ChorusMix)) {
                     if (tone.mChorus) {
                         tone.mChorus->cfg.mix = mParams.Get<PercentParam>(id);
                     }
-                } else if (inner == static_cast<clap_id>(ToneParams::ChorusRate)) {
+                } else if (inner == P_(ToneParams::ChorusRate)) {
                     if (tone.mChorus) {
                         tone.mChorus->cfg.lfoRateHz = mParams.Get<NumericParam>(id);
                     }
-                } else if (inner == static_cast<clap_id>(ToneParams::ChorusDelay)) {
+                } else if (inner == P_(ToneParams::ChorusDelay)) {
                     if (tone.mChorus) {
                         tone.mChorus->cfg.delayBaseMs = mParams.Get<NumericParam>(id);
                     }
-                } else if (inner == static_cast<clap_id>(ToneParams::ChorusDelayMod)) {
+                } else if (inner == P_(ToneParams::ChorusDelayMod)) {
                     if (tone.mChorus) {
                         tone.mChorus->cfg.delayModMs = mParams.Get<NumericParam>(id);
                     }
-                } else if (inner == static_cast<clap_id>(ToneParams::ChorusFeedback)) {
+                } else if (inner == P_(ToneParams::ChorusFeedback)) {
                     if (tone.mChorus) {
                         tone.mChorus->cfg.feedback = mParams.Get<PercentParam>(id);
                     }
-                } else if (inner == static_cast<clap_id>(ToneParams::EqLowFrequency)) {
+                } else if (inner == P_(ToneParams::EqLowFrequency)) {
                     tone.mEq.cfg.lowFreq = mParams.Get<NumericParam>(id);
-                } else if (inner == static_cast<clap_id>(ToneParams::EqLowGain)) {
+                } else if (inner == P_(ToneParams::EqLowGain)) {
                     tone.mEq.cfg.lowGainDb = mParams.Get<NumericParam>(id);
-                } else if (inner == static_cast<clap_id>(ToneParams::EqHighFrequency)) {
+                } else if (inner == P_(ToneParams::EqHighFrequency)) {
                     tone.mEq.cfg.highFreq = mParams.Get<NumericParam>(id);
-                } else if (inner == static_cast<clap_id>(ToneParams::EqHighGain)) {
+                } else if (inner == P_(ToneParams::EqHighGain)) {
                     tone.mEq.cfg.highGainDb = mParams.Get<NumericParam>(id);
-                } else if (inner == static_cast<clap_id>(ToneParams::PartialMix)) {
+                } else if (inner == P_(ToneParams::PartialMix)) {
                     tone.mPartialMix = mParams.Get<PercentParam>(id);
-                } else if (inner >= static_cast<clap_id>(ToneParams::Partial1Start) &&
-                           inner < static_cast<clap_id>(ToneParams::Partial2Start)) {
-                    HandlePartial(tone, tone.mPartial1, inner - static_cast<clap_id>(ToneParams::Partial1Start));
-                } else if (inner >= static_cast<clap_id>(ToneParams::Partial2Start) &&
-                           inner < static_cast<clap_id>(ToneParams::Lfo1Start)) {
-                    HandlePartial(tone, tone.mPartial2, inner - static_cast<clap_id>(ToneParams::Partial2Start));
-                } else if (inner >= static_cast<clap_id>(ToneParams::Lfo1Start) &&
-                           inner < static_cast<clap_id>(ToneParams::Lfo2Start)) {
-                    HandleLfo(tone.mLfo1, inner - static_cast<clap_id>(ToneParams::Lfo1Start));
-                } else if (inner >= static_cast<clap_id>(ToneParams::Lfo2Start) &&
-                           inner < static_cast<clap_id>(ToneParams::Lfo3Start)) {
-                    HandleLfo(tone.mLfo2, inner - static_cast<clap_id>(ToneParams::Lfo2Start));
-                } else if (inner >= static_cast<clap_id>(ToneParams::Lfo3Start) &&
-                           inner < static_cast<clap_id>(ToneParams::PitchEnvStart)) {
-                    HandleLfo(tone.mLfo3, inner - static_cast<clap_id>(ToneParams::Lfo3Start));
-                } else if (inner >= static_cast<clap_id>(ToneParams::Lfo3Start) &&
-                           inner < static_cast<clap_id>(ToneParams::Count)) {
-                    HandleEnv(tone.mPitchEnv, inner - static_cast<clap_id>(ToneParams::PitchEnvStart));
+                } else if (inner >= P_(ToneParams::Partial1Start) && inner < P_(ToneParams::Partial2Start)) {
+                    HandlePartial(tone, tone.mPartial1, inner - P_(ToneParams::Partial1Start));
+                } else if (inner >= P_(ToneParams::Partial2Start) && inner < P_(ToneParams::Lfo1Start)) {
+                    HandlePartial(tone, tone.mPartial2, inner - P_(ToneParams::Partial2Start));
+                } else if (inner >= P_(ToneParams::Lfo1Start) && inner < P_(ToneParams::Lfo2Start)) {
+                    HandleLfo(tone.mLfo1, inner - P_(ToneParams::Lfo1Start));
+                } else if (inner >= P_(ToneParams::Lfo2Start) && inner < P_(ToneParams::Lfo3Start)) {
+                    HandleLfo(tone.mLfo2, inner - P_(ToneParams::Lfo2Start));
+                } else if (inner >= P_(ToneParams::Lfo3Start) && inner < P_(ToneParams::PitchEnvStart)) {
+                    HandleLfo(tone.mLfo3, inner - P_(ToneParams::Lfo3Start));
+                } else if (inner >= P_(ToneParams::PitchEnvStart) && inner < P_(ToneParams::Count)) {
+                    HandleEnv(tone.mPitchEnv, inner - P_(ToneParams::PitchEnvStart));
                 }
             };
 
             auto HandleGlobal = [&](Voice& voice, clap_id inner) {
-                if (inner == static_cast<clap_id>(GlobalParams::Tune)) {
+                if (inner == P_(GlobalParams::Tune)) {
                     float tune = mParams.Get<NumericParam>(id);
                     voice.mTone1.mPartial1.mTune = tune;
                     voice.mTone1.mPartial2.mTune = tune;
                     voice.mTone2.mPartial1.mTune = tune;
                     voice.mTone2.mPartial2.mTune = tune;
-                } else if (inner == static_cast<clap_id>(GlobalParams::ToneAlgorithm)) {
+                } else if (inner == P_(GlobalParams::ToneAlgorithm)) {
                     voice.mAlgo = mParams.Get<EnumParam<Voice::ToneAlgorithm>>(id);
-                } else if (inner == static_cast<clap_id>(GlobalParams::ReverbMix)) {
+                } else if (inner == P_(GlobalParams::ReverbMix)) {
                     mSynth.mReverbMix = mParams.Get<PercentParam>(id);
-                } else if (inner == static_cast<clap_id>(GlobalParams::ReverbPreset)) {
+                } else if (inner == P_(GlobalParams::ReverbPreset)) {
                     if (mSynth.mReverb) {
                         mSynth.mReverb->cfg.preset = narrow_cast<int16_t>(mParams.Get<IntegerParam>(id));
                     }
-                } else if (inner >= static_cast<clap_id>(GlobalParams::Tone1Start) &&
-                           inner < static_cast<clap_id>(GlobalParams::Tone2Start)) {
-                    HandleTone(voice.mTone1, inner - static_cast<clap_id>(GlobalParams::Tone1Start));
-                } else if (inner >= static_cast<clap_id>(GlobalParams::Tone2Start) &&
-                           inner < static_cast<clap_id>(GlobalParams::Count)) {
-                    HandleTone(voice.mTone2, inner - static_cast<clap_id>(GlobalParams::Tone2Start));
+                } else if (inner >= P_(GlobalParams::Tone1Start) && inner < P_(GlobalParams::Tone2Start)) {
+                    HandleTone(voice.mTone1, inner - P_(GlobalParams::Tone1Start));
+                } else if (inner >= P_(GlobalParams::Tone2Start) && inner < P_(GlobalParams::Count)) {
+                    HandleTone(voice.mTone2, inner - P_(GlobalParams::Tone2Start));
                 }
             };
             mSynth.mVoices.ForEach([&](Voice& v) { HandleGlobal(v, id); });
@@ -463,8 +451,8 @@ class GuiApp : public kitgui::BaseApp {
             ImGui::EndMainMenuBar();
         }
 
-        static_assert(static_cast<clap_id>(GlobalParams::Count) == 156, "Update UI");
-#define XID(enum) (first + static_cast<clap_id>(enum))
+        static_assert(P_(GlobalParams::Count) == 156, "Update UI");
+#define XID(enum) (first + P_(enum))
         auto LfoParams = [&](clap_id first) {
             // kitgui::DebugParam(mParams, XID(LfoParams::Wave));
             kitgui::DebugParam(mParams, XID(LfoParams::Rate));
@@ -555,18 +543,18 @@ class GuiApp : public kitgui::BaseApp {
             ImGui::Unindent();
         };
         auto GlobalParams = [&]() {
-            kitgui::DebugParam(mParams, static_cast<clap_id>(GlobalParams::Tune));
-            kitgui::DebugEnumParam<Voice::ToneAlgorithm>(mParams, static_cast<clap_id>(GlobalParams::ToneAlgorithm));
-            kitgui::DebugParam(mParams, static_cast<clap_id>(GlobalParams::ReverbMix));
-            kitgui::DebugParam(mParams, static_cast<clap_id>(GlobalParams::ReverbPreset));
+            kitgui::DebugParam(mParams, P_(GlobalParams::Tune));
+            kitgui::DebugEnumParam<Voice::ToneAlgorithm>(mParams, P_(GlobalParams::ToneAlgorithm));
+            kitgui::DebugParam(mParams, P_(GlobalParams::ReverbMix));
+            kitgui::DebugParam(mParams, P_(GlobalParams::ReverbPreset));
             mSampleLoader.OnImGui(GetContext());
             if (ImGui::BeginTabBar("tone")) {
                 if (ImGui::BeginTabItem("Tone 1")) {
-                    ToneParams(static_cast<clap_id>(GlobalParams::Tone1Start));
+                    ToneParams(P_(GlobalParams::Tone1Start));
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Tone 2")) {
-                    ToneParams(static_cast<clap_id>(GlobalParams::Tone2Start));
+                    ToneParams(P_(GlobalParams::Tone2Start));
                     ImGui::EndTabItem();
                 }
                 ImGui::EndTabBar();
@@ -626,9 +614,9 @@ class Plugin : public InstrumentPlugin {
     void Config() override {
         InstrumentPlugin::Config();
 
-        ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), static_cast<clap_id>(GlobalParams::Count));
+        ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), P_(GlobalParams::Count));
         clap_id idx = 0;
-        static_assert(static_cast<clap_id>(GlobalParams::Count) == 156, "Update Traits");
+        static_assert(P_(GlobalParams::Count) == 156, "Update Traits");
         auto LfoParams = [&](const std::string& pre) {
             params.Parameter(idx++, new EnumParam<Partial::Wave>(pre + "_wave", "Wave", {"Pulse", "Saw", "PCM"},
                                                                  Partial::Wave::Pulse));
