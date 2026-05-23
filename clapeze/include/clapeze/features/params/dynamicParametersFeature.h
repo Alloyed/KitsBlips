@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <utility>
 
 #include "clap/events.h"
 #include "clapeze/features/params/baseParametersFeature.h"
@@ -22,6 +23,15 @@ class DynamicAudioHandle : public BaseAudioHandle {
                        size_t numParams,
                        Queue& mainToAudio,
                        Queue& audioToMain);
+
+    void RegisterHandler(std::function<void(clap_id)> handler) {
+        mHandleChange = std::move(handler);
+        if (mHandleChange) {
+            for (clap_id idx = 0; idx < mValues.size(); ++idx) {
+                mHandleChange(idx);
+            }
+        }
+    }
 
     template <class TParam>
     typename TParam::_valuetype Get(clap_id id) const;
@@ -39,6 +49,7 @@ class DynamicAudioHandle : public BaseAudioHandle {
     std::vector<std::unique_ptr<BaseParam>>& mParamsRef;
     std::vector<double> mValues;
     std::vector<double> mModulations;
+    std::function<void(clap_id)> mHandleChange;
     Queue& mMainToAudio;
     Queue& mAudioToMain;
 };
@@ -46,6 +57,8 @@ class DynamicAudioHandle : public BaseAudioHandle {
 class DynamicMainHandle : public BaseMainHandle {
    public:
     DynamicMainHandle(size_t numParams, Queue& mainToAudio, Queue& audioToMain);
+
+    void RegisterHandler(std::function<void(clap_id)> handler) { mHandleChange = std::move(handler); }
 
     double GetRawValue(clap_id id) const override;
     void SetRawValue(clap_id id, double newValue) override;
@@ -58,6 +71,7 @@ class DynamicMainHandle : public BaseMainHandle {
    private:
     std::vector<double> mValues;
     std::vector<double> mModulations;
+    std::function<void(clap_id)> mHandleChange;
     Queue& mMainToAudio;
     Queue& mAudioToMain;
 };

@@ -247,6 +247,7 @@ void EnumAudioHandle<TParamId>::SetRawValue(clap_id id, double newValue) {
     if (index < mValues.size()) {
         mValues[index] = newValue;
         mAudioToMain.push({ChangeType::SetValue, id, newValue});
+        // onAudioChanged
     }
 }
 
@@ -264,6 +265,7 @@ void EnumAudioHandle<TParamId>::SetRawModulation(clap_id id, double newModulatio
     if (index < mModulations.size()) {
         mModulations[index] = newModulation;
         mAudioToMain.push({ChangeType::SetModulation, id, newModulation});
+        // onAudioChanged
     }
 }
 }  // namespace clapeze::params
