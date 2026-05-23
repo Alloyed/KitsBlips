@@ -45,6 +45,8 @@ class Sampler1D {
                              Read<SHOULD_LOOP>(idx + 2), frac);
             };
         }
+
+        return {};
     }
     size_t GetNumSamples() const { return mBuffer.size(); }
     float GetSampleRate() const { return mBufSampleRate; }

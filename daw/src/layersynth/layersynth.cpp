@@ -642,8 +642,7 @@ class Plugin : public InstrumentPlugin {
         auto PartialParams = [&](const std::string& pre) {
             params.Parameter(idx++, new EnumParam<Partial::Wave>(pre + "_wave", "Wave", {"Pulse", "Saw", "PCM"},
                                                                  Partial::Wave::Pulse));
-            params.Parameter(idx++,
-                             new IntegerParam(pre + "_pitchCoarse", "Pitch Coarse", -32.0f, 32.0f, 0.0f, "semis"));
+            params.Parameter(idx++, new IntegerParam(pre + "_pitchCoarse", "Pitch Coarse", -32, 32, 0, "semis"));
             params.Parameter(idx++, new NumericParam(pre + "_pitchFine", "Pitch Fine", -100.0f, 100.0f, 0.0f, "cents"));
             params.Parameter(idx++,
                              new NumericParam(pre + "_pitchEnv", "Pitch Env amount", -32.0f, 32.0f, 0.0f, "semis"));

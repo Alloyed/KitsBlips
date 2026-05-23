@@ -27,15 +27,18 @@ class DynamicSpanAllocator {
     explicit DynamicSpanAllocator() {}
 
     etl::span<T> alloc(size_t size) {
-        size_t lastSize = mMemory.size();
-        mMemory.resize(lastSize + size);
-        return {mMemory.data() + lastSize, size};
+        mMemory.push_back(new T[size]);
+        return {mMemory.back(), size};
     }
 
-    void reset() { mMemory.resize(0); }
+    void reset() {
+        for (T* block : mMemory) {
+            delete[] block;
+        }
+    }
 
    private:
-    std::vector<T> mMemory;
+    std::vector<T*> mMemory;
 };
 
 }  // namespace kitdsp

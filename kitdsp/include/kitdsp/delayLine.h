@@ -64,6 +64,7 @@ class DelayLine {
                 return cubic(Read(idx - 1), Read(idx), Read(idx + 1), Read(idx + 2), frac);
             };
         }
+        return {};
     }
 
     void ReadChunk(size_t startSample, etl::span<TSample>& out) {

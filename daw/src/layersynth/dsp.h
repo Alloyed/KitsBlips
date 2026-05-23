@@ -296,7 +296,7 @@ class Voice {
     float mNote;
 };
 
-constexpr size_t cMaxVoices = 1;
+constexpr size_t cMaxVoices = 16;
 template <typename Processor>
 class SynthProcessor {
    public:

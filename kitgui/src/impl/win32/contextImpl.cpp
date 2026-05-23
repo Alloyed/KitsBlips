@@ -368,6 +368,13 @@ void ContextImpl::RunLoop() {
 }
 
 void ContextImpl::RunSingleFrame() {
+    static bool running = false;
+
+    if(running) {
+        // nativefiledialog may run as part of this loop, which will continue sending windows events (all on top of each other). to prevent this: only one frame at a time, thanks
+        return;
+    }
+    running = true;
     for (int32_t idx = static_cast<int32_t>(sActiveInstances.size()) - 1; idx >= 0; idx--) {
         auto& instance = sActiveInstances[idx];
         if (instance->mDestroy) {
@@ -406,6 +413,7 @@ void ContextImpl::RunSingleFrame() {
 
         ::SwapBuffers(instance->mDeviceContext);
     }
+    running = false;
 }
 
 LRESULT ContextImpl::OnWindowsEvent(HWND hWnd,

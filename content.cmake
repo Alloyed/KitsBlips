@@ -53,6 +53,14 @@ function(enable_tsan)
     set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -O1 -g -fsanitize=thread)
 endfunction()
 
+function(enable_fast_math)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        add_compile_options("/fp:fast")
+    else()
+        add_compile_options("-ffast-math" "-fno-finite-math-only" "-fsigned-zeros" "-fno-associative-math")
+    endif()
+endfunction()
+
 # local
 set(KITSBLIPS_DIR ${CMAKE_CURRENT_LIST_DIR})
 FetchContent_Declare(
