@@ -237,6 +237,10 @@ void ContextImpl::SetClearColor(Magnum::Color4 color) {
     mClearColor = color;
 }
 
+kitgui::WindowRef ContextImpl::GetWindow() const {
+    return wrapWindow(WindowApi::Win32, mWindow);
+}
+
 bool ContextImpl::SetUIScale(double scale) {
     // TODO: scale font
     ImGui::GetStyle().ScaleAllSizes(static_cast<float>(scale));
