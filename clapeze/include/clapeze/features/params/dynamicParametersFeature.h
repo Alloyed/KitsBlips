@@ -58,7 +58,14 @@ class DynamicMainHandle : public BaseMainHandle {
    public:
     DynamicMainHandle(size_t numParams, Queue& mainToAudio, Queue& audioToMain);
 
-    void RegisterHandler(std::function<void(clap_id)> handler) { mHandleChange = std::move(handler); }
+    void RegisterHandler(std::function<void(clap_id)> handler) {
+        mHandleChange = std::move(handler);
+        if (mHandleChange) {
+            for (clap_id idx = 0; idx < mValues.size(); ++idx) {
+                mHandleChange(idx);
+            }
+        }
+    }
 
     double GetRawValue(clap_id id) const override;
     void SetRawValue(clap_id id, double newValue) override;

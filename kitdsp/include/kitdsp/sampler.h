@@ -10,7 +10,7 @@ namespace kitdsp {
 template <typename SAMPLE>
 class Sampler1D {
    public:
-    explicit Sampler1D(etl::span<SAMPLE> buf) : mBuffer(buf) {}
+    explicit Sampler1D(etl::span<SAMPLE> buf, float sampleRate) : mBuffer(buf), mBufSampleRate(sampleRate) {}
 
     template <bool SHOULD_LOOP>
     SAMPLE Read(int32_t index) const {
@@ -46,10 +46,12 @@ class Sampler1D {
             };
         }
     }
-    size_t size() const { return mBuffer.size(); }
+    size_t GetNumSamples() const { return mBuffer.size(); }
+    float GetSampleRate() const { return mBufSampleRate; }
 
    private:
     etl::span<SAMPLE> mBuffer;
+    float mBufSampleRate;
 };
 
 }  // namespace kitdsp

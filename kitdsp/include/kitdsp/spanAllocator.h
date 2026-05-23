@@ -29,7 +29,7 @@ class DynamicSpanAllocator {
     etl::span<T> alloc(size_t size) {
         size_t lastSize = mMemory.size();
         mMemory.resize(lastSize + size);
-        return mMemory.subspan(lastSize, size);
+        return {mMemory.data() + lastSize, size};
     }
 
     void reset() { mMemory.resize(0); }

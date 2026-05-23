@@ -31,7 +31,7 @@ class Processor;
 class Partial {
    public:
     enum class Wave : uint8_t { Pulse, Saw, Pcm };
-    Partial(int32_t number): mNumber(number) {}
+    Partial(int32_t number) : mNumber(number) {}
     void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
         (void)velocity;
         mNote = note.key;
@@ -88,7 +88,8 @@ class Partial {
             case Wave::Pcm: {
                 if (mPcmSampler) {
                     constexpr float baseFreq = 261.626f;  // middle C
-                    mPcmAdvance = kitdsp::midiToFrequency(pitchNote, mTune) / baseFreq;
+                    float mPcmAdvance =
+                        (mPcmSampler->GetSampleRate() / sr) * (kitdsp::midiToFrequency(pitchNote, mTune) / baseFreq);
                     mPcmPhase += mPcmAdvance;
                     waveout = mPcmSampler->Read<false, kitdsp::interpolate::InterpolationStrategy::Linear>(mPcmPhase);
                 }
@@ -335,9 +336,17 @@ class SynthProcessor {
         (void)minBlockSize;
         (void)maxBlockSize;
         float sampleRate = narrow_cast<float>(_sampleRate);
-        mReverb = {mMemory.alloc(kitdsp::PSX::Reverb::GetBufferDesiredSizeFloats(sampleRate)), sampleRate};
-        mVoices.ForEach(
-            [&](Voice& v) { v.mTone1.mChorus = {mMemory.alloc(narrow_cast<size_t>(sampleRate) / 4u), sampleRate}; });
+        mMemory.reset();
+        // mReverb = {mMemory.alloc(kitdsp::PSX::Reverb::GetBufferDesiredSizeFloats(sampleRate)), sampleRate};
+        mVoices.ForEach([&](Voice& voice) {
+            // voice.mTone1.mChorus = {mMemory.alloc(narrow_cast<size_t>(sampleRate) / 4u), sampleRate};
+            // voice.mTone2.mChorus = {mMemory.alloc(narrow_cast<size_t>(sampleRate) / 4u), sampleRate};
+
+            voice.mTone1.mPartial1.sr = sampleRate;
+            voice.mTone1.mPartial2.sr = sampleRate;
+            voice.mTone2.mPartial1.sr = sampleRate;
+            voice.mTone2.mPartial2.sr = sampleRate;
+        });
     }
 
     clapeze::VoicePool<Processor, Voice, cMaxVoices> mVoices;

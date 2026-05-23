@@ -25,7 +25,7 @@ nfdwindowhandle_t NFD_GetWindow(kitgui::WindowRef ref) {
         case kitgui::WindowApi::Wayland: {
             type = NFD_WINDOW_HANDLE_TYPE_UNSET;
             break;
-        } break;
+        }
     }
     return {.type = type, .handle = ref.ptr};
 }

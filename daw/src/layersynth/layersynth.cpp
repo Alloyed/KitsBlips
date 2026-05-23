@@ -22,7 +22,9 @@
 
 #include "kitdsp/control/adsr.h"
 #include "kitdsp/control/lfo.h"
+#include "kitdsp/macros.h"
 #include "kitdsp/sampler.h"
+#include "kitgui/wrap_nfd.h"
 #include "layersynth/dsp.h"
 
 #if KITSBLIPS_ENABLE_GUI
@@ -125,6 +127,13 @@ struct EnvParam : public clapeze::NumericParam {
     }
 };
 
+struct FreqParam : public clapeze::NumericParam {
+    FreqParam(std::string_view key, std::string_view name, float min, float max, float defaultV)
+        : clapeze::NumericParam(key, name, min, max, defaultV, "hz") {
+        mCurve = clapeze::cPowCurve<2.0f>;
+    }
+};
+
 struct ModSourceParam : public clapeze::IntegerParam {
     ModSourceParam(std::string_view key, std::string_view name, int32_t defaultValue = 1)
         : clapeze::IntegerParam(key, name, 1, 3, defaultValue) {}
@@ -159,7 +168,8 @@ class RawSampleLoader {
                     ReleaseSample(pair.first);
                 }
                 mSampleData[pair.first] = pair.second;
-                mSamplers[pair.first] = std::make_optional<kitdsp::Sampler1D<float>>(pair.second->samples[0]);
+                mSamplers[pair.first] = std::make_optional<kitdsp::Sampler1D<float>>(
+                    pair.second->samples[0], narrow_cast<float>(pair.second->getSampleRate()));
                 changed = true;
             }
             return changed;
@@ -192,13 +202,32 @@ class RawSampleLoader {
     }
     AudioHandle& GetAudioHandle() { return mAudioHandle; }
 
-    void OnImGui() {
+    void OnImGui(kitgui::Context& ctx) {
         for (size_t i = 0; i < TNumSamples; ++i) {
             ImGui::PushID(static_cast<int>(i));
             if (ImGui::InputText(fmt::format("Sample {}", i).c_str(), &mSamplePaths[i],
                                  ImGuiInputTextFlags_EnterReturnsTrue)) {
                 LoadSample(i, mSamplePaths[i]);
             }
+            ImGui::SameLine();
+            if (ImGui::Button("Load")) {
+                nfdu8char_t* outPath{};
+                nfdu8filteritem_t filters[2] = {{"Audio", "wav"}};
+                nfdopendialogu8args_t args{};
+                args.filterList = filters;
+                args.filterCount = 1;
+                args.parentWindow = NFD_GetWindow(ctx.GetWindow());
+                nfdresult_t result = NFD_OpenDialogU8_With(&outPath, &args);
+                if (result == NFD_OKAY) {
+                    LoadSample(i, outPath);
+                    NFD_FreePathU8(outPath);
+                } else if (result == NFD_CANCEL) {
+                    mSampleStatus[i] = "<canceled>";
+                } else {
+                    mSampleStatus[i] = NFD_GetError();
+                }
+            }
+            // ImGui::Text();
             ImGui::PopID();
         }
     }
@@ -208,6 +237,7 @@ class RawSampleLoader {
     Queue mAudioToMain{};
     AudioHandle mAudioHandle;
     etl::array<std::string, TNumSamples> mSamplePaths{};
+    etl::array<std::string, TNumSamples> mSampleStatus{};
 };
 using SampleLoader = RawSampleLoader<4>;
 
@@ -263,13 +293,11 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                     tone.SetLfoRoute(part.mNumber, 4, mParams.Get<ModSourceParam>(id));
                 } else if (inner == static_cast<clap_id>(PartialParams::VcaLfoMult)) {
                     part.mVcaLfoMult = mParams.Get<PercentParam>(id);
-                } else if (
-                    inner >= static_cast<clap_id>(PartialParams::FilterEnvStart) &&
-                    inner < static_cast<clap_id>(PartialParams::VolumeEnvStart)) {
+                } else if (inner >= static_cast<clap_id>(PartialParams::FilterEnvStart) &&
+                           inner < static_cast<clap_id>(PartialParams::VolumeEnvStart)) {
                     HandleEnv(part.mFilterEnv, inner - static_cast<clap_id>(PartialParams::FilterEnvStart));
-                } else if (
-                    inner >= static_cast<clap_id>(PartialParams::VolumeEnvStart) &&
-                    inner < static_cast<clap_id>(PartialParams::Count)) {
+                } else if (inner >= static_cast<clap_id>(PartialParams::VolumeEnvStart) &&
+                           inner < static_cast<clap_id>(PartialParams::Count)) {
                     HandleEnv(part.mVolumeEnv, inner - static_cast<clap_id>(PartialParams::VolumeEnvStart));
                 }
             };
@@ -362,15 +390,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
     void ProcessReset() override { mSynth.ProcessReset(); }
 
     void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) override {
-        (void)minBlockSize;
-        (void)maxBlockSize;
-        float sr = static_cast<float>(sampleRate);
-        mSynth.mVoices.ForEach([&](Voice& voice) {
-            voice.mTone1.mPartial1.sr = sr;
-            voice.mTone1.mPartial2.sr = sr;
-            voice.mTone2.mPartial1.sr = sr;
-            voice.mTone2.mPartial2.sr = sr;
-        });
+        mSynth.Activate(sampleRate, minBlockSize, maxBlockSize);
     }
 
    private:
@@ -386,8 +406,8 @@ class GuiApp : public kitgui::BaseApp {
     ~GuiApp() = default;
 
     void OnActivate() override {
-        float scale = static_cast<float>(GetContext().GetUIScale());
-        // TODO: to update all this if the viewport changes
+        // float scale = static_cast<float>(GetContext().GetUIScale());
+        //  TODO: to update all this if the viewport changes
         uint32_t w{};
         uint32_t h{};
         GetContext().GetSizeInPixels(w, h);
@@ -417,8 +437,6 @@ class GuiApp : public kitgui::BaseApp {
             }
             ImGui::EndMainMenuBar();
         }
-
-
 
 #define XID(enum) (first + static_cast<clap_id>(enum))
         auto LfoParams = [&](clap_id first) {
@@ -516,7 +534,7 @@ class GuiApp : public kitgui::BaseApp {
         auto GlobalParams = [&]() {
             kitgui::DebugParam(mParams, static_cast<clap_id>(GlobalParams::Tune));
             kitgui::DebugEnumParam<Voice::ToneAlgorithm>(mParams, static_cast<clap_id>(GlobalParams::ToneAlgorithm));
-            mSampleLoader.OnImGui();
+            mSampleLoader.OnImGui(GetContext());
             if (ImGui::BeginTabBar("tone")) {
                 if (ImGui::BeginTabItem("Tone 1")) {
                     ToneParams(2);  // tone 1
@@ -623,11 +641,9 @@ class Plugin : public InstrumentPlugin {
             params.Parameter(idx++, new PercentParam(pre + "_chorusMix", "Chorus Mix", 0.0f));
             params.Parameter(idx++, new PercentParam(pre + "_chorusRate", "Chorus Rate", 0.0f));
             params.Parameter(idx++, new PercentParam(pre + "_chorusDepth", "Chorus Depth", 0.0f));
-            params.Parameter(idx++,
-                             new NumericParam(pre + "_eqLowFreq", "Low Frequency", 20.0f, 20000.0f, 300.0f, "hz"));
+            params.Parameter(idx++, new FreqParam(pre + "_eqLowFreq", "Low Frequency", 20.0f, 20000.0f, 300.0f));
             params.Parameter(idx++, new NumericParam(pre + "_eqLowGain", "Low Gain", -60.0f, 10.0f, 0.0f, "db"));
-            params.Parameter(idx++,
-                             new NumericParam(pre + "_eqHighFreq", "High Frequency", 20.0f, 20000.0f, 1800.0f, "hz"));
+            params.Parameter(idx++, new FreqParam(pre + "_eqHighFreq", "High Frequency", 20.0f, 20000.0f, 1800.0f));
             params.Parameter(idx++, new NumericParam(pre + "_eqHighGain", "High Gain", -60.0f, 10.0f, 0.0f, "db"));
             params.Parameter(idx++, new PercentParam(pre + "_partialMix", "Partial Mix", 0.0f));
             PartialParams(pre + "Part1");

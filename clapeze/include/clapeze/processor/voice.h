@@ -82,19 +82,18 @@ class VoicePool {
             }
         }
     }
-    template<typename T>
+    template <typename T>
     void ForEachActive(T fn) {
         for (VoiceIndex idx = 0; idx < mVoices.size(); idx++) {
             auto& data = mVoices[idx];
-            if(data.activeNote) {
+            if (data.activeNote) {
                 fn(mVoices[idx].voice);
             }
         }
     }
-    template<typename T>
+    template <typename T>
     void ForEach(T fn) {
         for (VoiceIndex idx = 0; idx < mVoices.size(); idx++) {
-            auto& data = mVoices[idx];
             fn(mVoices[idx].voice);
         }
     }

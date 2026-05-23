@@ -58,7 +58,9 @@ void DynamicAudioHandle::FlushEventsFromMain(BaseProcessor& processor, const cla
             case ChangeType::SetValue: {
                 clap_id index = change.id;
                 mValues[index] = change.value;
-                mHandleChange(index);
+                if (mHandleChange) {
+                    mHandleChange(index);
+                }
 
                 clap_event_param_value_t event = {};
                 event.header.size = sizeof(event);
@@ -149,12 +151,16 @@ void DynamicMainHandle::FlushFromAudio() {
         switch (change.type) {
             case ChangeType::SetValue: {
                 mValues[index] = change.value;
-                mHandleChange(index);
+                if (mHandleChange) {
+                    mHandleChange(index);
+                }
                 break;
             }
             case ChangeType::SetModulation: {
                 mModulations[index] = change.value;
-                mHandleChange(index);
+                if (mHandleChange) {
+                    mHandleChange(index);
+                }
                 break;
             }
             case ChangeType::StartGesture:
