@@ -9,7 +9,7 @@ include(../content.cmake)
 # hack to get magnum to recognize basis
 FetchContent_MakeAvailable(basis_universal)
 FetchContent_GetProperties(basis_universal SOURCE_DIR BASIS_UNIVERSAL_DIR)
-FetchContent_MakeAvailable(corrade magnum magnum-plugins fmt)
+FetchContent_MakeAvailable(corrade magnum magnum-plugins fmt nfd)
 
 # Only one backend can be compiled in at a time
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -56,6 +56,7 @@ target_link_libraries(kitgui PUBLIC
     Magnum::Magnum
     Magnum::SceneGraph
     fmt::fmt
+    nfd
 
     MagnumIntegration::ImGui
     Magnum::AnySceneImporter

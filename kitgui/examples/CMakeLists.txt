@@ -29,3 +29,6 @@ target_link_libraries(3dviewer kitgui)
 
 add_executable(customControls customControls.cpp)
 target_link_libraries(customControls kitgui)
+
+add_executable(filepicker filepicker.cpp)
+target_link_libraries(filepicker kitgui)

@@ -60,6 +60,7 @@ class ContextImpl {
 
     bool IsCreated() const;
     void SetClearColor(Magnum::Color4 color);
+    kitgui::WindowRef GetWindow() const;
 
    private:
     kitgui::Context& mContext;

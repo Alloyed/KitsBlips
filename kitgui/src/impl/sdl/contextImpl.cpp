@@ -11,6 +11,7 @@
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl3.h>
+#include <nfd.h>
 #include <algorithm>
 #include <string_view>
 #include "Magnum/GL/Renderer.h"
@@ -19,8 +20,14 @@
 #include "kitgui/kitgui.h"
 #include "log.h"
 
-#define LOG_SDL_ERROR_STATIC(ctx) do {kitgui::log::defaultLogger(SDL_GetError());} while(0)
-#define LOG_SDL_ERROR(ctx) do{kitgui::log::error(ctx, SDL_GetError());} while(0)
+#define LOG_SDL_ERROR_STATIC(ctx)                   \
+    do {                                            \
+        kitgui::log::defaultLogger(SDL_GetError()); \
+    } while (0)
+#define LOG_SDL_ERROR(ctx)                       \
+    do {                                         \
+        kitgui::log::error(ctx, SDL_GetError()); \
+    } while (0)
 
 // linux-specific platform details
 #ifdef __linux__
@@ -46,6 +53,17 @@ X11Window getX11Window(const kitgui::WindowRef& ref) {
         return reinterpret_cast<unsigned long>(ref.ptr);
     }
     return 0;
+}
+kitgui::WindowRef getWindowRef_(kitgui::WindowApi api, SDL_Window* sdlWindow) {
+    if (api == kitgui::WindowApi::Wayland) {
+        return {};
+    } else if (api == kitgui::WindowApi::X11) {
+        Window xWindow{};
+        Display* xDisplay{};
+        getX11Handles(sdlWindow, xWindow, xDisplay);
+        return kitgui::wrapWindow(kitgui::WindowApi::X11, reinterpret_cast<void*>(xWindow));
+    }
+    return {};
 }
 void onCreateWindow_(kitgui::WindowApi api, SDL_Window* sdlWindow, bool isFloating) {
     if (api == kitgui::WindowApi::Wayland) {
@@ -111,7 +129,7 @@ void checkSupportedApis_(bool& outHasX11, bool& outHasWayland) {
                 hasWayland = true;
             }
         }
-        //kitgui::log::info(fmt::format("Checking supported video drivers. x11: {}, wayland: {}", hasX11, hasWayland));
+        // kitgui::log::info(fmt::format("Checking supported video drivers. x11: {}, wayland: {}", hasX11, hasWayland));
         hasChecked = true;
     }
     outHasX11 = hasX11;
@@ -191,9 +209,12 @@ void ContextImpl::init(kitgui::WindowApi api, std::string_view appName) {
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+
+    NFD_Init();
 }
 
 void ContextImpl::deinit() {
+    NFD_Quit();
     if (sSdlGl) {
         sGl.reset();
         if (!SDL_GL_DestroyContext(sSdlGl)) {
@@ -412,6 +433,10 @@ void ContextImpl::MakeCurrent() {
         ImGui::SetCurrentContext(mImgui);
     }
     Magnum::Platform::GLContext::makeCurrent(sGl.get());
+}
+
+kitgui::WindowRef ContextImpl::GetWindow() const {
+    return getWindowRef_(sApi, mWindow);
 }
 
 std::vector<ContextImpl*> ContextImpl::sActiveInstances = {};

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <etl/span.h>
+#include <vector>
+
 namespace kitdsp {
 template <typename T>
 class SpanAllocator {

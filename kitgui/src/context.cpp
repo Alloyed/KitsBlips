@@ -6,6 +6,7 @@
 #include <string_view>
 #include <utility>
 #include "fileContext.h"
+#include "kitgui/kitgui.h"
 #include "log.h"
 #include "theme/everforest.h"
 
@@ -145,6 +146,10 @@ bool Context::Close() {
 
 void Context::MakeCurrent() {
     mImpl->MakeCurrent();
+}
+
+kitgui::WindowRef Context::GetWindow() const {
+    return mImpl->GetWindow();
 }
 
 void Context::RunLoop() {

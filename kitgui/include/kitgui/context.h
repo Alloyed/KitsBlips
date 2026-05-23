@@ -1,8 +1,9 @@
 #pragma once
 
-#include <iostream>
+#include <nfd.h>
 #include <cstdint>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <string>
@@ -161,6 +162,10 @@ class Context {
      */
     void SetLogger(Logger fn);
     const Logger& GetLogger() const;
+    /**
+     * Get the current window handle for external use
+     */
+    kitgui::WindowRef GetWindow() const;
 
    protected:
     // app events. forwards otherwise hidden events to impl

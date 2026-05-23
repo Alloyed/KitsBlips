@@ -146,6 +146,15 @@ FetchContent_Declare(
     EXCLUDE_FROM_ALL
     FIND_PACKAGE_ARGS
 )
+set(NFD_PORTAL ON)
+FetchContent_Declare(
+    nfd
+    GIT_REPOSITORY https://github.com/btzy/nativefiledialog-extended.git
+    GIT_TAG        v1.3.0
+    SYSTEM
+    EXCLUDE_FROM_ALL
+    FIND_PACKAGE_ARGS
+)
 
 
 set(BASISU_STATIC ON)
