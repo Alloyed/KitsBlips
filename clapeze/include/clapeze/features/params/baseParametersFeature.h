@@ -40,6 +40,7 @@ class BaseAudioHandle {
     virtual ~BaseAudioHandle() = default;
     virtual bool ProcessEvent(const clap_event_header_t& event) = 0;
     virtual void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) = 0;
+    virtual void OnNoteStart(const NoteTuple& note) = 0;
     virtual void OnNoteEnd(const NoteTuple& note) = 0;
 };
 

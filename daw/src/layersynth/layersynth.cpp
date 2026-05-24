@@ -46,10 +46,7 @@ namespace {
 
 #define P_(id) static_cast<clap_id>(id)
 enum class LfoParams : clap_id {
-    Wave,
     Rate,
-    Delay,
-    Sync,
     Count,
 };
 enum class EnvParams : clap_id {
@@ -59,15 +56,11 @@ enum class EnvParams : clap_id {
     Release,
     Count,
 };
-enum class PartialParams : clap_id {
-    Wave,
+enum class LayerParams : clap_id {
     PitchCoarse,
     PitchFine,
     PitchEnvMult,
     PitchLfoMult,
-    Duty,
-    DutyLfoSource,
-    DutyLfoMult,
     FilterNote,
     FilterTrackingMult,
     FilterEnvMult,
@@ -83,41 +76,15 @@ enum class PartialParams : clap_id {
     VolumeEnvStart = FilterEnvStart + P_(EnvParams::Count),
     Count = VolumeEnvStart + P_(EnvParams::Count),
 };
-enum class ToneParams {
-    ChorusMix,
-    ChorusRate,
-    ChorusDelay,
-    ChorusDelayMod,
-    ChorusFeedback,
-    EqLowFrequency,
-    EqLowGain,
-    EqHighFrequency,
-    EqHighGain,
-    PartialMix,
-    // + partial1
-    Partial1Start,
-    // + partial2
-    Partial2Start = Partial1Start + P_(PartialParams::Count),
-    // + lfo1
-    Lfo1Start = Partial2Start + P_(PartialParams::Count),
-    // + lfo2
-    Lfo2Start = Lfo1Start + P_(LfoParams::Count),
-    // + lfo3
-    Lfo3Start = Lfo2Start + P_(LfoParams::Count),
-    // + pitchEnv
-    PitchEnvStart = Lfo3Start + P_(LfoParams::Count),
-    Count = PitchEnvStart + P_(EnvParams::Count),
-};
 enum class GlobalParams {
     Tune,
-    ToneAlgorithm,
     ReverbMix,
     ReverbPreset,
-    // + tone1
-    Tone1Start,
-    // + tone2
-    Tone2Start = Tone1Start + P_(ToneParams::Count),
-    Count = Tone2Start + P_(ToneParams::Count),
+    Layer1Start,
+    Layer2Start = Layer1Start + P_(LayerParams::Count),
+    Layer3Start = Layer2Start + P_(LayerParams::Count),
+    Layer4Start = Layer3Start + P_(LayerParams::Count),
+    Count = Layer4Start + P_(LayerParams::Count),
 };
 
 struct LfoRateParam : public clapeze::NumericParam {
@@ -296,9 +263,10 @@ using SampleLoader = RawSampleLoader<4>;
 class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle> {
    public:
     explicit Processor(ParamsFeature::AudioHandle& params, SampleLoader::AudioHandle& sampleLoader)
-        : InstrumentProcessor(params), mSynth(*this, params), mSampleLoader(sampleLoader) {
-        static_assert(P_(GlobalParams::Count) == 156, "Update handlers");
+        : InstrumentProcessor(params), mGlobal(*this, params), mSampleLoader(sampleLoader) {
+        static_assert(P_(GlobalParams::Count) == 87, "Update handlers");
         params.RegisterHandler([&](clap_id id) {
+            // printf("Id: %u (%s), value: %f\n", id, mParams.GetKey(id).c_str(), mParams.GetRawValue(id));
             auto HandleLfo = [&](kitdsp::lfo::TriangleOscillator& lfo, clap_id inner) {
                 if (inner == P_(LfoParams::Rate)) {
                     float rate = mParams.Get<LfoRateParam>(id);
@@ -315,119 +283,65 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                 float sr = static_cast<float>(GetSampleRate());
                 adsr.SetParams(a, d, s, r, sr);
             };
-            auto HandlePartial = [&](Tone& tone, Partial& part, clap_id inner) {
+            auto HandleLayer = [&](Layer& layer, clap_id inner) {
                 clap_id start = id - inner;
-                if (inner == P_(PartialParams::Wave)) {
-                    part.mWave = mParams.Get<EnumParam<Partial::Wave>>(id);
-                } else if (inner == P_(PartialParams::PitchCoarse) || inner == P_(PartialParams::PitchFine)) {
-                    part.mNoteOffset =
-                        narrow_cast<float>(mParams.Get<IntegerParam>(start + P_(PartialParams::PitchCoarse))) +
-                        mParams.Get<NumericParam>(start + P_(PartialParams::PitchFine)) / 100.0f;
-                } else if (inner == P_(PartialParams::PitchEnvMult)) {
-                    part.mPitchEnvMult = mParams.Get<NumericParam>(id);
-                } else if (inner == P_(PartialParams::PitchLfoMult)) {
-                    part.mPitchLfoMult = mParams.Get<NumericParam>(id);
-                } else if (inner == P_(PartialParams::Duty)) {
-                    part.mDuty = mParams.Get<PercentParam>(id);
-                } else if (inner == P_(PartialParams::DutyLfoSource)) {
-                    tone.SetLfoRoute(part.mNumber, 2, mParams.Get<ModSourceParam>(id));
-                } else if (inner == P_(PartialParams::DutyLfoMult)) {
-                    part.mDutyLfoMult = mParams.Get<PercentParam>(id);
-                } else if (inner == P_(PartialParams::FilterNote)) {
-                    part.mFilterNote = mParams.Get<PercentParam>(id) * 80.0f;
-                } else if (inner == P_(PartialParams::FilterTrackingMult)) {
-                    part.mFilterTrackingMult = mParams.Get<PercentParam>(id);
-                } else if (inner == P_(PartialParams::FilterEnvMult)) {
-                    part.mFilterEnvMult = mParams.Get<PercentParam>(id) * 80.0f;
-                } else if (inner == P_(PartialParams::FilterLfoSource)) {
-                    tone.SetLfoRoute(part.mNumber, 3, mParams.Get<ModSourceParam>(id));
-                } else if (inner == P_(PartialParams::FilterLfoMult)) {
-                    part.mFilterLfoMult = mParams.Get<PercentParam>(id) * 80.0f;
-                } else if (inner == P_(PartialParams::FilterRes)) {
-                    part.mFilterRes = mParams.Get<PercentParam>(id);
-                } else if (inner == P_(PartialParams::VcaMult)) {
-                    part.mVcaMult = mParams.Get<PercentParam>(id);
-                } else if (inner == P_(PartialParams::VcaLfoSource)) {
-                    tone.SetLfoRoute(part.mNumber, 4, mParams.Get<ModSourceParam>(id));
-                } else if (inner == P_(PartialParams::VcaLfoMult)) {
-                    part.mVcaLfoMult = mParams.Get<PercentParam>(id);
-                } else if (inner >= P_(PartialParams::FilterEnvStart) && inner < P_(PartialParams::VolumeEnvStart)) {
-                    HandleEnv(part.mFilterEnv, inner - P_(PartialParams::FilterEnvStart));
-                } else if (inner >= P_(PartialParams::VolumeEnvStart) && inner < P_(PartialParams::Count)) {
-                    HandleEnv(part.mVolumeEnv, inner - P_(PartialParams::VolumeEnvStart));
-                }
-            };
-            auto HandleTone = [&](Tone& tone, clap_id inner) {
-                if (inner == P_(ToneParams::ChorusMix)) {
-                    if (tone.mChorus) {
-                        tone.mChorus->cfg.mix = mParams.Get<PercentParam>(id);
+                if (inner == P_(LayerParams::PitchCoarse) || inner == P_(LayerParams::PitchFine)) {
+                    layer.mNoteOffset =
+                        narrow_cast<float>(mParams.Get<IntegerParam>(start + P_(LayerParams::PitchCoarse))) +
+                        mParams.Get<NumericParam>(start + P_(LayerParams::PitchFine)) / 100.0f;
+                } else if (inner == P_(LayerParams::PitchEnvMult)) {
+                    layer.mPitchEnvMult = mParams.Get<NumericParam>(id);
+                } else if (inner == P_(LayerParams::PitchLfoMult)) {
+                    layer.mPitchLfoMult = mParams.Get<NumericParam>(id);
+                } else if (inner == P_(LayerParams::FilterNote)) {
+                    layer.mFilterNote = mParams.Get<PercentParam>(id) * 80.0f;
+                } else if (inner == P_(LayerParams::FilterTrackingMult)) {
+                    layer.mFilterTrackingMult = mParams.Get<PercentParam>(id);
+                } else if (inner == P_(LayerParams::FilterEnvMult)) {
+                    layer.mFilterEnvMult = mParams.Get<PercentParam>(id) * 80.0f;
+                } else if (inner == P_(LayerParams::FilterLfoSource)) {
+                    // tone.SetLfoRoute(part.mNumber, 3, mParams.Get<ModSourceParam>(id));
+                } else if (inner == P_(LayerParams::FilterLfoMult)) {
+                    layer.mFilterLfoMult = mParams.Get<PercentParam>(id) * 80.0f;
+                } else if (inner == P_(LayerParams::FilterRes)) {
+                    layer.mFilterRes = mParams.Get<PercentParam>(id);
+                } else if (inner == P_(LayerParams::VcaMult)) {
+                    layer.mVcaMult = mParams.Get<PercentParam>(id);
+                } else if (inner == P_(LayerParams::VcaLfoSource)) {
+                    // tone.SetLfoRoute(part.mNumber, 4, mParams.Get<ModSourceParam>(id));
+                } else if (inner == P_(LayerParams::VcaLfoMult)) {
+                    layer.mVcaLfoMult = mParams.Get<PercentParam>(id);
+                } else if (inner >= P_(LayerParams::FilterEnvStart) && inner < P_(LayerParams::VolumeEnvStart)) {
+                    for (Voice& voice : layer.mVoices.IterAll()) {
+                        HandleEnv(voice.mFilterEnv, inner - P_(LayerParams::VolumeEnvStart));
                     }
-                } else if (inner == P_(ToneParams::ChorusRate)) {
-                    if (tone.mChorus) {
-                        tone.mChorus->cfg.lfoRateHz = mParams.Get<NumericParam>(id);
+                } else if (inner >= P_(LayerParams::VolumeEnvStart) && inner < P_(LayerParams::Count)) {
+                    for (Voice& voice : layer.mVoices.IterAll()) {
+                        HandleEnv(voice.mVolumeEnv, inner - P_(LayerParams::VolumeEnvStart));
                     }
-                } else if (inner == P_(ToneParams::ChorusDelay)) {
-                    if (tone.mChorus) {
-                        tone.mChorus->cfg.delayBaseMs = mParams.Get<NumericParam>(id);
-                    }
-                } else if (inner == P_(ToneParams::ChorusDelayMod)) {
-                    if (tone.mChorus) {
-                        tone.mChorus->cfg.delayModMs = mParams.Get<NumericParam>(id);
-                    }
-                } else if (inner == P_(ToneParams::ChorusFeedback)) {
-                    if (tone.mChorus) {
-                        tone.mChorus->cfg.feedback = mParams.Get<PercentParam>(id);
-                    }
-                } else if (inner == P_(ToneParams::EqLowFrequency)) {
-                    tone.mEq.cfg.lowFreq = mParams.Get<NumericParam>(id);
-                } else if (inner == P_(ToneParams::EqLowGain)) {
-                    tone.mEq.cfg.lowGainDb = mParams.Get<NumericParam>(id);
-                } else if (inner == P_(ToneParams::EqHighFrequency)) {
-                    tone.mEq.cfg.highFreq = mParams.Get<NumericParam>(id);
-                } else if (inner == P_(ToneParams::EqHighGain)) {
-                    tone.mEq.cfg.highGainDb = mParams.Get<NumericParam>(id);
-                } else if (inner == P_(ToneParams::PartialMix)) {
-                    tone.mPartialMix = mParams.Get<PercentParam>(id);
-                } else if (inner >= P_(ToneParams::Partial1Start) && inner < P_(ToneParams::Partial2Start)) {
-                    HandlePartial(tone, tone.mPartial1, inner - P_(ToneParams::Partial1Start));
-                } else if (inner >= P_(ToneParams::Partial2Start) && inner < P_(ToneParams::Lfo1Start)) {
-                    HandlePartial(tone, tone.mPartial2, inner - P_(ToneParams::Partial2Start));
-                } else if (inner >= P_(ToneParams::Lfo1Start) && inner < P_(ToneParams::Lfo2Start)) {
-                    HandleLfo(tone.mLfo1, inner - P_(ToneParams::Lfo1Start));
-                } else if (inner >= P_(ToneParams::Lfo2Start) && inner < P_(ToneParams::Lfo3Start)) {
-                    HandleLfo(tone.mLfo2, inner - P_(ToneParams::Lfo2Start));
-                } else if (inner >= P_(ToneParams::Lfo3Start) && inner < P_(ToneParams::PitchEnvStart)) {
-                    HandleLfo(tone.mLfo3, inner - P_(ToneParams::Lfo3Start));
-                } else if (inner >= P_(ToneParams::PitchEnvStart) && inner < P_(ToneParams::Count)) {
-                    HandleEnv(tone.mPitchEnv, inner - P_(ToneParams::PitchEnvStart));
                 }
             };
 
-            auto HandleGlobal = [&](Voice& voice, clap_id inner) {
+            auto HandleGlobal = [&](clap_id inner) {
                 if (inner == P_(GlobalParams::Tune)) {
-                    float tune = mParams.Get<NumericParam>(id);
-                    voice.mTone1.mPartial1.mTune = tune;
-                    voice.mTone1.mPartial2.mTune = tune;
-                    voice.mTone2.mPartial1.mTune = tune;
-                    voice.mTone2.mPartial2.mTune = tune;
-                } else if (inner == P_(GlobalParams::ToneAlgorithm)) {
-                    voice.mAlgo = mParams.Get<EnumParam<Voice::ToneAlgorithm>>(id);
+                    mGlobal.mTune = mParams.Get<NumericParam>(id);
                 } else if (inner == P_(GlobalParams::ReverbMix)) {
-                    mSynth.mReverbMix = mParams.Get<PercentParam>(id);
+                    mGlobal.mReverbMix = mParams.Get<PercentParam>(id);
                 } else if (inner == P_(GlobalParams::ReverbPreset)) {
-                    if (mSynth.mReverb) {
-                        mSynth.mReverb->cfg.preset = narrow_cast<int16_t>(mParams.Get<IntegerParam>(id));
+                    if (mGlobal.mReverb) {
+                        mGlobal.mReverb->cfg.preset = narrow_cast<int16_t>(mParams.Get<IntegerParam>(id));
                     }
-                } else if (inner >= P_(GlobalParams::Tone1Start) && inner < P_(GlobalParams::Tone2Start)) {
-                    HandleTone(voice.mTone1, inner - P_(GlobalParams::Tone1Start));
-                } else if (inner >= P_(GlobalParams::Tone2Start) && inner < P_(GlobalParams::Count)) {
-                    HandleTone(voice.mTone2, inner - P_(GlobalParams::Tone2Start));
+                } else if (inner >= P_(GlobalParams::Layer1Start) && inner < P_(GlobalParams::Layer2Start)) {
+                    HandleLayer(mGlobal.mLayers[0], inner - P_(GlobalParams::Layer1Start));
+                } else if (inner >= P_(GlobalParams::Layer2Start) && inner < P_(GlobalParams::Layer3Start)) {
+                    HandleLayer(mGlobal.mLayers[1], inner - P_(GlobalParams::Layer1Start));
+                } else if (inner >= P_(GlobalParams::Layer3Start) && inner < P_(GlobalParams::Layer4Start)) {
+                    HandleLayer(mGlobal.mLayers[2], inner - P_(GlobalParams::Layer1Start));
+                } else if (inner >= P_(GlobalParams::Layer4Start) && inner < P_(GlobalParams::Count)) {
+                    HandleLayer(mGlobal.mLayers[3], inner - P_(GlobalParams::Layer1Start));
                 }
             };
-            mSynth.mVoices.ForEach([&](Voice& v, const std::optional<NoteTuple>& note) {
-                mParams.SetModulationMask(note ? *note : NoteTuple{});
-                HandleGlobal(v, id);
-            });
+            HandleGlobal(id);
             mParams.SetModulationMask({});
         });
     }
@@ -435,32 +349,31 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
 
     clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) override {
         if (mSampleLoader.OnAudioUpdate()) {
-            mSynth.mVoices.ForEach([this](Voice& voice) {
-                voice.mTone1.mPartial1.mPcmSampler = mSampleLoader.GetSampler(0);
-                voice.mTone1.mPartial2.mPcmSampler = mSampleLoader.GetSampler(1);
-                voice.mTone2.mPartial1.mPcmSampler = mSampleLoader.GetSampler(2);
-                voice.mTone2.mPartial2.mPcmSampler = mSampleLoader.GetSampler(3);
-            });
+            for (auto& layer : mGlobal.mLayers) {
+                for (Voice& voice : layer.mVoices.IterAll()) {
+                    voice.mPcmSampler = mSampleLoader.GetSampler(0);
+                }
+            }
         }
-        return mSynth.ProcessAudio(out);
+        return mGlobal.ProcessAudio(out);
     }
 
     void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) override {
-        mSynth.ProcessNoteOn(note, velocity);
+        mGlobal.ProcessNoteOn(note, velocity);
     }
 
-    void ProcessNoteOff(const clapeze::NoteTuple& note) override { mSynth.ProcessNoteOff(note); }
+    void ProcessNoteOff(const clapeze::NoteTuple& note) override { mGlobal.ProcessNoteOff(note); }
 
-    void ProcessNoteChoke(const clapeze::NoteTuple& note) override { mSynth.ProcessNoteChoke(note); }
+    void ProcessNoteChoke(const clapeze::NoteTuple& note) override { mGlobal.ProcessNoteChoke(note); }
 
-    void ProcessReset() override { mSynth.ProcessReset(); }
+    void ProcessReset() override { mGlobal.ProcessReset(); }
 
     void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) override {
-        mSynth.Activate(sampleRate, minBlockSize, maxBlockSize);
+        mGlobal.Activate(sampleRate, minBlockSize, maxBlockSize);
     }
 
    private:
-    SynthProcessor<Processor> mSynth;
+    Global mGlobal;
     SampleLoader::AudioHandle& mSampleLoader;
 };
 
@@ -504,110 +417,63 @@ class GuiApp : public kitgui::BaseApp {
             ImGui::EndMainMenuBar();
         }
 
-        static_assert(P_(GlobalParams::Count) == 156, "Update UI");
+        static_assert(P_(GlobalParams::Count) == 87, "Update UI");
 #define XID(enum) (first + P_(enum))
-        auto LfoParams = [&](clap_id first) {
-            // kitgui::DebugParam(mParams, XID(LfoParams::Wave));
-            kitgui::DebugParam(mParams, XID(LfoParams::Rate));
-            // kitgui::DebugParam(mParams, XID(LfoParams::Delay));
-            // kitgui::DebugParam(mParams, XID(LfoParams::Sync));
-        };
+        auto LfoParams = [&](clap_id first) { kitgui::DebugParam(mParams, XID(LfoParams::Rate)); };
         auto EnvParams = [&](clap_id first) {
             kitgui::DebugParam(mParams, XID(EnvParams::Attack));
             kitgui::DebugParam(mParams, XID(EnvParams::Decay));
             kitgui::DebugParam(mParams, XID(EnvParams::Sustain));
             kitgui::DebugParam(mParams, XID(EnvParams::Release));
         };
-        auto PartialParams = [&](clap_id first) {
+        auto LayerParams = [&](clap_id first) {
             ImGui::Indent();
             ImGui::SeparatorText("Wave Generator");
-            kitgui::DebugEnumParam<Partial::Wave>(mParams, XID(PartialParams::Wave));
-            kitgui::DebugParam(mParams, XID(PartialParams::PitchCoarse));
-            kitgui::DebugParam(mParams, XID(PartialParams::PitchFine));
-            kitgui::DebugParam(mParams, XID(PartialParams::PitchEnvMult));
-            kitgui::DebugParam(mParams, XID(PartialParams::PitchLfoMult));
-            kitgui::DebugParam(mParams, XID(PartialParams::Duty));
-            kitgui::DebugParam(mParams, XID(PartialParams::DutyLfoSource));
-            kitgui::DebugParam(mParams, XID(PartialParams::DutyLfoMult));
+            kitgui::DebugParam(mParams, XID(LayerParams::PitchCoarse));
+            kitgui::DebugParam(mParams, XID(LayerParams::PitchFine));
+            kitgui::DebugParam(mParams, XID(LayerParams::PitchEnvMult));
+            kitgui::DebugParam(mParams, XID(LayerParams::PitchLfoMult));
 
             ImGui::SeparatorText("Filter");
             ImGui::PushID("vcf");
-            kitgui::DebugParam(mParams, XID(PartialParams::FilterNote));
-            kitgui::DebugParam(mParams, XID(PartialParams::FilterTrackingMult));
-            kitgui::DebugParam(mParams, XID(PartialParams::FilterEnvMult));
-            kitgui::DebugParam(mParams, XID(PartialParams::FilterLfoSource));
-            kitgui::DebugParam(mParams, XID(PartialParams::FilterLfoMult));
-            kitgui::DebugParam(mParams, XID(PartialParams::FilterRes));
-            EnvParams(XID(PartialParams::FilterEnvStart));  // filter env
+            kitgui::DebugParam(mParams, XID(LayerParams::FilterNote));
+            kitgui::DebugParam(mParams, XID(LayerParams::FilterTrackingMult));
+            kitgui::DebugParam(mParams, XID(LayerParams::FilterEnvMult));
+            kitgui::DebugParam(mParams, XID(LayerParams::FilterLfoSource));
+            kitgui::DebugParam(mParams, XID(LayerParams::FilterLfoMult));
+            kitgui::DebugParam(mParams, XID(LayerParams::FilterRes));
+            EnvParams(XID(LayerParams::FilterEnvStart));  // filter env
             ImGui::PopID();
 
             ImGui::SeparatorText("Volume");
             ImGui::PushID("vca");
-            kitgui::DebugParam(mParams, XID(PartialParams::VcaMult));
-            kitgui::DebugParam(mParams, XID(PartialParams::VcaLfoSource));
-            kitgui::DebugParam(mParams, XID(PartialParams::VcaLfoMult));
-            EnvParams(XID(PartialParams::VolumeEnvStart));  // volume env
-            ImGui::PopID();
-            ImGui::Unindent();
-        };
-        auto ToneParams = [&](clap_id first) {
-            ImGui::Indent();
-            kitgui::DebugParam(mParams, XID(ToneParams::ChorusMix));
-            kitgui::DebugParam(mParams, XID(ToneParams::ChorusRate));
-            kitgui::DebugParam(mParams, XID(ToneParams::ChorusDelay));
-            kitgui::DebugParam(mParams, XID(ToneParams::ChorusDelayMod));
-            kitgui::DebugParam(mParams, XID(ToneParams::ChorusFeedback));
-            kitgui::DebugParam(mParams, XID(ToneParams::EqLowFrequency));
-            kitgui::DebugParam(mParams, XID(ToneParams::EqLowGain));
-            kitgui::DebugParam(mParams, XID(ToneParams::EqHighFrequency));
-            kitgui::DebugParam(mParams, XID(ToneParams::EqHighGain));
-            kitgui::DebugParam(mParams, XID(ToneParams::PartialMix));
-            if (ImGui::BeginTabBar("part")) {
-                if (ImGui::BeginTabItem("Partial 1")) {
-                    PartialParams(XID(ToneParams::Partial1Start));
-                    ImGui::EndTabItem();
-                }
-                if (ImGui::BeginTabItem("Partial 2")) {
-                    PartialParams(XID(ToneParams::Partial2Start));
-                    ImGui::EndTabItem();
-                }
-                ImGui::EndTabBar();
-            }
-
-            if (ImGui::BeginTabBar("lfo")) {
-                if (ImGui::BeginTabItem("LFO 1")) {
-                    LfoParams(XID(ToneParams::Lfo1Start));
-                    ImGui::EndTabItem();
-                }
-                if (ImGui::BeginTabItem("LFO 2")) {
-                    LfoParams(XID(ToneParams::Lfo2Start));
-                    ImGui::EndTabItem();
-                }
-                if (ImGui::BeginTabItem("LFO 3")) {
-                    LfoParams(XID(ToneParams::Lfo3Start));
-                    ImGui::EndTabItem();
-                }
-                ImGui::EndTabBar();
-            }
-            ImGui::SeparatorText("Pitch Envelope");
-            ImGui::PushID("pitchenv");
-            EnvParams(XID(ToneParams::PitchEnvStart));
+            kitgui::DebugParam(mParams, XID(LayerParams::VcaMult));
+            kitgui::DebugParam(mParams, XID(LayerParams::VcaLfoSource));
+            kitgui::DebugParam(mParams, XID(LayerParams::VcaLfoMult));
+            EnvParams(XID(LayerParams::VolumeEnvStart));  // volume env
             ImGui::PopID();
             ImGui::Unindent();
         };
         auto GlobalParams = [&]() {
             kitgui::DebugParam(mParams, P_(GlobalParams::Tune));
-            kitgui::DebugEnumParam<Voice::ToneAlgorithm>(mParams, P_(GlobalParams::ToneAlgorithm));
             kitgui::DebugParam(mParams, P_(GlobalParams::ReverbMix));
             kitgui::DebugParam(mParams, P_(GlobalParams::ReverbPreset));
             mSampleLoader.OnImGui(GetContext());
-            if (ImGui::BeginTabBar("tone")) {
-                if (ImGui::BeginTabItem("Tone 1")) {
-                    ToneParams(P_(GlobalParams::Tone1Start));
+            if (ImGui::BeginTabBar("layer")) {
+                if (ImGui::BeginTabItem("Layer 1")) {
+                    LayerParams(P_(GlobalParams::Layer1Start));
                     ImGui::EndTabItem();
                 }
-                if (ImGui::BeginTabItem("Tone 2")) {
-                    ToneParams(P_(GlobalParams::Tone2Start));
+                if (ImGui::BeginTabItem("Layer 2")) {
+                    LayerParams(P_(GlobalParams::Layer1Start));
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::BeginTabItem("Layer 3")) {
+                    LayerParams(P_(GlobalParams::Layer1Start));
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::BeginTabItem("Layer 4")) {
+                    LayerParams(P_(GlobalParams::Layer1Start));
                     ImGui::EndTabItem();
                 }
                 ImGui::EndTabBar();
@@ -669,13 +535,9 @@ class Plugin : public InstrumentPlugin {
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), P_(GlobalParams::Count));
         clap_id idx = 0;
-        static_assert(P_(GlobalParams::Count) == 156, "Update Traits");
+        static_assert(P_(GlobalParams::Count) == 87, "Update Traits");
         auto LfoParams = [&](const std::string& pre) {
-            params.Parameter(idx++, new EnumParam<Partial::Wave>(pre + "_wave", "Wave", {"Pulse", "Saw", "PCM"},
-                                                                 Partial::Wave::Pulse));
             params.Parameter(idx++, new LfoRateParam(pre + "_rate", "Rate"));
-            params.Parameter(idx++, new PercentParam(pre + "_delay", "Delay", 0.0f));
-            params.Parameter(idx++, new PercentParam(pre + "_sync", "Sync", 0.0f));
         };
         auto EnvParams = [&](const std::string& pre) {
             params.Parameter(idx++, new EnvParam(pre + "_attack", "Attack", 1.0f, 1000.0f));
@@ -683,18 +545,13 @@ class Plugin : public InstrumentPlugin {
             params.Parameter(idx++, new PercentParam(pre + "_sustain", "Sustain", 1.0f));
             params.Parameter(idx++, new EnvParam(pre + "_release", "Release", 10.0f, 30000.0f));
         };
-        auto PartialParams = [&](const std::string& pre) {
-            params.Parameter(idx++, new EnumParam<Partial::Wave>(pre + "_wave", "Wave", {"Pulse", "Saw", "PCM"},
-                                                                 Partial::Wave::Pulse));
+        auto LayerParams = [&](const std::string& pre) {
             params.Parameter(idx++, new IntegerParam(pre + "_pitchCoarse", "Pitch Coarse", -32, 32, 0, "semis"));
             params.Parameter(idx++, new NumericParam(pre + "_pitchFine", "Pitch Fine", -100.0f, 100.0f, 0.0f, "cents"));
             params.Parameter(idx++,
                              new NumericParam(pre + "_pitchEnv", "Pitch Env amount", -32.0f, 32.0f, 0.0f, "semis"));
             params.Parameter(idx++,
                              new NumericParam(pre + "_pitchLfo", "Pitch LFO amount", -12.0f, 12.0f, 0.0f, "semis"));
-            params.Parameter(idx++, new PercentParam(pre + "_duty", "Duty", 0.5f));
-            params.Parameter(idx++, new ModSourceParam(pre + "_dutySrc", "Duty Mod source", 1));
-            params.Parameter(idx++, new PercentParam(pre + "_dutyMult", "Duty Mod amount", 0.0f));
             params.Parameter(idx++, new PercentParam(pre + "_filter", "Filter Cutoff", 1.0f));
             params.Parameter(idx++, new PercentParam(pre + "_filterTrack", "Filter Tracking", 0.0f));
             params.Parameter(idx++, new PercentParam(pre + "_filterEnvMult", "Filter Env amount", 0.0f));
@@ -707,33 +564,14 @@ class Plugin : public InstrumentPlugin {
             EnvParams(pre + "FilterEnv");
             EnvParams(pre + "volumeEnv");
         };
-        auto ToneParams = [&](const std::string& pre) {
-            params.Parameter(idx++, new PercentParam(pre + "_chorusMix", "Chorus Mix", 0.0f));
-            params.Parameter(idx++, new FreqParam(pre + "_chorusRate", "Chorus Rate", 0.1f, 20.0f, 1.0f));
-            params.Parameter(idx++, new NumericParam(pre + "_chorusDelay", "Chorus Delay", 4.0f, 20.0f, 4.0f, "ms"));
-            params.Parameter(idx++, new NumericParam(pre + "_chorusDepth", "Chorus Depth", 2.0f, 20.0f, 2.0f, "ms"));
-            params.Parameter(idx++, new PercentParam(pre + "_chorusFeedback", "Chorus Feedback", 0.0f));
-            params.Parameter(idx++, new FreqParam(pre + "_eqLowFreq", "Low Frequency", 20.0f, 20000.0f, 300.0f));
-            params.Parameter(idx++, new NumericParam(pre + "_eqLowGain", "Low Gain", -60.0f, 10.0f, 0.0f, "db"));
-            params.Parameter(idx++, new FreqParam(pre + "_eqHighFreq", "High Frequency", 20.0f, 20000.0f, 1800.0f));
-            params.Parameter(idx++, new NumericParam(pre + "_eqHighGain", "High Gain", -60.0f, 10.0f, 0.0f, "db"));
-            params.Parameter(idx++, new PercentParam(pre + "_partialMix", "Partial Mix", 0.0f));
-            PartialParams(pre + "Part1");
-            PartialParams(pre + "Part2");
-            LfoParams(pre + "Lfo1");
-            LfoParams(pre + "Lfo2");
-            LfoParams(pre + "Lfo3");
-            EnvParams(pre + "PitchEnv");
-        };
         auto GlobalParams = [&]() {
             params.Parameter(idx++, new NumericParam("tune", "Tune", 20.0f, 1000.0f, 440.0f, "hz"));
-            params.Parameter(idx++,
-                             new EnumParam<Voice::ToneAlgorithm>("toneAlgo", "Routing", {"1 only", "2 only", "both"},
-                                                                 Voice::ToneAlgorithm::OneOnly));
             params.Parameter(idx++, new PercentParam("reverbMix", "Reverb Mix", 0.0f));
             params.Parameter(idx++, new IntegerParam("reverbPreset", "Reverb Preset", 1, kitdsp::PSX::kNumPresets, 1));
-            ToneParams("Tone1");
-            ToneParams("Tone2");
+            LayerParams("Layer1");
+            LayerParams("Layer2");
+            LayerParams("Layer3");
+            LayerParams("Layer4");
         };
 
         GlobalParams();

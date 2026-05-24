@@ -143,8 +143,27 @@ void DynamicAudioHandle::ClearModulation(const NoteTuple& note) {
     }
 }
 
-void DynamicAudioHandle::OnNoteEnd(const NoteTuple& note) {
+void DynamicAudioHandle::OnNoteStart(const NoteTuple& note) {
+    auto iter = mActiveNotes.find(note);
+    if (iter != mActiveNotes.end()) {
+        iter->second += 1;
+    } else {
+        mActiveNotes.insert({note, 1});
+    }
     ClearModulation(note);
+}
+
+void DynamicAudioHandle::OnNoteEnd(const NoteTuple& note) {
+    auto iter = mActiveNotes.find(note);
+    if (iter != mActiveNotes.end()) {
+        auto& numVoices = iter->second;
+        if (numVoices > 1) {
+            numVoices -= 1;
+        } else {
+            mActiveNotes.erase(iter);
+            ClearModulation(note);
+        }
+    }
 }
 
 DynamicMainHandle::DynamicMainHandle(size_t numParams, Queue& mainToAudio, Queue& audioToMain)

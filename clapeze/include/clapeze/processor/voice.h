@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <optional>
+#include <ranges>
 #include "clap/events.h"
 #include "clapeze/common.h"
 #include "clapeze/features/params/baseParametersFeature.h"
@@ -84,29 +85,16 @@ class VoicePool {
             }
         }
     }
-    template <typename T>
-    void ForEachActive(T fn) {
-        for (VoiceIndex idx = 0; idx < mVoices.size(); idx++) {
-            auto& data = mVoices[idx];
-            if (data.activeNote) {
-                if constexpr (std::is_invocable_v<T, TVoice&, const std::optional<NoteTuple>&>) {
-                    fn(mVoices[idx].voice, *(mVoices[idx].activeNote));
-                } else {
-                    fn(mVoices[idx].voice);
-                }
-            }
-        }
+
+    auto IterAll() {
+        return mVoices | std::ranges::views::transform([](auto& v) -> TVoice& { return v.voice; });
     }
-    template <typename T>
-    void ForEach(T fn) {
-        for (VoiceIndex idx = 0; idx < mVoices.size(); idx++) {
-            if constexpr (std::is_invocable_v<T, TVoice&, const NoteTuple&>) {
-                fn(mVoices[idx].voice, mVoices[idx].activeNote);
-            } else {
-                fn(mVoices[idx].voice);
-            }
-        }
+
+    auto IterActive() {
+        return mVoices | std::ranges::views::filter([](auto& v) { return v.activeNote.has_value(); }) |
+               std::ranges::views::transform([](auto& v) -> TVoice& { return v.voice; });
     }
+
     ProcessStatus ProcessAudio(StereoAudioBuffer& out) {
         std::fill(out.left.begin(), out.left.end(), 0.0f);
         std::fill(out.right.begin(), out.right.end(), 0.0f);
@@ -158,6 +146,7 @@ class VoicePool {
             data.voice.ProcessChoke();
         }
     }
+    void SendNoteStart(const NoteTuple& note) { mParams.OnNoteStart(note); }
 
     void SendNoteEnd(const NoteTuple& note) {
         clap_event_note_t event = {};
@@ -235,6 +224,7 @@ class VoicePool {
             nextVoiceData.voice.ProcessNoteOn(note, velocity);
             nextVoiceData.isPressed = true;
             nextVoiceData.age = mNextAge++;
+            pool.SendNoteStart(note);
         }
         void ProcessNoteOff(VoicePool& pool, const NoteTuple& note) {
             auto& mVoices = pool.mVoices;
@@ -267,6 +257,7 @@ class VoicePool {
             mActiveNotes.push_back({note, velocity});
             pool.mVoices[0].activeNote = note;
             Voice(pool).ProcessNoteOn(note, velocity);
+            pool.SendNoteStart(note);
         }
         void ProcessNoteOff(VoicePool& pool, const NoteTuple& note) {
             // if the top note is playing, we'll have to stop it later

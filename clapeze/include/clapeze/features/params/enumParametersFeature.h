@@ -60,6 +60,7 @@ class EnumAudioHandle : public BaseAudioHandle {
 
     bool ProcessEvent(const clap_event_header_t& event) override;
     void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) override;
+    void OnNoteStart(const NoteTuple& note) override { /* TODO */ }
     void OnNoteEnd(const NoteTuple& note) override { /* TODO */ }
 
    private:

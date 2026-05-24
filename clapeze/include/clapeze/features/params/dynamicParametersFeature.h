@@ -36,6 +36,7 @@ class DynamicAudioHandle : public BaseAudioHandle {
 
     void SetModulationMask(const NoteTuple& note);
     void ClearModulation(const NoteTuple& note);
+    void OnNoteStart(const NoteTuple& note) override;
     void OnNoteEnd(const NoteTuple& note) override;
 
     bool ProcessEvent(const clap_event_header_t& event) override;
@@ -48,9 +49,9 @@ class DynamicAudioHandle : public BaseAudioHandle {
         }
     }
     const std::string& GetKey(clap_id id) { return mParamsRef[id]->GetKey(); }
+    double GetRawValue(clap_id id) const;
 
    private:
-    double GetRawValue(clap_id id) const;
     void SetRawValue(clap_id id, double newValue);
 
     double GetRawModulation(clap_id id, const std::optional<NoteTuple>& note) const;
@@ -59,6 +60,7 @@ class DynamicAudioHandle : public BaseAudioHandle {
     std::vector<std::unique_ptr<BaseParam>>& mParamsRef;
     std::vector<double> mValues;
     etl::flat_map<etl::pair<clap_id, NoteTuple>, double, 255> mModulations;
+    etl::flat_map<NoteTuple, size_t, 64> mActiveNotes;
     std::function<void(clap_id)> mHandleChange;
     Queue& mMainToAudio;
     Queue& mAudioToMain;
