@@ -265,7 +265,9 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                 float d = mParams.Get<EnvParam>(start + 1);
                 float s = mParams.Get<PercentParam>(start + 2);
                 float r = mParams.Get<EnvParam>(start + 3);
-                adsr.SetParams(a, d, s, r, static_cast<float>(GetSampleRate()));
+
+                float sr = static_cast<float>(GetSampleRate());
+                adsr.SetParams(a, d, s, r, sr);
             };
             auto HandlePartial = [&](Tone& tone, Partial& part, clap_id inner) {
                 clap_id start = id - inner;

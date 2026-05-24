@@ -6,6 +6,7 @@
 #include "clap/plugin.h"
 #include "clap/process.h"
 #include "clapeze/features/latencyFeature.h"
+#include "clapeze/features/params/baseParametersFeature.h"
 #include "clapeze/pluginHost.h"
 #include "clapeze/processor/baseProcessor.h"
 
@@ -84,6 +85,11 @@ bool BasePlugin::Activate(double sampleRate, uint32_t minBlockSize, uint32_t max
     mProcessor->mMinBlockSize = minBlockSize;
     mProcessor->mMaxBlockSize = maxBlockSize;
     mProcessor->Activate(sampleRate, minBlockSize, maxBlockSize);
+
+    params::BaseParametersFeature* params = static_cast<params::BaseParametersFeature*>(TryGetFeature(CLAP_EXT_PARAMS));
+    if (params) {
+        params->OnActivated();
+    }
 
     LatencyFeature* latency = static_cast<LatencyFeature*>(TryGetFeature(CLAP_EXT_LATENCY));
     if (latency) {

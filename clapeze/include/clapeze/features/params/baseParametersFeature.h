@@ -19,7 +19,9 @@ struct Change {
     clap_id id;
     double value;
 };
-using Queue = etl::queue_spsc_atomic<Change, 100, etl::memory_model::MEMORY_MODEL_SMALL>;
+// likely worst case is something like 2x the number of parameters in the feature (queue up everything to change on
+// activate, then queue up everything to change on patch load)
+using Queue = etl::queue_spsc_atomic<Change, 1000, etl::memory_model::MEMORY_MODEL_MEDIUM>;
 
 class BaseMainHandle {
    public:
@@ -59,6 +61,7 @@ class BaseParametersFeature : public BaseFeature {
     void FlushFromAudio();
 
     void RequestFlushIfNotProcessing();
+    virtual void OnActivated() {};
 
     template <std::derived_from<BaseAudioHandle> THandle = BaseAudioHandle>
     THandle& GetAudioHandle() {

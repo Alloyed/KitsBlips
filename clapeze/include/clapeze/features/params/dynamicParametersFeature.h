@@ -12,6 +12,7 @@
 
 #include "clap/events.h"
 #include "clapeze/features/params/baseParametersFeature.h"
+#include "clapeze/impl/casts.h"
 #include "clapeze/pluginHost.h"
 
 namespace clapeze::params {
@@ -24,20 +25,21 @@ class DynamicAudioHandle : public BaseAudioHandle {
                        Queue& mainToAudio,
                        Queue& audioToMain);
 
-    void RegisterHandler(std::function<void(clap_id)> handler) {
-        mHandleChange = std::move(handler);
-        if (mHandleChange) {
-            for (clap_id idx = 0; idx < mValues.size(); ++idx) {
-                mHandleChange(idx);
-            }
-        }
-    }
+    void RegisterHandler(std::function<void(clap_id)> handler) { mHandleChange = std::move(handler); }
 
     template <class TParam>
     typename TParam::_valuetype Get(clap_id id) const;
 
     bool ProcessEvent(const clap_event_header_t& event) override;
     void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) override;
+    void NotifyAllChanged() {
+        if (mHandleChange) {
+            for (clap_id idx = 0; idx < mValues.size(); ++idx) {
+                mHandleChange(idx);
+            }
+        }
+    }
+    const std::string& GetKey(clap_id id) { return mParamsRef[id]->GetKey(); }
 
    private:
     double GetRawValue(clap_id id) const;
@@ -58,14 +60,7 @@ class DynamicMainHandle : public BaseMainHandle {
    public:
     DynamicMainHandle(size_t numParams, Queue& mainToAudio, Queue& audioToMain);
 
-    void RegisterHandler(std::function<void(clap_id)> handler) {
-        mHandleChange = std::move(handler);
-        if (mHandleChange) {
-            for (clap_id idx = 0; idx < mValues.size(); ++idx) {
-                mHandleChange(idx);
-            }
-        }
-    }
+    void RegisterHandler(std::function<void(clap_id)> handler) { mHandleChange = std::move(handler); }
 
     double GetRawValue(clap_id id) const override;
     void SetRawValue(clap_id id, double newValue) override;
@@ -74,6 +69,13 @@ class DynamicMainHandle : public BaseMainHandle {
     void StopGesture(clap_id id) override;
 
     void FlushFromAudio() override;
+    void NotifyAllChanged() {
+        if (mHandleChange) {
+            for (clap_id idx = 0; idx < mValues.size(); ++idx) {
+                mHandleChange(idx);
+            }
+        }
+    }
 
    private:
     std::vector<double> mValues;
@@ -98,6 +100,8 @@ class DynamicParametersFeature : public BaseParametersFeature {
         mMain->SetRawValue(id, mParams[id]->GetRawDefault());
         return *this;
     }
+
+    void OnActivated() override { impl::down_cast<DynamicAudioHandle*>(mAudio.get())->NotifyAllChanged(); }
 };
 
 // impl
