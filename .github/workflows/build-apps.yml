@@ -36,9 +36,6 @@ jobs:
           - name: Windows
             os: windows-2025
             extra-flags: -DKITSBLIPS_RETAIL="ON"
-          #- name: Windows-sentry
-          #  os: windows-2025
-          #  extra-flags: -DKITSBLIPS_ENABLE_SENTRY="ON" -DKITSBLIPS_RETAIL="ON"
 
     steps:
       - name: Set up Linux deps
@@ -53,9 +50,6 @@ jobs:
           submodules: recursive
 
       - uses: ./.github/actions/cmake
-        env:
-          KITSBLIPS_SENTRY_DSN: ${{ secrets.KITSBLIPS_SENTRY_DSN }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         with:
           source: ${{github.workspace}}/daw
           build: ${{github.workspace}}/build
@@ -92,7 +86,6 @@ jobs:
         uses: egor-tensin/setup-mingw@v3
         with:
           platform: x64
-          static: 0
 
       - name: Set up Linux deps
         if: runner.os == 'Linux'

@@ -34,7 +34,10 @@ function(enable_asan)
     if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         message(FATAL_ERROR "AddressSanitizer enabled, so we need to use clang.")
     endif()
-    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -O1 -g -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls)
+    add_compile_options(-O1 -g -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls)
+    add_link_options(-fsanitize=address)
+    set(CORRADE_CPU_USE_IFUNC OFF)
+    message(STATUS "AddressSanitizer enabled")
 endfunction()
 
 function(enable_msan)
@@ -42,7 +45,10 @@ function(enable_msan)
     if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         message(FATAL_ERROR "MemorySanitizer enabled, so we need to use clang.")
     endif()
-    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -O1 -g -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -fno-optimize-sibling-calls)
+    add_compile_options(-O1 -g -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -fno-optimize-sibling-calls)
+    add_link_options(-fsanitize=memory)
+    set(CORRADE_CPU_USE_IFUNC OFF)
+    message(STATUS "MemorySanitizer enabled")
 endfunction()
 
 function(enable_tsan)
@@ -50,7 +56,10 @@ function(enable_tsan)
     if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         message(FATAL_ERROR "ThreadSanitizer enabled, so we need to use clang.")
     endif()
-    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -O1 -g -fsanitize=thread)
+    add_compile_options(-O1 -g -fsanitize=thread)
+    add_link_options(-fsanitize=thread)
+    set(CORRADE_CPU_USE_IFUNC OFF)
+    message(STATUS "ThreadSanitizer enabled")
 endfunction()
 
 function(enable_fast_math)
@@ -266,13 +275,6 @@ FetchContent_Declare(
     AudioFile
     GIT_REPOSITORY https://github.com/adamstark/AudioFile.git
     GIT_TAG        1.1.4
-    SYSTEM
-    EXCLUDE_FROM_ALL
-)
-FetchContent_Declare(
-    sentry-native
-    GIT_REPOSITORY https://github.com/getsentry/sentry-native.git
-    GIT_TAG        0.12.3
     SYSTEM
     EXCLUDE_FROM_ALL
 )

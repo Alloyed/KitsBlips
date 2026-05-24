@@ -8,12 +8,9 @@ set(PRODUCT_ID "me.alloyed.KitsBlips")
 include(CMakeDependentOption)
 option(KITSBLIPS_ENABLE_GUI "enable GUI" ON)
 option(KITSBLIPS_ENABLE_VST "build VSTs" ON)
-option(KITSBLIPS_ENABLE_STANDALONE "build standalone (instruments only)" ON)
-option(KITSBLIPS_ENABLE_SENTRY "Enable sentry error reporting" OFF)
+cmake_dependent_option(KITSBLIPS_ENABLE_STANDALONE "build standalone (instruments only)" ON "WIN32" OFF)
 option(KITSBLIPS_RETAIL "Enable if this build is intended for end-users" OFF)
-if(APPLE)
-    option(KITSBLIPS_ENABLE_AUDIOUNIT "build Audio Units" OFF)
-endif()
+cmake_dependent_option(KITSBLIPS_ENABLE_AUDIOUNIT "build Audio Units" ON "APPLE" OFF)
 
 if(KITSBLIPS_ENABLE_VST AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     # needed for VST headers: https://forum.juce.com/t/juce-8-0-12-linux-vst-embedded-interface-pragma-pack-warnings/67852/7
@@ -37,9 +34,15 @@ set(CMAKE_CXX_STANDARD 20)
 # shared libs
 include(../content.cmake)
 enable_fast_math()
+#enable_msan()
+#enable_asan()
+
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
 FetchContent_MakeAvailable(clap fmt clapeze KitDSP)
 FetchContent_MakeAvailable(clap-wrapper)
+if(KITSBLIPS_ENABLE_GUI)
+    FetchContent_MakeAvailable(kitgui)
+endif()
 
 add_library(KitsBlips OBJECT)
 target_compile_definitions(KitsBlips PUBLIC
@@ -89,24 +92,8 @@ target_link_libraries(KitsBlips PRIVATE
 
 if(KITSBLIPS_ENABLE_GUI)
     message(STATUS "Building with kitgui enabled...")
-    FetchContent_MakeAvailable(kitgui)
-
     target_compile_definitions(KitsBlips PUBLIC KITSBLIPS_ENABLE_GUI=1)
     target_link_libraries(KitsBlips PRIVATE kitgui)
-endif()
-
-if(KITSBLIPS_ENABLE_SENTRY)
-    include(cmake/sentry.cmake)
-    target_compile_definitions(KitsBlips PUBLIC
-        KITSBLIPS_ENABLE_SENTRY=1
-        KITSBLIPS_SENTRY_DSN="$ENV{KITSBLIPS_SENTRY_DSN}"
-    )
-    target_link_libraries(KitsBlips PRIVATE sentry)
-    list(APPEND DEBUGGABLE_TARGETS KitsBlips-clap)
-    if(KITSBLIPS_ENABLE_VST)
-        list(APPEND DEBUGGABLE_TARGETS KitsBlips-vst3)
-    endif()
-    enable_sentry(${DEBUGGABLE_TARGETS})
 endif()
 
 set(ASSETS

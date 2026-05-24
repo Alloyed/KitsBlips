@@ -21,7 +21,6 @@
 #include <kitdsp/spanAllocator.h>
 #include <optional>
 
-
 namespace layersynth {
 
 using Sampler = kitdsp::Sampler1D<float>;
@@ -35,49 +34,32 @@ class Global;
 class Voice {
    public:
     explicit Voice(clapeze::BaseProcessor& p) { (void)p; }
-    void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
-        (void)velocity;
-        mNote = note.key;
-        mFilterEnv.TriggerOpen();
-        mVolumeEnv.TriggerOpen();
-        mPcmPhase = 0.0f;
-    }
-    void ProcessNoteOff() {
-        mFilterEnv.TriggerClose();
-        mVolumeEnv.TriggerClose();
-    }
-    void ProcessChoke() {
-        mFilterEnv.TriggerChoke();
-        mVolumeEnv.TriggerChoke();
-    }
+    void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity);
+    void ProcessNoteOff() { mVolumeEnv.TriggerClose(); }
+    void ProcessChoke() { mVolumeEnv.TriggerChoke(); }
     void Reset() {
         mOsc.Reset();
         mFilter.Reset();
-        mFilterEnv.Reset();
         mVolumeEnv.Reset();
         mPcmPhase = 0.0f;
     }
     bool ProcessAudio(clapeze::StereoAudioBuffer& out);
 
-    kitdsp::OversampledOscillator<kitdsp::naive::PulseOscillator, 2> mOsc;
-    kitdsp::EmileSvf mFilter;
-    kitdsp::ApproachAdsr mFilterEnv;
-    kitdsp::ApproachAdsr mVolumeEnv;
+    kitdsp::OversampledOscillator<kitdsp::naive::PulseOscillator, 2> mOsc{};
+    kitdsp::EmileSvf mFilter{};
+    Envelope mVolumeEnv{};
+    Lfo mPitchLfo{};
+    kitdsp::Approach mNote{};
 
     const Global* mGlobal{};
     const Layer* mLayer{};
-    const Envelope* mPitchEnv{};
-    const Lfo* mPitchLfo{};
-    const Lfo* mDutyLfo{};
-    const Lfo* mFilterLfo{};
-    const Lfo* mVcaLfo{};
     const Sampler* mPcmSampler{};
 
-    int32_t mNumber;
-
-    float mNote{};
+    float mVelocity{};
     float mPcmAdvance{};
     float mPcmPhase{};
+
+    kitdsp::SvfFilterMode mFilterMode{};
 };
 
 constexpr size_t cMaxVoices = 16;
@@ -107,17 +89,25 @@ class Layer {
     }
 
     clapeze::VoicePool<clapeze::BaseProcessor, Voice, cMaxVoices> mVoices;
+    std::optional<kitdsp::Chorus> mChorus;
+
+    int32_t mWaveIndex{};
     float mNoteOffset{};
     float mTune{};
-    float mPitchEnvMult{};
     float mPitchLfoMult{};
+
     float mFilterNote{};
-    float mFilterTrackingMult{};
-    float mFilterEnvMult{};
-    float mFilterLfoMult{};
     float mFilterRes{};
+    float mFilterTrackingMult{};
+
     float mVcaMult{};
-    float mVcaLfoMult{};
+    float mVcaVelocityMult{};
+
+    float mChorusMix{};
+    float mChorusRate{};
+    float mChorusDelay{};
+    float mChorusDepth{};
+    float mChorusFeedback{};
 
    private:
 };
@@ -176,6 +166,7 @@ class Global {
     float mReverbMix{};
     float mSampleRate{};
     float mTune{};
+    float mPortamento{};
 
    private:
 };

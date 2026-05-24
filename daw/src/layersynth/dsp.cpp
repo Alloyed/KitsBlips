@@ -6,14 +6,12 @@ bool Voice::ProcessAudio(clapeze::StereoAudioBuffer& out) {
     const auto& global = *mGlobal;
 
     for (size_t index = 0; index < out.left.size(); ++index) {
-        mFilterEnv.Process();
         mVolumeEnv.Process();
+        mPitchLfo.Process();
+        mNote.Process();
 
-        float pitchNote = mNote + layer.mNoteOffset + (mPitchEnv ? mPitchEnv->GetValue() * layer.mPitchEnvMult : 0.0f) +
-                          (mPitchLfo ? mPitchLfo->GetValue() * layer.mPitchLfoMult : 0.0f);
-        float filterNote = layer.mFilterNote + (mNote * layer.mFilterTrackingMult) +
-                           (mFilterEnv.GetValue() * layer.mFilterEnvMult) +
-                           (mFilterLfo ? mFilterLfo->GetValue() * layer.mFilterLfoMult : 0.0f);
+        float pitchNote = mNote.current + layer.mNoteOffset + (mPitchLfo.GetValue() * .2f);
+        float filterNote = layer.mFilterNote + (mNote.current * layer.mFilterTrackingMult);
         float res = layer.mFilterRes * 0.89f;  // acts as cap, experimentally determined
         float filterSteepness = 0.5f;          // steeper means "achieves self-oscillation quicker"
         float filterQ = 0.5f * std::exp(filterSteepness * (res / (1 - res)));  // [0, 1] -> [0.5, inf]
@@ -25,12 +23,25 @@ bool Voice::ProcessAudio(clapeze::StereoAudioBuffer& out) {
             float mPcmAdvance = (mPcmSampler->GetSampleRate() / global.mSampleRate) *
                                 (kitdsp::midiToFrequency(pitchNote, global.mTune) / baseFreq);
             mPcmPhase += mPcmAdvance;
-            waveout = mPcmSampler->Read<false, kitdsp::interpolate::InterpolationStrategy::Linear>(mPcmPhase);
+            waveout = mPcmSampler->Read<false, kitdsp::interpolate::InterpolationStrategy::Cubic>(mPcmPhase);
         }
-        waveout = mFilter.Process<kitdsp::SvfFilterMode::LowPass>(waveout);
+        switch (mFilterMode) {
+            case kitdsp::SvfFilterMode::LowPass: {
+                waveout = mFilter.Process<kitdsp::SvfFilterMode::LowPass>(waveout);
+                break;
+            }
+            case kitdsp::SvfFilterMode::BandPass: {
+                waveout = mFilter.Process<kitdsp::SvfFilterMode::BandPass>(waveout);
+                break;
+            }
+            case kitdsp::SvfFilterMode::HighPass: {
+                waveout = mFilter.Process<kitdsp::SvfFilterMode::HighPass>(waveout);
+                break;
+            }
+        }
 
         float vca =
-            (layer.mVcaMult + (mVcaLfo ? mVcaLfo->GetValue() * layer.mVcaLfoMult : 0.0f)) * mVolumeEnv.GetValue();
+            kitdsp::lerp(layer.mVcaMult, layer.mVcaMult * mVelocity, layer.mVcaVelocityMult) * mVolumeEnv.GetValue();
         out.left[index] += vca * waveout;
         out.right[index] += vca * waveout;
     }
@@ -61,4 +72,12 @@ clapeze::ProcessStatus Global::ProcessAudio(clapeze::StereoAudioBuffer& out) {
     return status;
 }
 
+void Voice::ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
+    mVelocity = velocity;
+    mNote.current = mNote.target;
+    mNote.target = note.key;
+    mNote.SetSettleTime(mGlobal->mPortamento, mGlobal->mSampleRate, mNote.target - mNote.current);
+    mVolumeEnv.TriggerOpen();
+    mPcmPhase = 0.0f;
+}
 }  // namespace layersynth

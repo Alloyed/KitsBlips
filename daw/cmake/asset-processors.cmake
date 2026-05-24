@@ -12,6 +12,4 @@ function(wip_asset_processors)
         COMMAND gltfpack -cc -tc -mi -i "${IN}" -o "${OUT}"
         VERBATIM
     )
-
-    # sentry-cli debug-files upload -o <org> -p <project> ${DIST_FOLDER}
 endfunction()

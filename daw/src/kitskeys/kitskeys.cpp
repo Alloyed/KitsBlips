@@ -39,10 +39,6 @@
 #include "gui/kitguiFeature.h"
 #endif
 
-#if KITSBLIPS_ENABLE_SENTRY
-#include <sentry.h>
-#endif
-
 namespace {
 enum class Params : clap_id {
     OscOctave,
@@ -762,28 +758,6 @@ class Plugin : public InstrumentPlugin {
 
    protected:
     void Config() override {
-#if KITSBLIPS_ENABLE_SENTRY
-        GetHost().SetLogFn([](clapeze::LogSeverity severity, const std::string& message) {
-            switch (severity) {
-                case LogSeverity::Debug:
-                    sentry_log_debug(message.c_str());
-                    break;
-                case LogSeverity::Info:
-                    sentry_log_info(message.c_str());
-                    break;
-                case LogSeverity::Warning:
-                    sentry_log_warn(message.c_str());
-                    break;
-                case LogSeverity::Error:
-                    sentry_log_error(message.c_str());
-                    break;
-                case LogSeverity::Fatal:
-                    sentry_log_fatal(message.c_str());
-                    break;
-            }
-        });
-#endif
-
         InstrumentPlugin::Config();
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), Params::Count)

@@ -19,10 +19,10 @@
 #include <kitdsp/control/lfo.h>
 #include <kitdsp/macros.h>
 #include <kitdsp/sampler.h>
-#include <memory>
 #include <sstream>
 
 #include "descriptor.h"
+#include "kitdsp/filters/svf.h"
 #include "shared/dr_flac.h"
 #include "shared/dr_wav.h"
 
@@ -43,7 +43,6 @@
 #endif
 
 namespace {
-
 #define P_(id) static_cast<clap_id>(id)
 enum class LfoParams : clap_id {
     Rate,
@@ -57,27 +56,26 @@ enum class EnvParams : clap_id {
     Count,
 };
 enum class LayerParams : clap_id {
+    WaveIndex,
     PitchCoarse,
     PitchFine,
-    PitchEnvMult,
-    PitchLfoMult,
+    FilterMode,
     FilterNote,
-    FilterTrackingMult,
-    FilterEnvMult,
-    FilterLfoSource,
-    FilterLfoMult,
     FilterRes,
+    FilterTrackingMult,
     VcaMult,
-    VcaLfoSource,
-    VcaLfoMult,
-    // + filterEnv
-    FilterEnvStart,
-    // + volumeEnv
-    VolumeEnvStart = FilterEnvStart + P_(EnvParams::Count),
-    Count = VolumeEnvStart + P_(EnvParams::Count),
+    VcaVelocityMult,
+    ChorusMix,
+    ChorusRate,
+    ChorusDepth,
+    ChorusFeedback,
+    VoiceEnvStart,
+    VoiceLfoStart = VoiceEnvStart + P_(EnvParams::Count),
+    Count = VoiceLfoStart + P_(LfoParams::Count),
 };
 enum class GlobalParams {
     Tune,
+    Portamento,
     ReverbMix,
     ReverbPreset,
     Layer1Start,
@@ -85,13 +83,6 @@ enum class GlobalParams {
     Layer3Start = Layer2Start + P_(LayerParams::Count),
     Layer4Start = Layer3Start + P_(LayerParams::Count),
     Count = Layer4Start + P_(LayerParams::Count),
-};
-
-struct LfoRateParam : public clapeze::NumericParam {
-    LfoRateParam(std::string_view key, std::string_view name)
-        : clapeze::NumericParam(key, name, 0.001f, 20.0f, 0.2f, "hz") {
-        mCurve = clapeze::cPowCurve<3.0f>;
-    }
 };
 
 struct EnvParam : public clapeze::NumericParam {
@@ -105,6 +96,13 @@ struct FreqParam : public clapeze::NumericParam {
     FreqParam(std::string_view key, std::string_view name, float min, float max, float defaultV)
         : clapeze::NumericParam(key, name, min, max, defaultV, "hz") {
         mCurve = clapeze::cPowCurve<2.0f>;
+    }
+};
+
+struct LfoRateParam : public clapeze::NumericParam {
+    LfoRateParam(std::string_view key, std::string_view name)
+        : clapeze::NumericParam(key, name, 0.001f, 20.0f, 0.2f, "hz") {
+        mCurve = clapeze::cPowCurve<3.0f>;
     }
 };
 
@@ -266,7 +264,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
    public:
     explicit Processor(ParamsFeature::AudioHandle& params, SampleLoader::AudioHandle& sampleLoader)
         : InstrumentProcessor(params), mGlobal(*this, params), mSampleLoader(sampleLoader) {
-        static_assert(P_(GlobalParams::Count) == 87, "Update handlers");
+        static_assert(P_(GlobalParams::Count) == 76, "Update handlers");
         params.RegisterHandler([&](clap_id id) {
             // printf("Id: %u (%s), value: %f\n", id, mParams.GetKey(id).c_str(), mParams.GetRawValue(id));
             auto HandleLfo = [&](kitdsp::lfo::TriangleOscillator& lfo, clap_id inner) {
@@ -287,39 +285,50 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
             };
             auto HandleLayer = [&](Layer& layer, clap_id inner) {
                 clap_id start = id - inner;
-                if (inner == P_(LayerParams::PitchCoarse) || inner == P_(LayerParams::PitchFine)) {
+                if (inner == P_(LayerParams::WaveIndex)) {
+                    layer.mWaveIndex = mParams.Get<IntegerParam>(id);
+                } else if (inner == P_(LayerParams::PitchCoarse) || inner == P_(LayerParams::PitchFine)) {
                     layer.mNoteOffset =
                         narrow_cast<float>(mParams.Get<IntegerParam>(start + P_(LayerParams::PitchCoarse))) +
                         mParams.Get<NumericParam>(start + P_(LayerParams::PitchFine)) / 100.0f;
-                } else if (inner == P_(LayerParams::PitchEnvMult)) {
-                    layer.mPitchEnvMult = mParams.Get<NumericParam>(id);
-                } else if (inner == P_(LayerParams::PitchLfoMult)) {
-                    layer.mPitchLfoMult = mParams.Get<NumericParam>(id);
+                } else if (inner == P_(LayerParams::FilterMode)) {
+                    for (Voice& voice : layer.mVoices.IterAll()) {
+                        voice.mFilterMode = mParams.Get<EnumParam<kitdsp::SvfFilterMode>>(id);
+                    }
                 } else if (inner == P_(LayerParams::FilterNote)) {
-                    layer.mFilterNote = mParams.Get<PercentParam>(id) * 80.0f;
+                    layer.mFilterNote = mParams.Get<PercentParam>(id) * 127.0f;
                 } else if (inner == P_(LayerParams::FilterTrackingMult)) {
                     layer.mFilterTrackingMult = mParams.Get<PercentParam>(id);
-                } else if (inner == P_(LayerParams::FilterEnvMult)) {
-                    layer.mFilterEnvMult = mParams.Get<PercentParam>(id) * 80.0f;
-                } else if (inner == P_(LayerParams::FilterLfoSource)) {
-                    // tone.SetLfoRoute(part.mNumber, 3, mParams.Get<ModSourceParam>(id));
-                } else if (inner == P_(LayerParams::FilterLfoMult)) {
-                    layer.mFilterLfoMult = mParams.Get<PercentParam>(id) * 80.0f;
                 } else if (inner == P_(LayerParams::FilterRes)) {
                     layer.mFilterRes = mParams.Get<PercentParam>(id);
                 } else if (inner == P_(LayerParams::VcaMult)) {
                     layer.mVcaMult = mParams.Get<PercentParam>(id);
-                } else if (inner == P_(LayerParams::VcaLfoSource)) {
-                    // tone.SetLfoRoute(part.mNumber, 4, mParams.Get<ModSourceParam>(id));
-                } else if (inner == P_(LayerParams::VcaLfoMult)) {
-                    layer.mVcaLfoMult = mParams.Get<PercentParam>(id);
-                } else if (inner >= P_(LayerParams::FilterEnvStart) && inner < P_(LayerParams::VolumeEnvStart)) {
-                    for (Voice& voice : layer.mVoices.IterAll()) {
-                        HandleEnv(voice.mFilterEnv, inner - P_(LayerParams::VolumeEnvStart));
+                } else if (inner == P_(LayerParams::VcaVelocityMult)) {
+                    layer.mVcaVelocityMult = mParams.Get<PercentParam>(id);
+                } else if (inner == P_(LayerParams::ChorusMix)) {
+                    if (layer.mChorus) {
+                        layer.mChorus->cfg.mix = mParams.Get<PercentParam>(id);
                     }
-                } else if (inner >= P_(LayerParams::VolumeEnvStart) && inner < P_(LayerParams::Count)) {
+                } else if (inner == P_(LayerParams::ChorusRate)) {
+                    if (layer.mChorus) {
+                        layer.mChorus->cfg.lfoRateHz = mParams.Get<FreqParam>(id);
+                    }
+                } else if (inner == P_(LayerParams::ChorusDepth)) {
+                    if (layer.mChorus) {
+                        layer.mChorus->cfg.delayBaseMs = mParams.Get<PercentParam>(id) * 20.0f;
+                        layer.mChorus->cfg.delayModMs = mParams.Get<PercentParam>(id) * 8.0f;
+                    }
+                } else if (inner == P_(LayerParams::ChorusFeedback)) {
+                    if (layer.mChorus) {
+                        layer.mChorus->cfg.feedback = mParams.Get<PercentParam>(id);
+                    }
+                } else if (inner >= P_(LayerParams::VoiceEnvStart) && inner < P_(LayerParams::VoiceLfoStart)) {
                     for (Voice& voice : layer.mVoices.IterAll()) {
-                        HandleEnv(voice.mVolumeEnv, inner - P_(LayerParams::VolumeEnvStart));
+                        HandleEnv(voice.mVolumeEnv, inner - P_(LayerParams::VoiceEnvStart));
+                    }
+                } else if (inner >= P_(LayerParams::VoiceLfoStart) && inner < P_(LayerParams::Count)) {
+                    for (Voice& voice : layer.mVoices.IterAll()) {
+                        HandleLfo(voice.mPitchLfo, inner - P_(LayerParams::VoiceLfoStart));
                     }
                 }
             };
@@ -327,6 +336,8 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
             auto HandleGlobal = [&](clap_id inner) {
                 if (inner == P_(GlobalParams::Tune)) {
                     mGlobal.mTune = mParams.Get<NumericParam>(id);
+                } else if (inner == P_(GlobalParams::Portamento)) {
+                    mGlobal.mPortamento = mParams.Get<EnvParam>(id);
                 } else if (inner == P_(GlobalParams::ReverbMix)) {
                     mGlobal.mReverbMix = mParams.Get<PercentParam>(id);
                 } else if (inner == P_(GlobalParams::ReverbPreset)) {
@@ -419,7 +430,7 @@ class GuiApp : public kitgui::BaseApp {
             ImGui::EndMainMenuBar();
         }
 
-        static_assert(P_(GlobalParams::Count) == 87, "Update UI");
+        static_assert(P_(GlobalParams::Count) == 76, "Update UI");
 #define XID(enum) (first + P_(enum))
         auto LfoParams = [&](clap_id first) { kitgui::DebugParam(mParams, XID(LfoParams::Rate)); };
         auto EnvParams = [&](clap_id first) {
@@ -431,33 +442,42 @@ class GuiApp : public kitgui::BaseApp {
         auto LayerParams = [&](clap_id first) {
             ImGui::Indent();
             ImGui::SeparatorText("Wave Generator");
+            ImGui::PushID("wg");
+            kitgui::DebugParam(mParams, XID(LayerParams::WaveIndex));
             kitgui::DebugParam(mParams, XID(LayerParams::PitchCoarse));
             kitgui::DebugParam(mParams, XID(LayerParams::PitchFine));
-            kitgui::DebugParam(mParams, XID(LayerParams::PitchEnvMult));
-            kitgui::DebugParam(mParams, XID(LayerParams::PitchLfoMult));
+            LfoParams(XID(LayerParams::VoiceLfoStart));
+            ImGui::PopID();
 
             ImGui::SeparatorText("Filter");
             ImGui::PushID("vcf");
+            kitgui::DebugEnumParam<kitdsp::SvfFilterMode>(mParams, XID(LayerParams::FilterMode));
             kitgui::DebugParam(mParams, XID(LayerParams::FilterNote));
-            kitgui::DebugParam(mParams, XID(LayerParams::FilterTrackingMult));
-            kitgui::DebugParam(mParams, XID(LayerParams::FilterEnvMult));
-            kitgui::DebugParam(mParams, XID(LayerParams::FilterLfoSource));
-            kitgui::DebugParam(mParams, XID(LayerParams::FilterLfoMult));
             kitgui::DebugParam(mParams, XID(LayerParams::FilterRes));
-            EnvParams(XID(LayerParams::FilterEnvStart));  // filter env
+            kitgui::DebugParam(mParams, XID(LayerParams::FilterTrackingMult));
             ImGui::PopID();
 
             ImGui::SeparatorText("Volume");
             ImGui::PushID("vca");
             kitgui::DebugParam(mParams, XID(LayerParams::VcaMult));
-            kitgui::DebugParam(mParams, XID(LayerParams::VcaLfoSource));
-            kitgui::DebugParam(mParams, XID(LayerParams::VcaLfoMult));
-            EnvParams(XID(LayerParams::VolumeEnvStart));  // volume env
+            kitgui::DebugParam(mParams, XID(LayerParams::VcaVelocityMult));
+            EnvParams(XID(LayerParams::VoiceEnvStart));
             ImGui::PopID();
+
+            ImGui::SeparatorText("Chorus");
+            ImGui::PushID("chorus");
+            kitgui::DebugParam(mParams, XID(LayerParams::ChorusMix));
+            kitgui::DebugParam(mParams, XID(LayerParams::ChorusRate));
+            kitgui::DebugParam(mParams, XID(LayerParams::ChorusDepth));
+            kitgui::DebugParam(mParams, XID(LayerParams::ChorusFeedback));
+            EnvParams(XID(LayerParams::VoiceEnvStart));
+            ImGui::PopID();
+
             ImGui::Unindent();
         };
         auto GlobalParams = [&]() {
             kitgui::DebugParam(mParams, P_(GlobalParams::Tune));
+            kitgui::DebugParam(mParams, P_(GlobalParams::Portamento));
             kitgui::DebugParam(mParams, P_(GlobalParams::ReverbMix));
             kitgui::DebugParam(mParams, P_(GlobalParams::ReverbPreset));
             mSampleLoader.OnImGui(GetContext());
@@ -536,47 +556,58 @@ class Plugin : public InstrumentPlugin {
         InstrumentPlugin::Config();
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), P_(GlobalParams::Count));
-        clap_id idx = 0;
-        static_assert(P_(GlobalParams::Count) == 87, "Update Traits");
-        auto LfoParams = [&](const std::string& pre) {
-            params.Parameter(idx++, new LfoRateParam(pre + "_rate", "Rate"));
+        static_assert(P_(GlobalParams::Count) == 76, "Update Traits");
+#define XID(enum) (first + P_(enum))
+        auto LfoParams = [&](const std::string& pre, clap_id first) {
+            params.Parameter(XID(LfoParams::Rate), new LfoRateParam(pre + "_rate", "Rate"));
         };
-        auto EnvParams = [&](const std::string& pre) {
-            params.Parameter(idx++, new EnvParam(pre + "_attack", "Attack", 1.0f, 1000.0f));
-            params.Parameter(idx++, new EnvParam(pre + "_decay", "Decay", 10.0f, 30000.0f));
-            params.Parameter(idx++, new PercentParam(pre + "_sustain", "Sustain", 1.0f));
-            params.Parameter(idx++, new EnvParam(pre + "_release", "Release", 10.0f, 30000.0f));
+        auto EnvParams = [&](const std::string& pre, clap_id first) {
+            params.Parameter(XID(EnvParams::Attack), new EnvParam(pre + "_attack", "Attack", 5.0f, 1000.0f));
+            params.Parameter(XID(EnvParams::Decay), new EnvParam(pre + "_decay", "Decay", 20.0f, 10000.0f));
+            params.Parameter(XID(EnvParams::Sustain), new PercentParam(pre + "_sustain", "Sustain", 1.0f));
+            params.Parameter(XID(EnvParams::Release), new EnvParam(pre + "_release", "Release", 20.0f, 10000.0f));
         };
-        auto LayerParams = [&](const std::string& pre) {
-            params.Parameter(idx++, new IntegerParam(pre + "_pitchCoarse", "Pitch Coarse", -32, 32, 0, "semis"));
-            params.Parameter(idx++, new NumericParam(pre + "_pitchFine", "Pitch Fine", -100.0f, 100.0f, 0.0f, "cents"));
-            params.Parameter(idx++,
-                             new NumericParam(pre + "_pitchEnv", "Pitch Env amount", -32.0f, 32.0f, 0.0f, "semis"));
-            params.Parameter(idx++,
-                             new NumericParam(pre + "_pitchLfo", "Pitch LFO amount", -12.0f, 12.0f, 0.0f, "semis"));
-            params.Parameter(idx++, new PercentParam(pre + "_filter", "Filter Cutoff", 1.0f));
-            params.Parameter(idx++, new PercentParam(pre + "_filterTrack", "Filter Tracking", 0.0f));
-            params.Parameter(idx++, new PercentParam(pre + "_filterEnvMult", "Filter Env amount", 0.0f));
-            params.Parameter(idx++, new ModSourceParam(pre + "_filterSrc", "Filter Mod source", 2));
-            params.Parameter(idx++, new PercentParam(pre + "_filterSrcMult", "Filter Mod amount", 0.0f));
-            params.Parameter(idx++, new PercentParam(pre + "_filterRes", "Filter Resonance", 0.0f));
-            params.Parameter(idx++, new PercentParam(pre + "_vcaMult", "Volume", 0.5f));
-            params.Parameter(idx++, new ModSourceParam(pre + "_vcaLfoSource", "Volume Mod source", 3));
-            params.Parameter(idx++, new PercentParam(pre + "_vcaLfoMult", "Volume Mod amount", 0.0f));
-            EnvParams(pre + "FilterEnv");
-            EnvParams(pre + "volumeEnv");
+        auto LayerParams = [&](const std::string& pre, clap_id first) {
+            params.Parameter(XID(LayerParams::WaveIndex), new IntegerParam(pre + "_wave", "Wave", 1, 4, 1));
+            params.Parameter(XID(LayerParams::PitchCoarse),
+                             new IntegerParam(pre + "_pitchCoarse", "Pitch Coarse", -32, 32, 0, "semis"));
+            params.Parameter(XID(LayerParams::PitchFine),
+                             new NumericParam(pre + "_pitchFine", "Pitch Fine", -100.0f, 100.0f, 0.0f, "cents"));
+            params.Parameter(XID(LayerParams::FilterMode),
+                             new EnumParam<kitdsp::SvfFilterMode>(pre + "_filterMode", "Filter Mode",
+                                                                  {"Lowpass", "Highpass", "Bandpass"},
+                                                                  kitdsp::SvfFilterMode::LowPass));
+            params.Parameter(XID(LayerParams::FilterNote), new PercentParam(pre + "_filter", "Filter Cutoff", 1.0f));
+            params.Parameter(XID(LayerParams::FilterRes),
+                             new PercentParam(pre + "_filterRes", "Filter Resonance", 0.0f));
+            params.Parameter(XID(LayerParams::FilterTrackingMult),
+                             new PercentParam(pre + "_filterTrack", "Filter Tracking", 0.0f));
+            params.Parameter(XID(LayerParams::VcaMult), new PercentParam(pre + "_vcaMult", "Volume", 0.5f));
+            params.Parameter(XID(LayerParams::VcaVelocityMult), new PercentParam(pre + "_vcaMult", "Velocity", 0.0f));
+            params.Parameter(XID(LayerParams::ChorusMix), new PercentParam(pre + "_chorusMix", "Chorus Mix", 0.0f));
+            params.Parameter(XID(LayerParams::ChorusRate),
+                             new FreqParam(pre + "_chorusRate", "Chorus Rate", 0.001f, 5.0f, 1.0f));
+            params.Parameter(XID(LayerParams::ChorusDepth),
+                             new PercentParam(pre + "_chorusDepth", "Chorus Depth", 1.0f));
+            params.Parameter(XID(LayerParams::ChorusFeedback),
+                             new PercentParam(pre + "_chorusFeedback", "Chorus Feedback", 0.0f));
+            EnvParams(pre + "VoiceEnv", XID(LayerParams::VoiceEnvStart));
+            LfoParams(pre + "VoiceLfo", XID(LayerParams::VoiceLfoStart));
         };
         auto GlobalParams = [&]() {
-            params.Parameter(idx++, new NumericParam("tune", "Tune", 20.0f, 1000.0f, 440.0f, "hz"));
-            params.Parameter(idx++, new PercentParam("reverbMix", "Reverb Mix", 0.0f));
-            params.Parameter(idx++, new IntegerParam("reverbPreset", "Reverb Preset", 1, kitdsp::PSX::kNumPresets, 1));
-            LayerParams("Layer1");
-            LayerParams("Layer2");
-            LayerParams("Layer3");
-            LayerParams("Layer4");
+            params.Parameter(P_(GlobalParams::Tune), new NumericParam("tune", "Tune", 20.0f, 1000.0f, 440.0f, "hz"));
+            params.Parameter(P_(GlobalParams::Portamento), new EnvParam("portamento", "Portamento", 0.0f, 20.0f));
+            params.Parameter(P_(GlobalParams::ReverbMix), new PercentParam("reverbMix", "Reverb Mix", 0.0f));
+            params.Parameter(P_(GlobalParams::ReverbPreset),
+                             new IntegerParam("reverbPreset", "Reverb Preset", 1, kitdsp::PSX::kNumPresets, 1));
+            LayerParams("Layer1", P_(GlobalParams::Layer1Start));
+            LayerParams("Layer2", P_(GlobalParams::Layer2Start));
+            LayerParams("Layer3", P_(GlobalParams::Layer3Start));
+            LayerParams("Layer4", P_(GlobalParams::Layer4Start));
         };
 
         GlobalParams();
+#undef XID
 
         ConfigFeature<clapeze::AssetsFeature>();
         ConfigFeature<StateFeature>(*this, mSampleLoader);
