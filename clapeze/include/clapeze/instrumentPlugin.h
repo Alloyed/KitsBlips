@@ -13,7 +13,7 @@ namespace clapeze {
 template <typename TParametersFeature>
 class InstrumentProcessor : public BaseProcessor {
    public:
-    explicit InstrumentProcessor(TParametersFeature& params) : BaseProcessor(), mParams(params) {}
+    explicit InstrumentProcessor(PluginHost& host, TParametersFeature& params) : BaseProcessor(host), mParams(params) {}
     ~InstrumentProcessor() override = default;
 
     void ProcessEvent(const clap_event_header_t& event) final {

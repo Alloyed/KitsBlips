@@ -33,7 +33,7 @@ class BaseProcessor {
 
    public:
     /* Processors are created during the Config() phase of the plugin, and destroyed when the plugin is destroyed. */
-    BaseProcessor() {}
+    BaseProcessor(PluginHost& host): mHost(host) {}
     virtual ~BaseProcessor() = default;
 
     /**
@@ -105,11 +105,14 @@ class BaseProcessor {
     double GetSampleRate() const { return mSampleRate; }
     size_t GetMaxBlockSize() const { return mMinBlockSize; }
     size_t GetMinBlockSize() const { return mMaxBlockSize; }
+    PluginHost& GetHost() { return mHost; }
+    const PluginHost& GetHost() const { return mHost; }
 
     // returns a ratio of cpu time spent vs audio time generated. above 1, we've failed to meet our deadline.
     double mLastTimeSpentRatio{};
 
    private:
+    PluginHost& mHost;
     double mSampleRate{};
     size_t mMinBlockSize{};
     size_t mMaxBlockSize{};

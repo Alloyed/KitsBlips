@@ -11,7 +11,7 @@ namespace clapeze {
 template <typename TParametersFeature>
 class EffectProcessor : public BaseProcessor {
    public:
-    explicit EffectProcessor(TParametersFeature& params) : BaseProcessor(), mParams(params) {}
+    explicit EffectProcessor(PluginHost& host, TParametersFeature& params) : BaseProcessor(host), mParams(params) {}
     ~EffectProcessor() = default;
 
     void ProcessEvent(const clap_event_header_t& event) final {

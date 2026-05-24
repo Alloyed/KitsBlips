@@ -137,7 +137,7 @@ TFeature* BasePlugin::TryConfigFeature(TArgs&&... args) {
 
 template <typename TProcessor, typename... TArgs>
 TProcessor& BasePlugin::ConfigProcessor(TArgs&&... args) {
-    mProcessor = std::make_unique<TProcessor>(std::forward<TArgs>(args)...);
+    mProcessor = std::make_unique<TProcessor>(GetHost(), std::forward<TArgs>(args)...);
     return impl::down_cast<TProcessor&>(*mProcessor);
 }
 

@@ -63,7 +63,7 @@ namespace harmonizer {
 
 class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
    public:
-    explicit Processor(ParamsFeature::AudioHandle& params) : EffectProcessor(params) {}
+    explicit Processor(clapeze::PluginHost& host,ParamsFeature::AudioHandle& params) : EffectProcessor(host,params) {}
     ~Processor() = default;
 
     ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {

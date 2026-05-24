@@ -27,7 +27,7 @@ using MessageQueue = etl::queue_spsc_atomic<FixedMessage, 100, etl::memory_model
 
 class Processor : public clapeze::BaseProcessor {
    public:
-    explicit Processor(MessageQueue& audioToMain) : mAudioToMain(audioToMain) {}
+    explicit Processor(clapeze::PluginHost& host,MessageQueue& audioToMain) : clapeze::BaseProcessor(host), mAudioToMain(audioToMain) {}
     ~Processor() = default;
 
     void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) override {

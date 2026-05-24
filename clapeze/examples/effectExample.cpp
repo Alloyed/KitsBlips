@@ -73,7 +73,7 @@ class MyProcessor : public clapeze::EffectProcessor<MyParamsHandle> {
     using BaseType = clapeze::EffectProcessor<MyParamsHandle>;
 
    public:
-    explicit MyProcessor(MyParamsHandle& params) : BaseType(params) {}
+    explicit MyProcessor(clapeze::PluginHost& host, MyParamsHandle& params) : BaseType(host, params) {}
     ~MyProcessor() = default;
 
     clapeze::ProcessStatus ProcessAudio(const clapeze::StereoAudioBuffer& in,

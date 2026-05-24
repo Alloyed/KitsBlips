@@ -20,7 +20,7 @@ class Approach {
     static float CalculateHalfLife(float halfLifeMs, float sampleRate) {
         if (halfLifeMs == 0.0f || sampleRate == 0.0f) {
             // instant approach
-            return 0.0f;
+            return 1.0f;
         } else {
             // https://mastodon.social/@acegikmo/111931613710775864
 

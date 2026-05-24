@@ -124,8 +124,16 @@ double DynamicAudioHandle::GetRawModulation(clap_id id, const std::optional<Note
 }
 void DynamicAudioHandle::SetRawModulation(clap_id id, const NoteTuple& note, double newModulation) {
     if (id < mValues.size()) {
-        mModulations.insert({{id, note}, newModulation});
+        auto iter = mModulations.find({id, note});
+        if (iter != mModulations.end()) {
+            iter->second = newModulation;
+        } else {
+            mModulations.insert({{id, note}, newModulation});
+        }
         mAudioToMain.push({ChangeType::SetModulation, id, note, newModulation});
+        if (mHandleChange) {
+            mHandleChange(id);
+        }
     }
 }
 
@@ -150,7 +158,6 @@ void DynamicAudioHandle::OnNoteStart(const NoteTuple& note) {
     } else {
         mActiveNotes.insert({note, 1});
     }
-    ClearModulation(note);
 }
 
 void DynamicAudioHandle::OnNoteEnd(const NoteTuple& note) {

@@ -80,8 +80,8 @@ class Processor : public clapeze::InstrumentProcessor<ParamsHandle> {
     };
 
    public:
-    explicit Processor(clapeze::params::DynamicAudioHandle& params)
-        : InstrumentProcessor(params), mVoices(*this, params) {}
+    explicit Processor(clapeze::PluginHost& host, clapeze::params::DynamicAudioHandle& params)
+        : InstrumentProcessor(host, params), mVoices(*this, params) {}
     ~Processor() = default;
 
     clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) override {
