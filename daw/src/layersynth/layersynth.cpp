@@ -172,6 +172,7 @@ class RawSampleLoader {
             }
 
             size_t numSamples = pFlac->totalPCMFrameCount;
+            f->sampleRate = narrow_cast<float>(pFlac->sampleRate);
             f->samples.resize(numSamples);
             std::vector<float> raw(numSamples * pFlac->channels);
             size_t numSamplesRead = drflac_read_pcm_frames_f32(pFlac, numSamples, raw.data());
@@ -191,6 +192,7 @@ class RawSampleLoader {
             }
 
             size_t numSamples = wav.totalPCMFrameCount;
+            f->sampleRate = narrow_cast<float>(wav.sampleRate);
             f->samples.resize(numSamples);
             std::vector<float> raw(numSamples * wav.channels);
             size_t numSamplesRead = drwav_read_pcm_frames_f32(&wav, wav.totalPCMFrameCount, raw.data());
@@ -334,11 +336,11 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                 } else if (inner >= P_(GlobalParams::Layer1Start) && inner < P_(GlobalParams::Layer2Start)) {
                     HandleLayer(mGlobal.mLayers[0], inner - P_(GlobalParams::Layer1Start));
                 } else if (inner >= P_(GlobalParams::Layer2Start) && inner < P_(GlobalParams::Layer3Start)) {
-                    HandleLayer(mGlobal.mLayers[1], inner - P_(GlobalParams::Layer1Start));
+                    HandleLayer(mGlobal.mLayers[1], inner - P_(GlobalParams::Layer2Start));
                 } else if (inner >= P_(GlobalParams::Layer3Start) && inner < P_(GlobalParams::Layer4Start)) {
-                    HandleLayer(mGlobal.mLayers[2], inner - P_(GlobalParams::Layer1Start));
+                    HandleLayer(mGlobal.mLayers[2], inner - P_(GlobalParams::Layer3Start));
                 } else if (inner >= P_(GlobalParams::Layer4Start) && inner < P_(GlobalParams::Count)) {
-                    HandleLayer(mGlobal.mLayers[3], inner - P_(GlobalParams::Layer1Start));
+                    HandleLayer(mGlobal.mLayers[3], inner - P_(GlobalParams::Layer4Start));
                 }
             };
             HandleGlobal(id);
@@ -465,15 +467,15 @@ class GuiApp : public kitgui::BaseApp {
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Layer 2")) {
-                    LayerParams(P_(GlobalParams::Layer1Start));
+                    LayerParams(P_(GlobalParams::Layer2Start));
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Layer 3")) {
-                    LayerParams(P_(GlobalParams::Layer1Start));
+                    LayerParams(P_(GlobalParams::Layer3Start));
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Layer 4")) {
-                    LayerParams(P_(GlobalParams::Layer1Start));
+                    LayerParams(P_(GlobalParams::Layer4Start));
                     ImGui::EndTabItem();
                 }
                 ImGui::EndTabBar();

@@ -96,8 +96,8 @@ class VoicePool {
     }
 
     ProcessStatus ProcessAudio(StereoAudioBuffer& out) {
-        std::fill(out.left.begin(), out.left.end(), 0.0f);
-        std::fill(out.right.begin(), out.right.end(), 0.0f);
+        //std::fill(out.left.begin(), out.left.end(), 0.0f);
+        //std::fill(out.right.begin(), out.right.end(), 0.0f);
         for (VoiceIndex idx = 0; idx < mVoices.size(); idx++) {
             auto& data = mVoices[idx];
             if (data.activeNote) {
@@ -110,7 +110,7 @@ class VoicePool {
                 }
             }
         }
-        return ProcessStatus::ContinueIfNotQuiet;
+        return ProcessStatus::Continue;
     }
 
     void StopAllVoices() {

@@ -524,6 +524,8 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
             mLeaderLfo.SetFrequency(lfoRate, sampleRate);
         }
 
+        std::fill(out.left.begin(), out.left.end(), 0.0f);
+        std::fill(out.right.begin(), out.right.end(), 0.0f);
         auto status = mVoices.ProcessAudio(out);
 
         float numSamples = narrow_cast<float>(out.left.size());

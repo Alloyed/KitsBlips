@@ -45,6 +45,8 @@ clapeze::ProcessStatus Layer::ProcessAudio(clapeze::StereoAudioBuffer& out) {
 
 clapeze::ProcessStatus Global::ProcessAudio(clapeze::StereoAudioBuffer& out) {
     clapeze::ProcessStatus status{};
+    std::fill(out.left.begin(), out.left.end(), 0.0f);
+    std::fill(out.right.begin(), out.right.end(), 0.0f);
     for (auto& layer : mLayers) {
         status = layer.ProcessAudio(out);
     }

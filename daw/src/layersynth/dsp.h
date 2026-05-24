@@ -1,5 +1,6 @@
 #pragma once
 
+#include <clapeze/features/params/dynamicParametersFeature.h>
 #include <clapeze/processor/voice.h>
 #include <etl/array.h>
 #include <kitdsp/apps/chorus.h>
@@ -19,7 +20,7 @@
 #include <kitdsp/sampler.h>
 #include <kitdsp/spanAllocator.h>
 #include <optional>
-#include "clapeze/features/params/dynamicParametersFeature.h"
+
 
 namespace layersynth {
 
