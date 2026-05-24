@@ -38,7 +38,7 @@ set(CMAKE_CXX_STANDARD 20)
 include(../content.cmake)
 enable_fast_math()
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Download Dependencies")
-FetchContent_MakeAvailable(clap fmt clapeze KitDSP AudioFile)
+FetchContent_MakeAvailable(clap fmt clapeze KitDSP)
 FetchContent_MakeAvailable(clap-wrapper)
 
 add_library(KitsBlips OBJECT)
@@ -52,6 +52,7 @@ target_enable_warnings(KitsBlips)
 target_sources(KitsBlips PRIVATE
     src/entry.cpp
     src/gui/kitguiFeature.cpp
+    src/shared/dr_libs.cpp
 )
 
 # public modules
@@ -84,7 +85,6 @@ target_include_directories(KitsBlips PUBLIC src)
 target_link_libraries(KitsBlips PRIVATE
     clapeze
     KitDSP
-    AudioFile
 )
 
 if(KITSBLIPS_ENABLE_GUI)

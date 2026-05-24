@@ -14,18 +14,18 @@
 #include <clapeze/processor/voice.h>
 #include <etl/flat_multimap.h>
 #include <etl/vector.h>
+#include <kitdsp/apps/psxReverbPresets.h>
+#include <kitdsp/control/adsr.h>
+#include <kitdsp/control/lfo.h>
+#include <kitdsp/macros.h>
+#include <kitdsp/sampler.h>
 #include <memory>
 #include <sstream>
-#include "AudioFile.h"
 
-#include <descriptor.h>
+#include "descriptor.h"
+#include "shared/dr_flac.h"
+#include "shared/dr_wav.h"
 
-#include "kitdsp/apps/psxReverbPresets.h"
-#include "kitdsp/control/adsr.h"
-#include "kitdsp/control/lfo.h"
-#include "kitdsp/macros.h"
-#include "kitdsp/sampler.h"
-#include "kitgui/wrap_nfd.h"
 #include "layersynth/dsp.h"
 
 #if KITSBLIPS_ENABLE_GUI
@@ -35,6 +35,7 @@
 #include <kitgui/app.h>
 #include <kitgui/context.h>
 #include <kitgui/gfx/scene.h>
+#include <kitgui/wrap_nfd.h>
 #include <misc/cpp/imgui_stdlib.h>
 #include "gui/debugui.h"
 #include "gui/kitguiFeature.h"
@@ -155,7 +156,10 @@ namespace layersynth {
 template <size_t TNumSamples>
 class RawSampleLoader {
    public:
-    using File = AudioFile<float>;
+    struct File {
+        std::vector<float> samples;
+        float sampleRate;
+    };
     using Queue = etl::queue_spsc_atomic<std::pair<size_t, File*>, 200, etl::memory_model::MEMORY_MODEL_SMALL>;
 
     class AudioHandle {
@@ -175,7 +179,7 @@ class RawSampleLoader {
                 }
                 mSampleData[pair.first] = pair.second;
                 mSamplers[pair.first] = std::make_optional<kitdsp::Sampler1D<float>>(
-                    pair.second->samples[0], narrow_cast<float>(pair.second->getSampleRate()));
+                    pair.second->samples, narrow_cast<float>(pair.second->sampleRate));
                 changed = true;
             }
             return changed;
@@ -193,9 +197,51 @@ class RawSampleLoader {
     RawSampleLoader() : mAudioHandle(mMainToAudio, mAudioToMain) {}
 
     void LoadSample(size_t idx, const std::string& path) {
-        File* f = new AudioFile<float>(path);
-        mMainToAudio.push({idx, f});
-        mSamplePaths[idx] = path;
+        File* f = new File();
+        if (path.ends_with(".flac")) {
+            drflac* pFlac = drflac_open_file(path.c_str(), nullptr);
+            if (pFlac == nullptr) {
+                return;
+            }
+
+            size_t numSamples = pFlac->totalPCMFrameCount;
+            f->samples.resize(numSamples);
+            std::vector<float> raw(numSamples * pFlac->channels);
+            size_t numSamplesRead = drflac_read_pcm_frames_f32(pFlac, numSamples, raw.data());
+            if (numSamplesRead != numSamples) {
+                return;
+            }
+            for (size_t idx = 0; idx < numSamples; ++idx) {
+                // always take left channel for simplicity
+                f->samples[idx] = raw[idx * pFlac->channels];
+            }
+
+            drflac_close(pFlac);
+        } else if (path.ends_with(".wav")) {
+            drwav wav;
+            if (!drwav_init_file(&wav, path.c_str(), nullptr)) {
+                return;
+            }
+
+            size_t numSamples = wav.totalPCMFrameCount;
+            f->samples.resize(numSamples);
+            std::vector<float> raw(numSamples * wav.channels);
+            size_t numSamplesRead = drwav_read_pcm_frames_f32(&wav, wav.totalPCMFrameCount, raw.data());
+            if (numSamplesRead != numSamples) {
+                return;
+            }
+            for (size_t idx = 0; idx < numSamples; ++idx) {
+                // always take left channel for simplicity
+                f->samples[idx] = raw[idx * wav.channels];
+            }
+
+            drwav_uninit(&wav);
+        }
+
+        if (f) {
+            mMainToAudio.push({idx, f});
+            mSamplePaths[idx] = path;
+        }
     }
 
     std::string GetSamplePath(size_t idx) { return mSamplePaths[idx]; }
