@@ -10,6 +10,7 @@
 #include <memory>
 
 #include "clap/events.h"
+#include "clapeze/common.h"
 #include "clapeze/features/params/baseParametersFeature.h"
 #include "clapeze/impl/casts.h"
 #include "clapeze/pluginHost.h"
@@ -52,13 +53,14 @@ class EnumAudioHandle : public BaseAudioHandle {
                 // tricksy: we're sending our own update from the audio thread to be processed in
                 // FlushEventsFromMain. probably smarter to ask for the event queue and push ourselves in there
                 // instead.
-                mMainToAudio.push({ChangeType::SetValue, index, raw});
+                mMainToAudio.push({ChangeType::SetValue, index, {}, raw});
             }
         }
     }
 
     bool ProcessEvent(const clap_event_header_t& event) override;
     void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) override;
+    void OnNoteEnd(const NoteTuple& note) override { /* TODO */ }
 
    private:
     double GetRawValue(clap_id id) const;
@@ -246,7 +248,7 @@ void EnumAudioHandle<TParamId>::SetRawValue(clap_id id, double newValue) {
     clap_id index = id;
     if (index < mValues.size()) {
         mValues[index] = newValue;
-        mAudioToMain.push({ChangeType::SetValue, id, newValue});
+        mAudioToMain.push({ChangeType::SetValue, id, {}, newValue});
         // onAudioChanged
     }
 }
@@ -264,7 +266,7 @@ void EnumAudioHandle<TParamId>::SetRawModulation(clap_id id, double newModulatio
     clap_id index = id;
     if (index < mModulations.size()) {
         mModulations[index] = newModulation;
-        mAudioToMain.push({ChangeType::SetModulation, id, newModulation});
+        mAudioToMain.push({ChangeType::SetModulation, id, {}, newModulation});
         // onAudioChanged
     }
 }

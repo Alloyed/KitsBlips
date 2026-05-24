@@ -9,6 +9,7 @@
 #include <optional>
 #include <unordered_map>
 #include "clapeze/basePlugin.h"
+#include "clapeze/common.h"
 #include "clapeze/features/params/baseParameter.h"
 #include "clapeze/impl/stringUtils.h"
 
@@ -17,6 +18,7 @@ enum class ChangeType : uint8_t { SetValue, SetModulation, StartGesture, StopGes
 struct Change {
     ChangeType type;
     clap_id id;
+    NoteTuple note;
     double value;
 };
 // likely worst case is something like 2x the number of parameters in the feature (queue up everything to change on
@@ -38,6 +40,7 @@ class BaseAudioHandle {
     virtual ~BaseAudioHandle() = default;
     virtual bool ProcessEvent(const clap_event_header_t& event) = 0;
     virtual void FlushEventsFromMain(BaseProcessor& processor, const clap_output_events_t* out) = 0;
+    virtual void OnNoteEnd(const NoteTuple& note) = 0;
 };
 
 class BaseParametersFeature : public BaseFeature {

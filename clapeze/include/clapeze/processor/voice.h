@@ -9,6 +9,7 @@
 #include <optional>
 #include "clap/events.h"
 #include "clapeze/common.h"
+#include "clapeze/features/params/baseParametersFeature.h"
 #include "clapeze/processor/baseProcessor.h"
 
 namespace clapeze {
@@ -24,7 +25,8 @@ enum class VoiceStrategy {
 template <typename TProcessor, typename TVoice, size_t TMaxVoices>
 class VoicePool {
    public:
-    explicit VoicePool(TProcessor& p, size_t numVoices = TMaxVoices) : mProcessor(p), mVoices() {
+    explicit VoicePool(TProcessor& p, clapeze::params::BaseAudioHandle& params, size_t numVoices = TMaxVoices)
+        : mProcessor(p), mParams(params), mVoices() {
         SetNumVoices(numVoices);
     }
 
@@ -87,14 +89,22 @@ class VoicePool {
         for (VoiceIndex idx = 0; idx < mVoices.size(); idx++) {
             auto& data = mVoices[idx];
             if (data.activeNote) {
-                fn(mVoices[idx].voice);
+                if constexpr (std::is_invocable_v<T, TVoice&, const std::optional<NoteTuple>&>) {
+                    fn(mVoices[idx].voice, *(mVoices[idx].activeNote));
+                } else {
+                    fn(mVoices[idx].voice);
+                }
             }
         }
     }
     template <typename T>
     void ForEach(T fn) {
         for (VoiceIndex idx = 0; idx < mVoices.size(); idx++) {
-            fn(mVoices[idx].voice);
+            if constexpr (std::is_invocable_v<T, TVoice&, const NoteTuple&>) {
+                fn(mVoices[idx].voice, mVoices[idx].activeNote);
+            } else {
+                fn(mVoices[idx].voice);
+            }
         }
     }
     ProcessStatus ProcessAudio(StereoAudioBuffer& out) {
@@ -161,6 +171,7 @@ class VoicePool {
         event.key = note.key;
         event.port_index = note.port;
         mProcessor.SendEvent(event.header);
+        mParams.OnNoteEnd(note);
     }
 
     struct VoiceData {
@@ -172,6 +183,7 @@ class VoicePool {
     };
 
     TProcessor& mProcessor;
+    params::BaseAudioHandle& mParams;
     etl::vector<VoiceData, TMaxVoices> mVoices;
     VoiceStrategy mStrategy{};
 

@@ -18,6 +18,7 @@
 #include <kitdsp/sampler.h>
 #include <kitdsp/spanAllocator.h>
 #include <optional>
+#include "clapeze/features/params/dynamicParametersFeature.h"
 
 namespace layersynth {
 
@@ -300,7 +301,7 @@ constexpr size_t cMaxVoices = 16;
 template <typename Processor>
 class SynthProcessor {
    public:
-    explicit SynthProcessor(Processor& p) : mVoices(p) {}
+    explicit SynthProcessor(Processor& p, clapeze::params::DynamicAudioHandle& params) : mVoices(p, params) {}
     ~SynthProcessor() = default;
 
     clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) {

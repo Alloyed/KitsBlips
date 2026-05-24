@@ -250,7 +250,7 @@ using SampleLoader = RawSampleLoader<4>;
 class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle> {
    public:
     explicit Processor(ParamsFeature::AudioHandle& params, SampleLoader::AudioHandle& sampleLoader)
-        : InstrumentProcessor(params), mSynth(*this), mSampleLoader(sampleLoader) {
+        : InstrumentProcessor(params), mSynth(*this, params), mSampleLoader(sampleLoader) {
         static_assert(P_(GlobalParams::Count) == 156, "Update handlers");
         params.RegisterHandler([&](clap_id id) {
             auto HandleLfo = [&](kitdsp::lfo::TriangleOscillator& lfo, clap_id inner) {
@@ -274,8 +274,9 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                 if (inner == P_(PartialParams::Wave)) {
                     part.mWave = mParams.Get<EnumParam<Partial::Wave>>(id);
                 } else if (inner == P_(PartialParams::PitchCoarse) || inner == P_(PartialParams::PitchFine)) {
-                    part.mNoteOffset = mParams.Get<IntegerParam>(start + P_(PartialParams::PitchCoarse)) +
-                                       mParams.Get<NumericParam>(start + P_(PartialParams::PitchFine)) / 100.0f;
+                    part.mNoteOffset =
+                        narrow_cast<float>(mParams.Get<IntegerParam>(start + P_(PartialParams::PitchCoarse))) +
+                        mParams.Get<NumericParam>(start + P_(PartialParams::PitchFine)) / 100.0f;
                 } else if (inner == P_(PartialParams::PitchEnvMult)) {
                     part.mPitchEnvMult = mParams.Get<NumericParam>(id);
                 } else if (inner == P_(PartialParams::PitchLfoMult)) {
@@ -377,7 +378,11 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                     HandleTone(voice.mTone2, inner - P_(GlobalParams::Tone2Start));
                 }
             };
-            mSynth.mVoices.ForEach([&](Voice& v) { HandleGlobal(v, id); });
+            mSynth.mVoices.ForEach([&](Voice& v, const std::optional<NoteTuple>& note) {
+                mParams.SetModulationMask(note ? *note : NoteTuple{});
+                HandleGlobal(v, id);
+            });
+            mParams.SetModulationMask({});
         });
     }
     ~Processor() = default;

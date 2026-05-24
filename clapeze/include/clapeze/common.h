@@ -44,6 +44,7 @@ struct StereoAudioBuffer {
 };
 
 // All of the identifying info for a given note.
+// Sorted from most specific to least specific: id trumps port-channel-key and so on
 // -1 means wildcard/no value, >= 0 is a specific value.
 struct NoteTuple {
     static constexpr int16_t kNone = -1;
@@ -67,6 +68,7 @@ struct NoteTuple {
         }
         return true;
     }
+    auto operator<=>(const NoteTuple&) const = default;
 };
 
 }  // namespace clapeze

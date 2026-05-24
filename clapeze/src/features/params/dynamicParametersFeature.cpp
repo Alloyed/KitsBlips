@@ -1,4 +1,6 @@
 #include "clapeze/features/params/dynamicParametersFeature.h"
+#include <etl/algorithm.h>
+#include "clapeze/common.h"
 
 namespace clapeze::params {
 
@@ -6,11 +8,7 @@ DynamicAudioHandle::DynamicAudioHandle(std::vector<std::unique_ptr<BaseParam>>& 
                                        size_t numParams,
                                        Queue& mainToAudio,
                                        Queue& audioToMain)
-    : mParamsRef(ref),
-      mValues(numParams, 0.0f),
-      mModulations(numParams, 0.0f),
-      mMainToAudio(mainToAudio),
-      mAudioToMain(audioToMain) {}
+    : mParamsRef(ref), mValues(numParams, 0.0f), mModulations(), mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {}
 
 bool DynamicAudioHandle::ProcessEvent(const clap_event_header_t& event) {
     if (event.space_id == CLAP_CORE_EVENT_SPACE_ID) {
@@ -22,7 +20,8 @@ bool DynamicAudioHandle::ProcessEvent(const clap_event_header_t& event) {
             }
             case CLAP_EVENT_PARAM_MOD: {
                 const auto& paramChange = reinterpret_cast<const clap_event_param_mod_t&>(event);
-                SetRawModulation(paramChange.param_id, paramChange.amount);
+                NoteTuple nt{paramChange.note_id, paramChange.port_index, paramChange.channel, paramChange.key};
+                SetRawModulation(paramChange.param_id, nt, paramChange.amount);
                 return true;
             }
             default: {
@@ -96,24 +95,56 @@ double DynamicAudioHandle::GetRawValue(clap_id id) const {
 void DynamicAudioHandle::SetRawValue(clap_id id, double newValue) {
     if (id < mValues.size()) {
         mValues[id] = newValue;
-        mAudioToMain.push({ChangeType::SetValue, id, newValue});
+        mAudioToMain.push({ChangeType::SetValue, id, {}, newValue});
         if (mHandleChange) {
             mHandleChange(id);
         }
     }
 }
 
-double DynamicAudioHandle::GetRawModulation(clap_id id) const {
-    if (id < mModulations.size()) {
-        return mModulations[id];
+double DynamicAudioHandle::GetRawModulation(clap_id id, const std::optional<NoteTuple>& note) const {
+    // nullopt here means matches global only as opposed to the empty note, which matches all
+    if (note == std::nullopt) {
+        auto iter = mModulations.find({id, {}});
+        if (iter != mModulations.end()) {
+            const auto& [_, value] = *iter;
+            return value;
+        }
+    } else {
+        // iterating backwards, to go from most-specific to least specific.
+        for (auto iter = mModulations.rbegin(); iter != mModulations.rend(); iter++) {
+            const auto& [key, value] = *iter;
+            const auto& [keyid, keynote] = key;
+            if (keyid == id && keynote.Match(*note)) {
+                return value;
+            }
+        }
     }
     return 0.0f;
 }
-void DynamicAudioHandle::SetRawModulation(clap_id id, double newModulation) {
-    if (id < mModulations.size()) {
-        mModulations[id] = newModulation;
-        mAudioToMain.push({ChangeType::SetModulation, id, newModulation});
+void DynamicAudioHandle::SetRawModulation(clap_id id, const NoteTuple& note, double newModulation) {
+    if (id < mValues.size()) {
+        mModulations.insert({{id, note}, newModulation});
+        mAudioToMain.push({ChangeType::SetModulation, id, note, newModulation});
     }
+}
+
+void DynamicAudioHandle::SetModulationMask(const NoteTuple& note) {
+    mModulationMask = note;
+}
+
+void DynamicAudioHandle::ClearModulation(const NoteTuple& note) {
+    for (auto it = mModulations.begin(); it != mModulations.end();) {
+        if (it->first.second.Match(note)) {
+            it = mModulations.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+void DynamicAudioHandle::OnNoteEnd(const NoteTuple& note) {
+    ClearModulation(note);
 }
 
 DynamicMainHandle::DynamicMainHandle(size_t numParams, Queue& mainToAudio, Queue& audioToMain)
@@ -129,7 +160,7 @@ double DynamicMainHandle::GetRawValue(clap_id id) const {
 void DynamicMainHandle::SetRawValue(clap_id id, double newValue) {
     if (id < mValues.size()) {
         mValues[id] = newValue;
-        mMainToAudio.push({ChangeType::SetValue, id, newValue});
+        mMainToAudio.push({ChangeType::SetValue, id, {}, newValue});
         if (mHandleChange) {
             mHandleChange(id);
         }
@@ -137,11 +168,11 @@ void DynamicMainHandle::SetRawValue(clap_id id, double newValue) {
 }
 
 void DynamicMainHandle::StartGesture(clap_id id) {
-    mMainToAudio.push({ChangeType::StartGesture, id, 0.0});
+    mMainToAudio.push({ChangeType::StartGesture, id, {}, 0.0});
 }
 
 void DynamicMainHandle::StopGesture(clap_id id) {
-    mMainToAudio.push({ChangeType::StopGesture, id, 0.0});
+    mMainToAudio.push({ChangeType::StopGesture, id, {}, 0.0});
 }
 
 void DynamicMainHandle::FlushFromAudio() {

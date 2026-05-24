@@ -16,7 +16,7 @@ void EnumMainHandle::SetRawValue(clap_id id, double newValue) {
     if (id < mValues.size()) {
         mValues[id] = newValue;
         // OnChangedMain
-        mMainToAudio.push({ChangeType::SetValue, id, newValue});
+        mMainToAudio.push({ChangeType::SetValue, id, {}, newValue});
     }
 }
 
@@ -43,11 +43,11 @@ void EnumMainHandle::FlushFromAudio() {
 }
 
 void EnumMainHandle::StartGesture(clap_id id) {
-    mMainToAudio.push({ChangeType::StartGesture, id, 0.0});
+    mMainToAudio.push({ChangeType::StartGesture, id, {}, 0.0});
 }
 
 void EnumMainHandle::StopGesture(clap_id id) {
-    mMainToAudio.push({ChangeType::StopGesture, id, 0.0});
+    mMainToAudio.push({ChangeType::StopGesture, id, {}, 0.0});
 }
 
 }  // namespace clapeze::params
