@@ -65,7 +65,7 @@ class Disperser {
             AllPassStack::kMaxSamples;
     }
 
-    explicit Disperser(etl::span<float> mem) : kitdsp::Disperser(SpanAllocator<float>(mem)) {}
+    explicit Disperser(etl::span<float> mem) : kitdsp::Disperser(SubSpanAllocator<float>(mem)) {}
     void Reset();
 
     void SetParams(float frequencyHz, float sampleRate, float feedback, size_t numFilters);
@@ -74,7 +74,7 @@ class Disperser {
     void ProcessInPlace(etl::span<Sample> in);
 
    private:
-    explicit Disperser(SpanAllocator<float> mem)
+    explicit Disperser(SubSpanAllocator<float> mem)
         : mLowAllpass(mem.alloc(AllPassStack::GetNeededSampleMemory())),
           mHighAllpass(mem.alloc(AllPassStack::GetNeededSampleMemory())),
           mLowDelay(mem.alloc(AllPassStack::kMaxSamples)),

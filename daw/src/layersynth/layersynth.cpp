@@ -39,8 +39,8 @@
 #include <misc/cpp/imgui_stdlib.h>
 #include "gui/debugui.h"
 #include "gui/kitguiFeature.h"
-#include "gui/presetBrowser.h"
 #include "gui/logger.h"
+#include "gui/presetBrowser.h"
 #endif
 
 namespace {
@@ -118,7 +118,7 @@ using ParamsFeature = clapeze::params::DynamicParametersFeature;
 using namespace clapeze;
 
 namespace layersynth {
-    static ExampleAppLog sLog;
+static ExampleAppLog sLog;
 
 template <size_t TNumSamples>
 class RawSampleLoader {
@@ -264,7 +264,9 @@ using SampleLoader = RawSampleLoader<4>;
 
 class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle> {
    public:
-    explicit Processor(clapeze::PluginHost& host, ParamsFeature::AudioHandle& params, SampleLoader::AudioHandle& sampleLoader)
+    explicit Processor(clapeze::PluginHost& host,
+                       ParamsFeature::AudioHandle& params,
+                       SampleLoader::AudioHandle& sampleLoader)
         : InstrumentProcessor(host, params), mGlobal(*this, params), mSampleLoader(sampleLoader) {
         static_assert(P_(GlobalParams::Count) == 76, "Update handlers");
         params.RegisterHandler([&](clap_id id) {
@@ -509,7 +511,7 @@ class GuiApp : public kitgui::BaseApp {
 
         GlobalParams();
 #undef XID
-        if(sLog.Show) {
+        if (sLog.Show) {
             sLog.Draw("AppLog");
         }
     }
@@ -562,25 +564,7 @@ class Plugin : public InstrumentPlugin {
    protected:
     void Config() override {
         InstrumentPlugin::Config();
-        GetHost().SetLogFn([](clapeze::LogSeverity severity, const std::string& message) {
-            switch (severity) {
-                case LogSeverity::Debug:
-                    sLog.AddLog("[clapeze][debug] %s\n", message.c_str());
-                    break;
-                case LogSeverity::Info:
-                    sLog.AddLog("[clapeze][_info] %s\n", message.c_str());
-                    break;
-                case LogSeverity::Warning:
-                    sLog.AddLog("[clapeze][_warn] %s\n", message.c_str());
-                    break;
-                case LogSeverity::Error:
-                    sLog.AddLog("[clapeze][error] %s\n", message.c_str());
-                    break;
-                case LogSeverity::Fatal:
-                    sLog.AddLog("[clapeze][fatal] %s\n", message.c_str());
-                    break;
-            }
-        });
+        sLog.Config(GetHost());
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), P_(GlobalParams::Count));
         static_assert(P_(GlobalParams::Count) == 76, "Update Traits");

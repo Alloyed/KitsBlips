@@ -1,5 +1,6 @@
 #pragma once
 
+#include "clapeze/pluginHost.h"
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>
 #include <mutex>
@@ -20,6 +21,28 @@ struct ExampleAppLog {
     ExampleAppLog() {
         AutoScroll = true;
         Clear();
+    }
+
+    void Config(clapeze::PluginHost& host) {
+        host.SetLogFn([this](clapeze::LogSeverity severity, const std::string& message) {
+            switch (severity) {
+                case clapeze::LogSeverity::Debug:
+                    AddLog("[clapeze][debug] %s\n", message.c_str());
+                    break;
+                case clapeze::LogSeverity::Info:
+                    AddLog("[clapeze][_info] %s\n", message.c_str());
+                    break;
+                case clapeze::LogSeverity::Warning:
+                    AddLog("[clapeze][_warn] %s\n", message.c_str());
+                    break;
+                case clapeze::LogSeverity::Error:
+                    AddLog("[clapeze][error] %s\n", message.c_str());
+                    break;
+                case clapeze::LogSeverity::Fatal:
+                    AddLog("[clapeze][fatal] %s\n", message.c_str());
+                    break;
+            }
+        });
     }
 
     void Clear() {

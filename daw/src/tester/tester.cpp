@@ -11,37 +11,35 @@
 #include <kitgui/context.h>
 
 #include "descriptor.h"
-#include "tester/appLog.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>
 #include <kitgui/app.h>
 #include "gui/kitguiFeature.h"
+#include "gui/logger.h"
 #endif
 
 namespace tester {
 using namespace clapeze;
-
-using FixedMessage = std::pair<LogSeverity, etl::string<100>>;
-using MessageQueue = etl::queue_spsc_atomic<FixedMessage, 100, etl::memory_model::MEMORY_MODEL_SMALL>;
+ExampleAppLog sLog;
 
 class Processor : public clapeze::BaseProcessor {
    public:
-    explicit Processor(clapeze::PluginHost& host,MessageQueue& audioToMain) : clapeze::BaseProcessor(host), mAudioToMain(audioToMain) {}
+    explicit Processor(clapeze::PluginHost& host) : clapeze::BaseProcessor(host) {}
     ~Processor() = default;
 
     void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) override {
-        LogFmt(LogSeverity::Info, "Processor::Activate({}, {}, {})", sampleRate, minBlockSize, maxBlockSize);
+        sLog.AddLog("Processor::Activate(%f, %lu, %lu)\n", sampleRate, minBlockSize, maxBlockSize);
     }
-    void Deactivate() override { LogFmt(LogSeverity::Info, "Processor::Deactivate()"); }
+    void Deactivate() override { sLog.AddLog("Processor::Deactivate()\n"); }
     void ProcessEvent(const clap_event_header_t& event) override {
         switch (event.type) {
             case CLAP_EVENT_NOTE_ON: {
-                LogFmt(LogSeverity::Debug, "NOTE_ON()");
+                sLog.AddLog("CLAP_EVENT_NOTE_ON\n");
                 break;
             }
             case CLAP_EVENT_NOTE_OFF: {
-                LogFmt(LogSeverity::Debug, "NOTE_OFF()");
+                sLog.AddLog("CLAP_EVENT_NOTE_OFF\n");
                 break;
             }
             default: {
@@ -53,46 +51,25 @@ class Processor : public clapeze::BaseProcessor {
         return clapeze::ProcessStatus::Sleep;
     }
     void ProcessFlush(const clap_process_t& process) override {}
-    void ProcessReset() override { LogFmt(LogSeverity::Info, "Processor::ProcessReset()"); }
-
-    template <typename... Args>
-    void LogFmt(LogSeverity severity, fmt::format_string<Args...> fmt, Args&&... args) const {
-        static etl::string<100> buf;
-        auto result = fmt::format_to_n(buf.data(), buf.max_size() - 1, fmt, std::forward<Args>(args)...);
-        *result.out = '\0';
-        buf.resize(result.size + 1);
-        mAudioToMain.emplace(severity, buf);
-    }
-
-   private:
-    MessageQueue& mAudioToMain;
+    void ProcessReset() override { sLog.AddLog("Processor::ProcessReset()\n"); }
 };
-
-namespace {
-ExampleAppLog sLog;
-MessageQueue sLogFromAudio;
-}  // namespace
 
 #if KITSBLIPS_ENABLE_GUI
 class GuiApp : public kitgui::BaseApp {
    public:
     explicit GuiApp(kitgui::Context& ctx, clapeze::PluginHost& host) : kitgui::BaseApp(ctx), mHost(host) {}
     void OnUpdate() override {
-        FixedMessage line;
-        while (sLogFromAudio.pop(line)) {
-            mHost.Log(line.first, line.second.c_str());
-        }
-
         static bool showDebugLog{};
         if (ImGui::BeginMenuBar()) {
-            if (ImGui::BeginMenu("Tools")) {
+            if (ImGui::BeginMenu("Debug")) {
+                ImGui::MenuItem("AppLog", nullptr, &sLog.Show);
                 ImGui::MenuItem("ImGui Debug Log", nullptr, &showDebugLog);
             }
         }
         if (ImGui::Button("Create CLAP_SUPPORT.csv")) {
             mHost.LogSupportMatrix();
         }
-        sLog.Draw();
+        sLog.Draw("AppLog");
 
         if (showDebugLog) {
             ImGui::ShowDebugLogWindow(&showDebugLog);
@@ -112,7 +89,7 @@ class Plugin : public clapeze::BasePlugin {
 
    protected:
     void Config() override {
-        GetHost().SetLogFn([](auto severity, const std::string& line) { sLog.AddLog(line); });
+        sLog.Config(GetHost());
 #if KITSBLIPS_ENABLE_GUI
         ConfigFeature<clapeze::AssetsFeature>();
         ConfigFeature<KitguiFeature>(
@@ -120,7 +97,7 @@ class Plugin : public clapeze::BasePlugin {
             kitgui::SizeConfig{1000, 600, false, true});
 #endif
 
-        ConfigProcessor<Processor>(sLogFromAudio);
+        ConfigProcessor<Processor>();
     }
 };
 
