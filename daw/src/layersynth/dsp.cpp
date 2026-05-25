@@ -23,6 +23,11 @@ bool Voice::ProcessAudio(clapeze::StereoAudioBuffer& out) {
             float mPcmAdvance = (mPcmSampler->GetSampleRate() / global.mSampleRate) *
                                 (kitdsp::midiToFrequency(pitchNote, global.mTune) / baseFreq);
             mPcmPhase += mPcmAdvance;
+            //float numSamples = narrow_cast<float>(mPcmSampler->GetNumSamples());
+            //if(mPcmPhase > numSamples) {
+            //    mPcmPhase -= numSamples;
+            //}
+            //waveout = mPcmSampler->Read<true, kitdsp::interpolate::InterpolationStrategy::Cubic>(mPcmPhase);
             waveout = mPcmSampler->Read<false, kitdsp::interpolate::InterpolationStrategy::Cubic>(mPcmPhase);
         }
         switch (mFilterMode) {

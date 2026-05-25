@@ -44,7 +44,7 @@ struct ParamTraits<Params, Params::Algorithm> : public clapeze::EnumParam<Algori
 
 template <>
 struct ParamTraits<Params, Params::Gain> : public clapeze::DbParam {
-    ParamTraits() : clapeze::DbParam("Gain", "Gain", 0.0f, 32.0f, 0.0f) {}
+    ParamTraits() : clapeze::DbParam("Gain", "Gain", 0.0f, 48.0f, 0.0f) {}
 };
 
 template <>
@@ -54,7 +54,7 @@ struct ParamTraits<Params, Params::Tone> : public clapeze::PercentParam {
 
 template <>
 struct ParamTraits<Params, Params::Makeup> : public clapeze::DbParam {
-    ParamTraits() : clapeze::DbParam("Makeup", "Makeup", -9.0f, 9.0f, 0.0f) {}
+    ParamTraits() : clapeze::DbParam("Makeup", "Makeup", -24.0f, 9.0f, 0.0f) {}
 };
 
 template <>

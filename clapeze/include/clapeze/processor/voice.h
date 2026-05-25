@@ -227,9 +227,9 @@ class VoicePool {
             pool.SendNoteStart(note);
         }
         void ProcessNoteOff(VoicePool& pool, const NoteTuple& note) {
-            auto& mVoices = pool.mVoices;
-            for (VoiceIndex idx = 0; idx < mVoices.size(); idx++) {
-                auto& data = mVoices[idx];
+            auto& voices = pool.mVoices;
+            for (VoiceIndex idx = 0; idx < voices.size(); idx++) {
+                auto& data = voices[idx];
                 if (data.activeNote && data.activeNote->Match(note)) {
                     data.voice.ProcessNoteOff();
                     data.isPressed = false;

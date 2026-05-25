@@ -365,10 +365,12 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
 
     clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) override {
         if (mSampleLoader.OnAudioUpdate()) {
+            size_t idx = 0;
             for (auto& layer : mGlobal.mLayers) {
                 for (Voice& voice : layer.mVoices.IterAll()) {
-                    voice.mPcmSampler = mSampleLoader.GetSampler(0);
+                    voice.mPcmSampler = mSampleLoader.GetSampler(idx);
                 }
+                idx++;
             }
         }
         return mGlobal.ProcessAudio(out);
@@ -593,7 +595,10 @@ class Plugin : public InstrumentPlugin {
                              new PercentParam(pre + "_filterRes", "Filter Resonance", 0.0f));
             params.Parameter(XID(LayerParams::FilterTrackingMult),
                              new PercentParam(pre + "_filterTrack", "Filter Tracking", 0.0f));
-            params.Parameter(XID(LayerParams::VcaMult), new PercentParam(pre + "_vcaMult", "Volume", 0.5f));
+
+            // 
+            params.Parameter(XID(LayerParams::VcaMult), new PercentParam(pre + "_vcaMult", "Volume", first == P_(GlobalParams::Layer1Start) ? 0.5f : 0.0f));
+
             params.Parameter(XID(LayerParams::VcaVelocityMult), new PercentParam(pre + "_vcaMult", "Velocity", 0.0f));
             params.Parameter(XID(LayerParams::ChorusMix), new PercentParam(pre + "_chorusMix", "Chorus Mix", 0.0f));
             params.Parameter(XID(LayerParams::ChorusRate),

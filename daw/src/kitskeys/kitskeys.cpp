@@ -391,8 +391,8 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
        public:
         explicit Voice(Processor& p) : mProcessor(p) {}
         void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
-            (void)velocity;
             mNote = note.key;
+            mVelocity = velocity;
             mEnv.TriggerOpen();
             mGateEnv.TriggerOpen();
         }
@@ -453,7 +453,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
 
                 float oscMod = kitdsp::lerp(lfo, env, oscModMix) * oscModAmount;
                 float filterMod = kitdsp::lerp(lfo, env, filterModMix) * filterModAmount;
-                float vcaMod = kitdsp::lerp(env, gateEnv, vcaEnvDisabled) * (1.0f - (-lfo * vcaModAmount));
+                float vcaMod = kitdsp::lerp(env, gateEnv, vcaEnvDisabled) * (1.0f - (-lfo * vcaModAmount)) * mVelocity;
                 vcaMod = vcaMod * vcaMod * vcaMod;  // approximate db curve (not really but yknow)
 
                 mOsc.SetFrequency(kitdsp::midiToFrequency(oscNote + oscMod), sampleRate);
@@ -479,6 +479,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
        private:
         Processor& mProcessor;
         float mNote;
+        float mVelocity;
         kitdsp::blep::RampUpOscillator mOsc{};
         kitdsp::Gate mGateEnv{};
         // TODO: paraphony, maybe
