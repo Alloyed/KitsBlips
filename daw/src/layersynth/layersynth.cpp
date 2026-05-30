@@ -23,6 +23,7 @@
 
 #include "descriptor.h"
 #include "kitdsp/filters/svf.h"
+#include "kitdsp/samplePlayer.h"
 #include "shared/dr_flac.h"
 #include "shared/dr_wav.h"
 
@@ -124,8 +125,13 @@ template <size_t TNumSamples>
 class RawSampleLoader {
    public:
     struct File {
+        std::string path;
         std::vector<float> samples;
         float sampleRate;
+        float baseFrequency;
+        size_t loopStart;
+        size_t loopEnd;
+        SamplePlayer::LoopDirection loopDirection;
     };
     using Queue = etl::queue_spsc_atomic<std::pair<size_t, File*>, 200, etl::memory_model::MEMORY_MODEL_SMALL>;
 
@@ -135,7 +141,6 @@ class RawSampleLoader {
         void ReleaseSample(size_t idx) {
             mAudioToMain.push({idx, mSampleData[idx]});
             mSampleData[idx] = nullptr;
-            mSamplers[idx] = std::nullopt;
         }
         bool OnAudioUpdate() {
             bool changed = false;
@@ -145,26 +150,24 @@ class RawSampleLoader {
                     ReleaseSample(pair.first);
                 }
                 mSampleData[pair.first] = pair.second;
-                mSamplers[pair.first] = std::make_optional<kitdsp::Sampler1D<float>>(
-                    pair.second->samples, narrow_cast<float>(pair.second->sampleRate));
                 changed = true;
             }
             return changed;
         }
-        const Sampler* GetSampler(size_t i) const { return mSamplers[i] ? &(*mSamplers[i]) : nullptr; }
-        size_t GetNumSamplers() const { return mSamplers.size(); }
+        const File* GetSampleData(size_t idx) const { return mSampleData[idx]; }
+        size_t GetNumSampleDatas() const { return mSampleData.size(); }
 
        private:
         Queue& mMainToAudio;
         Queue& mAudioToMain;
         etl::array<File*, TNumSamples> mSampleData;
-        etl::array<std::optional<Sampler>, TNumSamples> mSamplers;
     };
 
     RawSampleLoader() : mAudioHandle(mMainToAudio, mAudioToMain) {}
 
     void LoadSample(size_t idx, const std::string& path) {
         File* f = new File();
+        f->path = path;
         if (path.ends_with(".flac")) {
             drflac* pFlac = drflac_open_file(path.c_str(), nullptr);
             if (pFlac == nullptr) {
@@ -208,6 +211,14 @@ class RawSampleLoader {
         }
 
         if (f) {
+            // TODO: pull from file, or let the user hand-customize
+            f->baseFrequency = 261.626f;  // middle C
+            f->loopDirection = SamplePlayer::LoopDirection::Forward;
+            f->loopStart = 0;
+            f->loopEnd = f->samples.size();
+
+            sLog.AddLog("Slot %lu: %s, size: %lu, rate: %f, loop: %d \n", idx, f->path.c_str(), f->samples.size(),
+                        f->sampleRate, f->loopDirection);
             mMainToAudio.push({idx, f});
             mSamplePaths[idx] = path;
         }
@@ -368,7 +379,11 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
             size_t idx = 0;
             for (auto& layer : mGlobal.mLayers) {
                 for (Voice& voice : layer.mVoices.IterAll()) {
-                    voice.mPcmSampler = mSampleLoader.GetSampler(idx);
+                    const auto* data = mSampleLoader.GetSampleData(idx);
+                    etl::span<float> dd(const_cast<float*>(data->samples.data()), data->samples.size());
+                    voice.mPcmSampler.SetSampleData(dd, data->sampleRate);
+                    voice.mPcmSampler.SetLoop(data->loopDirection, data->loopStart, data->loopEnd);
+                    voice.mBaseFrequency = data->baseFrequency;
                 }
                 idx++;
             }
@@ -596,8 +611,10 @@ class Plugin : public InstrumentPlugin {
             params.Parameter(XID(LayerParams::FilterTrackingMult),
                              new PercentParam(pre + "_filterTrack", "Filter Tracking", 0.0f));
 
-            // 
-            params.Parameter(XID(LayerParams::VcaMult), new PercentParam(pre + "_vcaMult", "Volume", first == P_(GlobalParams::Layer1Start) ? 0.5f : 0.0f));
+            //
+            params.Parameter(
+                XID(LayerParams::VcaMult),
+                new PercentParam(pre + "_vcaMult", "Volume", first == P_(GlobalParams::Layer1Start) ? 0.5f : 0.0f));
 
             params.Parameter(XID(LayerParams::VcaVelocityMult), new PercentParam(pre + "_vcaMult", "Velocity", 0.0f));
             params.Parameter(XID(LayerParams::ChorusMix), new PercentParam(pre + "_chorusMix", "Chorus Mix", 0.0f));

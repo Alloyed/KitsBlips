@@ -17,13 +17,13 @@
 #include <kitdsp/math/util.h>
 #include <kitdsp/osc/blepOscillator.h>
 #include <kitdsp/osc/naiveOscillator.h>
-#include <kitdsp/sampler.h>
+#include <kitdsp/samplePlayer.h>
 #include <kitdsp/spanAllocator.h>
 #include <optional>
 
 namespace layersynth {
 
-using Sampler = kitdsp::Sampler1D<float>;
+using SamplePlayer = kitdsp::SamplePlayer<float>;
 using Lfo = kitdsp::lfo::TriangleOscillator;
 using Envelope = kitdsp::ApproachAdsr;
 
@@ -41,7 +41,6 @@ class Voice {
         mOsc.Reset();
         mFilter.Reset();
         mVolumeEnv.Reset();
-        mPcmPhase = 0.0f;
     }
     bool ProcessAudio(clapeze::StereoAudioBuffer& out);
 
@@ -53,11 +52,10 @@ class Voice {
 
     const Global* mGlobal{};
     const Layer* mLayer{};
-    const Sampler* mPcmSampler{};
+    SamplePlayer mPcmSampler;
 
     float mVelocity{};
-    float mPcmAdvance{};
-    float mPcmPhase{};
+    float mBaseFrequency{};
 
     kitdsp::SvfFilterMode mFilterMode{};
 };

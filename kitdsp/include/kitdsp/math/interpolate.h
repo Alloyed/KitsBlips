@@ -1,8 +1,9 @@
 #pragma once
 
+#include <cstdint>
 namespace kitdsp {
 namespace interpolate {
-enum class InterpolationStrategy { None, Linear, Hermite, Cubic };
+enum class InterpolationStrategy : uint8_t { None, Linear, Hermite, Cubic };
 /**
  * @param t a 0-1 fractional value that lies between x0 and x1
  */

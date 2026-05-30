@@ -12,7 +12,7 @@ class Sampler1D {
    public:
     explicit Sampler1D(etl::span<SAMPLE> buf, float sampleRate) : mBuffer(buf), mBufSampleRate(sampleRate) {}
 
-    template <bool SHOULD_LOOP>
+    template <bool SHOULD_LOOP = false>
     SAMPLE Read(int32_t index) const {
         size_t size = mBuffer.size();
         if (SHOULD_LOOP) {
@@ -22,7 +22,7 @@ class Sampler1D {
         }
     }
 
-    template <bool SHOULD_LOOP, interpolate::InterpolationStrategy STRATEGY>
+    template <interpolate::InterpolationStrategy STRATEGY, bool SHOULD_LOOP, bool LOOP_BACKWARDS>
     SAMPLE Read(float sampleIndex) const {
         // assumption: sample is exactly one period long
         int32_t idx = narrow_cast<int32_t>(sampleIndex);
@@ -34,15 +34,29 @@ class Sampler1D {
                 return Read<SHOULD_LOOP>(idx);
             };
             case InterpolationStrategy::Linear: {
-                return linear(Read<SHOULD_LOOP>(idx), Read<SHOULD_LOOP>(idx + 1), frac);
+                if (LOOP_BACKWARDS) {
+                    return linear(Read<SHOULD_LOOP>(idx), Read<SHOULD_LOOP>(idx - 1), frac);
+                } else {
+                    return linear(Read<SHOULD_LOOP>(idx), Read<SHOULD_LOOP>(idx + 1), frac);
+                }
             };
             case InterpolationStrategy::Hermite: {
-                return hermite4pt3oX(Read<SHOULD_LOOP>(idx - 1), Read<SHOULD_LOOP>(idx), Read<SHOULD_LOOP>(idx + 1),
-                                     Read<SHOULD_LOOP>(idx + 2), frac);
+                if (LOOP_BACKWARDS) {
+                    return hermite4pt3oX(Read<SHOULD_LOOP>(idx + 1), Read<SHOULD_LOOP>(idx), Read<SHOULD_LOOP>(idx - 1),
+                                         Read<SHOULD_LOOP>(idx - 2), frac);
+                } else {
+                    return hermite4pt3oX(Read<SHOULD_LOOP>(idx - 1), Read<SHOULD_LOOP>(idx), Read<SHOULD_LOOP>(idx + 1),
+                                         Read<SHOULD_LOOP>(idx + 2), frac);
+                }
             };
             case InterpolationStrategy::Cubic: {
-                return cubic(Read<SHOULD_LOOP>(idx - 1), Read<SHOULD_LOOP>(idx), Read<SHOULD_LOOP>(idx + 1),
-                             Read<SHOULD_LOOP>(idx + 2), frac);
+                if (LOOP_BACKWARDS) {
+                    return cubic(Read<SHOULD_LOOP>(idx + 1), Read<SHOULD_LOOP>(idx), Read<SHOULD_LOOP>(idx - 1),
+                                 Read<SHOULD_LOOP>(idx - 2), frac);
+                } else {
+                    return cubic(Read<SHOULD_LOOP>(idx - 1), Read<SHOULD_LOOP>(idx), Read<SHOULD_LOOP>(idx + 1),
+                                 Read<SHOULD_LOOP>(idx + 2), frac);
+                }
             };
         }
 
@@ -55,5 +69,4 @@ class Sampler1D {
     etl::span<SAMPLE> mBuffer;
     float mBufSampleRate;
 };
-
 }  // namespace kitdsp

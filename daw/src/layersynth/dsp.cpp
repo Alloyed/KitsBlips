@@ -17,19 +17,9 @@ bool Voice::ProcessAudio(clapeze::StereoAudioBuffer& out) {
         float filterQ = 0.5f * std::exp(filterSteepness * (res / (1 - res)));  // [0, 1] -> [0.5, inf]
         mFilter.SetFrequency(kitdsp::midiToFrequency(filterNote, global.mTune), global.mSampleRate, filterQ);
 
-        float waveout = 0.0f;
-        if (mPcmSampler) {
-            constexpr float baseFreq = 261.626f;  // middle C
-            float mPcmAdvance = (mPcmSampler->GetSampleRate() / global.mSampleRate) *
-                                (kitdsp::midiToFrequency(pitchNote, global.mTune) / baseFreq);
-            mPcmPhase += mPcmAdvance;
-            //float numSamples = narrow_cast<float>(mPcmSampler->GetNumSamples());
-            //if(mPcmPhase > numSamples) {
-            //    mPcmPhase -= numSamples;
-            //}
-            //waveout = mPcmSampler->Read<true, kitdsp::interpolate::InterpolationStrategy::Cubic>(mPcmPhase);
-            waveout = mPcmSampler->Read<false, kitdsp::interpolate::InterpolationStrategy::Cubic>(mPcmPhase);
-        }
+        float speed = kitdsp::midiToFrequency(pitchNote, global.mTune) / mBaseFrequency;
+        mPcmSampler.SetSpeed(speed, global.mSampleRate);
+        float waveout = mPcmSampler.Process();
         switch (mFilterMode) {
             case kitdsp::SvfFilterMode::LowPass: {
                 waveout = mFilter.Process<kitdsp::SvfFilterMode::LowPass>(waveout);
@@ -83,6 +73,6 @@ void Voice::ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
     mNote.target = note.key;
     mNote.SetSettleTime(mGlobal->mPortamento, mGlobal->mSampleRate, mNote.target - mNote.current);
     mVolumeEnv.TriggerOpen();
-    mPcmPhase = 0.0f;
+    mPcmSampler.Play();
 }
 }  // namespace layersynth
