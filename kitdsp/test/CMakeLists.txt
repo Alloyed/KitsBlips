@@ -18,6 +18,7 @@ add_executable(testdsp
     control/adsr.test.cpp
     pitch.test.cpp
     math/stft.test.cpp
+    apps/samplePlayer.test.cpp
 )
 
 target_include_directories(testdsp PRIVATE

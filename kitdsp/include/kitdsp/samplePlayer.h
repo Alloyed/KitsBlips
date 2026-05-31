@@ -35,6 +35,7 @@ class SamplePlayer {
     void Reset() {
         mPosition1 = 0.0f;
         mPosition2 = 0.0f;
+        mAdvanceDirection = 1.0f;
         mState = LoopState::Exit;
         mPlaying = false;
         mFade.target = 0.0f;
@@ -43,18 +44,23 @@ class SamplePlayer {
 
     // Play sample from start. if already playing, apply small crossfade to avoid clicks.
     void Play() {
-        mPosition2 = mPosition1;
+        if (mPlaying) {
+            mPosition2 = mPosition1;
+            mFade.current = 1.0f;
+        }
         mPosition1 = 0.0f;
+        mAdvanceDirection = 1.0f;
         mState = mDirection == LoopDirection::NoLoop ? LoopState::Exit : LoopState::Enter;
-        mFade.current = 1.0f;
         mPlaying = true;
     }
     // Stop sample (with small crossfade to avoid clicks)
     void Choke() {
-        mPosition2 = mPosition1;
-        mPosition1 = mLoopEnd;
-        mState = LoopState::Exit;
-        mFade.current = 1.0f;
+        if (mPlaying) {
+            mPosition2 = mPosition1;
+            mPosition1 = mRawSamples.size();
+            mState = LoopState::Exit;
+            mFade.current = 1.0f;
+        }
     }
     // Leave active loop (if there is one). if we haven't hit the loop yet we'll just pretend it isn't there.
     void Exit() { mState = LoopState::Exit; }
@@ -76,110 +82,192 @@ class SamplePlayer {
 
     SAMPLE Process() {
         if (!mDirectSampler.has_value() || !mPlaying) {
-            return {};
+            return SAMPLE(0);
         }
 
+        SAMPLE out;
+        etl::span<SAMPLE> outbuf{&out, 1};
+        size_t index = 0;
         using namespace interpolate;
         switch (mInterpolate) {
             case InterpolationStrategy::None: {
-                return ProcessImpl<InterpolationStrategy::None>();
+                ProcessImpl1<InterpolationStrategy::None>(outbuf, index);
+                break;
             }
             case InterpolationStrategy::Linear: {
-                return ProcessImpl<InterpolationStrategy::Linear>();
+                ProcessImpl1<InterpolationStrategy::Linear>(outbuf, index);
+                break;
             }
             case InterpolationStrategy::Cubic: {
-                return ProcessImpl<InterpolationStrategy::Cubic>();
+                ProcessImpl1<InterpolationStrategy::Cubic>(outbuf, index);
+                break;
             }
             case InterpolationStrategy::Hermite: {
-                return ProcessImpl<InterpolationStrategy::Hermite>();
+                ProcessImpl1<InterpolationStrategy::Hermite>(outbuf, index);
+                break;
+            }
+        }
+        return out;
+    }
+
+    SAMPLE Process(etl::span<SAMPLE>& outbuf) {
+        if (!mDirectSampler.has_value() || !mPlaying) {
+            std::fill(outbuf.begin(), outbuf.end(), SAMPLE(0));
+            return;
+        }
+
+        size_t index = 0;
+        while (index < outbuf.size()) {
+            if (!mPlaying) {
+                std::fill(outbuf.begin() + index, outbuf.end(), 0.0f);
+                return;
+            }
+            using namespace interpolate;
+            switch (mInterpolate) {
+                case InterpolationStrategy::None: {
+                    ProcessImpl1<InterpolationStrategy::None>(outbuf, index);
+                    break;
+                }
+                case InterpolationStrategy::Linear: {
+                    ProcessImpl1<InterpolationStrategy::Linear>(outbuf, index);
+                    break;
+                }
+                case InterpolationStrategy::Cubic: {
+                    ProcessImpl1<InterpolationStrategy::Cubic>(outbuf, index);
+                    break;
+                }
+                case InterpolationStrategy::Hermite: {
+                    ProcessImpl1<InterpolationStrategy::Hermite>(outbuf, index);
+                    break;
+                }
             }
         }
     }
 
    private:
     template <interpolate::InterpolationStrategy STRATEGY>
-    SAMPLE ProcessImpl() {
-        // advance
-        mPosition1 += mAdvance * mAdvanceDirection;
+    void ProcessImpl1(etl::span<SAMPLE>& out, size_t& index) {
         switch (mState) {
             case LoopState::Enter: {
-                if (mPosition1 >= mLoopEnd) {
-                    switch (mDirection) {
-                        case LoopDirection::NoLoop: {
-                            mState = LoopState::Exit;
-                            break;
-                        }
-                        case LoopDirection::Forward: {
-                            mState = LoopState::Loop;
-                            mPosition1 -= (mLoopEnd - mLoopStart);
-                            break;
-                        }
-                        case LoopDirection::Backward:
-                        case LoopDirection::PingPong: {
-                            mState = LoopState::Loop;
-                            mPosition1 -= (mPosition1 - mLoopEnd);
-                            mAdvanceDirection = -1.0f;
-                            break;
-                        }
-                    }
-                }
+                ProcessImpl2Enter<STRATEGY>(out, index);
                 break;
             }
             case LoopState::Loop: {
-                switch (mDirection) {
-                    case LoopDirection::NoLoop: {
-                        mState = LoopState::Exit;
-                        break;
-                    }
-                    case LoopDirection::Forward: {
-                        if (mPosition1 >= mLoopEnd) {
-                            mPosition1 -= (mLoopEnd - mLoopStart);
-                        }
-                        break;
-                    }
-                    case LoopDirection::Backward: {
-                        if (mPosition1 <= mLoopStart) {
-                            mPosition1 += (mLoopEnd - mLoopStart);
-                        }
-                        break;
-                    }
-                    case LoopDirection::PingPong: {
-                        if (mPosition1 <= mLoopStart) {
-                            mPosition1 += (mLoopStart - mPosition1);
-                            mAdvanceDirection = 1;
-                        } else if (mPosition1 >= mLoopEnd) {
-                            mPosition1 -= (mPosition1 - mLoopEnd);
-                            mAdvanceDirection = -1;
-                        }
-                        break;
-                    }
-                }
+                ProcessImpl2Loop<STRATEGY>(out, index);
                 break;
             }
             case LoopState::Exit: {
-                if ((mAdvanceDirection > 0 && mPosition1 >= mRawSamples.size()) ||
-                    (mAdvanceDirection < 0 && mPosition1 <= 0)) {
-                    mPlaying = false;
-                }
+                ProcessImpl2Exit<STRATEGY>(out, index);
                 break;
             }
         }
+    }
 
-        // read
-        float out1{};
-        if (mState == LoopState::Loop) {
-            if (mAdvanceDirection > 0) {
-                out1 = mLoopSampler->template Read<STRATEGY, true, false>(mPosition1);
-            } else {
-                out1 = mLoopSampler->template Read<STRATEGY, true, true>(mPosition1);
+    template <interpolate::InterpolationStrategy STRATEGY>
+    void ProcessImpl2Enter(etl::span<SAMPLE>& out, size_t& index) {
+        for (; index < out.size(); ++index) {
+            mPosition1 += mAdvance * mAdvanceDirection;
+            // update state
+            if (mPosition1 >= mLoopEnd) {
+                switch (mDirection) {
+                    case LoopDirection::NoLoop: {
+                        mState = LoopState::Exit;
+                        return;
+                    }
+                    case LoopDirection::Forward: {
+                        mState = LoopState::Loop;
+                        mPosition1 -= (mLoopEnd - mLoopStart);
+                        return;
+                    }
+                    case LoopDirection::Backward:
+                    case LoopDirection::PingPong: {
+                        mState = LoopState::Loop;
+                        mPosition1 -= (mPosition1 - mLoopEnd);
+                        mAdvanceDirection = -1.0f;
+                        return;
+                    }
+                }
             }
-        } else {
+
+            // output
+            float out1{};
             if (mAdvanceDirection > 0) {
                 out1 = mDirectSampler->template Read<STRATEGY, false, false>(mPosition1);
             } else {
                 out1 = mDirectSampler->template Read<STRATEGY, false, true>(mPosition1);
             }
+            out[index] = ProcessFade<STRATEGY>(out1);
         }
+    }
+    template <interpolate::InterpolationStrategy STRATEGY>
+    void ProcessImpl2Loop(etl::span<SAMPLE>& out, size_t& index) {
+        for (; index < out.size(); ++index) {
+            mPosition1 += mAdvance * mAdvanceDirection;
+            // update state
+            switch (mDirection) {
+                case LoopDirection::NoLoop: {
+                    mState = LoopState::Exit;
+                    return;
+                }
+                case LoopDirection::Forward: {
+                    if (mPosition1 >= mLoopEnd) {
+                        mPosition1 -= (mLoopEnd - mLoopStart);
+                    }
+                    break;
+                }
+                case LoopDirection::Backward: {
+                    if (mPosition1 <= mLoopStart) {
+                        mPosition1 += (mLoopEnd - mLoopStart);
+                    }
+                    break;
+                }
+                case LoopDirection::PingPong: {
+                    if (mPosition1 <= mLoopStart) {
+                        mPosition1 += (mLoopStart - mPosition1);
+                        mAdvanceDirection = 1.0f;
+                    } else if (mPosition1 >= mLoopEnd) {
+                        mPosition1 -= (mPosition1 - mLoopEnd);
+                        mAdvanceDirection = -1.0f;
+                    }
+                    break;
+                }
+            }
+            // output
+            float out1{};
+            if (mAdvanceDirection > 0.0f) {
+                out1 = mLoopSampler->template Read<STRATEGY, true, false>(mPosition1);
+            } else {
+                out1 = mLoopSampler->template Read<STRATEGY, true, true>(mPosition1);
+            }
+            out[index] = ProcessFade<STRATEGY>(out1);
+        }
+    }
+
+    template <interpolate::InterpolationStrategy STRATEGY>
+    void ProcessImpl2Exit(etl::span<SAMPLE>& out, size_t& index) {
+        for (; index < out.size(); ++index) {
+            mPosition1 += mAdvance * mAdvanceDirection;
+            // update state
+            if ((mAdvanceDirection > 0.0f && mPosition1 >= narrow_cast<float>(mRawSamples.size())) ||
+                (mAdvanceDirection < 0.0f && mPosition1 <= 0.0f)) {
+                if (!mFade.IsChanging()) {
+                    mPlaying = false;
+                    return;
+                }
+            }
+
+            float out1{};
+            if (mAdvanceDirection > 0.0f) {
+                out1 = mDirectSampler->template Read<STRATEGY, false, false>(mPosition1);
+            } else {
+                out1 = mDirectSampler->template Read<STRATEGY, false, true>(mPosition1);
+            }
+            out[index] = ProcessFade<STRATEGY>(out1);
+        }
+    }
+
+    template <interpolate::InterpolationStrategy STRATEGY>
+    SAMPLE ProcessFade(SAMPLE out1) {
         if (mFade.current > 0.0f) {
             mFade.Process();
             mPosition2 += mAdvance * mAdvanceDirection;
@@ -194,6 +282,7 @@ class SamplePlayer {
             return out1;
         }
     }
+
     etl::span<SAMPLE> mRawSamples;
     std::optional<Sampler1D<SAMPLE>> mDirectSampler;
     std::optional<Sampler1D<SAMPLE>> mLoopSampler;
@@ -202,14 +291,14 @@ class SamplePlayer {
     size_t mLoopEnd;
 
     float mBufSampleRate;
-    float mAdvance{};
-    float mAdvanceDirection{};
-    float mPosition1{};
-    float mPosition2{};
+    float mAdvance = 1.0f;
+    float mAdvanceDirection = 1.0f;
+    float mPosition1 = 0.0f;
+    float mPosition2 = 0.0f;
 
-    LoopDirection mDirection{};
-    LoopState mState{};
-    interpolate::InterpolationStrategy mInterpolate{};
-    bool mPlaying{};
+    LoopDirection mDirection = LoopDirection::NoLoop;
+    LoopState mState = LoopState::Exit;
+    interpolate::InterpolationStrategy mInterpolate = interpolate::InterpolationStrategy::Cubic;
+    bool mPlaying = false;
 };
 }  // namespace kitdsp

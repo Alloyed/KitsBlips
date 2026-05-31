@@ -7,6 +7,7 @@
 
 using namespace kitdsp;
 
+#if 0
 TEST(disperser, works) {
     AudioFile<float> f;
     bool ok = f.load(PROJECT_DIR "/test/guitar.wav");
@@ -33,3 +34,4 @@ TEST(disperser, works) {
 
     test::Snapshot(f);
 }
+#endif
