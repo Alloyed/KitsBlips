@@ -24,7 +24,7 @@ float_2 Chorus::Process(float_2 in) {
     float lfoMs = (mLfo.Process() * cfg.delayModMs);
     auto toSamples = [&](float offsetMs) {
         return clamp<float>((cfg.delayBaseMs + offsetMs) * mSampleRate / 1000.0f, 1.0f,
-                            static_cast<float>(mDelayLine.Size()));
+                            static_cast<float>(mDelayLine.Size() - 4));
     };
 
     using namespace kitdsp::interpolate;
@@ -46,7 +46,7 @@ float_2 Chorus::Process(float_2 in) {
 }
 
 float Chorus::GetMaxDelayMs() const {
-    return static_cast<float>(mDelayLine.Size()) * 1000.0f / mSampleRate;
+    return static_cast<float>(mDelayLine.Size() - 4) * 1000.0f / mSampleRate;
 }
 
 }  // namespace kitdsp

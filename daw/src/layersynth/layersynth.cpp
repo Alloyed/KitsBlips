@@ -137,7 +137,7 @@ class RawSampleLoader {
 
     class AudioHandle {
        public:
-        AudioHandle(Queue& mainToAudio, Queue& audioToMain) : mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {}
+        AudioHandle(Queue& mainToAudio, Queue& audioToMain) : mMainToAudio(mainToAudio), mAudioToMain(audioToMain) { mSampleData.fill(nullptr);}
         void ReleaseSample(size_t idx) {
             mAudioToMain.push({idx, mSampleData[idx]});
             mSampleData[idx] = nullptr;
@@ -154,7 +154,12 @@ class RawSampleLoader {
             }
             return changed;
         }
-        const File* GetSampleData(size_t idx) const { return mSampleData[idx]; }
+        const File* GetSampleData(size_t idx) const {
+            if(idx < mSampleData.size()) {
+                return mSampleData[idx];
+            }
+            return nullptr;
+        }
         size_t GetNumSampleDatas() const { return mSampleData.size(); }
 
        private:
@@ -329,8 +334,8 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                     }
                 } else if (inner == P_(LayerParams::ChorusDepth)) {
                     if (layer.mChorus) {
-                        layer.mChorus->cfg.delayBaseMs = mParams.Get<PercentParam>(id) * 20.0f;
-                        layer.mChorus->cfg.delayModMs = mParams.Get<PercentParam>(id) * 8.0f;
+                        layer.mChorus->cfg.delayBaseMs = mParams.Get<PercentParam>(id) * layer.mChorus->GetMaxDelayMs();
+                        layer.mChorus->cfg.delayModMs = mParams.Get<PercentParam>(id) * layer.mChorus->GetMaxDelayMs() * 0.4f;
                     }
                 } else if (inner == P_(LayerParams::ChorusFeedback)) {
                     if (layer.mChorus) {
@@ -378,12 +383,16 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
         if (mSampleLoader.OnAudioUpdate()) {
             size_t idx = 0;
             for (auto& layer : mGlobal.mLayers) {
+                const auto* data = mSampleLoader.GetSampleData(idx);
                 for (Voice& voice : layer.mVoices.IterAll()) {
-                    const auto* data = mSampleLoader.GetSampleData(idx);
-                    etl::span<float> dd(const_cast<float*>(data->samples.data()), data->samples.size());
-                    voice.mPcmSampler.SetSampleData(dd, data->sampleRate);
-                    voice.mPcmSampler.SetLoop(data->loopDirection, data->loopStart, data->loopEnd);
-                    voice.mBaseFrequency = data->baseFrequency;
+                    if (data) {
+                        etl::span<float> dd(const_cast<float*>(data->samples.data()), data->samples.size());
+                        voice.mPcmSampler.SetSampleData(dd, data->sampleRate);
+                        voice.mPcmSampler.SetLoop(data->loopDirection, data->loopStart, data->loopEnd);
+                        voice.mBaseFrequency = data->baseFrequency;
+                    } else {
+                        voice.mPcmSampler.SetSampleData({}, 0.0f);
+                    }
                 }
                 idx++;
             }
@@ -392,12 +401,19 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
     }
 
     void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) override {
+        sLog.AddLog("Note on (%d,%d)\n", note.key, note.id);
         mGlobal.ProcessNoteOn(note, velocity);
     }
 
-    void ProcessNoteOff(const clapeze::NoteTuple& note) override { mGlobal.ProcessNoteOff(note); }
+    void ProcessNoteOff(const clapeze::NoteTuple& note) override {
+        sLog.AddLog("Note off (%d,%d)\n", note.key, note.id);
+        mGlobal.ProcessNoteOff(note);
+    }
 
-    void ProcessNoteChoke(const clapeze::NoteTuple& note) override { mGlobal.ProcessNoteChoke(note); }
+    void ProcessNoteChoke(const clapeze::NoteTuple& note) override {
+        sLog.AddLog("Note choke (%d,%d)\n", note.key, note.id);
+        mGlobal.ProcessNoteChoke(note);
+    }
 
     void ProcessReset() override { mGlobal.ProcessReset(); }
 
@@ -494,7 +510,6 @@ class GuiApp : public kitgui::BaseApp {
             kitgui::DebugParam(mParams, XID(LayerParams::ChorusRate));
             kitgui::DebugParam(mParams, XID(LayerParams::ChorusDepth));
             kitgui::DebugParam(mParams, XID(LayerParams::ChorusFeedback));
-            EnvParams(XID(LayerParams::VoiceEnvStart));
             ImGui::PopID();
 
             ImGui::Unindent();

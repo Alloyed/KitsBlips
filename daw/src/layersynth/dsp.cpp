@@ -5,12 +5,17 @@ bool Voice::ProcessAudio(clapeze::StereoAudioBuffer& out) {
     const auto& layer = *mLayer;
     const auto& global = *mGlobal;
 
+    if(mBaseFrequency == 0.0f) 
+    {
+        return false;
+    }
+
     for (size_t index = 0; index < out.left.size(); ++index) {
         mVolumeEnv.Process();
         mPitchLfo.Process();
         mNote.Process();
 
-        float pitchNote = mNote.current + layer.mNoteOffset + (mPitchLfo.GetValue() * .2f);
+        float pitchNote = mNote.current + layer.mNoteOffset + (mPitchLfo.GetValue() * .0f);
         float filterNote = layer.mFilterNote + (mNote.current * layer.mFilterTrackingMult);
         float res = layer.mFilterRes * 0.89f;  // acts as cap, experimentally determined
         float filterSteepness = 0.5f;          // steeper means "achieves self-oscillation quicker"
@@ -41,27 +46,46 @@ bool Voice::ProcessAudio(clapeze::StereoAudioBuffer& out) {
         out.right[index] += vca * waveout;
     }
 
+    if(!mVolumeEnv.IsProcessing()) 
+    {
+        // is there a less stupid way to do this?
+        mPcmSampler.Reset();
+        mFilter.Reset();
+    }
+
     return mVolumeEnv.IsProcessing();
 }
 
 clapeze::ProcessStatus Layer::ProcessAudio(clapeze::StereoAudioBuffer& out) {
-    auto status = mVoices.ProcessAudio(out);
+    clapeze::StereoAudioBuffer tmp = mScratch.Alloc(out.left.size());
+    auto status = mVoices.ProcessAudio(tmp);
+    if(mChorus) {
+        for (size_t idx = 0; idx < tmp.left.size(); ++idx) {
+            kitdsp::float_2 processed = mChorus->Process(kitdsp::float_2(tmp.left[idx], tmp.right[idx]));
+            tmp.left[idx] = processed.left;
+            tmp.right[idx] = processed.right;
+        }
+    }
+    out.Add(tmp);
     return status;
 }
 
 clapeze::ProcessStatus Global::ProcessAudio(clapeze::StereoAudioBuffer& out) {
     clapeze::ProcessStatus status{};
-    std::fill(out.left.begin(), out.left.end(), 0.0f);
-    std::fill(out.right.begin(), out.right.end(), 0.0f);
+    out.Fill(0.0f);
+    out.isLeftConstant = false;
+    out.isRightConstant = false;
     for (auto& layer : mLayers) {
         status = layer.ProcessAudio(out);
     }
     if (mReverb && mReverbMix > 0.0f) {
         for (size_t idx = 0; idx < out.left.size(); ++idx) {
-            kitdsp::float_2 tmp = {out.left[idx], out.right[idx]};
-            tmp = mReverb->Process(tmp);
-            out.left[idx] = kitdsp::lerp(out.left[idx], tmp.left, mReverbMix);
-            out.right[idx] = kitdsp::lerp(out.right[idx], tmp.right, mReverbMix);
+            kitdsp::float_2 outf = {out.left[idx], out.right[idx]};
+            kitdsp::float_2 tmp = mReverb->Process(outf);
+            tmp = kitdsp::lerp<kitdsp::float_2>(outf, tmp, mReverbMix);
+            tmp = mLimit.Process(tmp);
+            out.left[idx] = tmp.left;
+            out.right[idx] = tmp.right;
         }
     }
     return status;

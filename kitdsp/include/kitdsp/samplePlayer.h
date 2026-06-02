@@ -26,10 +26,39 @@ class SamplePlayer {
     explicit SamplePlayer() { Reset(); }
 
     void SetSampleData(etl::span<SAMPLE> buf, float sampleRate) {
-        mRawSamples = buf;
-        mBufSampleRate = sampleRate;
-        mDirectSampler = Sampler1D<SAMPLE>(mRawSamples, mBufSampleRate);
-        mLoopSampler = Sampler1D<SAMPLE>(mRawSamples.subspan(mLoopStart, mLoopEnd - mLoopStart), mBufSampleRate);
+        if (buf.size() == 0 || sampleRate == 0.0f) {
+            mRawSamples = {};
+            mBufSampleRate = 0.0f;
+            mDirectSampler = std::nullopt;
+            mLoopStart = 0;
+            mLoopEnd = 0;
+            mLoopSampler = std::nullopt;
+        } else {
+            mRawSamples = buf;
+            mBufSampleRate = sampleRate;
+            mDirectSampler = Sampler1D<SAMPLE>(mRawSamples, mBufSampleRate);
+            // update loop if needed
+            mLoopStart = kitdsp::clamp<size_t>(mLoopStart, 0, mRawSamples.size());
+            mLoopEnd = kitdsp::clamp<size_t>(mLoopEnd, 0, mRawSamples.size());
+            mLoopSampler = Sampler1D<SAMPLE>(mRawSamples.subspan(mLoopStart, mLoopEnd - mLoopStart), mBufSampleRate);
+        }
+    }
+
+    void SetLoop(LoopDirection direction, size_t loopStart, size_t loopEnd) {
+        if (loopEnd < loopStart) {
+            std::swap(loopEnd, loopStart);
+        }
+        mDirection = direction;
+        mLoopStart = kitdsp::clamp<size_t>(loopStart, 0, mRawSamples.size());
+        mLoopEnd = kitdsp::clamp<size_t>(loopEnd, 0, mRawSamples.size());
+        if(mLoopSampler) {
+            mLoopSampler = Sampler1D<SAMPLE>(mRawSamples.subspan(mLoopStart, mLoopEnd - mLoopStart), mBufSampleRate);
+        }
+    }
+
+    void SetSpeed(float speed, float sampleRate) {
+        mFade.SetHalfLife(1.0f, sampleRate);
+        mAdvance = speed * mBufSampleRate / sampleRate;
     }
 
     void Reset() {
@@ -64,20 +93,6 @@ class SamplePlayer {
     }
     // Leave active loop (if there is one). if we haven't hit the loop yet we'll just pretend it isn't there.
     void Exit() { mState = LoopState::Exit; }
-
-    void SetSpeed(float speed, float sampleRate) {
-        mFade.SetHalfLife(1.0f, sampleRate);
-        mAdvance = speed * mBufSampleRate / sampleRate;
-    }
-    void SetLoop(LoopDirection direction, size_t loopStart, size_t loopEnd) {
-        if (loopEnd < loopStart) {
-            std::swap(loopEnd, loopStart);
-        }
-        mDirection = direction;
-        mLoopStart = kitdsp::max<size_t>(0, loopStart);
-        mLoopEnd = kitdsp::min<size_t>(loopEnd, mRawSamples.size());
-        mLoopSampler = Sampler1D<SAMPLE>(mRawSamples.subspan(mLoopStart, mLoopEnd - mLoopStart), mBufSampleRate);
-    }
     bool IsPlaying() const { return mPlaying; }
 
     SAMPLE Process() {
@@ -85,7 +100,7 @@ class SamplePlayer {
             return SAMPLE(0);
         }
 
-        SAMPLE out;
+        SAMPLE out = SAMPLE(0);
         etl::span<SAMPLE> outbuf{&out, 1};
         size_t index = 0;
         using namespace interpolate;
@@ -189,12 +204,21 @@ class SamplePlayer {
                 }
             }
 
+            if(mPosition1 < 0 || mPosition1 > mRawSamples.size())
+            {
+                printf("OW BADEmter!\n");
+            }
+
             // output
             float out1{};
             if (mAdvanceDirection > 0) {
                 out1 = mDirectSampler->template Read<STRATEGY, false, false>(mPosition1);
             } else {
                 out1 = mDirectSampler->template Read<STRATEGY, false, true>(mPosition1);
+            }
+            if(std::abs(out1) > 1.0f)
+            {
+                printf("OW BADLOOP!\n");
             }
             out[index] = ProcessFade<STRATEGY>(out1);
         }
@@ -232,12 +256,23 @@ class SamplePlayer {
                     break;
                 }
             }
+
+            float relativePosition = mPosition1 - mLoopStart;
+            if(relativePosition < 0 || relativePosition > mLoopEnd - mLoopStart)
+            {
+                printf("OW BADLOOP!\n");
+            }
+
             // output
             float out1{};
             if (mAdvanceDirection > 0.0f) {
-                out1 = mLoopSampler->template Read<STRATEGY, true, false>(mPosition1);
+                out1 = mLoopSampler->template Read<STRATEGY, true, false>(relativePosition);
             } else {
-                out1 = mLoopSampler->template Read<STRATEGY, true, true>(mPosition1);
+                out1 = mLoopSampler->template Read<STRATEGY, true, true>(relativePosition);
+            }
+            if(std::abs(out1) > 1.0f)
+            {
+                printf("OW BADLOOP!\n");
             }
             out[index] = ProcessFade<STRATEGY>(out1);
         }
@@ -256,11 +291,20 @@ class SamplePlayer {
                 }
             }
 
+            if(mPosition1 < 0 || mPosition1 > mRawSamples.size())
+            {
+                printf("OW BADExit!\n");
+            }
+
             float out1{};
             if (mAdvanceDirection > 0.0f) {
                 out1 = mDirectSampler->template Read<STRATEGY, false, false>(mPosition1);
             } else {
                 out1 = mDirectSampler->template Read<STRATEGY, false, true>(mPosition1);
+            }
+            if(std::abs(out1) > 1.0f)
+            {
+                printf("OW BADLOOP!\n");
             }
             out[index] = ProcessFade<STRATEGY>(out1);
         }
@@ -271,11 +315,21 @@ class SamplePlayer {
         if (mFade.current > 0.0f) {
             mFade.Process();
             mPosition2 += mAdvance * mAdvanceDirection;
+
+            if(mPosition2 < 0 || mPosition2 > mRawSamples.size())
+            {
+                printf("OW BADFADE!\n");
+            }
+
             float out2{};
-            if (mAdvanceDirection > 0) {
-                out2 = mDirectSampler->template Read<STRATEGY, false, true>(mPosition2);
-            } else {
+            if (mAdvanceDirection > 0.0f) {
                 out2 = mDirectSampler->template Read<STRATEGY, false, false>(mPosition2);
+            } else {
+                out2 = mDirectSampler->template Read<STRATEGY, false, true>(mPosition2);
+            }
+            if(std::abs(out2) > 1.0f)
+            {
+                printf("OW BADLOOP!\n");
             }
             return kitdsp::lerp(out1, out2, mFade.current);
         } else {
@@ -287,8 +341,8 @@ class SamplePlayer {
     std::optional<Sampler1D<SAMPLE>> mDirectSampler;
     std::optional<Sampler1D<SAMPLE>> mLoopSampler;
     kitdsp::Approach mFade{};
-    size_t mLoopStart;
-    size_t mLoopEnd;
+    size_t mLoopStart = 0;
+    size_t mLoopEnd = SIZE_MAX;
 
     float mBufSampleRate;
     float mAdvance = 1.0f;

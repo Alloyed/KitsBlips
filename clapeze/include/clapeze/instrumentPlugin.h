@@ -96,7 +96,13 @@ class InstrumentProcessor : public BaseProcessor {
             false,
         };
         // process audio from this frame
-        return ProcessAudio(out);
+        ProcessStatus status = ProcessAudio(out);
+
+        // Be sure to unset isXConstant if your buffer isn't constant!
+        assert(!out.isLeftConstant || out.left.size() < 2 || out.left[0] == out.left[1]);
+        assert(!out.isRightConstant || out.right.size() < 2 || out.right[0] == out.right[1]);
+
+        return status;
     }
     TParametersFeature& mParams;
     Transport mTransport{};

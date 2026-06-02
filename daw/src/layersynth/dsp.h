@@ -19,6 +19,7 @@
 #include <kitdsp/osc/naiveOscillator.h>
 #include <kitdsp/samplePlayer.h>
 #include <kitdsp/spanAllocator.h>
+#include <kitdsp/safetyLimiter.h>
 #include <optional>
 
 namespace layersynth {
@@ -38,13 +39,13 @@ class Voice {
     void ProcessNoteOff() { mVolumeEnv.TriggerClose(); }
     void ProcessChoke() { mVolumeEnv.TriggerChoke(); }
     void Reset() {
-        mOsc.Reset();
+        mPcmSampler.Reset();
         mFilter.Reset();
         mVolumeEnv.Reset();
     }
     bool ProcessAudio(clapeze::StereoAudioBuffer& out);
 
-    kitdsp::OversampledOscillator<kitdsp::naive::PulseOscillator, 2> mOsc{};
+    SamplePlayer mPcmSampler;
     kitdsp::EmileSvf mFilter{};
     Envelope mVolumeEnv{};
     Lfo mPitchLfo{};
@@ -52,7 +53,6 @@ class Voice {
 
     const Global* mGlobal{};
     const Layer* mLayer{};
-    SamplePlayer mPcmSampler;
 
     float mVelocity{};
     float mBaseFrequency{};
@@ -61,6 +61,8 @@ class Voice {
 };
 
 constexpr size_t cMaxVoices = 16;
+constexpr float cMaxChorusTimeMs = 20;
+
 class Layer {
    public:
     explicit Layer(clapeze::BaseProcessor& p, Global& sp, clapeze::params::DynamicAudioHandle& params)
@@ -81,11 +83,14 @@ class Layer {
 
     void ProcessNoteChoke(const clapeze::NoteTuple& note) { mVoices.ProcessNoteChoke(note); }
 
-    void Activate() {
+    void Activate(float sampleRate, size_t maxBlockSize, kitdsp::DynamicSpanAllocator<float>& memory) {
         mVoices.SetNumVoices(cMaxVoices);
         mVoices.SetStrategy(clapeze::VoiceStrategy::Poly);
+        mChorus = std::make_optional<kitdsp::Chorus>(memory.alloc(narrow_cast<size_t>(cMaxChorusTimeMs*sampleRate/1000.0f)), sampleRate);
+        mScratch.Resize(maxBlockSize);
     }
 
+    clapeze::StereoAudioScratchBuffer mScratch;
     clapeze::VoicePool<clapeze::BaseProcessor, Voice, cMaxVoices> mVoices;
     std::optional<kitdsp::Chorus> mChorus;
 
@@ -100,12 +105,6 @@ class Layer {
 
     float mVcaMult{};
     float mVcaVelocityMult{};
-
-    float mChorusMix{};
-    float mChorusRate{};
-    float mChorusDelay{};
-    float mChorusDepth{};
-    float mChorusFeedback{};
 
    private:
 };
@@ -144,6 +143,7 @@ class Global {
         for (auto& layer : mLayers) {
             layer.Reset();
         }
+        mLimit.Reset();
         if (mReverb) {
             mReverb->Reset();
         }
@@ -155,11 +155,15 @@ class Global {
         float sampleRate = narrow_cast<float>(_sampleRate);
         mSampleRate = sampleRate;
         mMemory.reset();
+        for (auto& layer : mLayers) {
+            layer.Activate(sampleRate, maxBlockSize, mMemory);
+        }
         mReverb = {mMemory.alloc(kitdsp::PSX::Reverb::GetBufferDesiredSizeFloats(sampleRate)), sampleRate};
     }
 
     etl::vector<Layer, cNumLayers> mLayers;
     std::optional<kitdsp::PSX::Reverb> mReverb{};
+    kitdsp::SafetyLimiter<kitdsp::float_2> mLimit;
     kitdsp::DynamicSpanAllocator<float> mMemory{};
     float mReverbMix{};
     float mSampleRate{};

@@ -15,7 +15,9 @@ class Sampler1D {
     template <bool SHOULD_LOOP = false>
     SAMPLE Read(int32_t index) const {
         size_t size = mBuffer.size();
-        if (SHOULD_LOOP) {
+        if (size == 0) {
+            return SAMPLE(0);
+        } else if (SHOULD_LOOP) {
             return mBuffer[index % size];
         } else {
             return index < 0 || index >= narrow_cast<int32_t>(size) ? SAMPLE(0) : mBuffer[index];

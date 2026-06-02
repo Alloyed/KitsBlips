@@ -61,6 +61,9 @@ struct Vector<TYPE, 2> {
 
     type sum() { return data[0] + data[1]; }
 
+    template<typename F>
+    Vector<type, size> map(F fn) const { return {fn(data[0]), fn(data[1])}; }
+
     Vector<type, size> operator-(const Vector<type, size>& other) const {
         return {data[0] - other.data[0], data[1] - other.data[1]};
     }
@@ -118,6 +121,9 @@ struct Vector<TYPE, 4> {
     explicit Vector(type in) : x(in), y(in), z(in), w(in) {}
 
     type sum() { return data[0] + data[1] + data[2] + data[3]; }
+
+    template<typename F>
+    Vector<type, size> map(F fn) const { return {fn(data[0]), fn(data[1], fn(data[2]), fn(data[3]))}; }
 
     Vector<type, size> operator+(const Vector<type, size>& other) const {
         return {data[0] + other.data[0], data[1] + other.data[1], data[2] + other.data[2], data[3] + other.data[3]};

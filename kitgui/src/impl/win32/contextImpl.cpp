@@ -295,18 +295,12 @@ void ContextImpl::SuggestTitle(std::string_view title) {
 }
 
 bool ContextImpl::Show() {
-    bool result = ::ShowWindow(mWindow, SW_SHOW);
-    if(!result) {
-        kitgui::log::info(mContext, GetLastWinError());
-    }
+    ::ShowWindow(mWindow, SW_SHOW);
     AddActiveInstance(this);
     return true;
 }
 bool ContextImpl::Hide() {
-    bool result = ::ShowWindow(mWindow, SW_HIDE);
-    if(!result) {
-        kitgui::log::info(mContext, GetLastWinError());
-    }
+    ::ShowWindow(mWindow, SW_HIDE);
     mActive = false;  // will be removed
     return true;
 }

@@ -16,6 +16,33 @@ struct MonoAudioBuffer {
         std::fill(data.begin(), data.end(), value);
         isConstant = true;
     }
+    void Add(const MonoAudioBuffer& in) {
+        for(size_t i = 0; i < data.size(); ++i)
+        {
+            data[i] += in.data[i];
+        }
+        isConstant = isConstant && in.isConstant;
+    }
+};
+
+class MonoAudioScratchBuffer {
+    explicit MonoAudioScratchBuffer(size_t maxBlockSize = 0) : mMemory(maxBlockSize, 0.0f) {}
+
+    void Resize(size_t maxBlockSize) {
+        mMemory.assign(maxBlockSize, 0.0f);
+    }
+
+    MonoAudioBuffer Alloc(size_t blockSize) {
+        return {etl::span<float>(mMemory.data(), blockSize), false};
+    }
+
+    MonoAudioBuffer Alloc(const MonoAudioBuffer& existing) {
+        std::copy(existing.data.begin(), existing.data.end(), mMemory.begin());
+        return {etl::span<float>(mMemory.data(), existing.data.size()), existing.isConstant};
+    }
+
+    private:
+    std::vector<float> mMemory;
 };
 
 struct StereoAudioBuffer {
@@ -41,6 +68,55 @@ struct StereoAudioBuffer {
         isLeftConstant = true;
         isRightConstant = true;
     }
+    void Add(const StereoAudioBuffer& in) {
+        for(size_t i = 0; i < left.size(); ++i)
+        {
+            left[i] += in.left[i];
+        }
+        for(size_t i = 0; i < right.size(); ++i)
+        {
+            right[i] += in.right[i];
+        }
+        isLeftConstant = isLeftConstant && in.isLeftConstant;
+        isRightConstant = isRightConstant && in.isRightConstant;
+    }
+};
+
+class StereoAudioScratchBuffer {
+    public:
+    explicit StereoAudioScratchBuffer(size_t maxBlockSize = 0)
+        : mLeftMemory(maxBlockSize, 0.0f), mRightMemory(maxBlockSize, 0.0f) {}
+
+    void Resize(size_t maxBlockSize) {
+        mLeftMemory.assign(maxBlockSize, 0.0f);
+        mRightMemory.assign(maxBlockSize, 0.0f);
+    }
+
+    StereoAudioBuffer Alloc(size_t blockSize) {
+        std::fill(mLeftMemory.begin(), mLeftMemory.begin()+blockSize, 0.0f);
+        std::fill(mRightMemory.begin(), mRightMemory.begin()+blockSize, 0.0f);
+        return {
+            etl::span<float>(mLeftMemory.data(), blockSize),
+            etl::span<float>(mRightMemory.data(), blockSize),
+            false,
+            false
+        };
+    }
+
+    StereoAudioBuffer Alloc(const StereoAudioBuffer& existing) {
+        std::copy(existing.left.begin(), existing.left.end(), mLeftMemory.begin());
+        std::copy(existing.right.begin(), existing.right.end(), mRightMemory.begin());
+        return {
+            etl::span<float>(mLeftMemory.data(), existing.left.size()),
+            etl::span<float>(mRightMemory.data(), existing.right.size()),
+            existing.isLeftConstant,
+            existing.isRightConstant
+        };
+    }
+
+    private:
+    std::vector<float> mLeftMemory;
+    std::vector<float> mRightMemory;
 };
 
 // All of the identifying info for a given note.
