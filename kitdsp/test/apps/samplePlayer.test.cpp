@@ -1,11 +1,12 @@
 #include "kitdsp/samplePlayer.h"
 #include <AudioFile.h>
 #include <gtest/gtest.h>
+#include "kitdsp/math/vector.h"
 #include "util.h"
 
 using namespace kitdsp;
 
-TEST(samplePlayer, works) {
+TEST(samplePlayer, worksInStereo) {
     AudioFile<float> f;
     bool ok = f.load(PROJECT_DIR "/test/guitar.wav");
     ASSERT_TRUE(ok);
@@ -13,10 +14,13 @@ TEST(samplePlayer, works) {
     float sampleRate = f.getSampleRate();
     size_t len = f.getNumSamplesPerChannel();
 
-    std::vector<float> samplesCopy = f.samples[0];
+    std::vector<float_2> samplesCopy(f.samples[0].size());
+    for (size_t i = 0; i < f.samples[0].size(); ++i) {
+        samplesCopy[i] = {f.samples[0][i], f.samples[1][i]};
+    }
     std::fill(f.samples[0].begin(), f.samples[0].end(), 0.0f);
     std::fill(f.samples[1].begin(), f.samples[1].end(), 0.0f);
-    SamplePlayer<float> sampler;
+    SamplePlayer<kitdsp::float_2> sampler;
     sampler.SetSampleData({samplesCopy.data(), len}, sampleRate);
     size_t idx = 0;
 
@@ -24,18 +28,18 @@ TEST(samplePlayer, works) {
     sampler.Play();
     sampler.SetSpeed(13.0f / 12.0f, sampleRate);
     for (size_t i = 0; i < len / 4; ++i) {
-        float out = sampler.Process();
-        f.samples[0][idx] = out;
-        f.samples[1][idx] = out;
+        kitdsp::float_2 out = sampler.Process();
+        f.samples[0][idx] = out.left;
+        f.samples[1][idx] = out.right;
         idx++;
     }
 
     // test mid-sample reverse
     sampler.SetSpeed(-13.0f / 12.0f, sampleRate);
     for (size_t i = 0; i < len / 8; ++i) {
-        float out = sampler.Process();
-        f.samples[0][idx] = out;
-        f.samples[1][idx] = out;
+        kitdsp::float_2 out = sampler.Process();
+        f.samples[0][idx] = out.left;
+        f.samples[1][idx] = out.right;
         idx++;
     }
 
@@ -43,18 +47,18 @@ TEST(samplePlayer, works) {
     sampler.SetSpeed(13.0f / 12.0f, sampleRate);
     sampler.Play(narrow_cast<float>(len / 2));
     for (size_t i = 0; i < len / 8; ++i) {
-        float out = sampler.Process();
-        f.samples[0][idx] = out;
-        f.samples[1][idx] = out;
+        kitdsp::float_2 out = sampler.Process();
+        f.samples[0][idx] = out.left;
+        f.samples[1][idx] = out.right;
         idx++;
     }
 
     // test choke
     sampler.Choke();
     for (size_t i = 0; i < len / 2; ++i) {
-        float out = sampler.Process();
-        f.samples[0][idx] = out;
-        f.samples[1][idx] = out;
+        kitdsp::float_2 out = sampler.Process();
+        f.samples[0][idx] = out.left;
+        f.samples[1][idx] = out.right;
         idx++;
     }
 

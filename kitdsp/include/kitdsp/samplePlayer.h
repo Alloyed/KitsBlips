@@ -152,7 +152,7 @@ class SamplePlayer {
         size_t index = 0;
         while (index < out.size()) {
             if (!mPlaying) {
-                std::fill(out.begin() + index, out.end(), 0.0f);
+                std::fill(out.begin() + index, out.end(), SAMPLE(0));
                 return;
             }
             using namespace interpolate;
@@ -247,7 +247,7 @@ class SamplePlayer {
             }
 
             // output
-            float out1{};
+            SAMPLE out1{};
             if (mAdvance > 0) {
                 out1 = mDirectSampler->template Read<STRATEGY, kNoLoop, kForwards>(mPosition1);
             } else {
@@ -289,7 +289,7 @@ class SamplePlayer {
             }
 
             // output
-            float out1{};
+            SAMPLE out1{};
             float relativePosition = mPosition1 - mLoopStart;
             if (advance > 0.0f) {
                 out1 = mLoopSampler->template Read<STRATEGY, kLoop, kForwards>(relativePosition);
@@ -314,7 +314,7 @@ class SamplePlayer {
                 }
             }
 
-            float out1{};
+            SAMPLE out1{};
             if (advance > 0.0f) {
                 out1 = mDirectSampler->template Read<STRATEGY, kNoLoop, kForwards>(mPosition1);
             } else {
@@ -331,7 +331,7 @@ class SamplePlayer {
             float advance = mAdvance * mSampleLoopDirection;
             mPosition2 += advance;
 
-            float out2{};
+            SAMPLE out2{};
             if (advance > 0.0f) {
                 out2 = mDirectSampler->template Read<STRATEGY, kNoLoop, kForwards>(mPosition2);
             } else {
