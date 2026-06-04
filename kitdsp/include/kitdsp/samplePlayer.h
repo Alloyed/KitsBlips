@@ -8,7 +8,11 @@
 #include "kitdsp/sampler.h"
 
 namespace kitdsp {
-/* Combines a sampler with a state machine for direct playback. supports mid-sample looping/crossfade/etc. */
+/**
+ * Combines a sampler with a state machine for direct playback.
+ * supports playback speed changing (including negative
+ * speed), mid-sample looping, and limited crossfade.
+ */
 template <typename SAMPLE>
 class SamplePlayer {
    public:
@@ -51,7 +55,7 @@ class SamplePlayer {
         mDirection = direction;
         mLoopStart = kitdsp::clamp<size_t>(loopStart, 0, mRawSamples.size());
         mLoopEnd = kitdsp::clamp<size_t>(loopEnd, 0, mRawSamples.size());
-        if(mLoopSampler) {
+        if (mLoopSampler) {
             mLoopSampler = Sampler1D<SAMPLE>(mRawSamples.subspan(mLoopStart, mLoopEnd - mLoopStart), mBufSampleRate);
         }
     }
@@ -64,7 +68,7 @@ class SamplePlayer {
     void Reset() {
         mPosition1 = 0.0f;
         mPosition2 = 0.0f;
-        mAdvanceDirection = 1.0f;
+        mLoopDirection = 1.0f;
         mState = LoopState::Exit;
         mPlaying = false;
         mFade.target = 0.0f;
@@ -73,12 +77,20 @@ class SamplePlayer {
 
     // Play sample from start. if already playing, apply small crossfade to avoid clicks.
     void Play() {
+        if (mAdvance > 0) {
+            Play(0.0f);
+        } else {
+            Play(mRawSamples.size());
+        }
+    }
+    // Play sample from specified position. if already playing, apply small crossfade to avoid clicks.
+    void Play(float startPosition) {
         if (mPlaying) {
             mPosition2 = mPosition1;
             mFade.current = 1.0f;
         }
-        mPosition1 = 0.0f;
-        mAdvanceDirection = 1.0f;
+        mPosition1 = startPosition;
+        mLoopDirection = 1.0f;
         mState = mDirection == LoopDirection::NoLoop ? LoopState::Exit : LoopState::Enter;
         mPlaying = true;
     }
@@ -86,7 +98,8 @@ class SamplePlayer {
     void Choke() {
         if (mPlaying) {
             mPosition2 = mPosition1;
-            mPosition1 = mRawSamples.size();
+            // jump to end
+            mPosition1 = mAdvance * mLoopDirection > 0 ? mRawSamples.size() : 0;
             mState = LoopState::Exit;
             mFade.current = 1.0f;
         }
@@ -100,59 +113,59 @@ class SamplePlayer {
             return SAMPLE(0);
         }
 
-        SAMPLE out = SAMPLE(0);
-        etl::span<SAMPLE> outbuf{&out, 1};
+        SAMPLE outRaw = SAMPLE(0);
+        etl::span<SAMPLE> out{&outRaw, 1};
         size_t index = 0;
         using namespace interpolate;
         switch (mInterpolate) {
             case InterpolationStrategy::None: {
-                ProcessImpl1<InterpolationStrategy::None>(outbuf, index);
+                ProcessImpl<InterpolationStrategy::None>(out, index);
                 break;
             }
             case InterpolationStrategy::Linear: {
-                ProcessImpl1<InterpolationStrategy::Linear>(outbuf, index);
+                ProcessImpl<InterpolationStrategy::Linear>(out, index);
                 break;
             }
             case InterpolationStrategy::Cubic: {
-                ProcessImpl1<InterpolationStrategy::Cubic>(outbuf, index);
+                ProcessImpl<InterpolationStrategy::Cubic>(out, index);
                 break;
             }
             case InterpolationStrategy::Hermite: {
-                ProcessImpl1<InterpolationStrategy::Hermite>(outbuf, index);
+                ProcessImpl<InterpolationStrategy::Hermite>(out, index);
                 break;
             }
         }
-        return out;
+        return outRaw;
     }
 
-    SAMPLE Process(etl::span<SAMPLE>& outbuf) {
+    SAMPLE Process(etl::span<SAMPLE>& out) {
         if (!mDirectSampler.has_value() || !mPlaying) {
-            std::fill(outbuf.begin(), outbuf.end(), SAMPLE(0));
+            std::fill(out.begin(), out.end(), SAMPLE(0));
             return;
         }
 
         size_t index = 0;
-        while (index < outbuf.size()) {
+        while (index < out.size()) {
             if (!mPlaying) {
-                std::fill(outbuf.begin() + index, outbuf.end(), 0.0f);
+                std::fill(out.begin() + index, out.end(), 0.0f);
                 return;
             }
             using namespace interpolate;
             switch (mInterpolate) {
                 case InterpolationStrategy::None: {
-                    ProcessImpl1<InterpolationStrategy::None>(outbuf, index);
+                    ProcessImpl<InterpolationStrategy::None>(out, index);
                     break;
                 }
                 case InterpolationStrategy::Linear: {
-                    ProcessImpl1<InterpolationStrategy::Linear>(outbuf, index);
+                    ProcessImpl<InterpolationStrategy::Linear>(out, index);
                     break;
                 }
                 case InterpolationStrategy::Cubic: {
-                    ProcessImpl1<InterpolationStrategy::Cubic>(outbuf, index);
+                    ProcessImpl<InterpolationStrategy::Cubic>(out, index);
                     break;
                 }
                 case InterpolationStrategy::Hermite: {
-                    ProcessImpl1<InterpolationStrategy::Hermite>(outbuf, index);
+                    ProcessImpl<InterpolationStrategy::Hermite>(out, index);
                     break;
                 }
             }
@@ -161,29 +174,28 @@ class SamplePlayer {
 
    private:
     template <interpolate::InterpolationStrategy STRATEGY>
-    void ProcessImpl1(etl::span<SAMPLE>& out, size_t& index) {
+    void ProcessImpl(etl::span<SAMPLE>& out, size_t& index) {
         switch (mState) {
             case LoopState::Enter: {
-                ProcessImpl2Enter<STRATEGY>(out, index);
+                ProcessEnter<STRATEGY>(out, index);
                 break;
             }
             case LoopState::Loop: {
-                ProcessImpl2Loop<STRATEGY>(out, index);
+                ProcessLoop<STRATEGY>(out, index);
                 break;
             }
             case LoopState::Exit: {
-                ProcessImpl2Exit<STRATEGY>(out, index);
+                ProcessExit<STRATEGY>(out, index);
                 break;
             }
         }
     }
 
     template <interpolate::InterpolationStrategy STRATEGY>
-    void ProcessImpl2Enter(etl::span<SAMPLE>& out, size_t& index) {
+    void ProcessEnter(etl::span<SAMPLE>& out, size_t& index) {
         for (; index < out.size(); ++index) {
-            mPosition1 += mAdvance * mAdvanceDirection;
-            // update state
-            if (mPosition1 >= mLoopEnd) {
+            mPosition1 += mAdvance;
+            if (mAdvance > 0 && mPosition1 >= mLoopEnd) {
                 switch (mDirection) {
                     case LoopDirection::NoLoop: {
                         mState = LoopState::Exit;
@@ -198,113 +210,105 @@ class SamplePlayer {
                     case LoopDirection::PingPong: {
                         mState = LoopState::Loop;
                         mPosition1 -= (mPosition1 - mLoopEnd);
-                        mAdvanceDirection = -1.0f;
+                        mLoopDirection = -1.0f;
+                        return;
+                    }
+                }
+            } else if (mAdvance < 0 && mPosition1 <= mLoopStart) {
+                switch (mDirection) {
+                    case LoopDirection::NoLoop: {
+                        mState = LoopState::Exit;
+                        return;
+                    }
+                    case LoopDirection::Forward: {
+                        mState = LoopState::Loop;
+                        mPosition1 += (mLoopEnd - mLoopStart);
+                        return;
+                    }
+                    case LoopDirection::Backward:
+                    case LoopDirection::PingPong: {
+                        mState = LoopState::Loop;
+                        mPosition1 += (mLoopStart - mPosition1);
+                        mLoopDirection = -1.0f;
                         return;
                     }
                 }
             }
 
-            if(mPosition1 < 0 || mPosition1 > mRawSamples.size())
-            {
-                printf("OW BADEmter!\n");
-            }
-
             // output
             float out1{};
-            if (mAdvanceDirection > 0) {
+            if (mAdvance > 0) {
                 out1 = mDirectSampler->template Read<STRATEGY, false, false>(mPosition1);
             } else {
                 out1 = mDirectSampler->template Read<STRATEGY, false, true>(mPosition1);
-            }
-            if(std::abs(out1) > 1.0f)
-            {
-                printf("OW BADLOOP!\n");
             }
             out[index] = ProcessFade<STRATEGY>(out1);
         }
     }
     template <interpolate::InterpolationStrategy STRATEGY>
-    void ProcessImpl2Loop(etl::span<SAMPLE>& out, size_t& index) {
+    void ProcessLoop(etl::span<SAMPLE>& out, size_t& index) {
         for (; index < out.size(); ++index) {
-            mPosition1 += mAdvance * mAdvanceDirection;
+            float advance = mAdvance * mLoopDirection;
+            mPosition1 += advance;
             // update state
             switch (mDirection) {
                 case LoopDirection::NoLoop: {
                     mState = LoopState::Exit;
                     return;
                 }
-                case LoopDirection::Forward: {
-                    if (mPosition1 >= mLoopEnd) {
-                        mPosition1 -= (mLoopEnd - mLoopStart);
-                    }
-                    break;
-                }
+                case LoopDirection::Forward:
                 case LoopDirection::Backward: {
                     if (mPosition1 <= mLoopStart) {
                         mPosition1 += (mLoopEnd - mLoopStart);
+                    } else if (mPosition1 >= mLoopEnd) {
+                        mPosition1 -= (mLoopEnd - mLoopStart);
                     }
                     break;
                 }
                 case LoopDirection::PingPong: {
                     if (mPosition1 <= mLoopStart) {
                         mPosition1 += (mLoopStart - mPosition1);
-                        mAdvanceDirection = 1.0f;
+                        mLoopDirection *= -1.0f;
                     } else if (mPosition1 >= mLoopEnd) {
                         mPosition1 -= (mPosition1 - mLoopEnd);
-                        mAdvanceDirection = -1.0f;
+                        mLoopDirection *= -1.0f;
                     }
                     break;
                 }
             }
 
             float relativePosition = mPosition1 - mLoopStart;
-            if(relativePosition < 0 || relativePosition > mLoopEnd - mLoopStart)
-            {
-                printf("OW BADLOOP!\n");
-            }
 
             // output
             float out1{};
-            if (mAdvanceDirection > 0.0f) {
+            if (advance > 0.0f) {
                 out1 = mLoopSampler->template Read<STRATEGY, true, false>(relativePosition);
             } else {
                 out1 = mLoopSampler->template Read<STRATEGY, true, true>(relativePosition);
-            }
-            if(std::abs(out1) > 1.0f)
-            {
-                printf("OW BADLOOP!\n");
             }
             out[index] = ProcessFade<STRATEGY>(out1);
         }
     }
 
     template <interpolate::InterpolationStrategy STRATEGY>
-    void ProcessImpl2Exit(etl::span<SAMPLE>& out, size_t& index) {
+    void ProcessExit(etl::span<SAMPLE>& out, size_t& index) {
         for (; index < out.size(); ++index) {
-            mPosition1 += mAdvance * mAdvanceDirection;
+            float advance = mAdvance * mLoopDirection;
+            mPosition1 += advance;
             // update state
-            if ((mAdvanceDirection > 0.0f && mPosition1 >= narrow_cast<float>(mRawSamples.size())) ||
-                (mAdvanceDirection < 0.0f && mPosition1 <= 0.0f)) {
+            if ((advance > 0.0f && mPosition1 >= narrow_cast<float>(mRawSamples.size())) ||
+                (advance < 0.0f && mPosition1 <= 0.0f)) {
                 if (!mFade.IsChanging()) {
                     mPlaying = false;
                     return;
                 }
             }
 
-            if(mPosition1 < 0 || mPosition1 > mRawSamples.size())
-            {
-                printf("OW BADExit!\n");
-            }
-
             float out1{};
-            if (mAdvanceDirection > 0.0f) {
+            if (advance > 0.0f) {
                 out1 = mDirectSampler->template Read<STRATEGY, false, false>(mPosition1);
             } else {
                 out1 = mDirectSampler->template Read<STRATEGY, false, true>(mPosition1);
-            }
-            if(std::abs(out1) > 1.0f)
-            {
-                printf("OW BADLOOP!\n");
             }
             out[index] = ProcessFade<STRATEGY>(out1);
         }
@@ -314,22 +318,14 @@ class SamplePlayer {
     SAMPLE ProcessFade(SAMPLE out1) {
         if (mFade.current > 0.0f) {
             mFade.Process();
-            mPosition2 += mAdvance * mAdvanceDirection;
-
-            if(mPosition2 < 0 || mPosition2 > mRawSamples.size())
-            {
-                printf("OW BADFADE!\n");
-            }
+            float advance = mAdvance * mLoopDirection;
+            mPosition2 += advance;
 
             float out2{};
-            if (mAdvanceDirection > 0.0f) {
+            if (advance > 0.0f) {
                 out2 = mDirectSampler->template Read<STRATEGY, false, false>(mPosition2);
             } else {
                 out2 = mDirectSampler->template Read<STRATEGY, false, true>(mPosition2);
-            }
-            if(std::abs(out2) > 1.0f)
-            {
-                printf("OW BADLOOP!\n");
             }
             return kitdsp::lerp(out1, out2, mFade.current);
         } else {
@@ -346,7 +342,7 @@ class SamplePlayer {
 
     float mBufSampleRate;
     float mAdvance = 1.0f;
-    float mAdvanceDirection = 1.0f;
+    float mLoopDirection = 1.0f;
     float mPosition1 = 0.0f;
     float mPosition2 = 0.0f;
 
