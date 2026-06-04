@@ -16,6 +16,7 @@ add_executable(testdsp
     apps/snesBitcrush.test.cpp
     apps/snesEcho.test.cpp
     control/adsr.test.cpp
+    control/dx7env.test.cpp
     pitch.test.cpp
     math/stft.test.cpp
     apps/samplePlayer.test.cpp

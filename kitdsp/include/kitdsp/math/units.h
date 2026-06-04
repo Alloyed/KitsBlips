@@ -35,4 +35,12 @@ inline float midiToRatio(float semitones) {
     return std::exp2(semitones / 12.0f);
 }
 
+inline float msToSamples(float ms, float sampleRate) {
+    return ms * sampleRate / 1000.0f;
+}
+
+inline float samplesToMs(float samples, float sampleRate) {
+    return samples * 1000.0f / sampleRate;
+}
+
 }  // namespace kitdsp
