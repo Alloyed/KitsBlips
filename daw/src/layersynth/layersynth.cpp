@@ -131,13 +131,15 @@ class RawSampleLoader {
         float baseFrequency;
         size_t loopStart;
         size_t loopEnd;
-        SamplePlayer::LoopDirection loopDirection;
+        kitdsp::SampleLoopDirection loopDirection;
     };
     using Queue = etl::queue_spsc_atomic<std::pair<size_t, File*>, 200, etl::memory_model::MEMORY_MODEL_SMALL>;
 
     class AudioHandle {
        public:
-        AudioHandle(Queue& mainToAudio, Queue& audioToMain) : mMainToAudio(mainToAudio), mAudioToMain(audioToMain) { mSampleData.fill(nullptr);}
+        AudioHandle(Queue& mainToAudio, Queue& audioToMain) : mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {
+            mSampleData.fill(nullptr);
+        }
         void ReleaseSample(size_t idx) {
             mAudioToMain.push({idx, mSampleData[idx]});
             mSampleData[idx] = nullptr;
@@ -155,7 +157,7 @@ class RawSampleLoader {
             return changed;
         }
         const File* GetSampleData(size_t idx) const {
-            if(idx < mSampleData.size()) {
+            if (idx < mSampleData.size()) {
                 return mSampleData[idx];
             }
             return nullptr;
@@ -218,7 +220,7 @@ class RawSampleLoader {
         if (f) {
             // TODO: pull from file, or let the user hand-customize
             f->baseFrequency = 261.626f;  // middle C
-            f->loopDirection = SamplePlayer::LoopDirection::Forward;
+            f->loopDirection = kitdsp::SampleLoopDirection::Forward;
             f->loopStart = 0;
             f->loopEnd = f->samples.size();
 
@@ -335,7 +337,8 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                 } else if (inner == P_(LayerParams::ChorusDepth)) {
                     if (layer.mChorus) {
                         layer.mChorus->cfg.delayBaseMs = mParams.Get<PercentParam>(id) * layer.mChorus->GetMaxDelayMs();
-                        layer.mChorus->cfg.delayModMs = mParams.Get<PercentParam>(id) * layer.mChorus->GetMaxDelayMs() * 0.4f;
+                        layer.mChorus->cfg.delayModMs =
+                            mParams.Get<PercentParam>(id) * layer.mChorus->GetMaxDelayMs() * 0.4f;
                     }
                 } else if (inner == P_(LayerParams::ChorusFeedback)) {
                     if (layer.mChorus) {

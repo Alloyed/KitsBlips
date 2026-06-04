@@ -74,7 +74,7 @@ TEST(samplePlayer, canLoop) {
     std::fill(f.samples[1].begin(), f.samples[1].end(), 0.0f);
     SamplePlayer<float> sampler;
     sampler.SetSampleData({samplesCopy.data(), len}, sampleRate);
-    sampler.SetLoop(SamplePlayer<float>::LoopDirection::Forward, len / 8, len / 4);
+    sampler.SetLoop(SampleLoopDirection::Forward, len / 8, len / 4);
     size_t idx = 0;
 
     // test playback
