@@ -1,25 +1,20 @@
 #pragma once
 
-#include "kitdsp/samplePlayer.h"
+#include <etl/queue_spsc_atomic.h>
+#include <fmt/format.h>
+#include <kitdsp/samplePlayer.h>
+
 #include "shared/dr_flac.h"
 #include "shared/dr_wav.h"
 
 #if KITSBLIPS_ENABLE_GUI
-#include <clapeze/features/assetsFeature.h>
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <kitgui/app.h>
 #include <kitgui/context.h>
-#include <kitgui/gfx/scene.h>
 #include <kitgui/wrap_nfd.h>
 #include <misc/cpp/imgui_stdlib.h>
-#include "gui/debugui.h"
-#include "gui/kitguiFeature.h"
-#include "gui/logger.h"
-#include "gui/presetBrowser.h"
 #endif
 
-using namespace clapeze;
 namespace layersynth {
 
 template <size_t TNumSamples>
@@ -32,13 +27,15 @@ class RawSampleLoader {
         float baseFrequency;
         size_t loopStart;
         size_t loopEnd;
-        SamplePlayer::LoopDirection loopDirection;
+        kitdsp::SampleLoopDirection loopDirection;
     };
     using Queue = etl::queue_spsc_atomic<std::pair<size_t, File*>, 200, etl::memory_model::MEMORY_MODEL_SMALL>;
 
     class AudioHandle {
        public:
-        AudioHandle(Queue& mainToAudio, Queue& audioToMain) : mMainToAudio(mainToAudio), mAudioToMain(audioToMain) { mSampleData.fill(nullptr);}
+        AudioHandle(Queue& mainToAudio, Queue& audioToMain) : mMainToAudio(mainToAudio), mAudioToMain(audioToMain) {
+            mSampleData.fill(nullptr);
+        }
         void ReleaseSample(size_t idx) {
             mAudioToMain.push({idx, mSampleData[idx]});
             mSampleData[idx] = nullptr;
@@ -56,7 +53,7 @@ class RawSampleLoader {
             return changed;
         }
         const File* GetSampleData(size_t idx) const {
-            if(idx < mSampleData.size()) {
+            if (idx < mSampleData.size()) {
                 return mSampleData[idx];
             }
             return nullptr;
@@ -119,7 +116,7 @@ class RawSampleLoader {
         if (f) {
             // TODO: pull from file, or let the user hand-customize
             f->baseFrequency = 261.626f;  // middle C
-            f->loopDirection = SamplePlayer::LoopDirection::Forward;
+            f->loopDirection = kitdsp::SampleLoopDirection::Forward;
             f->loopStart = 0;
             f->loopEnd = f->samples.size();
 
@@ -176,4 +173,4 @@ class RawSampleLoader {
     etl::array<std::string, TNumSamples> mSampleStatus{};
 };
 using SampleLoader = RawSampleLoader<4>;
-}
+}  // namespace layersynth

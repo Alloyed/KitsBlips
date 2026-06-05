@@ -3,6 +3,7 @@
 #include <clapeze/basePlugin.h>
 #include <clapeze/common.h>
 #include <clapeze/entryPoint.h>
+#include <clapeze/features/assetsFeature.h>
 #include <clapeze/features/params/dynamicParametersFeature.h>
 #include <clapeze/features/params/parameterTypes.h>
 #include <clapeze/features/presetFeature.h>
@@ -17,13 +18,12 @@
 #include <kitdsp/apps/psxReverbPresets.h>
 #include <kitdsp/control/adsr.h>
 #include <kitdsp/control/lfo.h>
+#include <kitdsp/filters/svf.h>
 #include <kitdsp/macros.h>
 #include <kitdsp/sampler.h>
 #include <sstream>
 
 #include "descriptor.h"
-#include "kitdsp/filters/svf.h"
-#include "kitdsp/samplePlayer.h"
 #include "shared/dr_flac.h"
 #include "shared/dr_wav.h"
 
@@ -31,7 +31,6 @@
 #include "layersynth/sampleLoader.h"
 
 #if KITSBLIPS_ENABLE_GUI
-#include <clapeze/features/assetsFeature.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <kitgui/app.h>
