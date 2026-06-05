@@ -27,6 +27,14 @@ inline float midiToFrequency(float midiNote, float a4Frequency = 440.0f) {
 }
 
 /**
+ * turns a frequency into a fractional note number in standard A4=440 western tuning.
+ * for ref: midi note 69 is A4, 48 is C3
+ */
+inline float frequencyToMidi(float frequency, float a4Frequency = 440.0f) {
+    return 69.0f + 12.0f * std::log2(frequency / a4Frequency);
+}
+
+/**
  * turns a number of 12TET semitones (fractional allowed) into a ratio that represents
  * that transposition in the frequency domain. so for example, +12 semitones is
  * 2.0, and -12 semitones is 0.5.

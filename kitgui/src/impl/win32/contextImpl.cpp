@@ -211,8 +211,12 @@ bool ContextImpl::Create(bool isFloating) {
 bool ContextImpl::Destroy() {
     if (IsCreated()) {
         MakeCurrent();
-        ImGui::DestroyContext(mImgui);
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplWin32_Shutdown();
         ImPlot::DestroyContext(mImPlot);
+        mImPlot = nullptr;
+        ImGui::DestroyContext(mImgui);
+        mImgui = nullptr;
         RemoveActiveInstance(this);
         mProfiler.reset();
         mGl.reset();

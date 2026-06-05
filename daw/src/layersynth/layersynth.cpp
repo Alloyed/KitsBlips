@@ -230,7 +230,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                 const auto* data = mSampleLoader.GetSampleData(idx);
                 for (Voice& voice : layer.mVoices.IterAll()) {
                     if (data) {
-                        etl::span<float> dd(const_cast<float*>(data->samples.data()), data->samples.size());
+                        etl::span<float> dd(const_cast<float*>(data->samples), data->numSamples);
                         voice.mPcmSampler.SetSampleData(dd, data->sampleRate);
                         voice.mPcmSampler.SetLoop(data->loopDirection, data->loopStart, data->loopEnd);
                         voice.mBaseFrequency = data->baseFrequency;
