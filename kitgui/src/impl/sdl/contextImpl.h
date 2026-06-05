@@ -18,6 +18,7 @@
 #include "kitgui/kitgui.h"
 
 struct ImGuiContext;
+struct ImPlotContext;
 
 namespace kitgui {
 class BaseApp;
@@ -67,6 +68,7 @@ class ContextImpl {
     SDL_PropertiesID mWindowProps{};
     SDL_Window* mWindow = nullptr;
     ImGuiContext* mImgui = nullptr;
+    ImPlotContext* mImPlot = nullptr;
     bool mActive = false;
     bool mDestroy = false;
     Magnum::Color4 mClearColor = {0.0f, 0.0f, 0.0f, 1.0f};

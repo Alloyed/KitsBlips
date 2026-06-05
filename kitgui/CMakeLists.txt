@@ -52,6 +52,7 @@ target_include_directories(kitgui PRIVATE src)
 
 target_link_libraries(kitgui PUBLIC
     imgui
+    implot
     Magnum::GL
     Magnum::Magnum
     Magnum::SceneGraph

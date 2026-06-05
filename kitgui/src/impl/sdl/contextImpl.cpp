@@ -9,6 +9,7 @@
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
 #include <imgui.h>
+#include <implot.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl3.h>
 #include <nfd.h>
@@ -297,7 +298,9 @@ bool ContextImpl::Create(bool isFloating) {
     // setup imgui
     IMGUI_CHECKVERSION();
     mImgui = ImGui::CreateContext();
+    mImPlot = ImPlot::CreateContext();
     ImGui::SetCurrentContext(mImgui);
+    ImPlot::SetCurrentContext(mImPlot);
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -324,9 +327,11 @@ bool ContextImpl::Destroy() {
         ImGui_ImplSDL3_Shutdown();
         ImGui_ImplOpenGL3_Shutdown();
         ImGui::DestroyContext(mImgui);
+        ImPlot::DestroyContext(mImPlot);
         SDL_DestroyProperties(mWindowProps);
         SDL_DestroyWindow(mWindow);
         mImgui = nullptr;
+        mImPlot = nullptr;
         mWindowProps = {};
         mWindow = nullptr;
 
@@ -431,6 +436,7 @@ void ContextImpl::MakeCurrent() {
     }
     if (mImgui) {
         ImGui::SetCurrentContext(mImgui);
+        ImPlot::SetCurrentContext(mImPlot);
     }
     Magnum::Platform::GLContext::makeCurrent(sGl.get());
 }

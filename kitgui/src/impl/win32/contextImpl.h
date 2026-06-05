@@ -25,6 +25,7 @@
 #include "kitgui/kitgui.h"
 
 struct ImGuiContext;
+struct ImPlotContext;
 
 namespace kitgui {
 class BaseApp;
@@ -83,6 +84,7 @@ class ContextImpl {
     std::unique_ptr<Magnum::Platform::GLContext> mGl = nullptr;
     std::unique_ptr<Magnum::DebugTools::FrameProfilerGL> mProfiler = nullptr;
     ImGuiContext* mImgui = nullptr;
+    ImPlotContext* mImPlot = nullptr;
     bool mActive = false;
     bool mDestroy = false;
     Magnum::Color4 mClearColor = {0.5f, 0.5f, 0.5f, 1.0f};

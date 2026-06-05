@@ -15,6 +15,7 @@
 #include <imgui_internal.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_win32.h>
+#include <implot.h>
 #include <algorithm>
 #include <chrono>
 #include "immediateMode/misc.h"
@@ -190,7 +191,9 @@ bool ContextImpl::Create(bool isFloating) {
     // setup imgui
     IMGUI_CHECKVERSION();
     mImgui = ImGui::CreateContext();
+    mImPlot = ImPlot::CreateContext();
     ImGui::SetCurrentContext(mImgui);
+    ImPlot::SetCurrentContext(mImPlot);
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -208,6 +211,8 @@ bool ContextImpl::Create(bool isFloating) {
 bool ContextImpl::Destroy() {
     if (IsCreated()) {
         MakeCurrent();
+        ImGui::DestroyContext(mImgui);
+        ImPlot::DestroyContext(mImPlot);
         RemoveActiveInstance(this);
         mProfiler.reset();
         mGl.reset();
@@ -317,6 +322,7 @@ void ContextImpl::MakeCurrent() {
     }
     if (mImgui) {
         ImGui::SetCurrentContext(mImgui);
+        ImPlot::SetCurrentContext(mImPlot);
     }
     Magnum::Platform::GLContext::makeCurrent(mGl.get());
 }

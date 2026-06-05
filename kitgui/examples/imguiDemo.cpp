@@ -1,5 +1,6 @@
 #include <Magnum/Math/Color.h>
 #include <imgui.h>
+#include <implot.h>
 #include "kitgui/app.h"
 #include "kitgui/context.h"
 #include "kitgui/gfx/scene.h"
@@ -14,7 +15,10 @@ class MyApp : public kitgui::BaseApp {
     ~MyApp() = default;
 
    protected:
-    void OnUpdate() override { ImGui::ShowDemoWindow(); }
+    void OnUpdate() override {
+        ImGui::ShowDemoWindow();
+        ImPlot::ShowDemoWindow();
+    }
 
    private:
 };

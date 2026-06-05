@@ -11,6 +11,15 @@ add_library(imgui STATIC EXCLUDE_FROM_ALL
 target_include_directories(imgui PRIVATE ${IMGUI_DIR})
 target_include_directories(imgui INTERFACE ${IMGUI_DIR})
 
+add_library(implot STATIC EXCLUDE_FROM_ALL
+    ${IMPLOT_DIR}/implot.cpp
+    ${IMPLOT_DIR}/implot_items.cpp
+    ${IMPLOT_DIR}/implot_demo.cpp
+)
+target_include_directories(implot PRIVATE ${IMPLOT_DIR})
+target_include_directories(implot INTERFACE ${IMPLOT_DIR})
+target_link_libraries(implot PUBLIC imgui)
+
 add_library(imgui_opengl STATIC EXCLUDE_FROM_ALL
     ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
 )
