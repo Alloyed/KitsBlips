@@ -360,11 +360,15 @@ class GuiApp : public kitgui::BaseApp {
             ImGui::Unindent();
         };
         auto GlobalParams = [&]() {
+            ImGui::SeparatorText("Global");
             kitgui::DebugParam(mParams, P_(GlobalParams::Tune));
             kitgui::DebugParam(mParams, P_(GlobalParams::Portamento));
             kitgui::DebugParam(mParams, P_(GlobalParams::ReverbMix));
             kitgui::DebugParam(mParams, P_(GlobalParams::ReverbPreset));
+
+            ImGui::SeparatorText("ROM Editor");
             mSampleLoader.OnImGui(GetContext());
+
             if (ImGui::BeginTabBar("layer")) {
                 if (ImGui::BeginTabItem("Layer 1")) {
                     LayerParams(P_(GlobalParams::Layer1Start));

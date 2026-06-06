@@ -146,6 +146,7 @@ class RawSampleLoader {
                 cloned.samples = new float[this->processedSamples.size()];
                 memcpy(cloned.samples, this->processedSamples.data(), this->processedSamples.size() * sizeof(float));
             }
+            cloned.numSamples = this->processedSamples.size();
             cloned.useLastSampleData = false;
             return cloned;
         }
@@ -167,6 +168,11 @@ class RawSampleLoader {
         }
 
         void Preprocess() {
+            if(rawSamples.empty()) 
+            {
+                processedSamples.resize(0);
+                return;
+            }
             float rateMultiple = lofiSampleRate / sampleRate;
             float rateAdvance = kitdsp::midiToRatio(lofiStretchSemis) * sampleRate / lofiSampleRate;
 
@@ -174,15 +180,15 @@ class RawSampleLoader {
             size_t numProcessedSamples = narrow_cast<size_t>(narrow_cast<float>(numRawSamples) * rateMultiple);
 
             // TODO: channel sum/pick right channel
-            auto Read = [&](size_t idx) { return idx == 0 && idx >= rawSamples[0].size() ? 0 : rawSamples[0][idx]; };
-            float rawIdx = sampleStart;
+            auto Read = [&](size_t idx) { return idx >= rawSamples[0].size() ? 0 : rawSamples[0][idx]; };
+            float rawIdx = narrow_cast<float>(sampleStart);
             processedSamples.resize(numProcessedSamples);
             for (auto& out : processedSamples) {
                 size_t idx = narrow_cast<size_t>(rawIdx);
                 float idxFrac = rawIdx - std::floor(rawIdx);
                 out = kitdsp::interpolate::cubic(Read(idx - 1), Read(idx), Read(idx + 1), Read(idx + 2), idxFrac);
                 // bitcrush
-                float bitmax = std::pow(2, lofiBitDepth - 1);  // assuming signed format
+                float bitmax = narrow_cast<float>(1 << (lofiBitDepth - 1));  // assuming signed format
                 out = std::floor(out * bitmax) / bitmax;
                 rawIdx += rateAdvance;
             }
@@ -243,7 +249,7 @@ class RawSampleLoader {
     RawSampleLoader() : mAudioHandle(mMainToAudioAcquire, mAudioToMainRelease, mAudioToMainPlayback) {}
 
     void LoadSample(size_t idx, const std::string& path) {
-        SourceFile f;
+        SourceFile& f = mMainFiles[idx];
         f.path = path;
         int midiNote = impl::TryParseMidiNoteFromFilename(path);
 
@@ -255,16 +261,22 @@ class RawSampleLoader {
 
             size_t numSamples = pFlac->totalPCMFrameCount;
             f.sampleRate = narrow_cast<float>(pFlac->sampleRate);
+            f.lofiSampleRate = f.sampleRate;
+            f.lofiBitDepth = pFlac->bitsPerSample;
+            f.sampleEnd = numSamples;
             f.loopEnd = numSamples;
-            std::vector<float> raw(numSamples * pFlac->channels);
-            size_t numSamplesRead = drflac_read_pcm_frames_f32(pFlac, numSamples, raw.data());
-            if (numSamplesRead != numSamples) {
-                return;
-            }
-            for (size_t channelIdx = 0; channelIdx < pFlac->channels; ++channelIdx) {
-                f.rawSamples.emplace_back(numSamples);
-                for (size_t idx = 0; idx < numSamples; ++idx) {
-                    f.rawSamples[channelIdx][idx] = raw[idx * channelIdx];
+            {
+                std::vector<float> raw(numSamples * pFlac->channels);
+                size_t numSamplesRead = drflac_read_pcm_frames_f32(pFlac, numSamples, raw.data());
+                if (numSamplesRead != numSamples) {
+                    return;
+                }
+                f.rawSamples.clear();
+                for (size_t channelIdx = 0; channelIdx < pFlac->channels; ++channelIdx) {
+                    f.rawSamples.emplace_back(numSamples);
+                    for (size_t idx = 0; idx < numSamples; ++idx) {
+                        f.rawSamples[channelIdx][idx] = raw[idx + (channelIdx * numSamples)];
+                    }
                 }
             }
 
@@ -277,6 +289,9 @@ class RawSampleLoader {
 
             size_t numSamples = wav.totalPCMFrameCount;
             f.sampleRate = narrow_cast<float>(wav.sampleRate);
+            f.lofiSampleRate = f.sampleRate;
+            f.lofiBitDepth = wav.bitsPerSample;
+            f.sampleEnd = numSamples;
             f.loopEnd = numSamples;
             {
                 std::vector<float> raw(numSamples * wav.channels);
@@ -285,10 +300,11 @@ class RawSampleLoader {
                     drwav_uninit(&wav);
                     return;
                 }
+                f.rawSamples.clear();
                 for (size_t channelIdx = 0; channelIdx < wav.channels; ++channelIdx) {
                     f.rawSamples.emplace_back(numSamples);
                     for (size_t idx = 0; idx < numSamples; ++idx) {
-                        f.rawSamples[channelIdx][idx] = raw[idx * channelIdx];
+                        f.rawSamples[channelIdx][idx] = raw[idx + (channelIdx * numSamples)];
                     }
                 }
             }
@@ -331,7 +347,6 @@ class RawSampleLoader {
 
         f.Preprocess();
         mOriginalFiles[idx] = f.CloneSource();
-        mMainFiles[idx] = std::move(f);
         SendFullSampleToAudio(idx);
         mSamplePaths[idx] = path;
     }
@@ -437,12 +452,14 @@ class RawSampleLoader {
             return ImGui::SliderScalar(label, ImGuiDataType_U64, (void*)data, (void*)&min, (void*)&max);
         };
 
-        if (sliderIndex("Sample Start", &file.sampleStart, 0, file.rawSamples[0].size())) {
-            SendSampleParamsToAudio(i);
+        if (sliderIndex("Sample Start", &file.sampleStart, 0, file.rawSamples.empty() ? 0 : file.rawSamples[0].size())) {
+            file.Preprocess();
+            SendFullSampleToAudio(i);
         }
 
-        if (sliderIndex("Sample End", &file.sampleEnd, 0, file.rawSamples[0].size())) {
-            SendSampleParamsToAudio(i);
+        if (sliderIndex("Sample End", &file.sampleEnd, 0, file.rawSamples.empty() ? 0 : file.rawSamples[0].size())) {
+            file.Preprocess();
+            SendFullSampleToAudio(i);
         }
 
         if (sliderIndex("Loop Start", &file.loopStart, 0, file.processedSamples.size())) {
@@ -481,11 +498,14 @@ class RawSampleLoader {
             SendFullSampleToAudio(i);
         }
 
-        if (ImPlot::BeginPlot("Waveform", ImVec2(-1.0f, 200.0f))) {
-            ImPlot::PlotShaded("##waveform", file.rawSamples[0].data(), static_cast<int>(file.rawSamples[0].size()));
+        if (ImPlot::BeginPlot("Waveform", ImVec2(-1.0f, 160.0f))) {
+            if(!file.rawSamples.empty()) {
+                //ImPlot::PlotShaded("##rawsamples", file.rawSamples[0].data(), static_cast<int>(file.rawSamples[0].size()));
+                ImPlot::PlotShaded("##processedsamples", file.processedSamples.data(), static_cast<int>(file.processedSamples.size()));
+            }
             // TODO: measured in processed sample rate not raw
-            // double markers[2] = {static_cast<double>(file.loopStart), static_cast<double>(file.loopEnd)};
-            // ImPlot::PlotInfLines("##loop", markers, 2);
+            double markers[2] = {static_cast<double>(file.loopStart), static_cast<double>(file.loopEnd)};
+            ImPlot::PlotInfLines("##loop", markers, 2);
             ImPlot::EndPlot();
         }
         ImGui::PopID();
