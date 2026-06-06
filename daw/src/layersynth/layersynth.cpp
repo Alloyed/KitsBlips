@@ -24,6 +24,7 @@
 #include <sstream>
 
 #include "descriptor.h"
+#include "kitdsp/samplePlayer.h"
 #include "shared/dr_flac.h"
 #include "shared/dr_wav.h"
 
@@ -409,19 +410,40 @@ class StateFeature : public TomlStateFeature<ParamsFeature> {
     StateFeature(BasePlugin& self, SampleLoader& sampleLoader)
         : TomlStateFeature(self, 0), mSampleLoader(sampleLoader) {}
     bool OnSave(toml::table& file) const override {
-        toml::table sampleskv{};
         for (size_t idx = 0; idx < 4; ++idx) {
-            sampleskv.insert(fmt::format("sample_{}", idx), mSampleLoader.GetSamplePath(idx));
+            const auto& f = mSampleLoader.GetSourceFile(idx);
+            toml::table sampleskv{};
+            sampleskv.insert("path", f.path);
+            sampleskv.insert("baseFrequency", f.baseFrequency);
+            sampleskv.insert("sampleStart", narrow_cast<uint32_t>(f.sampleStart));
+            sampleskv.insert("sampleEnd", narrow_cast<uint32_t>(f.sampleEnd));
+            sampleskv.insert("loopStart", narrow_cast<uint32_t>(f.loopStart));
+            sampleskv.insert("loopEnd", narrow_cast<uint32_t>(f.loopEnd));
+            sampleskv.insert("loopDirection", static_cast<int32_t>(f.loopDirection));
+            sampleskv.insert("lofiSampleRate", f.lofiSampleRate);
+            sampleskv.insert("lofiBitDepth", f.lofiBitDepth);
+            sampleskv.insert("lofiStretchSemis", f.lofiStretchSemis);
+            file.insert(fmt::format("sample_{}", idx), sampleskv);
         }
-        file.insert("samples", sampleskv);
         return true;
     }
     bool OnLoad(const toml::table& file) override {
-        auto sampleskv = file["samples"].as_table();
-        if (sampleskv) {
-            for (size_t idx = 0; idx < 4; ++idx) {
-                std::string path = sampleskv->get(fmt::format("sample_{}", idx))->value_or("");
+        for (size_t idx = 0; idx < 4; ++idx) {
+            auto sampleskv = file[fmt::format("sample_{}", idx)].as_table();
+            if (sampleskv) {
+                std::string path = sampleskv->get("path")->value_or("");
                 mSampleLoader.LoadSample(idx, path);
+                auto& f = mSampleLoader.GetSourceFile(idx);
+                f.baseFrequency = sampleskv->get("baseFrequency")->value_or(261.626f);
+                f.sampleStart = sampleskv->get("sampleStart")->value_or(0);
+                f.sampleEnd = sampleskv->get("sampleEnd")->value_or(SIZE_MAX);
+                f.loopStart = sampleskv->get("loopStart")->value_or(0);
+                f.loopEnd = sampleskv->get("loopEnd")->value_or(SIZE_MAX);
+                f.loopDirection =
+                    static_cast<kitdsp::SampleLoopDirection>(sampleskv->get("loopDirection")->value_or(0));
+                f.lofiSampleRate = sampleskv->get("lofiSampleRate")->value_or(0.0f);
+                f.lofiBitDepth = sampleskv->get("lofiBitDepth")->value_or(32);
+                f.lofiStretchSemis = sampleskv->get("lofiStretchSemis")->value_or(0.0f);
             }
         }
         return true;

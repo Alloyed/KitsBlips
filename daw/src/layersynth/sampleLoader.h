@@ -1,25 +1,27 @@
 #pragma once
 
-#include <cmath>
-#include <cstring>
 #include <etl/queue_spsc_atomic.h>
-#include <filesystem>
 #include <fmt/format.h>
-#include <iomanip>
 #include <kitdsp/samplePlayer.h>
+#include <cstring>
+#include <filesystem>
+#include <iomanip>
 #include <regex>
 #include <vector>
 
+#include "kitdsp/macros.h"
+#include "kitdsp/math/interpolate.h"
+#include "kitdsp/math/units.h"
 #include "shared/dr_flac.h"
 #include "shared/dr_wav.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <implot.h>
 #include <kitgui/context.h>
 #include <kitgui/wrap_nfd.h>
 #include <misc/cpp/imgui_stdlib.h>
-#include <implot.h>
 #endif
 
 namespace layersynth {
@@ -37,6 +39,16 @@ inline std::string FormatBytes(uint64_t bytes, int precision = 1) {
         ++unitIndex;
     }
 
+    // interesting limits
+    // sourced from: https://www.copetti.org/writings/consoles/
+    // snes:  64kb psram (audio-only, reduced by delay)
+    // psx:  508kb dram (audio-only, reduced by reverb)
+    // ps2:    2MB ram  (audio-only, reduced by reverb)
+    // n64:    4MB rdram (unified mem)
+    // nds:    4MB psram (unified mem)
+    // gc:    16MB aram (built for audio but other systems can steal memory)
+    // 3ds:  256kb cache, 128MB FCRAM (shared)
+
     std::ostringstream ss;
 
     if (unitIndex == 0) {
@@ -49,8 +61,7 @@ inline std::string FormatBytes(uint64_t bytes, int precision = 1) {
 }
 
 inline std::string FormatMidiNote(int midiNote) {
-    if (midiNote < 0 || midiNote > 127)
-    {
+    if (midiNote < 0 || midiNote > 127) {
         return "";
     }
 
@@ -97,8 +108,8 @@ inline int TryParseMidiNoteFromFilename(const std::string& filename) {
 template <size_t TNumSamples>
 class RawSampleLoader {
    public:
-    struct File {
-        std::string path;
+    /* File information send to the audio thread*/
+    struct AudioFile {
         float* samples = nullptr;
         size_t numSamples = 0;
         float sampleRate = 0.0f;
@@ -107,17 +118,77 @@ class RawSampleLoader {
         size_t loopEnd = 0;
         kitdsp::SampleLoopDirection loopDirection = kitdsp::SampleLoopDirection::Forward;
         bool useLastSampleData = false;
+    };
+    /* Source file information used to prepare AudioFiles */
+    struct SourceFile {
+        std::string path;
+        std::vector<std::vector<float>> rawSamples;
+        std::vector<float> processedSamples;
+        float sampleRate = 0.0f;
+        float baseFrequency = 261.626f;
 
-        File Clone() const {
-            File cloned = *this;
-            if (this->samples && this->numSamples > 0) {
-                cloned.samples = new float[this->numSamples];
-                memcpy(cloned.samples, this->samples, this->numSamples * sizeof(float));
+        size_t sampleStart = 0;
+        size_t sampleEnd = 0;
+
+        size_t loopStart = 0;
+        size_t loopEnd = 0;
+        kitdsp::SampleLoopDirection loopDirection = kitdsp::SampleLoopDirection::Forward;
+
+        float lofiSampleRate = 0.0f;
+        int32_t lofiBitDepth = 32;
+        float lofiStretchSemis = 0.0f;
+
+        bool useLastSampleData = false;
+
+        AudioFile Clone() const {
+            AudioFile cloned = CloneLite();
+            if (this->processedSamples.size() > 0) {
+                cloned.samples = new float[this->processedSamples.size()];
+                memcpy(cloned.samples, this->processedSamples.data(), this->processedSamples.size() * sizeof(float));
             }
+            cloned.useLastSampleData = false;
             return cloned;
         }
+
+        AudioFile CloneLite() const {
+            AudioFile cloned{};
+            cloned.baseFrequency = this->baseFrequency * kitdsp::midiToRatio(this->lofiStretchSemis);
+            cloned.sampleRate = this->lofiSampleRate;
+            cloned.loopStart = this->loopStart;
+            cloned.loopEnd = this->loopEnd;
+            cloned.loopDirection = this->loopDirection;
+            cloned.useLastSampleData = true;
+            return cloned;
+        }
+
+        SourceFile CloneSource() const {
+            SourceFile cloned = *this;
+            return cloned;
+        }
+
+        void Preprocess() {
+            float rateMultiple = lofiSampleRate / sampleRate;
+            float rateAdvance = kitdsp::midiToRatio(lofiStretchSemis) * sampleRate / lofiSampleRate;
+
+            size_t numRawSamples = sampleEnd - sampleStart;
+            size_t numProcessedSamples = narrow_cast<size_t>(narrow_cast<float>(numRawSamples) * rateMultiple);
+
+            // TODO: channel sum/pick right channel
+            auto Read = [&](size_t idx) { return idx == 0 && idx >= rawSamples[0].size() ? 0 : rawSamples[0][idx]; };
+            float rawIdx = sampleStart;
+            processedSamples.resize(numProcessedSamples);
+            for (auto& out : processedSamples) {
+                size_t idx = narrow_cast<size_t>(rawIdx);
+                float idxFrac = rawIdx - std::floor(rawIdx);
+                out = kitdsp::interpolate::cubic(Read(idx - 1), Read(idx), Read(idx + 1), Read(idx + 2), idxFrac);
+                // bitcrush
+                float bitmax = std::pow(2, lofiBitDepth - 1);  // assuming signed format
+                out = std::floor(out * bitmax) / bitmax;
+                rawIdx += rateAdvance;
+            }
+        }
     };
-    using FileQueue = etl::queue_spsc_atomic<std::pair<size_t, File*>, 200, etl::memory_model::MEMORY_MODEL_SMALL>;
+    using FileQueue = etl::queue_spsc_atomic<std::pair<size_t, AudioFile*>, 200, etl::memory_model::MEMORY_MODEL_SMALL>;
 
     struct SamplePlaybackUpdate {
         size_t fileIndex;
@@ -130,16 +201,18 @@ class RawSampleLoader {
     class AudioHandle {
        public:
         AudioHandle(FileQueue& mainToAudio, FileQueue& audioToMain, PlaybackQueue& playbackFileQueue)
-            : mMainToAudioAcquire(mainToAudio), mAudioToMainRelease(audioToMain), mAudioToMainPlayback(playbackFileQueue) {
+            : mMainToAudioAcquire(mainToAudio),
+              mAudioToMainRelease(audioToMain),
+              mAudioToMainPlayback(playbackFileQueue) {
             mFiles.fill(nullptr);
         }
         bool OnAudioUpdate() {
             bool changed = false;
-            std::pair<size_t, File*> pair;
+            std::pair<size_t, AudioFile*> pair;
             while (mMainToAudioAcquire.pop(pair)) {
                 auto [index, file] = pair;
                 if (mFiles[index]) {
-                    if(file->useLastSampleData) {
+                    if (file->useLastSampleData) {
                         file->samples = mFiles[index]->samples;
                         file->numSamples = mFiles[index]->numSamples;
                         file->useLastSampleData = false;
@@ -152,7 +225,7 @@ class RawSampleLoader {
             }
             return changed;
         }
-        const File* GetSampleData(size_t idx) const {
+        const AudioFile* GetSampleData(size_t idx) const {
             if (idx < mFiles.size()) {
                 return mFiles[idx];
             }
@@ -164,13 +237,13 @@ class RawSampleLoader {
         FileQueue& mMainToAudioAcquire;
         FileQueue& mAudioToMainRelease;
         PlaybackQueue& mAudioToMainPlayback;
-        etl::array<File*, TNumSamples> mFiles;
+        etl::array<AudioFile*, TNumSamples> mFiles;
     };
 
     RawSampleLoader() : mAudioHandle(mMainToAudioAcquire, mAudioToMainRelease, mAudioToMainPlayback) {}
 
     void LoadSample(size_t idx, const std::string& path) {
-        File f;
+        SourceFile f;
         f.path = path;
         int midiNote = impl::TryParseMidiNoteFromFilename(path);
 
@@ -182,16 +255,17 @@ class RawSampleLoader {
 
             size_t numSamples = pFlac->totalPCMFrameCount;
             f.sampleRate = narrow_cast<float>(pFlac->sampleRate);
-            f.numSamples = numSamples;
             f.loopEnd = numSamples;
-            f.samples = new float[numSamples];
             std::vector<float> raw(numSamples * pFlac->channels);
             size_t numSamplesRead = drflac_read_pcm_frames_f32(pFlac, numSamples, raw.data());
             if (numSamplesRead != numSamples) {
                 return;
             }
-            for (size_t idx = 0; idx < numSamples; ++idx) {
-                f.samples[idx] = raw[idx * pFlac->channels];
+            for (size_t channelIdx = 0; channelIdx < pFlac->channels; ++channelIdx) {
+                f.rawSamples.emplace_back(numSamples);
+                for (size_t idx = 0; idx < numSamples; ++idx) {
+                    f.rawSamples[channelIdx][idx] = raw[idx * channelIdx];
+                }
             }
 
             drflac_close(pFlac);
@@ -203,20 +277,19 @@ class RawSampleLoader {
 
             size_t numSamples = wav.totalPCMFrameCount;
             f.sampleRate = narrow_cast<float>(wav.sampleRate);
-            f.numSamples = numSamples;
             f.loopEnd = numSamples;
-            f.samples = new float[numSamples];
             {
                 std::vector<float> raw(numSamples * wav.channels);
                 size_t numSamplesRead = drwav_read_pcm_frames_f32(&wav, wav.totalPCMFrameCount, raw.data());
                 if (numSamplesRead != numSamples) {
-                    delete[] f.samples;
-                    f.samples = nullptr;
                     drwav_uninit(&wav);
                     return;
                 }
-                for (size_t idx = 0; idx < numSamples; ++idx) {
-                    f.samples[idx] = raw[idx * wav.channels];
+                for (size_t channelIdx = 0; channelIdx < wav.channels; ++channelIdx) {
+                    f.rawSamples.emplace_back(numSamples);
+                    for (size_t idx = 0; idx < numSamples; ++idx) {
+                        f.rawSamples[channelIdx][idx] = raw[idx * channelIdx];
+                    }
                 }
             }
 
@@ -256,13 +329,14 @@ class RawSampleLoader {
             f.baseFrequency = kitdsp::midiToFrequency(narrow_cast<float>(midiNote));
         }
 
-        mOriginalFiles[idx] = f.Clone();
+        f.Preprocess();
+        mOriginalFiles[idx] = f.CloneSource();
         mMainFiles[idx] = std::move(f);
         SendFullSampleToAudio(idx);
         mSamplePaths[idx] = path;
     }
 
-    std::string GetSamplePath(size_t idx) { return mSamplePaths[idx]; }
+    SourceFile& GetSourceFile(size_t idx) { return mMainFiles[idx]; }
 
     bool ImguiSampleSelect(const char* id, size_t* sampleIndex) {
         ImGui::BeginGroup();
@@ -271,9 +345,12 @@ class RawSampleLoader {
         int numColumns = 4;
         for (size_t idx = 0; idx < TNumSamples; ++idx) {
             ImGui::PushID(narrow_cast<int>(idx));
-            if (idx > 0 && idx % numColumns != 0) ImGui::SameLine();
+            if (idx > 0 && idx % numColumns != 0)
+                ImGui::SameLine();
             std::string stem = std::filesystem::path(mSamplePaths[idx]).stem().string();
-            if(stem.empty()) { stem = "<empty>";}
+            if (stem.empty()) {
+                stem = "<empty>";
+            }
             if (ImGui::Button(stem.c_str())) {
                 *sampleIndex = idx;
                 changed = true;
@@ -286,9 +363,9 @@ class RawSampleLoader {
     }
 
     void SendSampleParamsToAudio(size_t idx) {
-        File& sourceFile = mMainFiles[idx];
-        File* audioFile = new File();
-        *audioFile = sourceFile;
+        SourceFile& sourceFile = mMainFiles[idx];
+        AudioFile* audioFile = new AudioFile();
+        *audioFile = sourceFile.CloneLite();
         audioFile->samples = nullptr;
         audioFile->numSamples = 0;
         audioFile->useLastSampleData = true;
@@ -296,17 +373,17 @@ class RawSampleLoader {
     }
 
     void SendFullSampleToAudio(size_t idx) {
-        File& sourceFile = mMainFiles[idx];
-        File* audioFile = new File();
+        SourceFile& sourceFile = mMainFiles[idx];
+        AudioFile* audioFile = new AudioFile();
         *audioFile = sourceFile.Clone();
         mMainToAudioAcquire.push({idx, audioFile});
     }
 
     void OnMainUpdate() {
-        std::pair<size_t, File*> pair;
+        std::pair<size_t, AudioFile*> pair;
         while (mAudioToMainRelease.pop(pair)) {
             auto* file = pair.second;
-            if(file->samples) {
+            if (file->samples) {
                 delete[] file->samples;
             }
             delete file;
@@ -317,16 +394,14 @@ class RawSampleLoader {
     void OnImGui(kitgui::Context& ctx) {
         size_t totalBytes = 0;
         for (size_t i = 0; i < TNumSamples; ++i) {
-            if (mMainFiles[i].samples) {
-                totalBytes += mMainFiles[i].numSamples * sizeof(float);
-            }
+            totalBytes += mMainFiles[i].processedSamples.size() * mMainFiles[i].lofiBitDepth / 8;
         }
         ImGui::Text("Total sample memory: %s", impl::FormatBytes(totalBytes).c_str());
 
         ImguiSampleSelect("##currentSample", &mCurrentSampleIndex);
 
         size_t i = mCurrentSampleIndex;
-        File& file = mMainFiles[i];
+        SourceFile& file = mMainFiles[i];
         ImGui::PushID(static_cast<int>(i));
         if (ImGui::InputText(fmt::format("Sample {}", i).c_str(), &mSamplePaths[i],
                              ImGuiInputTextFlags_EnterReturnsTrue)) {
@@ -350,46 +425,68 @@ class RawSampleLoader {
                 mSampleStatus[i] = NFD_GetError();
             }
         }
-        if (file.samples) {
-            int note = narrow_cast<int>(kitdsp::frequencyToMidi(file.baseFrequency));
-            // TODO: print note name
-            if (ImGui::SliderInt("Note", &note, 0, 127)) {
-                file.baseFrequency = kitdsp::midiToFrequency(narrow_cast<float>(note));
-                SendSampleParamsToAudio(i);
-            }
+        int note = narrow_cast<int>(kitdsp::frequencyToMidi(file.baseFrequency));
+        // TODO: print note name
+        if (ImGui::SliderInt("Note", &note, 0, 127)) {
+            file.baseFrequency = kitdsp::midiToFrequency(narrow_cast<float>(note));
+            SendSampleParamsToAudio(i);
+        }
 
-            auto sliderIndex = [](const char* label, size_t* data, size_t min, size_t max) {
-                static_assert(sizeof(size_t) == sizeof(uint64_t));
-                return ImGui::SliderScalar(label, ImGuiDataType_U64, (void*)data, (void*)&min, (void*)&max);
-            };
+        auto sliderIndex = [](const char* label, size_t* data, size_t min, size_t max) {
+            static_assert(sizeof(size_t) == sizeof(uint64_t));
+            return ImGui::SliderScalar(label, ImGuiDataType_U64, (void*)data, (void*)&min, (void*)&max);
+        };
 
-            if (sliderIndex("Loop Start", &file.loopStart, 0, file.numSamples)) {
-                SendSampleParamsToAudio(i);
-            }
+        if (sliderIndex("Sample Start", &file.sampleStart, 0, file.rawSamples[0].size())) {
+            SendSampleParamsToAudio(i);
+        }
 
-            if (sliderIndex("Loop End", &file.loopEnd, 0, file.numSamples)) {
-                SendSampleParamsToAudio(i);
-            }
+        if (sliderIndex("Sample End", &file.sampleEnd, 0, file.rawSamples[0].size())) {
+            SendSampleParamsToAudio(i);
+        }
 
-            const char* loopNames[] = {"No Loop", "Forward", "Backward", "Ping Pong"};
-            int dir = static_cast<int>(file.loopDirection);
-            if (ImGui::Combo("Loop Dir", &dir, loopNames, IM_ARRAYSIZE(loopNames))) {
-                file.loopDirection = static_cast<kitdsp::SampleLoopDirection>(dir);
-                SendSampleParamsToAudio(i);
-            }
+        if (sliderIndex("Loop Start", &file.loopStart, 0, file.processedSamples.size())) {
+            SendSampleParamsToAudio(i);
+        }
 
-            if (ImGui::Button("Reset")) {
-                mMainFiles[i] = mOriginalFiles[i].Clone();
-                SendFullSampleToAudio(i);
-            }
+        if (sliderIndex("Loop End", &file.loopEnd, 0, file.processedSamples.size())) {
+            SendSampleParamsToAudio(i);
+        }
 
-            if (ImPlot::BeginPlot("Waveform", ImVec2(-1.0f, 200.0f))) {
-                ImPlot::PlotShaded("##waveform", file.samples, static_cast<int>(file.numSamples));
-                double markers[2] = {static_cast<double>(file.loopStart),
-                                     static_cast<double>(file.loopEnd)};
-                ImPlot::PlotInfLines("##loop", markers, 2);
-                ImPlot::EndPlot();
-            }
+        const char* loopNames[] = {"No Loop", "Forward", "Backward", "Ping Pong"};
+        int dir = static_cast<int>(file.loopDirection);
+        if (ImGui::Combo("Loop Dir", &dir, loopNames, IM_ARRAYSIZE(loopNames))) {
+            file.loopDirection = static_cast<kitdsp::SampleLoopDirection>(dir);
+            SendSampleParamsToAudio(i);
+        }
+
+        if (ImGui::InputFloat("Lofi Sample Rate", &file.lofiSampleRate, 8000.0f, file.sampleRate)) {
+            file.lofiSampleRate = std::floor(file.lofiSampleRate);
+            file.Preprocess();
+            SendFullSampleToAudio(i);
+        }
+
+        if (ImGui::InputInt("Lofi Bit Depth", &file.lofiBitDepth, 8, 32)) {
+            file.Preprocess();
+            SendFullSampleToAudio(i);
+        }
+
+        if (ImGui::SliderFloat("Lofi Stretch", &file.lofiStretchSemis, 0.0f, 32.0f)) {
+            file.Preprocess();
+            SendFullSampleToAudio(i);
+        }
+
+        if (ImGui::Button("Reset")) {
+            mMainFiles[i] = mOriginalFiles[i].CloneSource();
+            SendFullSampleToAudio(i);
+        }
+
+        if (ImPlot::BeginPlot("Waveform", ImVec2(-1.0f, 200.0f))) {
+            ImPlot::PlotShaded("##waveform", file.rawSamples[0].data(), static_cast<int>(file.rawSamples[0].size()));
+            // TODO: measured in processed sample rate not raw
+            // double markers[2] = {static_cast<double>(file.loopStart), static_cast<double>(file.loopEnd)};
+            // ImPlot::PlotInfLines("##loop", markers, 2);
+            ImPlot::EndPlot();
         }
         ImGui::PopID();
     }
@@ -402,8 +499,8 @@ class RawSampleLoader {
     etl::array<std::string, TNumSamples> mSamplePaths{};
     size_t mCurrentSampleIndex = 0;
     etl::array<std::string, TNumSamples> mSampleStatus{};
-    etl::array<File, TNumSamples> mMainFiles{};
-    etl::array<File, TNumSamples> mOriginalFiles{};
+    etl::array<SourceFile, TNumSamples> mMainFiles{};
+    etl::array<SourceFile, TNumSamples> mOriginalFiles{};
 };
 using SampleLoader = RawSampleLoader<4>;
 }  // namespace layersynth
