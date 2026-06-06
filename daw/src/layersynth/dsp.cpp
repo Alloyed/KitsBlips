@@ -83,7 +83,7 @@ clapeze::ProcessStatus Global::ProcessAudio(clapeze::StereoAudioBuffer& out) {
             kitdsp::float_2 outf = {out.left[idx], out.right[idx]};
             kitdsp::float_2 tmp = mReverb->Process(outf);
             tmp = kitdsp::lerp<kitdsp::float_2>(outf, tmp, mReverbMix);
-            tmp = mLimit.Process(tmp);
+            //tmp = mLimit.Process(tmp);
             out.left[idx] = tmp.left;
             out.right[idx] = tmp.right;
         }

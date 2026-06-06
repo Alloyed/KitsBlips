@@ -173,11 +173,10 @@ class RawSampleLoader {
                 processedSamples.resize(0);
                 return;
             }
-            float rateMultiple = lofiSampleRate / sampleRate;
             float rateAdvance = kitdsp::midiToRatio(lofiStretchSemis) * sampleRate / lofiSampleRate;
 
             size_t numRawSamples = sampleEnd - sampleStart;
-            size_t numProcessedSamples = narrow_cast<size_t>(narrow_cast<float>(numRawSamples) * rateMultiple);
+            size_t numProcessedSamples = narrow_cast<size_t>(narrow_cast<float>(numRawSamples) / rateAdvance);
 
             // TODO: channel sum/pick right channel
             auto Read = [&](size_t idx) { return idx >= rawSamples[0].size() ? 0 : rawSamples[0][idx]; };
@@ -488,7 +487,9 @@ class RawSampleLoader {
             SendFullSampleToAudio(i);
         }
 
-        if (ImGui::SliderFloat("Lofi Stretch", &file.lofiStretchSemis, 0.0f, 32.0f)) {
+        int32_t stretch = file.lofiStretchSemis;
+        if (ImGui::SliderInt("Lofi Stretch", &stretch, 0.0f, 32.0f)) {
+            file.lofiStretchSemis = stretch;
             file.Preprocess();
             SendFullSampleToAudio(i);
         }

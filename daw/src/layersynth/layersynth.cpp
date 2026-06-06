@@ -60,6 +60,7 @@ enum class EnvParams : clap_id {
 };
 enum class LayerParams : clap_id {
     WaveIndex,
+    WavePlayback,
     PitchCoarse,
     PitchFine,
     FilterMode,
@@ -128,7 +129,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                        ParamsFeature::AudioHandle& params,
                        SampleLoader::AudioHandle& sampleLoader)
         : InstrumentProcessor(host, params), mGlobal(*this, params), mSampleLoader(sampleLoader) {
-        static_assert(P_(GlobalParams::Count) == 76, "Update handlers");
+        static_assert(P_(GlobalParams::Count) == 80, "Update handlers");
         params.RegisterHandler([&](clap_id id) {
             auto HandleLfo = [&](kitdsp::lfo::TriangleOscillator& lfo, clap_id inner) {
                 if (inner == P_(LfoParams::Rate)) {
@@ -149,7 +150,12 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
             auto HandleLayer = [&](Layer& layer, clap_id inner) {
                 clap_id start = id - inner;
                 if (inner == P_(LayerParams::WaveIndex)) {
-                    layer.mWaveIndex = mParams.Get<IntegerParam>(id);
+                    layer.mWaveIndex = mParams.Get<IntegerParam>(id) - 1;
+                    UpdateSamplers();
+                } else if (inner == P_(LayerParams::WavePlayback)) {
+                    for (Voice& voice : layer.mVoices.IterAll()) {
+                        voice.mPcmSampler.SetInterpolate(mParams.Get<EnumParam<kitdsp::interpolate::InterpolationStrategy>>(id));
+                    }
                 } else if (inner == P_(LayerParams::PitchCoarse) || inner == P_(LayerParams::PitchFine)) {
                     layer.mNoteOffset =
                         narrow_cast<float>(mParams.Get<IntegerParam>(start + P_(LayerParams::PitchCoarse))) +
@@ -224,23 +230,25 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
     }
     ~Processor() = default;
 
+    void UpdateSamplers() {
+        for (auto& layer : mGlobal.mLayers) {
+            const auto* data = mSampleLoader.GetSampleData(layer.mWaveIndex);
+            for (Voice& voice : layer.mVoices.IterAll()) {
+                if (data) {
+                    etl::span<float> dd(const_cast<float*>(data->samples), data->numSamples);
+                    voice.mPcmSampler.SetSampleData(dd, data->sampleRate);
+                    voice.mPcmSampler.SetLoop(data->loopDirection, data->loopStart, data->loopEnd);
+                    voice.mBaseFrequency = data->baseFrequency;
+                } else {
+                    voice.mPcmSampler.SetSampleData({}, 0.0f);
+                }
+            }
+        }
+    }
+
     clapeze::ProcessStatus ProcessAudio(clapeze::StereoAudioBuffer& out) override {
         if (mSampleLoader.OnAudioUpdate()) {
-            size_t idx = 0;
-            for (auto& layer : mGlobal.mLayers) {
-                const auto* data = mSampleLoader.GetSampleData(idx);
-                for (Voice& voice : layer.mVoices.IterAll()) {
-                    if (data) {
-                        etl::span<float> dd(const_cast<float*>(data->samples), data->numSamples);
-                        voice.mPcmSampler.SetSampleData(dd, data->sampleRate);
-                        voice.mPcmSampler.SetLoop(data->loopDirection, data->loopStart, data->loopEnd);
-                        voice.mBaseFrequency = data->baseFrequency;
-                    } else {
-                        voice.mPcmSampler.SetSampleData({}, 0.0f);
-                    }
-                }
-                idx++;
-            }
+            UpdateSamplers();
         }
         return mGlobal.ProcessAudio(out);
     }
@@ -315,7 +323,7 @@ class GuiApp : public kitgui::BaseApp {
             ImGui::EndMainMenuBar();
         }
 
-        static_assert(P_(GlobalParams::Count) == 76, "Update UI");
+        static_assert(P_(GlobalParams::Count) == 80, "Update UI");
 #define XID(enum) (first + P_(enum))
         auto LfoParams = [&](clap_id first) { kitgui::DebugParam(mParams, XID(LfoParams::Rate)); };
         auto EnvParams = [&](clap_id first) {
@@ -329,6 +337,7 @@ class GuiApp : public kitgui::BaseApp {
             ImGui::SeparatorText("Wave Generator");
             ImGui::PushID("wg");
             kitgui::DebugParam(mParams, XID(LayerParams::WaveIndex));
+            kitgui::DebugEnumParam<kitdsp::interpolate::InterpolationStrategy>(mParams, XID(LayerParams::WavePlayback));
             kitgui::DebugParam(mParams, XID(LayerParams::PitchCoarse));
             kitgui::DebugParam(mParams, XID(LayerParams::PitchFine));
             LfoParams(XID(LayerParams::VoiceLfoStart));
@@ -469,7 +478,7 @@ class Plugin : public InstrumentPlugin {
         sLog.Config(GetHost());
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), P_(GlobalParams::Count));
-        static_assert(P_(GlobalParams::Count) == 76, "Update Traits");
+        static_assert(P_(GlobalParams::Count) == 80, "Update Traits");
 #define XID(enum) (first + P_(enum))
         auto LfoParams = [&](const std::string& pre, clap_id first) {
             params.Parameter(XID(LfoParams::Rate), new LfoRateParam(pre + "_rate", "Rate"));
@@ -482,6 +491,7 @@ class Plugin : public InstrumentPlugin {
         };
         auto LayerParams = [&](const std::string& pre, clap_id first) {
             params.Parameter(XID(LayerParams::WaveIndex), new IntegerParam(pre + "_wave", "Wave", 1, 4, 1));
+            params.Parameter(XID(LayerParams::WavePlayback), new EnumParam<kitdsp::interpolate::InterpolationStrategy>(pre + "_playback", "Interpolation", {"None","Linear","Hermite","Cubic"}, kitdsp::interpolate::InterpolationStrategy::Cubic));
             params.Parameter(XID(LayerParams::PitchCoarse),
                              new IntegerParam(pre + "_pitchCoarse", "Pitch Coarse", -32, 32, 0, "semis"));
             params.Parameter(XID(LayerParams::PitchFine),

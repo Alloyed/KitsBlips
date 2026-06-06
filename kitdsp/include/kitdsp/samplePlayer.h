@@ -92,6 +92,10 @@ class SamplePlayer {
         mAdvance = speed * mBufSampleRate / sampleRate;
     }
 
+    void SetInterpolate(kitdsp::interpolate::InterpolationStrategy strategy) {
+        mInterpolate = strategy;
+    }
+
     /**
      * Play sample from start (or end, if playing backwards). If already playing, apply small crossfade to avoid clicks.
      */
@@ -99,7 +103,7 @@ class SamplePlayer {
         if (mAdvance > 0) {
             Play(0.0f);
         } else {
-            Play(mRawSamples.size());
+            Play(narrow_cast<float>(mRawSamples.size()));
         }
     }
     /**
