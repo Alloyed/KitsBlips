@@ -1,14 +1,20 @@
 #include <clap/ext/params.h>
+#include <clapeze/basePlugin.h>
+#include <clapeze/common.h>
 #include <clapeze/entryPoint.h>
 #include <clapeze/features/params/enumParametersFeature.h>
 #include <clapeze/features/params/parameterTypes.h>
 #include <clapeze/features/presetFeature.h>
+#include <clapeze/features/state/baseStateFeature.h>
 #include <clapeze/features/state/tomlStateFeature.h>
+#include <clapeze/impl/stringUtils.h>
 #include <clapeze/instrumentPlugin.h>
+#include <clapeze/processor/transport.h>
 #include <clapeze/processor/voice.h>
 #include <etl/flat_multimap.h>
 #include <etl/vector.h>
 #include <kitdsp/control/adsr.h>
+#include <kitdsp/control/approach.h>
 #include <kitdsp/control/gate.h>
 #include <kitdsp/control/lfo.h>
 #include <kitdsp/filters/onePole.h>
@@ -21,15 +27,9 @@
 #include <memory>
 #include <sstream>
 
-#include "clapeze/basePlugin.h"
-#include "clapeze/common.h"
-#include "clapeze/features/state/baseStateFeature.h"
-#include "clapeze/impl/stringUtils.h"
-#include "clapeze/processor/transport.h"
 #include "descriptor.h"
 #include "gui/parameterControls.h"
 #include "gui/presetBrowser.h"
-#include "kitdsp/control/approach.h"
 
 #if KITSBLIPS_ENABLE_GUI
 #include <clapeze/features/assetsFeature.h>
@@ -441,7 +441,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
 
             // vca
             // We know this will usually be used polyphonically, so let's get some headroom
-            constexpr float cVcaBaseGainRatio = 0.2f;
+            static const float cVcaBaseGainRatio = kitdsp::dbToRatio(-10.0f);
             float vcaGain = kitdsp::dbToRatio(params.Get<Params::VcaGain>()) * cVcaBaseGainRatio;
             float vcaModAmount = params.Get<Params::VcaLfoAmount>();
             float vcaEnvDisabled = params.Get<Params::VcaEnvDisabled>() == OnOff::On ? 1.0f : 0.0f;  // TODO: xfade

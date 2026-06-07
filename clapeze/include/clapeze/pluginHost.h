@@ -61,7 +61,7 @@ class PluginHost {
     /** Add a callback to be run every time Log() is called. use for log visualization */
     void SetLogFn(LogFn fn);
 
-    /** requests that the host restarts the plugin next chance it gets. */
+    /** requests that the host deactivates and then reactivates the processing thread the next chance it gets. */
     void RequestRestart() const;
 
     /** requests that the host activates the processing thread the next chance it gets. */

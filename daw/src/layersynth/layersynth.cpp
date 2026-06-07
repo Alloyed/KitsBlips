@@ -19,14 +19,12 @@
 #include <kitdsp/control/adsr.h>
 #include <kitdsp/control/lfo.h>
 #include <kitdsp/filters/svf.h>
-#include <kitdsp/util/macros.h>
+#include <kitdsp/sampling/samplePlayer.h>
 #include <kitdsp/sampling/sampler.h>
+#include <kitdsp/util/macros.h>
 #include <sstream>
 
 #include "descriptor.h"
-#include "kitdsp/sampling/samplePlayer.h"
-#include "shared/dr_flac.h"
-#include "shared/dr_wav.h"
 
 #include "layersynth/dsp.h"
 #include "layersynth/sampleLoader.h"
@@ -63,19 +61,22 @@ enum class LayerParams : clap_id {
     WavePlayback,
     PitchCoarse,
     PitchFine,
+    PitchLfoMult,
     FilterMode,
     FilterNote,
     FilterRes,
     FilterTrackingMult,
+    FilterEnvMult,
     VcaMult,
     VcaVelocityMult,
     ChorusMix,
     ChorusRate,
     ChorusDepth,
     ChorusFeedback,
-    VoiceEnvStart,
-    VoiceLfoStart = VoiceEnvStart + P_(EnvParams::Count),
-    Count = VoiceLfoStart + P_(LfoParams::Count),
+    FilterEnvStart,
+    VcaEnvStart = FilterEnvStart + P_(EnvParams::Count),
+    PitchLfoStart = VcaEnvStart + P_(EnvParams::Count),
+    Count = PitchLfoStart + P_(LfoParams::Count),
 };
 enum class GlobalParams {
     Tune,
@@ -129,7 +130,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                        ParamsFeature::AudioHandle& params,
                        SampleLoader::AudioHandle& sampleLoader)
         : InstrumentProcessor(host, params), mGlobal(*this, params), mSampleLoader(sampleLoader) {
-        static_assert(P_(GlobalParams::Count) == 80, "Update handlers");
+        static_assert(P_(GlobalParams::Count) == 104, "Update handlers");
         params.RegisterHandler([&](clap_id id) {
             auto HandleLfo = [&](kitdsp::lfo::TriangleOscillator& lfo, clap_id inner) {
                 if (inner == P_(LfoParams::Rate)) {
@@ -154,12 +155,15 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                     UpdateSamplers();
                 } else if (inner == P_(LayerParams::WavePlayback)) {
                     for (Voice& voice : layer.mVoices.IterAll()) {
-                        voice.mPcmSampler.SetInterpolate(mParams.Get<EnumParam<kitdsp::interpolate::InterpolationStrategy>>(id));
+                        voice.mPcmSampler.SetInterpolate(
+                            mParams.Get<EnumParam<kitdsp::interpolate::InterpolationStrategy>>(id));
                     }
                 } else if (inner == P_(LayerParams::PitchCoarse) || inner == P_(LayerParams::PitchFine)) {
                     layer.mNoteOffset =
                         narrow_cast<float>(mParams.Get<IntegerParam>(start + P_(LayerParams::PitchCoarse))) +
                         mParams.Get<NumericParam>(start + P_(LayerParams::PitchFine)) / 100.0f;
+                } else if (inner == P_(LayerParams::PitchLfoMult)) {
+                    layer.mPitchLfoMult = mParams.Get<NumericParam>(id);
                 } else if (inner == P_(LayerParams::FilterMode)) {
                     for (Voice& voice : layer.mVoices.IterAll()) {
                         voice.mFilterMode = mParams.Get<EnumParam<kitdsp::SvfFilterMode>>(id);
@@ -168,6 +172,8 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                     layer.mFilterNote = mParams.Get<PercentParam>(id) * 127.0f;
                 } else if (inner == P_(LayerParams::FilterTrackingMult)) {
                     layer.mFilterTrackingMult = mParams.Get<PercentParam>(id);
+                } else if (inner == P_(LayerParams::FilterEnvMult)) {
+                    layer.mFilterEnvMult = mParams.Get<NumericParam>(id) * 64.0f;
                 } else if (inner == P_(LayerParams::FilterRes)) {
                     layer.mFilterRes = mParams.Get<PercentParam>(id);
                 } else if (inner == P_(LayerParams::VcaMult)) {
@@ -192,13 +198,17 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
                     if (layer.mChorus) {
                         layer.mChorus->cfg.feedback = mParams.Get<PercentParam>(id);
                     }
-                } else if (inner >= P_(LayerParams::VoiceEnvStart) && inner < P_(LayerParams::VoiceLfoStart)) {
+                } else if (inner >= P_(LayerParams::FilterEnvStart) && inner < P_(LayerParams::VcaEnvStart)) {
                     for (Voice& voice : layer.mVoices.IterAll()) {
-                        HandleEnv(voice.mVolumeEnv, inner - P_(LayerParams::VoiceEnvStart));
+                        HandleEnv(voice.mFilterEnv, inner - P_(LayerParams::FilterEnvStart));
                     }
-                } else if (inner >= P_(LayerParams::VoiceLfoStart) && inner < P_(LayerParams::Count)) {
+                } else if (inner >= P_(LayerParams::VcaEnvStart) && inner < P_(LayerParams::PitchLfoStart)) {
                     for (Voice& voice : layer.mVoices.IterAll()) {
-                        HandleLfo(voice.mPitchLfo, inner - P_(LayerParams::VoiceLfoStart));
+                        HandleEnv(voice.mVolumeEnv, inner - P_(LayerParams::VcaEnvStart));
+                    }
+                } else if (inner >= P_(LayerParams::PitchLfoStart) && inner < P_(LayerParams::Count)) {
+                    for (Voice& voice : layer.mVoices.IterAll()) {
+                        HandleLfo(voice.mPitchLfo, inner - P_(LayerParams::PitchLfoStart));
                     }
                 }
             };
@@ -317,13 +327,16 @@ class GuiApp : public kitgui::BaseApp {
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Debug")) {
+                if (ImGui::MenuItem("Request Restart")) {
+                    mPlugin.GetHost().RequestRestart();
+                }
                 ImGui::MenuItem("AppLog", nullptr, &(sLog.Show));
                 ImGui::EndMenu();
             }
             ImGui::EndMainMenuBar();
         }
 
-        static_assert(P_(GlobalParams::Count) == 80, "Update UI");
+        static_assert(P_(GlobalParams::Count) == 104, "Update UI");
 #define XID(enum) (first + P_(enum))
         auto LfoParams = [&](clap_id first) { kitgui::DebugParam(mParams, XID(LfoParams::Rate)); };
         auto EnvParams = [&](clap_id first) {
@@ -340,7 +353,8 @@ class GuiApp : public kitgui::BaseApp {
             kitgui::DebugEnumParam<kitdsp::interpolate::InterpolationStrategy>(mParams, XID(LayerParams::WavePlayback));
             kitgui::DebugParam(mParams, XID(LayerParams::PitchCoarse));
             kitgui::DebugParam(mParams, XID(LayerParams::PitchFine));
-            LfoParams(XID(LayerParams::VoiceLfoStart));
+            kitgui::DebugParam(mParams, XID(LayerParams::PitchLfoMult));
+            LfoParams(XID(LayerParams::PitchLfoStart));
             ImGui::PopID();
 
             ImGui::SeparatorText("Filter");
@@ -349,13 +363,15 @@ class GuiApp : public kitgui::BaseApp {
             kitgui::DebugParam(mParams, XID(LayerParams::FilterNote));
             kitgui::DebugParam(mParams, XID(LayerParams::FilterRes));
             kitgui::DebugParam(mParams, XID(LayerParams::FilterTrackingMult));
+            kitgui::DebugParam(mParams, XID(LayerParams::FilterEnvMult));
+            EnvParams(XID(LayerParams::FilterEnvStart));
             ImGui::PopID();
 
             ImGui::SeparatorText("Volume");
             ImGui::PushID("vca");
             kitgui::DebugParam(mParams, XID(LayerParams::VcaMult));
             kitgui::DebugParam(mParams, XID(LayerParams::VcaVelocityMult));
-            EnvParams(XID(LayerParams::VoiceEnvStart));
+            EnvParams(XID(LayerParams::VcaEnvStart));
             ImGui::PopID();
 
             ImGui::SeparatorText("Chorus");
@@ -425,7 +441,7 @@ class StateFeature : public TomlStateFeature<ParamsFeature> {
     bool OnSave(toml::table& file) const override {
         for (size_t idx = 0; idx < SampleLoader::kNumSamples; ++idx) {
             const auto& f = mSampleLoader.GetSourceFile(idx);
-            if(!f.path.empty()) {
+            if (!f.path.empty()) {
                 toml::table table{};
                 table.insert("path", f.path);
                 table.insert("baseFrequency", f.baseFrequency);
@@ -455,8 +471,7 @@ class StateFeature : public TomlStateFeature<ParamsFeature> {
                 f.sampleEnd = table->at_path("sampleEnd").value_or(SIZE_MAX);
                 f.loopStart = table->at_path("loopStart").value_or(0.0f);
                 f.loopEnd = table->at_path("loopEnd").value_or(1.0f);
-                f.loopDirection =
-                    static_cast<kitdsp::SampleLoopDirection>(table->at_path("loopDirection").value_or(0));
+                f.loopDirection = static_cast<kitdsp::SampleLoopDirection>(table->at_path("loopDirection").value_or(0));
                 f.enableLofi = table->at_path("enableLofi").value_or(false);
                 f.lofiSampleRate = table->at_path("lofiSampleRate").value_or(0.0f);
                 f.lofiBitDepth = table->at_path("lofiBitDepth").value_or(32);
@@ -482,7 +497,7 @@ class Plugin : public InstrumentPlugin {
         sLog.Config(GetHost());
 
         ParamsFeature& params = ConfigFeature<ParamsFeature>(GetHost(), P_(GlobalParams::Count));
-        static_assert(P_(GlobalParams::Count) == 80, "Update Traits");
+        static_assert(P_(GlobalParams::Count) == 104, "Update Traits");
 #define XID(enum) (first + P_(enum))
         auto LfoParams = [&](const std::string& pre, clap_id first) {
             params.Parameter(XID(LfoParams::Rate), new LfoRateParam(pre + "_rate", "Rate"));
@@ -494,12 +509,18 @@ class Plugin : public InstrumentPlugin {
             params.Parameter(XID(EnvParams::Release), new EnvParam(pre + "_release", "Release", 20.0f, 10000.0f));
         };
         auto LayerParams = [&](const std::string& pre, clap_id first) {
-            params.Parameter(XID(LayerParams::WaveIndex), new IntegerParam(pre + "_wave", "Wave", 1, SampleLoader::kNumSamples, 1));
-            params.Parameter(XID(LayerParams::WavePlayback), new EnumParam<kitdsp::interpolate::InterpolationStrategy>(pre + "_playback", "Interpolation", {"None","Linear","Hermite","Cubic"}, kitdsp::interpolate::InterpolationStrategy::Cubic));
+            params.Parameter(XID(LayerParams::WaveIndex),
+                             new IntegerParam(pre + "_wave", "Wave", 1, SampleLoader::kNumSamples, 1));
+            params.Parameter(XID(LayerParams::WavePlayback),
+                             new EnumParam<kitdsp::interpolate::InterpolationStrategy>(
+                                 pre + "_playback", "Interpolation", {"None", "Linear", "Hermite", "Cubic"},
+                                 kitdsp::interpolate::InterpolationStrategy::Cubic));
             params.Parameter(XID(LayerParams::PitchCoarse),
                              new IntegerParam(pre + "_pitchCoarse", "Pitch Coarse", -32, 32, 0, "semis"));
             params.Parameter(XID(LayerParams::PitchFine),
                              new NumericParam(pre + "_pitchFine", "Pitch Fine", -100.0f, 100.0f, 0.0f, "cents"));
+            params.Parameter(XID(LayerParams::PitchLfoMult),
+                             new NumericParam(pre + "_pitchLfo", "Pitch LFO", 0.0f, 24.0f, 0.0f, "semis"));
             params.Parameter(XID(LayerParams::FilterMode),
                              new EnumParam<kitdsp::SvfFilterMode>(pre + "_filterMode", "Filter Mode",
                                                                   {"Lowpass", "Highpass", "Bandpass"},
@@ -509,6 +530,8 @@ class Plugin : public InstrumentPlugin {
                              new PercentParam(pre + "_filterRes", "Filter Resonance", 0.0f));
             params.Parameter(XID(LayerParams::FilterTrackingMult),
                              new PercentParam(pre + "_filterTrack", "Filter Tracking", 0.0f));
+            params.Parameter(XID(LayerParams::FilterEnvMult),
+                             new NumericParam(pre + "_filterEnvMult", "Filter Env", -1.0f, 1.0f, 0.0f));
 
             //
             params.Parameter(
@@ -523,8 +546,9 @@ class Plugin : public InstrumentPlugin {
                              new PercentParam(pre + "_chorusDepth", "Chorus Depth", 1.0f));
             params.Parameter(XID(LayerParams::ChorusFeedback),
                              new PercentParam(pre + "_chorusFeedback", "Chorus Feedback", 0.0f));
-            EnvParams(pre + "VoiceEnv", XID(LayerParams::VoiceEnvStart));
-            LfoParams(pre + "VoiceLfo", XID(LayerParams::VoiceLfoStart));
+            EnvParams(pre + "FilterEnv", XID(LayerParams::FilterEnvStart));
+            EnvParams(pre + "VoiceEnv", XID(LayerParams::VcaEnvStart));
+            LfoParams(pre + "VoiceLfo", XID(LayerParams::PitchLfoStart));
         };
         auto GlobalParams = [&]() {
             params.Parameter(P_(GlobalParams::Tune), new NumericParam("tune", "Tune", 20.0f, 1000.0f, 440.0f, "hz"));

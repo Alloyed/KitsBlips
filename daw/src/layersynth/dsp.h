@@ -36,17 +36,26 @@ class Voice {
    public:
     explicit Voice(clapeze::BaseProcessor& p) { (void)p; }
     void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity);
-    void ProcessNoteOff() { mVolumeEnv.TriggerClose(); }
-    void ProcessChoke() { mVolumeEnv.TriggerChoke(); }
+    void ProcessNoteOff() {
+        mFilterEnv.TriggerClose();
+        mVolumeEnv.TriggerClose();
+    }
+    void ProcessChoke() {
+        mFilterEnv.TriggerChoke();
+        mVolumeEnv.TriggerChoke();
+    }
     void Reset() {
         mPcmSampler.Reset();
         mFilter.Reset();
+        mFilterEnv.Reset();
         mVolumeEnv.Reset();
+        mPitchLfo.Reset();
     }
     bool ProcessAudio(clapeze::StereoAudioBuffer& out);
 
     SamplePlayer mPcmSampler;
     kitdsp::EmileSvf mFilter{};
+    Envelope mFilterEnv{};
     Envelope mVolumeEnv{};
     Lfo mPitchLfo{};
     kitdsp::Approach mNote{};
@@ -86,7 +95,8 @@ class Layer {
     void Activate(float sampleRate, size_t maxBlockSize, kitdsp::DynamicSpanAllocator<float>& memory) {
         mVoices.SetNumVoices(cMaxVoices);
         mVoices.SetStrategy(clapeze::VoiceStrategy::Poly);
-        mChorus = std::make_optional<kitdsp::Chorus>(memory.alloc(narrow_cast<size_t>(cMaxChorusTimeMs*sampleRate/1000.0f)), sampleRate);
+        mChorus = std::make_optional<kitdsp::Chorus>(
+            memory.alloc(narrow_cast<size_t>(cMaxChorusTimeMs * sampleRate / 1000.0f)), sampleRate);
         mScratch.Resize(maxBlockSize);
     }
 
@@ -102,6 +112,7 @@ class Layer {
     float mFilterNote{};
     float mFilterRes{};
     float mFilterTrackingMult{};
+    float mFilterEnvMult{};
 
     float mVcaMult{};
     float mVcaVelocityMult{};

@@ -5,18 +5,19 @@ bool Voice::ProcessAudio(clapeze::StereoAudioBuffer& out) {
     const auto& layer = *mLayer;
     const auto& global = *mGlobal;
 
-    if(mBaseFrequency == 0.0f) 
-    {
+    if (mBaseFrequency == 0.0f) {
         return false;
     }
 
     for (size_t index = 0; index < out.left.size(); ++index) {
+        mFilterEnv.Process();
         mVolumeEnv.Process();
         mPitchLfo.Process();
         mNote.Process();
 
-        float pitchNote = mNote.current + layer.mNoteOffset + (mPitchLfo.GetValue() * .0f);
-        float filterNote = layer.mFilterNote + (mNote.current * layer.mFilterTrackingMult);
+        float pitchNote = mNote.current + layer.mNoteOffset + (mPitchLfo.GetValue() * layer.mPitchLfoMult);
+        float filterNote = layer.mFilterNote + (pitchNote * layer.mFilterTrackingMult) +
+                           (mFilterEnv.GetValue() * layer.mFilterEnvMult);
         float res = layer.mFilterRes * 0.89f;  // acts as cap, experimentally determined
         float filterSteepness = 0.5f;          // steeper means "achieves self-oscillation quicker"
         float filterQ = 0.5f * std::exp(filterSteepness * (res / (1 - res)));  // [0, 1] -> [0.5, inf]
@@ -46,11 +47,12 @@ bool Voice::ProcessAudio(clapeze::StereoAudioBuffer& out) {
         out.right[index] += vca * waveout;
     }
 
-    if(!mVolumeEnv.IsProcessing()) 
-    {
+    if (!mVolumeEnv.IsProcessing()) {
         // is there a less stupid way to do this?
         mPcmSampler.Reset();
         mFilter.Reset();
+        mFilterEnv.Reset();
+        mPitchLfo.Reset();
     }
 
     return mVolumeEnv.IsProcessing();
@@ -59,7 +61,7 @@ bool Voice::ProcessAudio(clapeze::StereoAudioBuffer& out) {
 clapeze::ProcessStatus Layer::ProcessAudio(clapeze::StereoAudioBuffer& out) {
     clapeze::StereoAudioBuffer tmp = mScratch.Alloc(out.left.size());
     auto status = mVoices.ProcessAudio(tmp);
-    if(mChorus) {
+    if (mChorus) {
         for (size_t idx = 0; idx < tmp.left.size(); ++idx) {
             kitdsp::float_2 processed = mChorus->Process(kitdsp::float_2(tmp.left[idx], tmp.right[idx]));
             tmp.left[idx] = processed.left;
@@ -83,7 +85,7 @@ clapeze::ProcessStatus Global::ProcessAudio(clapeze::StereoAudioBuffer& out) {
             kitdsp::float_2 outf = {out.left[idx], out.right[idx]};
             kitdsp::float_2 tmp = mReverb->Process(outf);
             tmp = kitdsp::lerp<kitdsp::float_2>(outf, tmp, mReverbMix);
-            //tmp = mLimit.Process(tmp);
+            // tmp = mLimit.Process(tmp);
             out.left[idx] = tmp.left;
             out.right[idx] = tmp.right;
         }
@@ -97,6 +99,7 @@ void Voice::ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
     mNote.target = note.key;
     mNote.SetSettleTime(mGlobal->mPortamento, mGlobal->mSampleRate, mNote.target - mNote.current);
     mVolumeEnv.TriggerOpen();
+    mFilterEnv.TriggerOpen();
     mPcmSampler.Play();
 }
 }  // namespace layersynth
