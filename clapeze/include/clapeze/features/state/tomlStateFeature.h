@@ -116,8 +116,8 @@ class TomlStateFeature : public BaseStateFeature {
                 return true;
             }
 
-            if (auto v = metakv->get("version")->value_or(0u); v != mSaveVersion) {
-                if (!OnMigrate(file, v, mSaveVersion)) {
+            if (auto s = metakv->get_as<int64_t>("version"); !s || **s != mSaveVersion) {
+                if (!OnMigrate(file, static_cast<uint32_t>(**s), mSaveVersion)) {
                     host.LogFmt(clapeze::LogSeverity::Warning, "loading, migration failed");
                     return true;
                 }

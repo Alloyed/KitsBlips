@@ -423,42 +423,44 @@ class StateFeature : public TomlStateFeature<ParamsFeature> {
     StateFeature(BasePlugin& self, SampleLoader& sampleLoader)
         : TomlStateFeature(self, 0), mSampleLoader(sampleLoader) {}
     bool OnSave(toml::table& file) const override {
-        for (size_t idx = 0; idx < 4; ++idx) {
+        for (size_t idx = 0; idx < SampleLoader::kNumSamples; ++idx) {
             const auto& f = mSampleLoader.GetSourceFile(idx);
-            toml::table sampleskv{};
-            sampleskv.insert("path", f.path);
-            sampleskv.insert("baseFrequency", f.baseFrequency);
-            sampleskv.insert("sampleStart", narrow_cast<uint32_t>(f.sampleStart));
-            sampleskv.insert("sampleEnd", narrow_cast<uint32_t>(f.sampleEnd));
-            sampleskv.insert("loopStart", narrow_cast<uint32_t>(f.loopStart));
-            sampleskv.insert("loopEnd", narrow_cast<uint32_t>(f.loopEnd));
-            sampleskv.insert("loopDirection", static_cast<int32_t>(f.loopDirection));
-            sampleskv.insert("enableLofi", f.enableLofi);
-            sampleskv.insert("lofiSampleRate", f.lofiSampleRate);
-            sampleskv.insert("lofiBitDepth", f.lofiBitDepth);
-            sampleskv.insert("lofiStretchSemis", f.lofiStretchSemis);
-            file.insert(fmt::format("sample_{}", idx), sampleskv);
+            if(!f.path.empty()) {
+                toml::table table{};
+                table.insert("path", f.path);
+                table.insert("baseFrequency", f.baseFrequency);
+                table.insert("sampleStart", narrow_cast<uint32_t>(f.sampleStart));
+                table.insert("sampleEnd", narrow_cast<uint32_t>(f.sampleEnd));
+                table.insert("loopStart", narrow_cast<uint32_t>(f.loopStart));
+                table.insert("loopEnd", narrow_cast<uint32_t>(f.loopEnd));
+                table.insert("loopDirection", static_cast<int32_t>(f.loopDirection));
+                table.insert("enableLofi", f.enableLofi);
+                table.insert("lofiSampleRate", f.lofiSampleRate);
+                table.insert("lofiBitDepth", f.lofiBitDepth);
+                table.insert("lofiStretchSemis", f.lofiStretchSemis);
+                file.insert(fmt::format("sample_{}", idx), table);
+            }
         }
         return true;
     }
     bool OnLoad(const toml::table& file) override {
-        for (size_t idx = 0; idx < 4; ++idx) {
-            auto sampleskv = file[fmt::format("sample_{}", idx)].as_table();
-            if (sampleskv) {
-                std::string path = sampleskv->get("path")->value_or("");
+        for (size_t idx = 0; idx < SampleLoader::kNumSamples; ++idx) {
+            auto table = file[fmt::format("sample_{}", idx)].as_table();
+            if (table) {
+                std::string path = table->at_path("path").value_or("");
                 mSampleLoader.LoadSample(idx, path);
                 auto& f = mSampleLoader.GetSourceFile(idx);
-                f.baseFrequency = sampleskv->get("baseFrequency")->value_or(261.626f);
-                f.sampleStart = sampleskv->get("sampleStart")->value_or(0);
-                f.sampleEnd = sampleskv->get("sampleEnd")->value_or(SIZE_MAX);
-                f.loopStart = sampleskv->get("loopStart")->value_or(0);
-                f.loopEnd = sampleskv->get("loopEnd")->value_or(SIZE_MAX);
+                f.baseFrequency = table->at_path("baseFrequency").value_or(261.626f);
+                f.sampleStart = table->at_path("sampleStart").value_or(0);
+                f.sampleEnd = table->at_path("sampleEnd").value_or(SIZE_MAX);
+                f.loopStart = table->at_path("loopStart").value_or(0.0f);
+                f.loopEnd = table->at_path("loopEnd").value_or(1.0f);
                 f.loopDirection =
-                    static_cast<kitdsp::SampleLoopDirection>(sampleskv->get("loopDirection")->value_or(0));
-                f.enableLofi = sampleskv->get("enableLofi")->value_or(false);
-                f.lofiSampleRate = sampleskv->get("lofiSampleRate")->value_or(0.0f);
-                f.lofiBitDepth = sampleskv->get("lofiBitDepth")->value_or(32);
-                f.lofiStretchSemis = sampleskv->get("lofiStretchSemis")->value_or(0.0f);
+                    static_cast<kitdsp::SampleLoopDirection>(table->at_path("loopDirection").value_or(0));
+                f.enableLofi = table->at_path("enableLofi").value_or(false);
+                f.lofiSampleRate = table->at_path("lofiSampleRate").value_or(0.0f);
+                f.lofiBitDepth = table->at_path("lofiBitDepth").value_or(32);
+                f.lofiStretchSemis = table->at_path("lofiStretchSemis").value_or(0.0f);
             }
         }
         return true;
@@ -492,7 +494,7 @@ class Plugin : public InstrumentPlugin {
             params.Parameter(XID(EnvParams::Release), new EnvParam(pre + "_release", "Release", 20.0f, 10000.0f));
         };
         auto LayerParams = [&](const std::string& pre, clap_id first) {
-            params.Parameter(XID(LayerParams::WaveIndex), new IntegerParam(pre + "_wave", "Wave", 1, 4, 1));
+            params.Parameter(XID(LayerParams::WaveIndex), new IntegerParam(pre + "_wave", "Wave", 1, SampleLoader::kNumSamples, 1));
             params.Parameter(XID(LayerParams::WavePlayback), new EnumParam<kitdsp::interpolate::InterpolationStrategy>(pre + "_playback", "Interpolation", {"None","Linear","Hermite","Cubic"}, kitdsp::interpolate::InterpolationStrategy::Cubic));
             params.Parameter(XID(LayerParams::PitchCoarse),
                              new IntegerParam(pre + "_pitchCoarse", "Pitch Coarse", -32, 32, 0, "semis"));
