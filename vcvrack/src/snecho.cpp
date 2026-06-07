@@ -1,6 +1,6 @@
 #include "kitdsp/apps/snesEcho.h"
 #include "kitdsp/apps/snesEchoFilterPresets.h"
-#include "kitdsp/dbMeter.h"
+#include "kitdsp/volume/dbMeter.h"
 #include "kitdsp/samplerate/resampler.h"
 #include "plugin.hpp"
 

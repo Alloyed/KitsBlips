@@ -1,7 +1,7 @@
 #pragma once
 
 #include "kitdsp/control/lfo.h"
-#include "kitdsp/delayLine.h"
+#include "kitdsp/sampling/delayLine.h"
 #include "kitdsp/filters/biquad.h"
 #include "kitdsp/math/interpolate.h"
 #include "kitdsp/math/vector.h"

@@ -5,7 +5,7 @@
 #include <cstring>
 #include <memory>
 #include <type_traits>
-#include "kitdsp/macros.h"
+#include "kitdsp/util/macros.h"
 
 namespace kitdsp {
 constexpr float kTwoPi = 6.28318530718f;

@@ -17,9 +17,9 @@
 #include <kitdsp/math/util.h>
 #include <kitdsp/osc/blepOscillator.h>
 #include <kitdsp/osc/naiveOscillator.h>
-#include <kitdsp/samplePlayer.h>
-#include <kitdsp/spanAllocator.h>
-#include <kitdsp/safetyLimiter.h>
+#include <kitdsp/sampling/samplePlayer.h>
+#include <kitdsp/util/spanAllocator.h>
+#include <kitdsp/volume/safetyLimiter.h>
 #include <optional>
 
 namespace layersynth {

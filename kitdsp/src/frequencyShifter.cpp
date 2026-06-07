@@ -1,4 +1,4 @@
-#include "kitdsp/frequencyShifter.h"
+#include "kitdsp/pitch/frequencyShifter.h"
 #include "kitdsp/lookupTables/sineLut.h"
 
 #define sin_(x) sin2pif_lut(x)

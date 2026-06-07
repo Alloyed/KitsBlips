@@ -5,7 +5,7 @@
 #include "kitdsp/control/approach.h"
 #include "kitdsp/math/interpolate.h"
 #include "kitdsp/math/util.h"
-#include "kitdsp/sampler.h"
+#include "kitdsp/sampling/sampler.h"
 
 namespace kitdsp {
 enum class SampleLoopDirection : uint8_t {

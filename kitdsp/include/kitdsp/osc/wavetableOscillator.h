@@ -2,7 +2,7 @@
 
 #include "kitdsp/math/interpolate.h"
 #include "kitdsp/osc/oscillatorUtil.h"
-#include "kitdsp/sampler.h"
+#include "kitdsp/sampling/sampler.h"
 
 namespace kitdsp {
 template <typename SAMPLE, interpolate::InterpolationStrategy STRATEGY>

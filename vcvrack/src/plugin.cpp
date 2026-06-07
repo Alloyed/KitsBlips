@@ -1,5 +1,5 @@
 #include "plugin.hpp"
-#include <kitdsp/macros.h>
+#include <kitdsp/util/macros.h>
 
 Plugin* pluginInstance;
 

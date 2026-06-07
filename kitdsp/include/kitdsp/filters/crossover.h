@@ -6,8 +6,11 @@
 
 namespace kitdsp {
 /**
- * A crossover filter splits a signal into low and high frequencies. When adding them back together, the result is
- * all-pass: every frequency's magnitude is preserved, but the phases will be a little different.
+ * A crossover filter splits a signal into low and high frequencies. When adding
+ * them back together, the result is all-pass: every frequency's magnitude is
+ * preserved, but the phases will be a little different. You can use this for
+ * multiband processing, or, in the real world, sending different bands to
+ * different speakers (this is how subwoofer/midrange/tweeter setups work)
  *
  * This is the 4th order Linkwitz-Riley filter, as described here:
  * https://www.musicdsp.org/en/latest/Filters/266-4th-order-linkwitz-riley-filters.html

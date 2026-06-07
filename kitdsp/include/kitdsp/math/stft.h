@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kitdsp/chunkifier.h"
+#include "kitdsp/samplerate/chunkifier.h"
 #include "kitdsp/lookupTables/sineLut.h"
 #include "kitdsp/math/shy_fft.h"
 

@@ -2,8 +2,8 @@
 
 #include <etl/span.h>
 #include <cassert>
-#include "kitdsp/delayLine.h"
-#include "kitdsp/macros.h"
+#include "kitdsp/sampling/delayLine.h"
+#include "kitdsp/util/macros.h"
 
 namespace kitdsp {
 /**
@@ -34,7 +34,7 @@ class Chunkifier {
     void Process(TSample input, TFn fn) {
         mBuf.Write(input);
         mHopIdx++;
-        if (mHopIdx > mHopSize) {
+        if (mHopIdx >= mHopSize) {
             // mChunk is necessary here because the delay line might not be continuous
             mBuf.ReadChunk(mChunk.size() - 1, mChunk);
             fn(mChunk);

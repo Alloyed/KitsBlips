@@ -1,11 +1,11 @@
 #pragma once
 
 #include "etl/vector.h"
-#include "kitdsp/delayLine.h"
+#include "kitdsp/sampling/delayLine.h"
 #include "kitdsp/filters/biquad.h"
 #include "kitdsp/filters/crossover.h"
 #include "kitdsp/samplerate/undersampler.h"
-#include "kitdsp/spanAllocator.h"
+#include "kitdsp/util/spanAllocator.h"
 
 namespace kitdsp {
 

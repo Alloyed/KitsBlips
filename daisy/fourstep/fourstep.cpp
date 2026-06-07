@@ -1,6 +1,6 @@
 #include <daisy.h>
 #include <daisy_patch_sm.h>
-#include <kitdsp/ScaleQuantizer.h>
+#include <kitdsp/apps/ScaleQuantizer.h>
 #include <kitdsp/math/util.h>
 #include "kitDaisy/controls.h"
 

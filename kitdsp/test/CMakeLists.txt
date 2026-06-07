@@ -3,6 +3,7 @@ set(BUILD_GTEST ON CACHE BOOL "" FORCE)
 
 include(../../content.cmake)
 FetchContent_MakeAvailable(googletest AudioFile)
+Include(GoogleTest)
 
 add_executable(testdsp
     trapfpe.cpp
@@ -36,5 +37,4 @@ target_compile_definitions(testdsp PUBLIC
     -DPROJECT_DIR="${CMAKE_SOURCE_DIR}"
 )
 
-add_test(NAME testdsp
-         COMMAND testdsp)
+gtest_discover_tests(testdsp)

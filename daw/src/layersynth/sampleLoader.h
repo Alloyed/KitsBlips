@@ -2,14 +2,14 @@
 
 #include <etl/queue_spsc_atomic.h>
 #include <fmt/format.h>
-#include <kitdsp/samplePlayer.h>
+#include <kitdsp/sampling/samplePlayer.h>
 #include <cstring>
 #include <filesystem>
 #include <iomanip>
 #include <regex>
 #include <vector>
 
-#include "kitdsp/macros.h"
+#include "kitdsp/util/macros.h"
 #include "kitdsp/math/interpolate.h"
 #include "kitdsp/math/units.h"
 #include "shared/dr_flac.h"
@@ -124,7 +124,7 @@ class RawSampleLoader {
         std::string path;
         std::vector<std::vector<float>> rawSamples;
         std::vector<float> processedSamples;
-        float sampleRate = 0.0f;
+        float rawSampleRate = 0.0f;
         float baseFrequency = 261.626f;
 
         size_t sampleStart = 0;
@@ -134,6 +134,7 @@ class RawSampleLoader {
         size_t loopEnd = 0;
         kitdsp::SampleLoopDirection loopDirection = kitdsp::SampleLoopDirection::Forward;
 
+        bool enableLofi = false;
         float lofiSampleRate = 0.0f;
         int32_t lofiBitDepth = 32;
         float lofiStretchSemis = 0.0f;
@@ -153,8 +154,13 @@ class RawSampleLoader {
 
         AudioFile CloneLite() const {
             AudioFile cloned{};
-            cloned.baseFrequency = this->baseFrequency * kitdsp::midiToRatio(this->lofiStretchSemis);
-            cloned.sampleRate = this->lofiSampleRate;
+            if(enableLofi) {
+                cloned.baseFrequency = this->baseFrequency * kitdsp::midiToRatio(this->lofiStretchSemis);
+                cloned.sampleRate = this->lofiSampleRate;
+            } else {
+                cloned.baseFrequency = this->baseFrequency;
+                cloned.sampleRate = this->rawSampleRate;
+            }
             cloned.loopStart = this->loopStart;
             cloned.loopEnd = this->loopEnd;
             cloned.loopDirection = this->loopDirection;
@@ -173,24 +179,29 @@ class RawSampleLoader {
                 processedSamples.resize(0);
                 return;
             }
-            float rateAdvance = kitdsp::midiToRatio(lofiStretchSemis) * sampleRate / lofiSampleRate;
+            float rateAdvance = kitdsp::midiToRatio(lofiStretchSemis) * rawSampleRate / lofiSampleRate;
 
-            size_t numRawSamples = sampleEnd - sampleStart;
-            size_t numProcessedSamples = narrow_cast<size_t>(narrow_cast<float>(numRawSamples) / rateAdvance);
+            if(enableLofi) {
+                size_t numRawSamples = sampleEnd - sampleStart;
+                size_t numProcessedSamples = narrow_cast<size_t>(narrow_cast<float>(numRawSamples) / rateAdvance);
 
-            // TODO: channel sum/pick right channel
-            auto Read = [&](size_t idx) { return idx >= rawSamples[0].size() ? 0 : rawSamples[0][idx]; };
-            float rawIdx = narrow_cast<float>(sampleStart);
-            processedSamples.resize(numProcessedSamples);
-            for (auto& out : processedSamples) {
-                size_t idx = narrow_cast<size_t>(rawIdx);
-                float idxFrac = rawIdx - std::floor(rawIdx);
-                out = kitdsp::interpolate::cubic(Read(idx - 1), Read(idx), Read(idx + 1), Read(idx + 2), idxFrac);
-                // bitcrush
-                float bitmax = narrow_cast<float>(1 << (lofiBitDepth - 1));  // assuming signed format
-                out = std::floor(out * bitmax) / bitmax;
-                rawIdx += rateAdvance;
+                // TODO: channel sum/pick right channel
+                auto Read = [&](size_t idx) { return idx >= rawSamples[0].size() ? 0 : rawSamples[0][idx]; };
+                float rawIdx = narrow_cast<float>(sampleStart);
+                processedSamples.resize(numProcessedSamples);
+                for (auto& out : processedSamples) {
+                    size_t idx = narrow_cast<size_t>(rawIdx);
+                    float idxFrac = rawIdx - std::floor(rawIdx);
+                    out = kitdsp::interpolate::cubic(Read(idx - 1), Read(idx), Read(idx + 1), Read(idx + 2), idxFrac);
+                    // bitcrush
+                    float bitmax = narrow_cast<float>(1ul << (lofiBitDepth - 1));  // assuming signed format
+                    out = std::floor(out * bitmax) / bitmax;
+                    rawIdx += rateAdvance;
+                }
+            } else {
+                processedSamples = rawSamples[0];
             }
+            sAnySampleChanged = true;
         }
     };
     using FileQueue = etl::queue_spsc_atomic<std::pair<size_t, AudioFile*>, 200, etl::memory_model::MEMORY_MODEL_SMALL>;
@@ -218,9 +229,12 @@ class RawSampleLoader {
                 auto [index, file] = pair;
                 if (mFiles[index]) {
                     if (file->useLastSampleData) {
+                        // move buffer to new file
                         file->samples = mFiles[index]->samples;
                         file->numSamples = mFiles[index]->numSamples;
                         file->useLastSampleData = false;
+                        mFiles[index]->samples = nullptr;
+                        mFiles[index]->numSamples = 0;
                     }
                     // release
                     mAudioToMainRelease.push({index, mFiles[index]});
@@ -259,8 +273,8 @@ class RawSampleLoader {
             }
 
             size_t numSamples = pFlac->totalPCMFrameCount;
-            f.sampleRate = narrow_cast<float>(pFlac->sampleRate);
-            f.lofiSampleRate = f.sampleRate;
+            f.rawSampleRate = narrow_cast<float>(pFlac->sampleRate);
+            f.lofiSampleRate = f.rawSampleRate;
             f.lofiBitDepth = pFlac->bitsPerSample;
             f.sampleEnd = numSamples;
             f.loopEnd = numSamples;
@@ -270,11 +284,15 @@ class RawSampleLoader {
                 if (numSamplesRead != numSamples) {
                     return;
                 }
+                // de-interleave inputs
                 f.rawSamples.clear();
                 for (size_t channelIdx = 0; channelIdx < pFlac->channels; ++channelIdx) {
                     f.rawSamples.emplace_back(numSamples);
-                    for (size_t idx = 0; idx < numSamples; ++idx) {
-                        f.rawSamples[channelIdx][idx] = raw[idx + (channelIdx * numSamples)];
+                }
+                size_t rawIdx = 0;
+                for (size_t idx = 0; idx < numSamples; ++idx) {
+                    for (size_t channelIdx = 0; channelIdx < pFlac->channels; ++channelIdx) {
+                        f.rawSamples[channelIdx][idx] = raw[rawIdx++];
                     }
                 }
             }
@@ -287,8 +305,8 @@ class RawSampleLoader {
             }
 
             size_t numSamples = wav.totalPCMFrameCount;
-            f.sampleRate = narrow_cast<float>(wav.sampleRate);
-            f.lofiSampleRate = f.sampleRate;
+            f.rawSampleRate = narrow_cast<float>(wav.sampleRate);
+            f.lofiSampleRate = f.rawSampleRate;
             f.lofiBitDepth = wav.bitsPerSample;
             f.sampleEnd = numSamples;
             f.loopEnd = numSamples;
@@ -299,11 +317,15 @@ class RawSampleLoader {
                     drwav_uninit(&wav);
                     return;
                 }
+                // de-interleave inputs
                 f.rawSamples.clear();
                 for (size_t channelIdx = 0; channelIdx < wav.channels; ++channelIdx) {
                     f.rawSamples.emplace_back(numSamples);
-                    for (size_t idx = 0; idx < numSamples; ++idx) {
-                        f.rawSamples[channelIdx][idx] = raw[idx + (channelIdx * numSamples)];
+                }
+                size_t rawIdx = 0;
+                for (size_t idx = 0; idx < numSamples; ++idx) {
+                    for (size_t channelIdx = 0; channelIdx < wav.channels; ++channelIdx) {
+                        f.rawSamples[channelIdx][idx] = raw[rawIdx++];
                     }
                 }
             }
@@ -461,13 +483,6 @@ class RawSampleLoader {
             SendFullSampleToAudio(i);
         }
 
-        if (sliderIndex("Loop Start", &file.loopStart, 0, file.processedSamples.size())) {
-            SendSampleParamsToAudio(i);
-        }
-
-        if (sliderIndex("Loop End", &file.loopEnd, 0, file.processedSamples.size())) {
-            SendSampleParamsToAudio(i);
-        }
 
         const char* loopNames[] = {"No Loop", "Forward", "Backward", "Ping Pong"};
         int dir = static_cast<int>(file.loopDirection);
@@ -476,22 +491,43 @@ class RawSampleLoader {
             SendSampleParamsToAudio(i);
         }
 
-        if (ImGui::InputFloat("Lofi Sample Rate", &file.lofiSampleRate, 8000.0f, file.sampleRate)) {
-            file.lofiSampleRate = std::floor(file.lofiSampleRate);
+        if(file.loopDirection != kitdsp::SampleLoopDirection::NoLoop) {
+            ImGui::Indent();
+            if (sliderIndex("Loop Start", &file.loopStart, 0, file.processedSamples.size())) {
+                SendSampleParamsToAudio(i);
+            }
+
+            if (sliderIndex("Loop End", &file.loopEnd, 0, file.processedSamples.size())) {
+                SendSampleParamsToAudio(i);
+            }
+            ImGui::Unindent();
+        }
+
+        if(ImGui::Checkbox("Lofi", &file.enableLofi)) {
             file.Preprocess();
             SendFullSampleToAudio(i);
         }
 
-        if (ImGui::InputInt("Lofi Bit Depth", &file.lofiBitDepth, 8, 32)) {
-            file.Preprocess();
-            SendFullSampleToAudio(i);
-        }
+        if(file.enableLofi) {
+            ImGui::Indent();
+            if (ImGui::InputFloat("Lofi Sample Rate", &file.lofiSampleRate, 8000.0f, file.rawSampleRate)) {
+                file.lofiSampleRate = std::floor(file.lofiSampleRate);
+                file.Preprocess();
+                SendFullSampleToAudio(i);
+            }
 
-        int32_t stretch = file.lofiStretchSemis;
-        if (ImGui::SliderInt("Lofi Stretch", &stretch, 0.0f, 32.0f)) {
-            file.lofiStretchSemis = stretch;
-            file.Preprocess();
-            SendFullSampleToAudio(i);
+            if (ImGui::InputInt("Lofi Bit Depth", &file.lofiBitDepth, 8, 32)) {
+                file.Preprocess();
+                SendFullSampleToAudio(i);
+            }
+
+            int32_t stretch = narrow_cast<int32_t>(file.lofiStretchSemis);
+            if (ImGui::SliderInt("Lofi Stretch", &stretch, 0, 32)) {
+                file.lofiStretchSemis = narrow_cast<float>(stretch);
+                file.Preprocess();
+                SendFullSampleToAudio(i);
+            }
+            ImGui::Unindent();
         }
 
         if (ImGui::Button("Reset")) {
@@ -499,9 +535,14 @@ class RawSampleLoader {
             SendFullSampleToAudio(i);
         }
 
+        if(sAnySampleChanged) {
+            ImPlot::SetNextAxesToFit();
+            sAnySampleChanged = false;
+        }
         if (ImPlot::BeginPlot("Waveform", ImVec2(-1.0f, 160.0f))) {
             if(!file.rawSamples.empty()) {
-                //ImPlot::PlotShaded("##rawsamples", file.rawSamples[0].data(), static_cast<int>(file.rawSamples[0].size()));
+                ImPlot::SetupAxis(ImAxis_Y1, nullptr, ImPlotAxisFlags_NoTickLabels);
+                ImPlot::SetupAxesLimits(0.0, narrow_cast<double>(file.processedSamples.size()), -1.0, 1.0);
                 ImPlot::PlotShaded("##processedsamples", file.processedSamples.data(), static_cast<int>(file.processedSamples.size()));
             }
             // TODO: measured in processed sample rate not raw
@@ -522,6 +563,7 @@ class RawSampleLoader {
     etl::array<std::string, TNumSamples> mSampleStatus{};
     etl::array<SourceFile, TNumSamples> mMainFiles{};
     etl::array<SourceFile, TNumSamples> mOriginalFiles{};
+    static inline bool sAnySampleChanged = false;
 };
 using SampleLoader = RawSampleLoader<4>;
 }  // namespace layersynth

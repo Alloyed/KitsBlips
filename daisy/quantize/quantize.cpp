@@ -1,4 +1,4 @@
-#include <kitdsp/ScaleQuantizer.h>
+#include <kitdsp/apps/ScaleQuantizer.h>
 #include <kitdsp/math/util.h>
 #include "daisy_patch_sm.h"
 

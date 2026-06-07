@@ -4,6 +4,9 @@
 #include "kitdsp/math/units.h"
 
 namespace kitdsp {
+/**
+ * tracks the decibel loudness of the input
+ */
 class DbMeter : public OnePole {
    public:
     explicit DbMeter(float sampleRate) : OnePole() {

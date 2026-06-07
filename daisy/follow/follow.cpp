@@ -1,4 +1,4 @@
-#include <kitdsp/dbMeter.h>
+#include <kitdsp/volume/dbMeter.h>
 #include <kitdsp/math/util.h>
 #include <string>
 #include "daisy_patch_sm.h"

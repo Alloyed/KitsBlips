@@ -69,6 +69,7 @@ class ContextImpl {
     bool IsCreated() const;
     void SetClearColor(Magnum::Color4 color);
     kitgui::WindowRef GetWindow() const;
+    std::string GetFrameStats() const;
 
     LRESULT OnWindowsEvent(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 

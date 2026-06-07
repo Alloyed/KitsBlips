@@ -1,6 +1,6 @@
 #include <daisy.h>
 #include <daisy_patch_sm.h>
-#include <kitdsp/dbMeter.h>
+#include <kitdsp/volume/dbMeter.h>
 #include <kitdsp/math/util.h>
 #include "kitDaisy/controls.h"
 

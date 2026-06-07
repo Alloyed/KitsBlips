@@ -1,4 +1,4 @@
-#include "kitdsp/frequencyShifter.h"
+#include "kitdsp/pitch/frequencyShifter.h"
 #include <AudioFile.h>
 #include <gtest/gtest.h>
 #include "util.h"

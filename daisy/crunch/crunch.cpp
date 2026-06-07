@@ -2,7 +2,7 @@
 #include <daisy_patch_sm.h>
 #include <cstdint>
 
-#include <kitdsp/dbMeter.h>
+#include <kitdsp/volume/dbMeter.h>
 #include <kitdsp/filters/dcBlocker.h>
 #include <kitdsp/filters/onePole.h>
 #include <kitdsp/math/approx.h>

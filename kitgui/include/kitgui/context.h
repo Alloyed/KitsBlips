@@ -166,6 +166,10 @@ class Context {
      * Get the current window handle for external use
      */
     kitgui::WindowRef GetWindow() const;
+    /**
+     * Returns a formatted string containing gui performance statistics
+     */
+    std::string GetFrameStats() const;
 
    protected:
     // app events. forwards otherwise hidden events to impl

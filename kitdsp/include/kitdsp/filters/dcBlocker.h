@@ -1,11 +1,14 @@
 #pragma once
 
 namespace kitdsp {
-// https://www.dsprelated.com/freebooks/filters/DC_Blocker.html
+/**
+ * This is a tiny, one-pole filter that blocks out very low frequencies. if the input signal has a DC offset, this will filter that out.
+ * from: https://www.dsprelated.com/freebooks/filters/DC_Blocker.html
+ */
 class DcBlocker {
    public:
     inline float Process(float in) {
-        float out = in - mLastIn + 0.995f * mLastOut;
+        float out = in - mLastIn + coef * mLastOut;
         mLastIn = in;
         mLastOut = out;
         return out;
@@ -19,5 +22,6 @@ class DcBlocker {
    private:
     float mLastIn{};
     float mLastOut{};
+    static constexpr float coef = 0.995f; // called R in the source
 };
 }  // namespace kitdsp

@@ -1,6 +1,6 @@
 #include "kitdsp/apps/disperser.h"
 #include "kitdsp/lookupTables/sineLut.h"
-#include "kitdsp/macros.h"
+#include "kitdsp/util/macros.h"
 #include "kitdsp/math/interpolate.h"
 #include "kitdsp/math/util.h"
 

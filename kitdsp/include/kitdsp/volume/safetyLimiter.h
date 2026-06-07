@@ -6,8 +6,12 @@
 
 namespace kitdsp {
 /**
- * A low-complexity, no-configuration "safety" limiter, derived from:
- * https://github.com/pichenettes/stmlib/blob/master/dsp/limiter.h
+ * A low-complexity, no-configuration "safety" limiter. If you're actively
+ * working on something, and there's a risk of it exploding numerically or
+ * producing very loud outputs, something like this can limit the volume before
+ * it does damage to your speakers!
+ *
+ * derived from: https://github.com/pichenettes/stmlib/blob/master/dsp/limiter.h
  */
 template <typename TSample>
 class SafetyLimiter {

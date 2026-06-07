@@ -5,7 +5,7 @@
 #include <clapeze/features/params/parameterTypes.h>
 #include <clapeze/features/state/tomlStateFeature.h>
 #include <clapeze/processor/baseProcessor.h>
-#include <kitdsp/frequencyShifter.h>
+#include <kitdsp/pitch/frequencyShifter.h>
 #include <kitdsp/math/util.h>
 #include "descriptor.h"
 

@@ -1,6 +1,6 @@
 #include "kitdsp/apps/snesBitcrush.h"
 #include "kitdsp/apps/snesEcho.h"
-#include "kitdsp/macros.h"
+#include "kitdsp/util/macros.h"
 
 namespace kitdsp {
 namespace SNES {

@@ -3,7 +3,10 @@
 
 namespace kitdsp {
 
-Chorus::Chorus(etl::span<float> buffer, float sampleRate) : mDelayLine(buffer), mSampleRate(sampleRate) {}
+Chorus::Chorus(etl::span<float> buffer, float sampleRate) : mDelayLine(buffer), mSampleRate(sampleRate) {
+    mDelayBaseMs.SetHalfLife(0.01f, mSampleRate);
+    mDelayModMs.SetHalfLife(0.01f, mSampleRate);
+}
 
 void Chorus::Reset() {
     cfg = {};
@@ -16,14 +19,17 @@ float_2 Chorus::Process(float in) {
 }
 
 float_2 Chorus::Process(float_2 in) {
+    mDelayBaseMs.target = cfg.delayBaseMs;
+    mDelayModMs.target = cfg.delayModMs;
     mLfo.SetFrequency(cfg.lfoRateHz, mSampleRate);
 
     float_2 out{};
 
-    // TODO: moving delayModMs or delayBaseMs results in ugly clicking. probably avoid somehow (slew?)
-    float lfoMs = (mLfo.Process() * cfg.delayModMs);
+    float delayModMs = mDelayModMs.Process();
+    float delayBaseMs = mDelayBaseMs.Process();
+    float lfoMs = (mLfo.Process() * delayModMs);
     auto toSamples = [&](float offsetMs) {
-        return clamp<float>((cfg.delayBaseMs + offsetMs) * mSampleRate / 1000.0f, 1.0f,
+        return clamp<float>((delayBaseMs + offsetMs) * mSampleRate / 1000.0f, 1.0f,
                             static_cast<float>(mDelayLine.Size() - 4));
     };
 

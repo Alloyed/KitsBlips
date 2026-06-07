@@ -3,7 +3,7 @@
 #include <etl/span.h>
 #include <cstdint>
 #include <cstring>
-#include "kitdsp/macros.h"
+#include "kitdsp/util/macros.h"
 #include "kitdsp/math/interpolate.h"
 
 namespace kitdsp {

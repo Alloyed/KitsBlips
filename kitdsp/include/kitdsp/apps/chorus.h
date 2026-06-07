@@ -1,8 +1,9 @@
 #pragma once
 
 #include "kitdsp/control/lfo.h"
-#include "kitdsp/delayLine.h"
+#include "kitdsp/sampling/delayLine.h"
 #include "kitdsp/math/vector.h"
+#include "kitdsp/control/approach.h"
 
 namespace kitdsp {
 class Chorus {
@@ -37,5 +38,7 @@ class Chorus {
     DelayLine<float> mDelayLine;
     float mSampleRate;
     lfo::TriangleOscillator mLfo{};
+    Approach mDelayBaseMs;
+    Approach mDelayModMs;
 };
 }  // namespace kitdsp

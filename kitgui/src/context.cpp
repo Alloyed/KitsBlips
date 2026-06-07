@@ -152,6 +152,10 @@ kitgui::WindowRef Context::GetWindow() const {
     return mImpl->GetWindow();
 }
 
+std::string Context::GetFrameStats() const {
+    return mImpl->GetFrameStats();
+}
+
 void Context::RunLoop() {
     Impl::RunLoop();
 }

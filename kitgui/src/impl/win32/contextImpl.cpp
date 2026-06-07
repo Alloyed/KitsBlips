@@ -175,7 +175,7 @@ bool ContextImpl::Create(bool isFloating) {
         return false;
     }
     ::SetWindowLongPtr(mWindow, 0, reinterpret_cast<LONG_PTR>(this));
-    ::SetTimer(mWindow, 1, 30, nullptr);
+    ::SetTimer(mWindow, 1, 32, nullptr);
 
     if (!CreateWglContext()) {
         return false;
@@ -248,6 +248,10 @@ void ContextImpl::SetClearColor(Magnum::Color4 color) {
 
 kitgui::WindowRef ContextImpl::GetWindow() const {
     return wrapWindow(WindowApi::Win32, mWindow);
+}
+
+std::string ContextImpl::GetFrameStats() const {
+    return mProfiler ? mProfiler->statistics() : "";
 }
 
 bool ContextImpl::SetUIScale(double scale) {

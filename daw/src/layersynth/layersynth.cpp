@@ -19,12 +19,12 @@
 #include <kitdsp/control/adsr.h>
 #include <kitdsp/control/lfo.h>
 #include <kitdsp/filters/svf.h>
-#include <kitdsp/macros.h>
-#include <kitdsp/sampler.h>
+#include <kitdsp/util/macros.h>
+#include <kitdsp/sampling/sampler.h>
 #include <sstream>
 
 #include "descriptor.h"
-#include "kitdsp/samplePlayer.h"
+#include "kitdsp/sampling/samplePlayer.h"
 #include "shared/dr_flac.h"
 #include "shared/dr_wav.h"
 
@@ -433,6 +433,7 @@ class StateFeature : public TomlStateFeature<ParamsFeature> {
             sampleskv.insert("loopStart", narrow_cast<uint32_t>(f.loopStart));
             sampleskv.insert("loopEnd", narrow_cast<uint32_t>(f.loopEnd));
             sampleskv.insert("loopDirection", static_cast<int32_t>(f.loopDirection));
+            sampleskv.insert("enableLofi", f.enableLofi);
             sampleskv.insert("lofiSampleRate", f.lofiSampleRate);
             sampleskv.insert("lofiBitDepth", f.lofiBitDepth);
             sampleskv.insert("lofiStretchSemis", f.lofiStretchSemis);
@@ -454,6 +455,7 @@ class StateFeature : public TomlStateFeature<ParamsFeature> {
                 f.loopEnd = sampleskv->get("loopEnd")->value_or(SIZE_MAX);
                 f.loopDirection =
                     static_cast<kitdsp::SampleLoopDirection>(sampleskv->get("loopDirection")->value_or(0));
+                f.enableLofi = sampleskv->get("enableLofi")->value_or(false);
                 f.lofiSampleRate = sampleskv->get("lofiSampleRate")->value_or(0.0f);
                 f.lofiBitDepth = sampleskv->get("lofiBitDepth")->value_or(32);
                 f.lofiStretchSemis = sampleskv->get("lofiStretchSemis")->value_or(0.0f);
