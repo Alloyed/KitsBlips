@@ -196,8 +196,8 @@ class RawSampleLoader {
                     float idxFrac = rawIdx - std::floor(rawIdx);
                     out = kitdsp::interpolate::hermite4pt3oX(Read(idx - 1), Read(idx), Read(idx + 1), Read(idx + 2), idxFrac);
                     // bitcrush
-                    float bitmax = narrow_cast<float>(1ul << (lofiBitDepth - 1));  // assuming signed format
-                    out = std::floor(out * bitmax) / bitmax;
+                    double bitmax = narrow_cast<double>(1ul << (lofiBitDepth - 1));  // assuming signed format
+                    out = narrow_cast<float>(std::trunc(narrow_cast<double>(out) * bitmax) / bitmax);
                     rawIdx += rateAdvance;
                 }
             } else {
@@ -473,7 +473,6 @@ class RawSampleLoader {
             }
         }
         int note = narrow_cast<int>(kitdsp::frequencyToMidi(file.baseFrequency));
-        // TODO: print note name
         if (ImGui::SliderInt("Note", &note, 0, 127, impl::FormatMidiNote(note).c_str())) {
             file.baseFrequency = kitdsp::midiToFrequency(narrow_cast<float>(note));
             SendSampleParamsToAudio(i);
@@ -552,13 +551,13 @@ class RawSampleLoader {
             sAnySampleChanged = false;
         }
         if (ImPlot::BeginPlot("Waveform", ImVec2(-1.0f, 160.0f))) {
+            int32_t numSamples = file.processedSamples.size();
             if(!file.rawSamples.empty()) {
                 ImPlot::SetupAxis(ImAxis_Y1, nullptr, ImPlotAxisFlags_NoTickLabels);
-                ImPlot::SetupAxesLimits(0.0, narrow_cast<double>(file.processedSamples.size()), -1.0, 1.0);
-                ImPlot::PlotShaded("##processedsamples", file.processedSamples.data(), static_cast<int>(file.processedSamples.size()));
+                ImPlot::SetupAxesLimits(0.0, narrow_cast<double>(numSamples), -1.0, 1.0);
+                ImPlot::PlotShaded("##processedsamples", file.processedSamples.data(), numSamples);
             }
-            // TODO: measured in processed sample rate not raw
-            double markers[2] = {static_cast<double>(file.loopStart), static_cast<double>(file.loopEnd)};
+            double markers[2] = {static_cast<double>(file.loopStart * numSamples), static_cast<double>(file.loopEnd * numSamples)};
             ImPlot::PlotInfLines("##loop", markers, 2);
             ImPlot::EndPlot();
         }
