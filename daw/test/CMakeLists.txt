@@ -3,6 +3,7 @@ set(BUILD_GTEST ON CACHE BOOL "" FORCE)
 
 include(../../content.cmake)
 FetchContent_MakeAvailable(googletest AudioFile)
+include(GoogleTest)
 
 add_executable(testdaw
     basic.test.cpp
@@ -13,7 +14,7 @@ target_link_libraries(testdaw
     AudioFile
     gtest_main
 )
-add_test(NAME testdaw COMMAND testdaw)
+gtest_discover_tests(testdaw)
 
 if(KITSBLIPS_ENABLE_GUI)
     FetchContent_MakeAvailable(kitgui)
