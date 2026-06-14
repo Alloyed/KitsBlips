@@ -5,6 +5,12 @@ include(../../content.cmake)
 FetchContent_MakeAvailable(googletest AudioFile)
 Include(GoogleTest)
 
+add_executable(d50decoder tools/d50Decoder.cpp)
+target_link_libraries(d50decoder
+    KitDSP
+    AudioFile
+)
+
 add_executable(testdsp
     trapfpe.cpp
     osc/dsfOscillator.test.cpp
