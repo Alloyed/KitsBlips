@@ -568,7 +568,7 @@ class GuiApp : public kitgui::BaseApp {
 
     void OnActivate() override {
         float scale = static_cast<float>(GetContext().GetUIScale());
-        mScene->Load("assets/kitskeys.glb");
+        mScene->Load("assets/kitsblips.kitskeys/kitskeys.glb");
         // TODO: to update all this if the viewport changes
         uint32_t w{};
         uint32_t h{};
@@ -653,7 +653,6 @@ class GuiApp : public kitgui::BaseApp {
         }
 
         mScene->Update();
-        mPresetBrowser.Update();
         for (auto& knob : mKnobs) {
             clap_id id = knob->GetParamId();
             if (mParams.GetBaseParam(id)->GetFlags() & CLAP_PARAM_IS_HIDDEN) {
@@ -698,7 +697,8 @@ class GuiApp : public kitgui::BaseApp {
     void OnGuiUpdate() override {
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("Preset")) {
-                if (ImGui::MenuItem("Reset All")) {
+                mPresetBrowser.PresetMenu();
+                if (ImGui::MenuItem("Init")) {
                     mParams.ResetAllParamsToDefault();
                 }
                 clapeze::BaseStateFeature& state =
@@ -736,6 +736,8 @@ class GuiApp : public kitgui::BaseApp {
             }
             ImGui::End();
         }
+
+        mPresetBrowser.Update();
     }
 
     void OnDraw() override { mScene->Draw(); }

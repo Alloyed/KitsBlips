@@ -40,6 +40,7 @@ class PresetFeature : public BaseFeature {
 
     PresetInfo& GetPresetInfo();
     const PresetInfo& GetPresetInfo() const;
+    const std::optional<PresetLocation>& GetLastPresetLocation() const { return mLastPresetLocation; }
 
    private:
     static bool _from_location(const clap_plugin_t* plugin,

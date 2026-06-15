@@ -85,7 +85,7 @@ class AssetsFeature : public BaseFeature {
 
     void Configure(BasePlugin& self) override;
 
-    std::vector<std::string> GetAllPathsFromPlugin() const;
+    std::vector<std::string> GetAllPathsFromPlugin(std::string_view prefix = "") const;
 
     miniz_istream OpenFromPlugin(const char* path);
     std::ifstream OpenFromFilesystem(const char* path);

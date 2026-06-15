@@ -97,7 +97,11 @@ if(KITSBLIPS_ENABLE_GUI)
 endif()
 
 set(ASSETS
-    assets/kitskeys.glb
+    assets/kitsblips.kitskeys/kitskeys.glb
+    assets/kitsblips.kitskeys/airglow.preset
+    assets/kitsblips.kitskeys/wobbly.preset
+    assets/kitsblips.kitskeys/fifth-lead.preset
+    assets/kitsblips.kitskeys/resonant-bass.preset
 )
 
 # as shrimple as that!

@@ -37,9 +37,7 @@ bool PresetFeature::LoadPreset(clap_preset_discovery_location_kind location_kind
                                const char* load_key) {
     const clap_host_t* rawHost = nullptr;
     const clap_host_preset_load_t* rawPresetLoad = nullptr;
-    if (!mHost.TryGetExtension(NAME, rawHost, rawPresetLoad)) {
-        return false;
-    }
+    mHost.TryGetExtension(NAME, rawHost, rawPresetLoad); // optional extension
 
     BaseStateFeature& state = BaseFeature::GetFromPlugin<BaseStateFeature>(mPlugin);
     AssetsFeature& assets = BaseFeature::GetFromPlugin<AssetsFeature>(mPlugin);
@@ -49,7 +47,9 @@ bool PresetFeature::LoadPreset(clap_preset_discovery_location_kind location_kind
             int32_t zipError{};
             const char* msg{};
             loadStream.getZipError(zipError, msg);
-            rawPresetLoad->on_error(rawHost, location_kind, location, load_key, 0, msg);
+            if(rawPresetLoad) {
+                rawPresetLoad->on_error(rawHost, location_kind, location, load_key, 0, msg);
+            }
             return false;
         }
         if (!state.Load(loadStream)) {
@@ -58,16 +58,20 @@ bool PresetFeature::LoadPreset(clap_preset_discovery_location_kind location_kind
     } else if (location_kind == CLAP_PRESET_DISCOVERY_LOCATION_FILE) {
         auto loadStream = assets.OpenFromFilesystem(location);
         if (loadStream.bad()) {
-            int32_t osError = errno;
-            const char* msg = std::strerror(errno);
-            rawPresetLoad->on_error(rawHost, location_kind, location, load_key, osError, msg);
+            if(rawPresetLoad) {
+                int32_t osError = errno;
+                const char* msg = std::strerror(errno);
+                rawPresetLoad->on_error(rawHost, location_kind, location, load_key, osError, msg);
+            }
             return false;
         }
         if (!state.Load(loadStream)) {
             return false;
         }
     }
-    rawPresetLoad->loaded(rawHost, location_kind, location, load_key);
+    if (rawPresetLoad) {
+        rawPresetLoad->loaded(rawHost, location_kind, location, load_key);
+    }
     mLastPresetLocation = {.kind = location_kind,
                            .location = location_kind == CLAP_PRESET_DISCOVERY_LOCATION_PLUGIN ? load_key : location};
     return true;

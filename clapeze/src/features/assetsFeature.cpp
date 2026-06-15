@@ -28,19 +28,23 @@ AssetsFeature::~AssetsFeature() {
     }
 }
 
-void AssetsFeature::Configure(BasePlugin& self) {}
+void AssetsFeature::Configure(BasePlugin& self) {
+    (void)self;
+}
 
-std::vector<std::string> GetAllPathsFromPlugin() {
+std::vector<std::string> AssetsFeature::GetAllPathsFromPlugin(std::string_view prefix) const {
     std::vector<std::string> out;
     mz_uint numFiles = mz_zip_reader_get_num_files(&sZip);
     out.reserve(numFiles);
 
     for (mz_uint idx = 0; idx < numFiles; ++idx) {
         mz_uint bytesNeeded = mz_zip_reader_get_filename(&sZip, idx, nullptr, 0);
-        out.emplace_back(bytesNeeded, '\0');
-        std::string& buf = out.back();
-        [[maybe_unused]] mz_uint bytesWritten = mz_zip_reader_get_filename(&sZip, idx, buf.data(), buf.size());
+        std::string buf(bytesNeeded, '\0');
+        [[maybe_unused]] mz_uint bytesWritten = mz_zip_reader_get_filename(&sZip, idx, buf.data(), static_cast<mz_uint>(buf.size()));
         assert(bytesWritten == bytesNeeded);
+        if(buf.starts_with(prefix)) {
+            out.emplace_back(buf.c_str());
+        }
     }
     return out;
 }

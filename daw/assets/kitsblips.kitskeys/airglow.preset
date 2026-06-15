@@ -1,0 +1,32 @@
+[_meta]
+plugin = 'kitsblips.kitskeys'
+version = 0
+
+[params]
+EnvAttack = 0.0
+EnvDecay = 0.0
+EnvRelease = 0.0
+EnvSustain = 1.0
+FilterCutoff = 1.0
+FilterModAmount = 0.5
+FilterModMix = 0.5
+FilterResonance = 0.0
+LfoOut = 0.35201090574264526
+LfoRate = 0.21508736908435822
+LfoRateSync = 2.0
+LfoShape = 0.0
+LfoSync = 0.0
+OscModAmount = 0.5
+OscModMix = 0.5
+OscOctave = 0.0
+OscTune = 0.5
+PolyChordType = 0.0
+PolyCount = 4.0
+VcaEnvDisabled = 0.0
+VcaGain = 0.8695651888847351
+VcaLfoAmount = 0.5
+
+[preset]
+creator = 'alloyed'
+description = 'go listen to airglow fires :)'
+name = 'airglow'

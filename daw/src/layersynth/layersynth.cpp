@@ -588,7 +588,7 @@ class Plugin : public InstrumentPlugin {
 };
 
 CLAPEZE_REGISTER_PLUGIN(Plugin,
-                        AudioInstrumentDescriptor("kitsblips.layersynth",
-                                                  "layersynth",
-                                                  "A Linear-Arithmetic inspired polysynth"));
+                        AudioInstrumentDescriptor("kitsblips.romp",
+                                                  "KitsBlips Romp",
+                                                  "A lo-fi digital sampling polysynth"));
 }  // namespace layersynth
