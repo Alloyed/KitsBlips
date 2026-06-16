@@ -2,6 +2,7 @@
 #include "gui/kitguiFeature.h"
 
 #include <clap/ext/timer-support.h>
+#include <fstream>
 #include <clapeze/basePlugin.h>
 #include <clapeze/features/assetsFeature.h>
 #include <clapeze/features/baseGuiFeature.h>
@@ -90,8 +91,22 @@ void KitguiFeature::Configure(BasePlugin& self) {
     mCtx.SetFileLoader([&self](std::string_view path) -> std::optional<std::string> {
         auto& assets = clapeze::AssetsFeature::GetFromPlugin<clapeze::AssetsFeature>(self);
         std::string pathstr{path};
-        miniz_istream stream = assets.OpenFromPlugin(pathstr.c_str());
-        std::string out = clapeze::impl::istream_tostring(stream);
+        bool isPlugin = true; 
+        if(pathstr.starts_with("plugin://")) {
+            pathstr = pathstr.substr(9);
+            isPlugin = true;
+        } else if (pathstr.starts_with("file://")) {
+            pathstr = pathstr.substr(7);
+            isPlugin = false;
+        }
+        std::string out;
+        if(isPlugin) {
+            miniz_istream stream = assets.OpenFromPlugin(pathstr.c_str());
+            out = clapeze::impl::istream_tostring(stream);
+        } else {
+            std::ifstream stream = assets.OpenFromFilesystem(pathstr.c_str());
+            out = clapeze::impl::istream_tostring(stream);
+        }
         return out;
     });
 }

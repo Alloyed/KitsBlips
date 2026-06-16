@@ -41,7 +41,7 @@ class VoicePool {
             // deleting existing voices and reallocating
             mVoices.clear();
             for (size_t idx = 0; idx < numVoices; ++idx) {
-                mVoices.emplace_back(mProcessor);
+                mVoices.emplace_back(mProcessor, idx);
             }
         }
     }
@@ -164,7 +164,7 @@ class VoicePool {
     }
 
     struct VoiceData {
-        explicit VoiceData(TProcessor& p) : voice(p) {}
+        explicit VoiceData(TProcessor& p, size_t idx) : voice(p, idx) {}
         TVoice voice;
         std::optional<NoteTuple> activeNote{};
         bool isPressed;

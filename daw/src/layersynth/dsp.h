@@ -34,7 +34,7 @@ class Global;
 
 class Voice {
    public:
-    explicit Voice(clapeze::BaseProcessor& p) { (void)p; }
+    explicit Voice(clapeze::BaseProcessor& p, size_t idx) { (void)p;(void)idx; }
     void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity);
     void ProcessNoteOff() {
         mFilterEnv.TriggerClose();

@@ -389,7 +389,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
 
     class Voice {
        public:
-        explicit Voice(Processor& p) : mProcessor(p) {}
+        explicit Voice(Processor& p, size_t idx) : mProcessor(p) {(void)idx;}
         void ProcessNoteOn(const clapeze::NoteTuple& note, float velocity) {
             mNote = note.key;
             mVelocity = velocity;
@@ -441,7 +441,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
 
             // vca
             // We know this will usually be used polyphonically, so let's get some headroom
-            static const float cVcaBaseGainRatio = kitdsp::dbToRatio(-10.0f);
+            static const float cVcaBaseGainRatio = kitdsp::dbToRatio(-6.0f);
             float vcaGain = kitdsp::dbToRatio(params.Get<Params::VcaGain>()) * cVcaBaseGainRatio;
             float vcaModAmount = params.Get<Params::VcaLfoAmount>();
             float vcaEnvDisabled = params.Get<Params::VcaEnvDisabled>() == OnOff::On ? 1.0f : 0.0f;  // TODO: xfade
@@ -453,7 +453,7 @@ class Processor : public clapeze::InstrumentProcessor<ParamsFeature::AudioHandle
 
                 float oscMod = kitdsp::lerp(lfo, env, oscModMix) * oscModAmount;
                 float filterMod = kitdsp::lerp(lfo, env, filterModMix) * filterModAmount;
-                float vcaMod = kitdsp::lerp(env, gateEnv, vcaEnvDisabled) * (1.0f - (-lfo * vcaModAmount)) * mVelocity;
+                float vcaMod = kitdsp::lerp(env, gateEnv, vcaEnvDisabled) * (1.0f - (-lfo * vcaModAmount)) * kitdsp::lerp(0.3f, 1.0f, mVelocity);
                 vcaMod = vcaMod * vcaMod * vcaMod;  // approximate db curve (not really but yknow)
 
                 mOsc.SetFrequency(kitdsp::midiToFrequency(oscNote + oscMod), sampleRate);
