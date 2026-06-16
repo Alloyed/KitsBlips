@@ -27,6 +27,9 @@ target_link_libraries(multiwindow kitgui)
 add_executable(3dviewer 3dviewer.cpp)
 target_link_libraries(3dviewer kitgui)
 
+add_executable(imageviewer imageviewer.cpp)
+target_link_libraries(imageviewer kitgui)
+
 add_executable(customControls customControls.cpp)
 target_link_libraries(customControls kitgui)
 

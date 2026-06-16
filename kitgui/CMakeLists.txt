@@ -34,16 +34,18 @@ target_enable_warnings(kitgui)
 
 target_sources(kitgui PRIVATE
     src/context.cpp
+    src/controls/knob.cpp
+    src/controls/toggleSwitch.cpp
     src/fileContext.cpp
     src/gfx/animations.cpp
     src/gfx/drawables.cpp
-    src/gfx/scene.cpp
-    src/gfx/sceneGraph.cpp
+    src/gfx/image.cpp
+    src/gfx/importerManager.cpp
     src/gfx/lights.cpp
     src/gfx/materials.cpp
     src/gfx/meshes.cpp
-    src/controls/knob.cpp
-    src/controls/toggleSwitch.cpp
+    src/gfx/scene.cpp
+    src/gfx/sceneGraph.cpp
     src/theme/everforest.cpp
 )
 

@@ -3,7 +3,7 @@
 #include <nfd.h>
 #include "kitgui.h"
 
-nfdwindowhandle_t NFD_GetWindow(kitgui::WindowRef ref) {
+inline nfdwindowhandle_t NFD_GetWindow(kitgui::WindowRef ref) {
     size_t type{};
     switch (ref.api) {
         case kitgui::WindowApi::Any: {

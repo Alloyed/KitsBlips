@@ -38,16 +38,13 @@
 #include "gfx/meshes.h"
 #include "gfx/postProcess.h"
 #include "gfx/sceneGraph.h"
+#include "gfx/importerManager.h"
 #include "kitgui/context.h"
 #include "kitgui/types.h"
 
 using namespace Magnum;
 using namespace Magnum::Math::Literals;
 using namespace Magnum::Math::Literals::ColorLiterals;
-
-namespace {
-PluginManager::Manager<Trade::AbstractImporter> sImporterManager{};
-}
 
 namespace kitgui {
 
@@ -105,13 +102,13 @@ void Scene::Impl::Load(std::string_view path) {
     if (mLoaded || mLoadError) {
         return;
     }
-    PluginManager::PluginMetadata* basisImporter = sImporterManager.metadata("BasisImporter");
+    PluginManager::PluginMetadata* basisImporter = ImporterManager().metadata("BasisImporter");
     if (basisImporter) {
         mMaterialCache.ConfigureBasisLoader(*basisImporter);
     }
 
     Corrade::Containers::Pointer<Magnum::Trade::AbstractImporter> importer =
-        sImporterManager.loadAndInstantiate("GltfImporter");
+        ImporterManager().loadAndInstantiate("GltfImporter");
     assert(!!importer);
 
     const auto fileCallback = [](const std::string& filename, Magnum::InputFileCallbackPolicy policy,

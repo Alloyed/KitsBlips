@@ -69,6 +69,7 @@ target_sources(KitsBlips PRIVATE
     src/freqshift/freqshift.cpp
     src/harmonizer/harmonizer.cpp
     src/filters/filters.cpp
+    src/singer/singer.cpp
 )
 
 if(WIN32)
