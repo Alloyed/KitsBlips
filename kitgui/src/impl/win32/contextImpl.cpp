@@ -291,6 +291,8 @@ bool ContextImpl::Create(bool isFloating) {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    io.ConfigViewportsNoAutoMerge = true;
+    io.ConfigViewportsNoDefaultParent = false;
     sIniFile = app_path() + "/imgui.ini";
     sLogFile = app_path() + "/imgui.log";
     io.IniFilename = sIniFile.c_str();
