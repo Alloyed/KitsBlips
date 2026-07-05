@@ -33,6 +33,10 @@ void Context::deinit() {
     Impl::deinit();
 }
 
+std::string Context::app_path() {
+    return Impl::app_path();
+}
+
 Context::Context(Context::AppFactory fn)
     : mCreateAppFn(std::move(fn)),
       mLogger(log::defaultLogger),

@@ -12,9 +12,9 @@
 #include <Magnum/Platform/GLContext.h>
 #include <dwmapi.h>
 #include <imgui.h>
-#include <imgui_internal.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_win32.h>
+#include <imgui_internal.h>
 #include <implot.h>
 #include <algorithm>
 #include <chrono>
@@ -24,7 +24,11 @@
 #include "log.h"
 
 // Forward declare message handler from imgui_impl_win32.cpp
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandlerEx(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, ImGuiIO& io); // Doesn't use ImGui::GetCurrentContext()
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandlerEx(HWND hWnd,
+                                                               UINT msg,
+                                                               WPARAM wParam,
+                                                               LPARAM lParam,
+                                                               ImGuiIO& io);  // Doesn't use ImGui::GetCurrentContext()
 
 namespace {
 // Win32 message handler
@@ -50,7 +54,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     }
 
     kitgui::win32::ContextImpl* instance = kitgui::win32::ContextImpl::FindContextImplForWindow(hWnd);
-    if(instance) {
+    if (instance) {
         auto innerResult = instance->OnWindowsEvent(hWnd, msg, wParam, lParam);
         if (innerResult) {
             return innerResult;
@@ -113,13 +117,17 @@ using namespace Magnum;
 
 namespace kitgui::win32 {
 std::wstring ContextImpl::sClassName{};
+std::string ContextImpl::sAppName{};
+std::string ContextImpl::sIniFile{};
+std::string ContextImpl::sLogFile{};
 
 void ContextImpl::init(kitgui::WindowApi api, std::string_view appName) {
     (void)api;
     sClassName = utf8_to_utf16(appName);
+    sAppName = appName;
     // Note! this changes dpi awareness per-process, which may mess with the host's settings.
     // we might need to read the current dpi-awareness setting and make decisions based on that instead?
-    //ImGui_ImplWin32_EnableDpiAwareness();
+    // ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSW windowClass = {};
     windowClass.lpfnWndProc = WndProc;
     windowClass.cbWndExtra = sizeof(ContextImpl*);
@@ -131,6 +139,17 @@ void ContextImpl::init(kitgui::WindowApi api, std::string_view appName) {
 
 void ContextImpl::deinit() {
     ::UnregisterClassW(sClassName.c_str(), nullptr);
+}
+std::string ContextImpl::app_path() {
+    std::string tmp{};
+    if (const char* localAppData = std::getenv("LOCALAPPDATA")) {
+        tmp = localAppData;
+    }
+    if (tmp.empty() || sAppName.empty()) {
+        return "";
+    }
+    tmp += "/" + sAppName;
+    return tmp;
 }
 
 ContextImpl::ContextImpl(kitgui::Context& ctx) : mContext(ctx) {}
@@ -196,10 +215,11 @@ bool ContextImpl::Create(bool isFloating) {
     ImPlot::SetCurrentContext(mImPlot);
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    // disable file writing
-    io.IniFilename = nullptr;
-    io.LogFilename = nullptr;
+    // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    sIniFile = app_path() + "/imgui.ini";
+    sLogFile = app_path() + "/imgui.log";
+    io.IniFilename = sIniFile.c_str();
+    io.LogFilename = sLogFile.c_str();
 
     // Setup Platform/Renderer backends
     ImGui_ImplWin32_InitForOpenGL(mWindow);
@@ -278,17 +298,17 @@ bool ContextImpl::GetSizeInPixels(uint32_t& widthOut, uint32_t& heightOut) const
     return true;
 }
 bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
-    (void)resizable; // TODO: resizable
+    (void)resizable;  // TODO: resizable
     bool result = ::SetWindowPos(mWindow, nullptr, 0, 0, width, height,
-                          SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
-    if(!result) {
+                                 SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
+    if (!result) {
         kitgui::log::error(mContext, GetLastWinError());
     }
     return result;
 }
 bool ContextImpl::SetParent(const kitgui::WindowRef& parentWindowRef) {
     bool result = ::SetParent(mWindow, static_cast<HWND>(parentWindowRef.ptr));
-    if(!result) {
+    if (!result) {
         kitgui::log::error(mContext, GetLastWinError());
     }
     return result;
@@ -302,7 +322,7 @@ bool ContextImpl::SetTransient([[maybe_unused]] const kitgui::WindowRef& transie
 void ContextImpl::SuggestTitle(std::string_view title) {
     std::wstring wideTitle = utf8_to_utf16(title);
     bool result = ::SetWindowTextW(mWindow, wideTitle.c_str());
-    if(!result) {
+    if (!result) {
         kitgui::log::info(mContext, GetLastWinError());
     }
 }
@@ -325,7 +345,7 @@ bool ContextImpl::Close() {
 
 void ContextImpl::MakeCurrent() {
     bool result = ::wglMakeCurrent(mDeviceContext, mWglContext);
-    if(!result) {
+    if (!result) {
         kitgui::log::info(mContext, GetLastWinError());
     }
     if (mImgui) {
@@ -378,8 +398,9 @@ void ContextImpl::RunLoop() {
 void ContextImpl::RunSingleFrame() {
     static bool running = false;
 
-    if(running) {
-        // nativefiledialog may run as part of this loop, which will continue sending windows events (all on top of each other). to prevent this: only one frame at a time, thanks
+    if (running) {
+        // nativefiledialog may run as part of this loop, which will continue sending windows events (all on top of each
+        // other). to prevent this: only one frame at a time, thanks
         return;
     }
     running = true;
@@ -428,7 +449,6 @@ LRESULT ContextImpl::OnWindowsEvent(HWND hWnd,
                                     UINT msg,
                                     [[maybe_unused]] WPARAM wParam,
                                     [[maybe_unused]] LPARAM lParam) {
-
     if (ImGui_ImplWin32_WndProcHandlerEx(hWnd, msg, wParam, lParam, mImgui->IO)) {
         return 1;
     }
@@ -490,7 +510,7 @@ bool ContextImpl::CreateWglContext() {
     }
 
     mWglContext = ::wglCreateContext(mDeviceContext);
-    if(mWglContext == nullptr) {
+    if (mWglContext == nullptr) {
         kitgui::log::error(mContext, GetLastWinError());
         return false;
     }

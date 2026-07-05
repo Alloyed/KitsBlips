@@ -9,9 +9,9 @@
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
 #include <imgui.h>
-#include <implot.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl3.h>
+#include <implot.h>
 #include <nfd.h>
 #include <algorithm>
 #include <string_view>
@@ -177,7 +177,7 @@ using namespace Magnum;
 
 namespace kitgui::sdl {
 void ContextImpl::init(kitgui::WindowApi api, std::string_view appName) {
-    (void)appName;
+    sAppName = appName;
     sApi = api;
     switch (api) {
         // only one API possible on these platforms
@@ -224,6 +224,27 @@ void ContextImpl::deinit() {
         sSdlGl = nullptr;
     }
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
+}
+
+std::string ContextImpl::app_path() {
+    std::string tmp{};
+#ifdef _WIN32
+    if (const char* localAppData = std::getenv("LOCALAPPDATA")) {
+        tmp = localAppData;
+    }
+#else
+    if (const char* xdgDataHome = std::getenv("XDG_DATA_HOME")) {
+        tmp = xdgDataHome;
+    } else if (const char* home = std::getenv("HOME")) {
+        tmp = home;
+        tmp += "/.local/share";
+    }
+#endif
+    if (tmp.empty() || sAppName.empty()) {
+        return "";
+    }
+    tmp += "/" + sAppName;
+    return tmp;
 }
 
 ContextImpl::ContextImpl(kitgui::Context& ctx) : mContext(ctx) {}
@@ -303,11 +324,12 @@ bool ContextImpl::Create(bool isFloating) {
     ImPlot::SetCurrentContext(mImPlot);
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-    //  disable file writing
-    io.IniFilename = nullptr;
-    io.LogFilename = nullptr;
+    // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    //  io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    sIniFile = app_path() + "/imgui.ini";
+    sLogFile = app_path() + "/imgui.log";
+    io.IniFilename = sIniFile.c_str();
+    io.LogFilename = sLogFile.c_str();
 
     // Setup Platform/Renderer backends
     if (!ImGui_ImplSDL3_InitForOpenGL(mWindow, sSdlGl)) {
@@ -445,6 +467,9 @@ kitgui::WindowRef ContextImpl::GetWindow() const {
     return getWindowRef_(sApi, mWindow);
 }
 
+std::string ContextImpl::sAppName{};
+std::string ContextImpl::sIniFile{};
+std::string ContextImpl::sLogFile{};
 std::vector<ContextImpl*> ContextImpl::sActiveInstances = {};
 kitgui::WindowApi ContextImpl::sApi = kitgui::WindowApi::Any;
 SDL_GLContext ContextImpl::sSdlGl{};

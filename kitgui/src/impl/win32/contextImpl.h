@@ -39,6 +39,7 @@ class ContextImpl {
     ~ContextImpl() = default;
     static void init(kitgui::WindowApi api, std::string_view appName);
     static void deinit();
+    static std::string app_path();
 
     // host events: (matches clap API)
     bool Create(bool isFloating);
@@ -91,11 +92,15 @@ class ContextImpl {
     Magnum::Color4 mClearColor = {0.5f, 0.5f, 0.5f, 1.0f};
 
     static std::wstring sClassName;
+    static std::string sAppName;
+    static std::string sIniFile;
+    static std::string sLogFile;
 
     static void AddActiveInstance(ContextImpl* instance);
     static void RemoveActiveInstance(ContextImpl* instance);
     static std::vector<ContextImpl*> sActiveInstances;
-    public:
+
+   public:
     static ContextImpl* FindContextImplForWindow(HWND wnd);
 };
 

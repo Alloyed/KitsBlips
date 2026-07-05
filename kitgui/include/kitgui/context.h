@@ -3,7 +3,6 @@
 #include <nfd.h>
 #include <cstdint>
 #include <functional>
-#include <iostream>
 #include <memory>
 #include <optional>
 #include <string>
@@ -61,6 +60,8 @@ class Context {
     static void init(kitgui::WindowApi api, std::string_view appName);
     /** cleans up the init() call. ensure all contexts are destroyed before doing this! */
     static void deinit();
+    /** Returns a folder that can be used to store app-specific files (config, logs, etc) */
+    static std::string app_path();
 
     /**
      * Creates a window for this context. if isFloating is true, the window will be instatiated independently, if false,
