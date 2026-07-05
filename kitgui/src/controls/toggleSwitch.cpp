@@ -11,7 +11,8 @@ bool ToggleSwitch::Update(bool& rawValueInOut) {
     // roughly adapted from https://github.com/ocornut/imgui/issues/1537
 
     auto itemWidth = mWidth ? (*mWidth) * ImGui::GetIO().FontGlobalScale : ImGui::GetTextLineHeight() * 2.0f;
-    ImVec2 screen_pos = mPos ? ImVec2{mPos->x(), mPos->y()} : ImGui::GetCursorScreenPos();
+    ImVec2 start_pos = ImGui::GetMainViewport()->Pos;
+    ImVec2 screen_pos = mPos ? ImVec2{start_pos.x + mPos->x(), start_pos.y + mPos->y()} : ImGui::GetCursorScreenPos();
 
     ImGui::PushID(static_cast<void*>(this));
     ImGui::PushItemWidth(itemWidth);

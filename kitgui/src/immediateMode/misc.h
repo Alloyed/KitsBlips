@@ -7,7 +7,7 @@ namespace kitgui {
 namespace ImGuiHelpers {
 template <typename FN>
 inline void beginFullscreen(FN fn) {
-    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->Pos);
     ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     static bool open = true;

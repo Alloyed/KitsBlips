@@ -75,14 +75,16 @@ class ContextImpl {
     LRESULT OnWindowsEvent(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
    private:
+    struct Subwindow {
+        ::HDC hDC;
+    };
     bool CreateWglContext();
     void DestroyWglContext();
 
     kitgui::Context& mContext;
     kitgui::WindowApi mApi;
-    ::HWND mWindow;
+    ::HWND mMainWindow;
     ::HDC mDeviceContext;
-    ::HGLRC mWglContext;
     std::unique_ptr<Magnum::Platform::GLContext> mGl = nullptr;
     std::unique_ptr<Magnum::DebugTools::FrameProfilerGL> mProfiler = nullptr;
     ImGuiContext* mImgui = nullptr;
@@ -91,6 +93,9 @@ class ContextImpl {
     bool mDestroy = false;
     Magnum::Color4 mClearColor = {0.5f, 0.5f, 0.5f, 1.0f};
 
+   public:
+    static ::HGLRC sWglContext;
+   private:
     static std::wstring sClassName;
     static std::string sAppName;
     static std::string sIniFile;

@@ -89,6 +89,75 @@ std::string GetLastWinError() {
     return out;
 }
 
+struct WGL_WindowData { HDC hDC; };
+
+bool CreateDeviceWGL(HWND hWnd, WGL_WindowData* data)
+{
+    HDC hDc = ::GetDC(hWnd);
+    PIXELFORMATDESCRIPTOR pfd = { 0 };
+    pfd.nSize = sizeof(pfd);
+    pfd.nVersion = 1;
+    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.cColorBits = 32;
+
+    const int pf = ::ChoosePixelFormat(hDc, &pfd);
+    if (pf == 0)
+        return false;
+    if (::SetPixelFormat(hDc, pf, &pfd) == FALSE)
+        return false;
+    ::ReleaseDC(hWnd, hDc);
+
+    data->hDC = ::GetDC(hWnd);
+    if (!kitgui::win32::ContextImpl::sWglContext) {
+        kitgui::win32::ContextImpl::sWglContext = ::wglCreateContext(data->hDC);
+        if (!kitgui::win32::ContextImpl::sWglContext) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void CleanupDeviceWGL(HWND hWnd, WGL_WindowData* data)
+{
+    wglMakeCurrent(nullptr, nullptr);
+    ::ReleaseDC(hWnd, data->hDC);
+}
+
+static void Hook_Renderer_CreateWindow(ImGuiViewport* viewport)
+{
+    assert(viewport->RendererUserData == NULL);
+
+    WGL_WindowData* data = IM_NEW(WGL_WindowData);
+    CreateDeviceWGL((HWND)viewport->PlatformHandle, data);
+    viewport->RendererUserData = data;
+}
+
+static void Hook_Renderer_DestroyWindow(ImGuiViewport* viewport)
+{
+    if (viewport->RendererUserData != NULL)
+    {
+        WGL_WindowData* data = (WGL_WindowData*)viewport->RendererUserData;
+        CleanupDeviceWGL((HWND)viewport->PlatformHandle, data);
+        IM_DELETE(data);
+        viewport->RendererUserData = NULL;
+    }
+}
+
+static void Hook_Platform_RenderWindow(ImGuiViewport* viewport, void*)
+{
+    // Activate the platform window DC in the OpenGL rendering context
+    if (WGL_WindowData* data = (WGL_WindowData*)viewport->RendererUserData) {
+        wglMakeCurrent(data->hDC, kitgui::win32::ContextImpl::sWglContext);
+    }
+}
+
+static void Hook_Renderer_SwapBuffers(ImGuiViewport* viewport, void*)
+{
+    if (WGL_WindowData* data = (WGL_WindowData*)viewport->RendererUserData)
+        ::SwapBuffers(data->hDC);
+}
+
 std::string utf16_to_utf8(std::wstring_view wstr) {
     if (wstr.empty()) {
         return {};
@@ -116,6 +185,7 @@ std::wstring utf8_to_utf16(std::string_view str) {
 using namespace Magnum;
 
 namespace kitgui::win32 {
+::HGLRC ContextImpl::sWglContext = nullptr;
 std::wstring ContextImpl::sClassName{};
 std::string ContextImpl::sAppName{};
 std::string ContextImpl::sIniFile{};
@@ -139,6 +209,10 @@ void ContextImpl::init(kitgui::WindowApi api, std::string_view appName) {
 
 void ContextImpl::deinit() {
     ::UnregisterClassW(sClassName.c_str(), nullptr);
+    if(sWglContext) {
+        ::wglDeleteContext(sWglContext);
+        sWglContext = nullptr;
+    }
 }
 std::string ContextImpl::app_path() {
     std::string tmp{};
@@ -170,7 +244,7 @@ bool ContextImpl::Create(bool isFloating) {
         windowStyle |= WS_THICKFRAME | WS_MAXIMIZEBOX;
     }
 
-    mWindow = ::CreateWindowW(
+    mMainWindow = ::CreateWindowW(
         // class name
         sClassName.c_str(),
         // window name (fill in later)
@@ -189,18 +263,18 @@ bool ContextImpl::Create(bool isFloating) {
         nullptr,
         // param
         nullptr);
-    if (mWindow == nullptr) {
+    if (mMainWindow == nullptr) {
         kitgui::log::error(mContext, GetLastWinError());
         return false;
     }
-    ::SetWindowLongPtr(mWindow, 0, reinterpret_cast<LONG_PTR>(this));
-    ::SetTimer(mWindow, 1, 32, nullptr);
+    ::SetWindowLongPtr(mMainWindow, 0, reinterpret_cast<LONG_PTR>(this));
+    ::SetTimer(mMainWindow, 1, 32, nullptr);
 
     if (!CreateWglContext()) {
         return false;
     }
 
-    ::wglMakeCurrent(mDeviceContext, mWglContext);
+    ::wglMakeCurrent(mDeviceContext, sWglContext);
     Magnum::Platform::GLContext::makeCurrent(nullptr);
     mGl = std::make_unique<Magnum::Platform::GLContext>();
     Magnum::Platform::GLContext::makeCurrent(mGl.get());
@@ -216,14 +290,29 @@ bool ContextImpl::Create(bool isFloating) {
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     sIniFile = app_path() + "/imgui.ini";
     sLogFile = app_path() + "/imgui.log";
     io.IniFilename = sIniFile.c_str();
     io.LogFilename = sLogFile.c_str();
 
     // Setup Platform/Renderer backends
-    ImGui_ImplWin32_InitForOpenGL(mWindow);
+    ImGui_ImplWin32_InitForOpenGL(mMainWindow);
     ImGui_ImplOpenGL3_Init();
+
+        // Win32+GL needs specific hooks for viewport, as there are specific things needed to tie Win32 and GL api.
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
+        IM_ASSERT(platform_io.Renderer_CreateWindow == NULL);
+        IM_ASSERT(platform_io.Renderer_DestroyWindow == NULL);
+        IM_ASSERT(platform_io.Renderer_SwapBuffers == NULL);
+        IM_ASSERT(platform_io.Platform_RenderWindow == NULL);
+        platform_io.Renderer_CreateWindow = Hook_Renderer_CreateWindow;
+        platform_io.Renderer_DestroyWindow = Hook_Renderer_DestroyWindow;
+        platform_io.Renderer_SwapBuffers = Hook_Renderer_SwapBuffers;
+        platform_io.Platform_RenderWindow = Hook_Platform_RenderWindow;
+    }
 
     return true;
 }
@@ -241,9 +330,9 @@ bool ContextImpl::Destroy() {
         mProfiler.reset();
         mGl.reset();
         DestroyWglContext();
-        ::KillTimer(mWindow, 1);
-        ::DestroyWindow(mWindow);
-        mWindow = nullptr;
+        ::KillTimer(mMainWindow, 1);
+        ::DestroyWindow(mMainWindow);
+        mMainWindow = nullptr;
 
         // pick any valid current engine for later: this works around a bug i don't fully understand in SDL3 itself :x
         // without this block, closing a window when multiple are active causes a crash in the main update loop when we
@@ -267,7 +356,7 @@ void ContextImpl::SetClearColor(Magnum::Color4 color) {
 }
 
 kitgui::WindowRef ContextImpl::GetWindow() const {
-    return wrapWindow(WindowApi::Win32, mWindow);
+    return wrapWindow(WindowApi::Win32, mMainWindow);
 }
 
 std::string ContextImpl::GetFrameStats() const {
@@ -285,21 +374,21 @@ double ContextImpl::GetUIScale() const {
 }
 bool ContextImpl::GetSize(uint32_t& widthOut, uint32_t& heightOut) const {
     RECT rect;
-    ::GetWindowRect(mWindow, &rect);
+    ::GetWindowRect(mMainWindow, &rect);
     widthOut = rect.right - rect.left;
     heightOut = rect.bottom - rect.top;
     return true;
 }
 bool ContextImpl::GetSizeInPixels(uint32_t& widthOut, uint32_t& heightOut) const {
     RECT rect;
-    ::GetWindowRect(mWindow, &rect);
+    ::GetWindowRect(mMainWindow, &rect);
     widthOut = rect.right - rect.left;
     heightOut = rect.bottom - rect.top;
     return true;
 }
 bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizable) {
     (void)resizable;  // TODO: resizable
-    bool result = ::SetWindowPos(mWindow, nullptr, 0, 0, width, height,
+    bool result = ::SetWindowPos(mMainWindow, nullptr, 0, 0, width, height,
                                  SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
     if (!result) {
         kitgui::log::error(mContext, GetLastWinError());
@@ -307,7 +396,7 @@ bool ContextImpl::SetSizeDirectly(uint32_t width, uint32_t height, bool resizabl
     return result;
 }
 bool ContextImpl::SetParent(const kitgui::WindowRef& parentWindowRef) {
-    bool result = ::SetParent(mWindow, static_cast<HWND>(parentWindowRef.ptr));
+    bool result = ::SetParent(mMainWindow, static_cast<HWND>(parentWindowRef.ptr));
     if (!result) {
         kitgui::log::error(mContext, GetLastWinError());
     }
@@ -315,25 +404,25 @@ bool ContextImpl::SetParent(const kitgui::WindowRef& parentWindowRef) {
 }
 bool ContextImpl::SetTransient([[maybe_unused]] const kitgui::WindowRef& transientWindowRef) {
     // TODO
-    // return setTransient(mApi, mWindow, transientWindowRef);
+    // return setTransient(mApi, mMainWindow, transientWindowRef);
     kitgui::log::error(mContext, "SetTransient NYI");
     return false;
 }
 void ContextImpl::SuggestTitle(std::string_view title) {
     std::wstring wideTitle = utf8_to_utf16(title);
-    bool result = ::SetWindowTextW(mWindow, wideTitle.c_str());
+    bool result = ::SetWindowTextW(mMainWindow, wideTitle.c_str());
     if (!result) {
         kitgui::log::info(mContext, GetLastWinError());
     }
 }
 
 bool ContextImpl::Show() {
-    ::ShowWindow(mWindow, SW_SHOW);
+    ::ShowWindow(mMainWindow, SW_SHOW);
     AddActiveInstance(this);
     return true;
 }
 bool ContextImpl::Hide() {
-    ::ShowWindow(mWindow, SW_HIDE);
+    ::ShowWindow(mMainWindow, SW_HIDE);
     mActive = false;  // will be removed
     return true;
 }
@@ -344,7 +433,7 @@ bool ContextImpl::Close() {
 }
 
 void ContextImpl::MakeCurrent() {
-    bool result = ::wglMakeCurrent(mDeviceContext, mWglContext);
+    bool result = ::wglMakeCurrent(mDeviceContext, sWglContext);
     if (!result) {
         kitgui::log::info(mContext, GetLastWinError());
     }
@@ -440,6 +529,12 @@ void ContextImpl::RunSingleFrame() {
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         instance->mProfiler->endFrame();
 
+        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+            // Restore the OpenGL rendering context to the main window DC, since platform windows might have changed it.
+            instance->MakeCurrent();
+        }
         ::SwapBuffers(instance->mDeviceContext);
     }
     running = false;
@@ -483,7 +578,7 @@ bool ContextImpl::GetPreferredApi(kitgui::WindowApi& apiOut, bool& isFloatingOut
 
 ContextImpl* ContextImpl::FindContextImplForWindow(HWND win) {
     for (ContextImpl* instance : sActiveInstances) {
-        if (instance->mWindow == win) {
+        if (instance->mMainWindow == win) {
             return instance;
         }
     }
@@ -491,7 +586,7 @@ ContextImpl* ContextImpl::FindContextImplForWindow(HWND win) {
 }
 
 bool ContextImpl::CreateWglContext() {
-    mDeviceContext = ::GetDC(mWindow);
+    mDeviceContext = ::GetDC(mMainWindow);
     if (mDeviceContext == nullptr) {
         kitgui::log::error(mContext, GetLastWinError());
         return false;
@@ -509,18 +604,19 @@ bool ContextImpl::CreateWglContext() {
         return false;
     }
 
-    mWglContext = ::wglCreateContext(mDeviceContext);
-    if (mWglContext == nullptr) {
-        kitgui::log::error(mContext, GetLastWinError());
-        return false;
+    if(sWglContext == nullptr) {
+        sWglContext = ::wglCreateContext(mDeviceContext);
+        if (sWglContext == nullptr) {
+            kitgui::log::error(mContext, GetLastWinError());
+            return false;
+        }
     }
     return true;
 }
 
 void ContextImpl::DestroyWglContext() {
     ::wglMakeCurrent(nullptr, nullptr);
-    ::ReleaseDC(mWindow, mDeviceContext);
-    mWglContext = nullptr;
+    ::ReleaseDC(mMainWindow, mDeviceContext);
     mDeviceContext = nullptr;
 }
 }  // namespace kitgui::win32

@@ -12,7 +12,8 @@ bool Knob::Update(double& rawValueInOut) {
     // roughly adapted from https://github.com/altschuler/imgui-knobs/tree/main
     float scale = ImGui::GetIO().FontGlobalScale;
     auto itemWidth = mWidth ? (*mWidth) * scale : ImGui::GetTextLineHeight() * 2.0f;
-    ImVec2 screen_pos = mPos ? ImVec2{mPos->x(), mPos->y()} : ImGui::GetCursorScreenPos();
+    ImVec2 start_pos = ImGui::GetMainViewport()->Pos;
+    ImVec2 screen_pos = mPos ? ImVec2{start_pos.x + mPos->x(), start_pos.y + mPos->y()} : ImGui::GetCursorScreenPos();
 
     ImGui::PushID(static_cast<void*>(this));
     ImGui::PushItemWidth(itemWidth);
