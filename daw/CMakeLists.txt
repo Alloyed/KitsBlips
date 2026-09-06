@@ -70,6 +70,7 @@ target_sources(KitsBlips PRIVATE
     src/harmonizer/harmonizer.cpp
     src/filters/filters.cpp
     src/singer/singer.cpp
+    src/meniscus/meniscus.cpp
 )
 
 if(WIN32)
