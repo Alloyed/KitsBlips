@@ -28,12 +28,17 @@ class DelayLine {
         mWriteIndex = (mWriteIndex - 1 + size) % size;
     }
 
+    inline void AdvanceFrozen() {
+        size_t size = mBuffer.size();
+        mWriteIndex = (mWriteIndex - 1 + size) % size;
+    }
+
     inline const TSample Read(int32_t delayIndex) const {
         assert(delayIndex < narrow_cast<int32_t>(Size()));
         // non-interpolating read
         size_t size = mBuffer.size();
         // TODO: if size is a power-of-two this could be a cheap & instead
-        // (index + delay) & (size − 1)
+        // (index + delay) & (size - 1)
         return mBuffer[(mWriteIndex + delayIndex) % size];
     }
 

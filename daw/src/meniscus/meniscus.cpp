@@ -198,12 +198,12 @@ float rectWindow(float t) {
     return 1.0f;
 }
 
+
 struct Grain {
     float sizeSamples = 0.0f;
     float samplesPlayed = 0.0f;
     float speed = 0.0f;
     float_2 pan = {};
-    float panRight = 0.5f;
 
     void Set(float start, float size, float speed, float pan) {
         this->pos = start;
@@ -212,12 +212,8 @@ struct Grain {
         this->pan = kitdsp::equalPowerPan(pan);
         this->samplesPlayed = 0.0f;
     }
-    void Advance(bool frozen) {
-        if (frozen) {
-            pos = std::max(0.0f, pos - speed);
-        } else {
-            pos = std::max(0.0f, pos + 1.0f - speed);
-        }
+    void Advance() {
+        pos = std::max(0.0f, pos + 1.0f - speed);
         samplesPlayed += speed;
     }
     kitdsp::float_2 Read(DelayLine<float_2>& buf) const {
@@ -317,14 +313,18 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
 
             float lengthSamples = kitdsp::msToSamples(mParams.Get<Params::GrainLength>(), sampleRate);
             float delaySamples = lengthSamples * (speed+1.0f) + 1.0f;
-            //float pan = (mDsp->mInitialPan.GetValue() * mParams.Get<Params::StereoWidth>() / 2) + 0.5f;
-            float pan = 0.0f;
+            float pan = (mDsp->mInitialPan.GetValue() * mParams.Get<Params::StereoWidth>() / 2) + 0.5f;
 
             Grain& g = mDsp->mGrains.emplace_back();
             g.Set(delaySamples, lengthSamples, speed, pan);
         }
 
         float mixf = mParams.Get<Params::Mix>();
+        if(mixf < 0.001 || mParams.Get<Params::Bypass>() == clapeze::OnOff::On) {
+            out.CopyFrom(in);
+            return ProcessStatus::Continue;
+        }
+
         float tone = mParams.Get<Params::Tone>();
         bool bufferFreeze = mParams.Get<Params::BufferFreeze>() == clapeze::OnOff::On;
         for (size_t idx = 0; idx < in.left.size(); ++idx) {
@@ -333,14 +333,16 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
             float right = in.right[idx];
             left = mDsp->mToneL.Process(left, tone);
             right = mDsp->mToneR.Process(right, tone);
-            if(!bufferFreeze) {
+            if(bufferFreeze) {
+                mDsp->mDelay.AdvanceFrozen();
+            } else {
                 mDsp->mDelay.Write({left, right});
             }
 
             float processedLeft = 0.0f;
             float processedRight = 0.0f;
             for(auto& grain : mDsp->mGrains) {
-                grain.Advance(bufferFreeze);
+                grain.Advance();
                 kitdsp::float_2 out = grain.Read(mDsp->mDelay);
                 processedLeft += out.left;
                 processedRight += out.right;
@@ -378,7 +380,7 @@ class GuiApp : public kitgui::BaseApp {
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
         mParams.FlushFromAudio();
-        ImGui::TextWrapped("temp ui :)");
+        ImGui::TextWrapped("temp ui :) swag");
         ImGui::TextWrapped("https://bsky.app/profile/hyenablood.yeen.world/post/3mutleh4fgs2v");
         if(!mAlt) {
             kitgui::DebugParam<ParamsFeature, Params::Mix>(mParams);

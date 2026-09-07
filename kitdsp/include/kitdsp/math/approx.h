@@ -36,21 +36,23 @@ inline float tanhf(float x) {
 }
 
 // https://bmtechjournal.wordpress.com/2020/05/27/super-fast-quadratic-sinusoid-approximation/
-// period is [0,1] instead of [0,2pi]
+// period is [0,1] instead of [0,2pi], output is [-1, 1]
 inline float sin2pif_nasty(float x) {
+    return std::sin(x * kTwoPi);
     // limit range
-    x = x - truncf(x) - 0.5f;
+    //x = x - std::floor(x) - 0.5f;
 
-    return 2.0f * x * (1.0f - fabsf(2.0f * x));
+    //return 8.0f * x * (1.0f - std::abs(2.0f * x));
 }
 
 // https://bmtechjournal.wordpress.com/2020/05/27/super-fast-quadratic-sinusoid-approximation/
-// period is [0,1] instead of [0,2pi]
+// period is [0,1] instead of [0,2pi], output is [-1, 1]
 inline float cos2pif_nasty(float x) {
+    return std::cos(x * kTwoPi);
     // limit range
-    x = x - truncf(x + 0.25f) - 0.5f;
+    //x = x - std::floor(x + 0.25f) - 0.5f;
 
-    return 2.0f * x * (1.0f - fabsf(2.0f * x));
+    //return 8.0f * x * (1.0f - std::abs(2.0f * x));
 }
 
 /*
@@ -58,6 +60,7 @@ inline float cos2pif_nasty(float x) {
  * input: _x must be >= 0, and <= 2 * pi.
  */
 inline float sinf_squinky(float _x) {
+    //return std::sin(x);
     _x -= (_x > kPi) ? kTwoPi : 0.0f;
 
     bool xneg = _x < 0;
