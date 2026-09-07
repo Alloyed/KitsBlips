@@ -12,6 +12,7 @@
 #include <kitdsp/filters/onePole.h>
 #include <kitdsp/math/units.h>
 #include <kitdsp/math/vector.h>
+#include <kitdsp/volume/panning.h>
 #include <kitdsp/osc/whiteNoise.h>
 #include <kitdsp/util/spanAllocator.h>
 #include <etl/vector.h>
@@ -20,6 +21,7 @@
 #if KITSBLIPS_ENABLE_GUI
 #include <imgui.h>
 #include <kitgui/app.h>
+#include "gui/debugui.h"
 #include "gui/kitguiFeature.h"
 #endif
 
@@ -200,16 +202,14 @@ struct Grain {
     float sizeSamples = 0.0f;
     float samplesPlayed = 0.0f;
     float speed = 0.0f;
-    float panLeft = 0.5f;
+    float_2 pan = {};
     float panRight = 0.5f;
 
     void Set(float start, float size, float speed, float pan) {
         this->pos = start;
         this->sizeSamples = size;
         this->speed = speed;
-        // constant power pan law
-        this->panLeft = kitdsp::clamp(kitdsp::approx::sin2pif_nasty((1.0f-pan)/4.0f), 0.0f, 1.0f);
-        this->panRight = kitdsp::clamp(kitdsp::approx::sin2pif_nasty(pan/4.0f), 0.0f, 1.0f);
+        this->pan = kitdsp::equalPowerPan(pan);
         this->samplesPlayed = 0.0f;
     }
     void Advance(bool frozen) {
@@ -220,15 +220,14 @@ struct Grain {
         }
         samplesPlayed += speed;
     }
-    kitdsp::float_2 Read(DelayLine<float>& buf) const {
+    kitdsp::float_2 Read(DelayLine<float_2>& buf) const {
         if (sizeSamples == 0.0f) {
             return {};
         }
-        float progress = kitdsp::clamp(samplesPlayed / sizeSamples, 0.0f, 1.0f);
+        //float progress = kitdsp::clamp(samplesPlayed / sizeSamples, 0.0f, 1.0f);
         using namespace kitdsp::interpolate;
-        float mono = buf.Read<InterpolationStrategy::Hermite>(pos);// * chunkyWindow(progress);
-        //return {mono * panLeft, mono * panRight};
-        return {mono * panLeft, mono * panRight};
+        float_2 out = buf.Read<InterpolationStrategy::Hermite>(pos);// * chunkyWindow(progress);
+        return out * pan;
     }
     bool Finished() const {
         if (sizeSamples == 0.0f) {
@@ -244,20 +243,23 @@ struct Grain {
 
 struct Dsp {
     static constexpr double kMaxSeconds = 10.0;
-    Dsp(float sampleRate, DynamicSpanAllocator<float>& memory):
+    Dsp(float sampleRate, DynamicSpanAllocator<float_2>& memory):
         mDelay(memory.alloc(narrow_cast<size_t>(sampleRate * kMaxSeconds))),
-        mTone(sampleRate)
+        mToneL(sampleRate),
+        mToneR(sampleRate)
     {}
     void Reset() {
-        mTone.Reset();
+        mToneL.Reset();
+        mToneR.Reset();
         mDelay.Reset();
         mGrains.clear();
         mGrainClock.Reset();
         mInitialPan.Reset();
         mNoise.Reset();
     }
-    kitdsp::DelayLine<float> mDelay;
-    ToneFilter mTone;
+    kitdsp::DelayLine<float_2> mDelay;
+    ToneFilter mToneL;
+    ToneFilter mToneR;
     etl::vector<Grain, 32> mGrains{};
     kitdsp::lfo::ImpulseTrain mGrainClock{};
     kitdsp::lfo::SineOscillator mInitialPan{};
@@ -329,11 +331,10 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
             // in
             float left = in.left[idx];
             float right = in.right[idx];
-            float mono = left;
-            //float mono = (left + right) / 2;
-            //float mono = mDsp->mTone.Process(kitdsp::lerp(left, right, 0.5f), tone);
+            left = mDsp->mToneL.Process(left, tone);
+            right = mDsp->mToneR.Process(right, tone);
             if(!bufferFreeze) {
-                mDsp->mDelay.Write(mono);
+                mDsp->mDelay.Write({left, right});
             }
 
             float processedLeft = 0.0f;
@@ -367,7 +368,7 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
     }
 
    private:
-    kitdsp::DynamicSpanAllocator<float> mMemory{};
+    kitdsp::DynamicSpanAllocator<float_2> mMemory{};
     std::unique_ptr<Dsp> mDsp;
 };
 
@@ -377,12 +378,33 @@ class GuiApp : public kitgui::BaseApp {
     GuiApp(kitgui::Context& ctx, ParamsFeature& params) : kitgui::BaseApp(ctx), mParams(params) {}
     void OnUpdate() override {
         mParams.FlushFromAudio();
-        ImGui::TextWrapped("UI meniscus (TODO)");
-        /*mParams.DebugImGui();*/
+        ImGui::TextWrapped("temp ui :)");
+        ImGui::TextWrapped("https://bsky.app/profile/hyenablood.yeen.world/post/3mutleh4fgs2v");
+        if(!mAlt) {
+            kitgui::DebugParam<ParamsFeature, Params::Mix>(mParams);
+            kitgui::DebugParam<ParamsFeature, Params::Tone>(mParams);
+            kitgui::DebugParam<ParamsFeature, Params::PanSpeed>(mParams);
+            kitgui::DebugParam<ParamsFeature, Params::GrainDensity>(mParams);
+            kitgui::DebugParam<ParamsFeature, Params::GrainLength>(mParams);
+            kitgui::DebugParam<ParamsFeature, Params::GrainPitch>(mParams);
+            kitgui::DebugParam<ParamsFeature, Params::PanStrategy>(mParams);
+        } else {
+            kitgui::DebugParam<ParamsFeature, Params::ReverbMix>(mParams);
+            kitgui::DebugParam<ParamsFeature, Params::ModDepth>(mParams);
+            kitgui::DebugParam<ParamsFeature, Params::ModSpeed>(mParams);
+            kitgui::DebugParam<ParamsFeature, Params::ReverbLength>(mParams);
+            kitgui::DebugParam<ParamsFeature, Params::BufferLength>(mParams);
+            kitgui::DebugParam<ParamsFeature, Params::GrainPitchOdds>(mParams);
+            kitgui::DebugParam<ParamsFeature, Params::StereoWidth>(mParams);
+        }
+        kitgui::DebugParam<ParamsFeature, Params::Bypass>(mParams);
+        kitgui::DebugParam<ParamsFeature, Params::BufferFreeze>(mParams);
+        ImGui::Checkbox("Alt", &mAlt);
     }
 
    private:
     ParamsFeature& mParams;
+    bool mAlt = false;
 };
 #endif
 
@@ -425,6 +447,6 @@ class Plugin : public EffectPlugin {
     }
 };
 
-CLAPEZE_REGISTER_PLUGIN(Plugin, AudioEffectDescriptor("kitsblips.meniscus", "meniscus", "Plugin description"));
+CLAPEZE_REGISTER_PLUGIN(Plugin, AudioEffectDescriptor("kitsblips.meniscus", "Meniscus", "Plugin description"));
 
 }  // namespace meniscus

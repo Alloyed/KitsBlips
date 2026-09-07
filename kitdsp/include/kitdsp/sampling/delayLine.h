@@ -48,7 +48,7 @@ class DelayLine {
         using namespace interpolate;
         switch (strategy) {
             case InterpolationStrategy::None: {
-                assert(idx >= 0 && idx < Size());
+                assert(idx >= 0 && idx < narrow_cast<int32_t>(Size()));
                 return Read(idx);
             };
             case InterpolationStrategy::Linear: {
@@ -68,7 +68,7 @@ class DelayLine {
     }
 
     void ReadChunk(size_t startSample, etl::span<TSample>& out) {
-        assert(startSample - static_cast<int32_t>(out.size()) + 1 >= 0);
+        assert(startSample - narrow_cast<int32_t>(out.size()) + 1 >= 0);
         for (size_t i = 0; i < out.size(); ++i) {
             out[i] = Read(startSample - i);
         }
