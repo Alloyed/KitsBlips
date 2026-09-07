@@ -64,6 +64,7 @@ class DynamicSpanAllocator {
         for (T* block : mMemory) {
             delete[] block;
         }
+        mMemory.clear();
     }
 
    private:

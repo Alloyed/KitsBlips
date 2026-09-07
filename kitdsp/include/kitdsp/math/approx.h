@@ -38,21 +38,25 @@ inline float tanhf(float x) {
 // https://bmtechjournal.wordpress.com/2020/05/27/super-fast-quadratic-sinusoid-approximation/
 // period is [0,1] instead of [0,2pi], output is [-1, 1]
 inline float sin2pif_nasty(float x) {
-    return std::sin(x * kTwoPi);
-    // limit range
-    //x = x - std::floor(x) - 0.5f;
+    //return std::sin(x * kTwoPi);
+    // set phase for sin
+    x = x - .5f;
+    // wrap to -0.5, 0.5
+    x = x - std::floor(x) - 0.5f;
 
-    //return 8.0f * x * (1.0f - std::abs(2.0f * x));
+    return 8.0f * x * (1.0f - std::abs(2.0f * x));
 }
 
 // https://bmtechjournal.wordpress.com/2020/05/27/super-fast-quadratic-sinusoid-approximation/
 // period is [0,1] instead of [0,2pi], output is [-1, 1]
 inline float cos2pif_nasty(float x) {
-    return std::cos(x * kTwoPi);
-    // limit range
-    //x = x - std::floor(x + 0.25f) - 0.5f;
+    //return std::cos(x * kTwoPi);
+    // set phase for cos
+    x = x - .25f;
+    // wrap to -0.5, 0.5
+    x = x - std::floor(x) - 0.5f;
 
-    //return 8.0f * x * (1.0f - std::abs(2.0f * x));
+    return 8.0f * x * (1.0f - std::abs(2.0f * x));
 }
 
 /*
