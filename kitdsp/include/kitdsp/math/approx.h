@@ -29,7 +29,7 @@ inline float rsqrtf(float number) {
 }
 
 // https://github.com/raphlinus/synthesizer-io/blob/master/synthesizer-io-core/benches/sigmoid.rs
-inline float tanhf(float x) {
+inline float tanh(float x) {
     float xx = x * x;
     float x1 = x + (0.16489087f + 0.00985468f * xx) * (x * xx);
     return x1 * rsqrtf(1.0f + x1 * x1);

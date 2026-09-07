@@ -190,7 +190,6 @@ float chunkyWindow(float t) {
     return kitdsp::clamp(0.75f * (1.0f - kitdsp::approx::cos2pif_nasty(t)), 0.0f, 1.0f);
 }
 
-
 float rectWindow(float t) {
     if (t <= 0.0f || t >= 1.0f) {
         return 0.0f;
@@ -198,13 +197,8 @@ float rectWindow(float t) {
     return 1.0f;
 }
 
-
-struct Grain {
-    float sizeSamples = 0.0f;
-    float samplesPlayed = 0.0f;
-    float speed = 0.0f;
-    float_2 pan = {};
-
+class Grain {
+    public:
     void Set(float start, float size, float speed, float pan) {
         this->pos = start;
         this->sizeSamples = size;
@@ -220,9 +214,9 @@ struct Grain {
         if (sizeSamples == 0.0f) {
             return {};
         }
-        //float progress = kitdsp::clamp(samplesPlayed / sizeSamples, 0.0f, 1.0f);
+        float progress = kitdsp::clamp(samplesPlayed / sizeSamples, 0.0f, 1.0f);
         using namespace kitdsp::interpolate;
-        float_2 out = buf.Read<InterpolationStrategy::Hermite>(pos);// * chunkyWindow(progress);
+        float_2 out = buf.Read<InterpolationStrategy::Hermite>(pos) * hanningWindow(progress);
         return out * pan;
     }
     bool Finished() const {
@@ -234,6 +228,10 @@ struct Grain {
     }
 
    private:
+    float sizeSamples = 0.0f;
+    float samplesPlayed = 0.0f;
+    float speed = 0.0f;
+    float_2 pan = {};
     float pos;
 };
 
@@ -258,7 +256,7 @@ struct Dsp {
     ToneFilter mToneR;
     etl::vector<Grain, 32> mGrains{};
     kitdsp::lfo::ImpulseTrain mGrainClock{};
-    kitdsp::lfo::SineOscillator mInitialPan{};
+    kitdsp::lfo::Phasor mInitialPan{};
     kitdsp::WhiteNoise mNoise{};
 };
 
@@ -270,8 +268,10 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
     ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
         float sampleRate = static_cast<float>(GetSampleRate());
         float numSamples = static_cast<float>(in.left.size());
-        mDsp->mInitialPan.SetFrequency(mParams.Get<Params::PanSpeed>(), sampleRate);
+        PanStrategy strategy = mParams.Get<Params::PanStrategy>();
+        mDsp->mInitialPan.SetFrequency(mParams.Get<Params::PanSpeed>() + mSpeedOffset, sampleRate);
         mDsp->mGrainClock.SetFrequency(mParams.Get<Params::GrainDensity>(), sampleRate);
+        mDsp->mDelay.SetSize(kitdsp::msToSamples(mParams.Get<Params::BufferLength>(), sampleRate));
 
         mDsp->mInitialPan.Process(numSamples);
         if(mDsp->mGrainClock.Process(numSamples)) {
@@ -312,8 +312,23 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
             }
 
             float lengthSamples = kitdsp::msToSamples(mParams.Get<Params::GrainLength>(), sampleRate);
-            float delaySamples = lengthSamples * (speed+1.0f) + 1.0f;
-            float pan = (mDsp->mInitialPan.GetValue() * mParams.Get<Params::StereoWidth>() / 2) + 0.5f;
+            float delaySamples = lengthSamples * (speed+0.25f) + 1.0f;
+            float pan{};
+            switch(strategy) {
+                case PanStrategy::Zen:
+                   pan = kitdsp::approx::cos2pif_nasty(mDsp->mInitialPan.GetPhase());
+                   mSpeedOffset = 0;
+                   break;
+                case PanStrategy::Swirl:
+                   pan = kitdsp::approx::tanh(kitdsp::approx::cos2pif_nasty(mDsp->mInitialPan.GetPhase()) * 3.0f);
+                   mSpeedOffset = 0;
+                   break;
+                case PanStrategy::Torrent:
+                   pan = kitdsp::approx::tanh(kitdsp::approx::cos2pif_nasty(mDsp->mInitialPan.GetPhase()) * 3.0f);
+                   mSpeedOffset = mDsp->mNoise.Process() * 0.25;
+                   break;
+            }
+            pan = (pan * mParams.Get<Params::StereoWidth>() / 2) + 0.5f;
 
             Grain& g = mDsp->mGrains.emplace_back();
             g.Set(delaySamples, lengthSamples, speed, pan);
@@ -331,12 +346,13 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
             // in
             float left = in.left[idx];
             float right = in.right[idx];
-            left = mDsp->mToneL.Process(left, tone);
-            right = mDsp->mToneR.Process(right, tone);
             if(bufferFreeze) {
                 mDsp->mDelay.AdvanceFrozen();
             } else {
-                mDsp->mDelay.Write({left, right});
+                mDsp->mDelay.Write({
+                    mDsp->mToneL.Process(left, tone),
+                    mDsp->mToneR.Process(right, tone)
+                });
             }
 
             float processedLeft = 0.0f;
@@ -360,6 +376,7 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
 
     void ProcessReset() override {
         mDsp->Reset();
+        mSpeedOffset = 0.0f;
     }
 
     void Activate(double sampleRate, size_t minBlockSize, size_t maxBlockSize) override {
@@ -371,6 +388,7 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
 
    private:
     kitdsp::DynamicSpanAllocator<float_2> mMemory{};
+    float mSpeedOffset = 0.0f;
     std::unique_ptr<Dsp> mDsp;
 };
 

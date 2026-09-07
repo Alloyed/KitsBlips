@@ -15,7 +15,7 @@ namespace kitdsp {
 template <typename TSample>
 class DelayLine {
    public:
-    explicit DelayLine(etl::span<TSample> buffer) : mBuffer(buffer) { Reset(); }
+    explicit DelayLine(etl::span<TSample> buffer) : mBuffer(buffer), mSize(buffer.size()) { Reset(); }
 
     void Reset() {
         std::memset(mBuffer.data(), 0, mBuffer.size_bytes());
@@ -24,24 +24,22 @@ class DelayLine {
 
     inline void Write(const TSample sample) {
         mBuffer[mWriteIndex] = sample;
-        size_t size = mBuffer.size();
-        mWriteIndex = (mWriteIndex - 1 + size) % size;
+        mWriteIndex = (mWriteIndex - 1 + mSize) % mSize;
     }
 
     inline void AdvanceFrozen() {
-        size_t size = mBuffer.size();
-        mWriteIndex = (mWriteIndex - 1 + size) % size;
+        mWriteIndex = (mWriteIndex - 1 + mSize) % mSize;
     }
 
     inline const TSample Read(int32_t delayIndex) const {
         assert(delayIndex < narrow_cast<int32_t>(Size()));
         // non-interpolating read
-        size_t size = mBuffer.size();
         // TODO: if size is a power-of-two this could be a cheap & instead
         // (index + delay) & (size - 1)
-        return mBuffer[(mWriteIndex + delayIndex) % size];
+        return mBuffer[(mWriteIndex + delayIndex) % mSize];
     }
 
+    void SetSize(size_t newSize) { mSize = std::min(mBuffer.size(), newSize); }
     inline size_t Size() const { return mBuffer.size(); }
 
     template <interpolate::InterpolationStrategy strategy>
@@ -92,5 +90,6 @@ class DelayLine {
    private:
     size_t mWriteIndex;
     etl::span<TSample> mBuffer;
+    size_t mSize;
 };
 }  // namespace kitdsp
