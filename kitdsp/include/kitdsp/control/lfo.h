@@ -56,6 +56,9 @@ class SineOscillator : public Phasor {
    public:
     float Process(float numSamples = 1) {
         Advance(numSamples);
+        return GetValue();
+    }
+    float GetValue() const {
         return approx::cos2pif_nasty(mPhase);
     }
 };

@@ -11,6 +11,7 @@
 #include <kitdsp/sampling/delayLine.h>
 #include <kitdsp/filters/onePole.h>
 #include <kitdsp/math/units.h>
+#include <kitdsp/math/vector.h>
 #include <kitdsp/osc/whiteNoise.h>
 #include <kitdsp/util/spanAllocator.h>
 #include <etl/vector.h>
@@ -64,11 +65,11 @@ using ParamsFeature = clapeze::params::EnumParametersFeature<Params>;
 namespace clapeze::params {
 template <>
 struct ParamTraits<Params, Params::Mix> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Mix", "Mix", 1.0f) {}
+    ParamTraits() : clapeze::PercentParam("Mix", "Mix", 0.5f) {}
 };
 template <>
 struct ParamTraits<Params, Params::Tone> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Tone", "Tone", 1.0f) {}
+    ParamTraits() : clapeze::PercentParam("Tone", "Tone", 0.5f) {}
 };
 template<>
 struct ParamTraits<Params, Params::PanSpeed> : public clapeze::NumericParam {
@@ -77,13 +78,18 @@ struct ParamTraits<Params, Params::PanSpeed> : public clapeze::NumericParam {
         mCurve = clapeze::cPowCurve<3.0f>;
     }
 };
-template <>
-struct ParamTraits<Params, Params::GrainDensity> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("GrainDensity", "Density", 1.0f) {}
+template<>
+struct ParamTraits<Params, Params::GrainDensity> : public clapeze::NumericParam {
+    ParamTraits()
+        : clapeze::NumericParam("GrainDensity", "Density", 0.02f, 20.0f, 6.0f, "hz") {
+        mCurve = clapeze::cPowCurve<2.0f>;
+    }
 };
 template <>
-struct ParamTraits<Params, Params::GrainLength> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("GrainLength", "Length", 1.0f) {}
+struct ParamTraits<Params, Params::GrainLength> : public clapeze::NumericParam {
+    ParamTraits() : clapeze::NumericParam("GrainLength", "Length", 40.0f, 400.0f, 40.0f, "ms") {
+        mCurve = clapeze::cPowCurve<2.0f>;
+    }
 };
 template <>
 struct ParamTraits<Params, Params::GrainPitch> : public clapeze::EnumParam<PitchRange> {
@@ -111,11 +117,11 @@ struct ParamTraits<Params, Params::BufferFreeze> : public clapeze::OnOffParam {
 };
 template <>
 struct ParamTraits<Params, Params::ReverbMix> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("Reverb Mix", "Reverb", 1.0f) {}
+    ParamTraits() : clapeze::PercentParam("Reverb Mix", "Reverb", 0.0f) {}
 };
 template <>
 struct ParamTraits<Params, Params::ModDepth> : public clapeze::PercentParam {
-    ParamTraits() : clapeze::PercentParam("ModDepth", "Depth", 1.0f) {}
+    ParamTraits() : clapeze::PercentParam("ModDepth", "Depth", 0.0f) {}
 };
 template<>
 struct ParamTraits<Params, Params::ModSpeed> : public clapeze::NumericParam {
@@ -132,7 +138,7 @@ struct ParamTraits<Params, Params::ReverbLength> : public clapeze::NumericParam 
 };
 template <>
 struct ParamTraits<Params, Params::BufferLength> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("BufferLength", "Length", 200.0f, 100000.0f, 5000.0f, "ms") {
+    ParamTraits() : clapeze::NumericParam("BufferLength", "Length", 2000.0f, 10000.0f, 5000.0f, "ms") {
         mCurve = cPowCurve<2.0f>;
     }
 };
@@ -142,7 +148,7 @@ struct ParamTraits<Params, Params::GrainPitchOdds> : public clapeze::NumericPara
 };
 template <>
 struct ParamTraits<Params, Params::StereoWidth> : public clapeze::NumericParam {
-    ParamTraits() : clapeze::NumericParam("StereoWidth", "Width", .5f, 1.0f, 0.5f, "") {}
+    ParamTraits() : clapeze::NumericParam("StereoWidth", "Width", .5f, 1.0f, 1.0f, "") {}
 };
 }  // namespace clapeze::params
 
@@ -175,6 +181,14 @@ float hanningWindow(float t) {
     return 0.5f * (1.0f - kitdsp::approx::cos2pif_nasty(t));
 }
 
+float chunkyWindow(float t) {
+    if (t <= 0.0f || t >= 1.0f) {
+        return 0.0f;
+    }
+    return kitdsp::clamp(0.75f * (1.0f - kitdsp::approx::cos2pif_nasty(t)), 0.0f, 1.0f);
+}
+
+
 float rectWindow(float t) {
     if (t <= 0.0f || t >= 1.0f) {
         return 0.0f;
@@ -186,11 +200,16 @@ struct Grain {
     float sizeSamples = 0.0f;
     float samplesPlayed = 0.0f;
     float speed = 0.0f;
+    float panLeft = 0.5f;
+    float panRight = 0.5f;
 
-    void Set(float start, float size, float speed) {
+    void Set(float start, float size, float speed, float pan) {
         this->pos = start;
         this->sizeSamples = size;
         this->speed = speed;
+        // constant power pan law
+        this->panLeft = kitdsp::clamp(kitdsp::approx::sin2pif_nasty((1.0f-pan)/4.0f), 0.0f, 1.0f);
+        this->panRight = kitdsp::clamp(kitdsp::approx::sin2pif_nasty(pan/4.0f), 0.0f, 1.0f);
         this->samplesPlayed = 0.0f;
     }
     void Advance(bool frozen) {
@@ -201,13 +220,15 @@ struct Grain {
         }
         samplesPlayed += speed;
     }
-    float Read(DelayLine<float>& buf) const {
+    kitdsp::float_2 Read(DelayLine<float>& buf) const {
         if (sizeSamples == 0.0f) {
-            return 0.0f;
+            return {};
         }
         float progress = kitdsp::clamp(samplesPlayed / sizeSamples, 0.0f, 1.0f);
         using namespace kitdsp::interpolate;
-        return buf.Read<InterpolationStrategy::Linear>(pos) * hanningWindow(progress);
+        float mono = buf.Read<InterpolationStrategy::Hermite>(pos);// * chunkyWindow(progress);
+        //return {mono * panLeft, mono * panRight};
+        return {mono * panLeft, mono * panRight};
     }
     bool Finished() const {
         if (sizeSamples == 0.0f) {
@@ -222,8 +243,8 @@ struct Grain {
 };
 
 struct Dsp {
-    static constexpr double kMaxSeconds = 15.0;
-    Dsp(double sampleRate, DynamicSpanAllocator<float>& memory):
+    static constexpr double kMaxSeconds = 10.0;
+    Dsp(float sampleRate, DynamicSpanAllocator<float>& memory):
         mDelay(memory.alloc(narrow_cast<size_t>(sampleRate * kMaxSeconds))),
         mTone(sampleRate)
     {}
@@ -249,8 +270,13 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
     ~Processor() = default;
 
     ProcessStatus ProcessAudio(const StereoAudioBuffer& in, StereoAudioBuffer& out) override {
-        mDsp->mGrainClock.SetFrequency(kitdsp::lerp(0.2, 20.0f, mParams.Get<Params::GrainDensity>()), GetSampleRate());
-        if(mDsp->mGrainClock.Process(in.left.size())) {
+        float sampleRate = static_cast<float>(GetSampleRate());
+        float numSamples = static_cast<float>(in.left.size());
+        mDsp->mInitialPan.SetFrequency(mParams.Get<Params::PanSpeed>(), sampleRate);
+        mDsp->mGrainClock.SetFrequency(mParams.Get<Params::GrainDensity>(), sampleRate);
+
+        mDsp->mInitialPan.Process(numSamples);
+        if(mDsp->mGrainClock.Process(numSamples)) {
             float speed = 1.0f;
             float odds = mParams.Get<Params::GrainPitchOdds>();
             PitchRange range = mParams.Get<Params::GrainPitch>();
@@ -264,37 +290,48 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
                     case PitchRange::Plus1:
                         speed = 2.0f;
                         break;
-                    case PitchRange::Minus1Plus1:
-                        speed = std::exp2(narrow_cast<float>(mDsp->mNoise.ProcessInt(-1, 1)));
+                    case PitchRange::Minus1Plus1: {
+                        static constexpr std::array kChoices = {-1.0f, 1.0f};
+                        speed = std::exp2(kChoices[mDsp->mNoise.ProcessIndex(kChoices.size())]);
                         break;
-                    case PitchRange::Minus1Plus2:
-                        speed = std::exp2(narrow_cast<float>(mDsp->mNoise.ProcessInt(-1, 2)));
+                    }
+                    case PitchRange::Minus1Plus2:{
+                        static constexpr std::array kChoices = {-1.0f, 1.0f, 2.0f};
+                        speed = std::exp2(kChoices[mDsp->mNoise.ProcessIndex(kChoices.size())]);
                         break;
-                    case PitchRange::Minus2Plus1:
-                        speed = std::exp2(narrow_cast<float>(mDsp->mNoise.ProcessInt(-2, 1)));
+                    }
+                    case PitchRange::Minus2Plus1: {
+                        static constexpr std::array kChoices = {-2.0f, -1.0f, 1.0f};
+                        speed = std::exp2(kChoices[mDsp->mNoise.ProcessIndex(kChoices.size())]);
                         break;
-                    case PitchRange::Minus2Plus2:
-                        speed = std::exp2(narrow_cast<float>(mDsp->mNoise.ProcessInt(-2, 2)));
+                    }
+                    case PitchRange::Minus2Plus2: {
+                        static constexpr std::array kChoices = {-2.0f, -1.0f, 1.0f, 2.0f};
+                        speed = std::exp2(kChoices[mDsp->mNoise.ProcessIndex(kChoices.size())]);
                         break;
+                    }
                 }
             }
 
-            float lengthSamples = kitdsp::lerp(100.0f, 3000.0f, mParams.Get<Params::GrainLength>())
-            // *8 ensures grains will always be long enough, even if they are played 2 octaves up (*8 speed)
-            float delaySamples = lengthSamples * 8.0f + 1.0f;
+            float lengthSamples = kitdsp::msToSamples(mParams.Get<Params::GrainLength>(), sampleRate);
+            float delaySamples = lengthSamples * (speed+1.0f) + 1.0f;
+            //float pan = (mDsp->mInitialPan.GetValue() * mParams.Get<Params::StereoWidth>() / 2) + 0.5f;
+            float pan = 0.0f;
 
             Grain& g = mDsp->mGrains.emplace_back();
-            g.Set(delaySamples, lengthSamples, speed);
+            g.Set(delaySamples, lengthSamples, speed, pan);
         }
 
         float mixf = mParams.Get<Params::Mix>();
         float tone = mParams.Get<Params::Tone>();
-        bool bufferFreeze = mParams.Get<Params::BufferFreeze>();
+        bool bufferFreeze = mParams.Get<Params::BufferFreeze>() == clapeze::OnOff::On;
         for (size_t idx = 0; idx < in.left.size(); ++idx) {
             // in
             float left = in.left[idx];
             float right = in.right[idx];
-            float mono = mDsp->mTone.Process(kitdsp::lerp(left, right, 0.5f), tone);
+            float mono = left;
+            //float mono = (left + right) / 2;
+            //float mono = mDsp->mTone.Process(kitdsp::lerp(left, right, 0.5f), tone);
             if(!bufferFreeze) {
                 mDsp->mDelay.Write(mono);
             }
@@ -303,8 +340,9 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
             float processedRight = 0.0f;
             for(auto& grain : mDsp->mGrains) {
                 grain.Advance(bufferFreeze);
-                processedLeft += grain.Read(mDsp->mDelay);
-                processedRight += grain.Read(mDsp->mDelay);
+                kitdsp::float_2 out = grain.Read(mDsp->mDelay);
+                processedLeft += out.left;
+                processedRight += out.right;
             }
 
             // outputs
@@ -325,7 +363,7 @@ class Processor : public EffectProcessor<ParamsFeature::AudioHandle> {
         (void)minBlockSize;
         (void)maxBlockSize;
         mMemory.reset();
-        mDsp = std::make_unique<Dsp>(sampleRate, mMemory);
+        mDsp = std::make_unique<Dsp>(static_cast<float>(sampleRate), mMemory);
     }
 
    private:

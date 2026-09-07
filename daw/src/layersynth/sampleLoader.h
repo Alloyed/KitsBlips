@@ -551,7 +551,7 @@ class RawSampleLoader {
             sAnySampleChanged = false;
         }
         if (ImPlot::BeginPlot("Waveform", ImVec2(-1.0f, 160.0f))) {
-            int32_t numSamples = file.processedSamples.size();
+            int32_t numSamples = static_cast<int32_t>(file.processedSamples.size());
             if(!file.rawSamples.empty()) {
                 ImPlot::SetupAxis(ImAxis_Y1, nullptr, ImPlotAxisFlags_NoTickLabels);
                 ImPlot::SetupAxesLimits(0.0, narrow_cast<double>(numSamples), -1.0, 1.0);
